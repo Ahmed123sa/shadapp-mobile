@@ -108,7 +108,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_stats == null) _loading = true; _error = null; });
     try {
       final query = _buildFilterQuery();
       final reportsFuture = _api.get('/reports$query').catchError((e) {

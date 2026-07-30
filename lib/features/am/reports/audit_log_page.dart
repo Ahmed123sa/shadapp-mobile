@@ -34,7 +34,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_logs.isEmpty) _loading = true; _error = null; });
     try {
       final params = <String, String>{};
       if (_searchQuery.isNotEmpty) params['search'] = _searchQuery;

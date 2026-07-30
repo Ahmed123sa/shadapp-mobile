@@ -32,7 +32,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
   Future<void> _load() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_payments.isEmpty) _loading = true; _error = null; });
     try {
       final results = await Future.wait<Map<String, dynamic>>([
         _api.get('/workspaces/$wsId/payments'),

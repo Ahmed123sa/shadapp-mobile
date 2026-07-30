@@ -15,9 +15,19 @@ class _SaTeamPageState extends State<SaTeamPage> {
   final _api = ApiClient();
   final _searchController = TextEditingController();
   List<dynamic> _managers = [];
-  List<dynamic> _filteredManagers = [];
+  String _searchQuery = '';
   bool _loading = true;
   Timer? _debounce;
+
+  List<dynamic> get _filteredManagers {
+    if (_searchQuery.isEmpty) return _managers;
+    final q = _searchQuery.toLowerCase();
+    return _managers.where((m) {
+      final name = (m['name'] as String? ?? '').toLowerCase();
+      final email = (m['email'] as String? ?? '').toLowerCase();
+      return name.contains(q) || email.contains(q);
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -35,19 +45,17 @@ class _SaTeamPageState extends State<SaTeamPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final query = _searchController.text.trim().isNotEmpty
-          ? '?q=${Uri.encodeComponent(_searchController.text.trim())}'
-          : '';
-      final data = await _api.get('/account-managers$query');
+      final data = await _api.get('/account-managers');
       _managers = data['managers'] as List<dynamic>? ?? [];
-      _filteredManagers = _managers;
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () => _load());
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      setState(() => _searchQuery = value.trim());
+    });
   }
 
   @override
@@ -108,7 +116,7 @@ class _SaTeamPageState extends State<SaTeamPage> {
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear, size: 16, color: ShadColors.textSecondary),
-                onPressed: () { _searchController.clear(); _load(); },
+                onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); },
               )
             : null,
         filled: true,

@@ -32,11 +32,17 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 7, vsync: this, initialIndex: widget.initialTabIndex.clamp(0, 6));
+    _tabController.addListener(_onTabChanged);
     _fetchWorkspace();
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) setState(() {});
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -141,8 +147,8 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         ),
         // ── Tab Content ──
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
+          child: IndexedStack(
+            index: _tabController.index,
             children: [
               ChatTab(wsStatus: _wsStatus, workspaceId: widget.workspaceId),
               FilesTab(workspaceId: widget.workspaceId),

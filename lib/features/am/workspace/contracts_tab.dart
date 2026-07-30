@@ -34,7 +34,7 @@ class _ContractsTabState extends State<ContractsTab> {
   Future<void> _load() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_contracts.isEmpty) _loading = true; _error = null; });
     try {
       final results = await Future.wait<Map<String, dynamic>>([
         _api.get('/workspaces/$wsId/contracts'),

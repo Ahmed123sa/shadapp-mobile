@@ -36,6 +36,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   int _badgeApprovals = 0;
   int _badgeChat = 0;
   Timer? _pollTimer;
+  int _pollTick = 0;
 
   @override
   void initState() {
@@ -45,8 +46,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     _searchController.addListener(_filter);
     _setupRealtimeNotifications();
     _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      _load();
       _loadNotifs();
+      _pollTick++;
+      if (_pollTick % 5 == 0) _load();
     });
   }
 
@@ -57,7 +59,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     reverb.connectForUser(uid);
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
-      _load();
       if (!mounted) return;
       final msg = (payload['data'] as Map?)?['message'] as String? ?? 'إشعار جديد';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -354,7 +355,23 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         onRefresh: _load,
         child: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _buildTabContent(),
+          : IndexedStack(
+              index: _selectedIndex,
+              children: _isSA
+                ? [
+                    _buildHomeTab(),
+                    const SaApprovalsPage(),
+                    const SaClientsPage(),
+                    const SaTeamPage(),
+                    const AdminSettingsPage(),
+                  ]
+                : [
+                    _buildAmHomeTab(),
+                    const SaApprovalsPage(),
+                    _buildAmClientsTab(),
+                    const AdminSettingsPage(),
+                  ],
+            ),
       ),
       bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
@@ -397,25 +414,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     );
   }
 
-  Widget _buildTabContent() {
-    if (_isSA) {
-      switch (_selectedIndex) {
-        case 0: return _buildHomeTab();
-        case 1: return _buildApprovalsTab();
-        case 2: return _buildClientsTab();
-        case 3: return _buildTeamTab();
-        case 4: return _buildSettingsTab();
-        default: return _buildHomeTab();
-      }
-    }
-    switch (_selectedIndex) {
-      case 0: return _buildAmHomeTab();
-      case 1: return _buildApprovalsTab();
-      case 2: return _buildAmClientsTab();
-      case 3: return _buildSettingsTab();
-      default: return _buildAmHomeTab();
-    }
-  }
+
 
   Widget _buildAmHomeTab() {
     final totalClients = _allClients.length;
@@ -634,22 +633,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       ]),
     );
-  }
-
-  Widget _buildApprovalsTab() {
-    return const SaApprovalsPage();
-  }
-
-  Widget _buildClientsTab() {
-    return const SaClientsPage();
-  }
-
-  Widget _buildTeamTab() {
-    return const SaTeamPage();
-  }
-
-  Widget _buildSettingsTab() {
-    return const AdminSettingsPage();
   }
 
   Widget _buildSearchBar() {

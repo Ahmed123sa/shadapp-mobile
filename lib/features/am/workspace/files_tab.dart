@@ -33,7 +33,7 @@ class _FilesTabState extends State<FilesTab> {
   Future<void> _load() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_files.isEmpty) _loading = true; _error = null; });
     try {
       final data = await _api.get('/workspaces/$wsId/files');
       _files = data['files'] as List<dynamic>? ?? [];

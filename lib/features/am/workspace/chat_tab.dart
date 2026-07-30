@@ -30,6 +30,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   List<dynamic> _messages = [];
   bool _loading = true;
   Timer? _pollTimer;
+  int _pollTick = 0;
   Map<String, dynamic>? _workspaceData;
   Map<String, dynamic>? _nextMeeting;
   Map<String, dynamic>? _nextPayment;
@@ -76,9 +77,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   }
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       _load();
-      _loadWorkspace();
+      _pollTick++;
+      if (_pollTick % 4 == 0) _loadWorkspace();
     });
   }
 

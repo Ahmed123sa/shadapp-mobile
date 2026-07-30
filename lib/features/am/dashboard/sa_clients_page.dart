@@ -18,7 +18,6 @@ class _SaClientsPageState extends State<SaClientsPage> {
   List<Map<String, dynamic>> _allClients = [];
   List<Map<String, dynamic>> _managers = [];
   bool _loading = true;
-  bool _searchLoading = false;
   int _filterIndex = 0;
   String _searchQuery = '';
   Timer? _debounce;
@@ -39,17 +38,16 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   Future<void> _load() async {
-    if (!_searchLoading) setState(() => _loading = true);
+    setState(() => _loading = true);
     try {
       final params = <String, String>{};
-      if (_searchQuery.isNotEmpty) params['q'] = _searchQuery;
       if (_selectedManagerId != null) params['manager_id'] = _selectedManagerId.toString();
       final query = params.isNotEmpty ? '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}' : '';
       final data = await _api.get('/clients$query');
       final clients = safeList(data['clients']);
       if (mounted) setState(() { _allClients = clients.cast<Map<String, dynamic>>(); });
     } catch (_) {}
-    if (mounted) setState(() { _loading = false; _searchLoading = false; });
+    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _loadManagers() async {
@@ -64,8 +62,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      setState(() { _searchQuery = value.trim(); _searchLoading = true; });
-      _load();
+      setState(() => _searchQuery = value.trim());
     });
   }
 
@@ -81,7 +78,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear, size: 16, color: ShadColors.textSecondary),
-                onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); _load(); },
+                onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); },
               )
             : null,
         filled: true,
@@ -105,11 +102,22 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   List<Map<String, dynamic>> get _filteredClients {
+    var filtered = _allClients;
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      filtered = filtered.where((c) {
+        final name = (c['company_name'] as String? ?? '').toLowerCase();
+        final person = (c['contact_person'] as String? ?? '').toLowerCase();
+        final phone = (c['phone'] as String? ?? '').toLowerCase();
+        final email = (c['email'] as String? ?? '').toLowerCase();
+        return name.contains(q) || person.contains(q) || phone.contains(q) || email.contains(q);
+      }).toList();
+    }
     switch (_filterIndex) {
-      case 1: return _allClients.where((c) => (c['workspace'] as Map<String, dynamic>?)?['status'] == 'active').toList();
-      case 2: return _allClients.where((c) => c['signed_at'] == null).toList();
-      case 3: return _allClients.where((c) => c['signed_at'] != null && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').toList();
-      default: return _allClients;
+      case 1: return filtered.where((c) => (c['workspace'] as Map<String, dynamic>?)?['status'] == 'active').toList();
+      case 2: return filtered.where((c) => c['signed_at'] == null).toList();
+      case 3: return filtered.where((c) => c['signed_at'] != null && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').toList();
+      default: return filtered;
     }
   }
 

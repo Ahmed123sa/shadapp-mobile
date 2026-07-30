@@ -113,7 +113,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     reverb.connectForClient(cid);
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
-      _contractRefreshNotifier.value++;
       if (!mounted) return;
       final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? 'إشعار جديد';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -136,7 +135,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     });
     FirebaseMessaging.onMessageOpenedApp.listen((_) {
       _loadClientData();
-      _loadNotifs();
     });
   }
 
@@ -144,7 +142,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _loadClientData();
-      _loadNotifs();
     }
   }
 

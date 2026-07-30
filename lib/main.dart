@@ -124,39 +124,26 @@ class ShadApp extends StatefulWidget {
 
 class _ShadAppState extends State<ShadApp> {
   @override
-  void initState() {
-    super.initState();
-    widget.localeProvider.addListener(_onLocaleChanged);
-  }
-
-  void _onLocaleChanged() {
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    widget.localeProvider.removeListener(_onLocaleChanged);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'ShadApp',
-      debugShowCheckedModeBanner: false,
-      theme: shadTheme(),
-      locale: widget.localeProvider.locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ar'),
-        Locale('en'),
-      ],
-      routerConfig: widget.router,
+    return AnimatedBuilder(
+      animation: widget.localeProvider,
+      builder: (context, _) => MaterialApp.router(
+        title: 'ShadApp',
+        debugShowCheckedModeBanner: false,
+        theme: shadTheme(),
+        locale: widget.localeProvider.locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ar'),
+          Locale('en'),
+        ],
+        routerConfig: widget.router,
+      ),
     );
   }
 }

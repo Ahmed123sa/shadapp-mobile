@@ -31,7 +31,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
 
   Future<void> _load() async {
     final isSA = _api.role == 'super_admin';
-    setState(() { _loading = true; _error = null; });
+    setState(() { if (_meetings.isEmpty) _loading = true; _error = null; });
     try {
       final data = isSA
           ? await _api.get('/all-meetings')
