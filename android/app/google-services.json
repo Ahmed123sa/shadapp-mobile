@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "461634224771",
+    "project_id": "shadapp-f9d92",
+    "storage_bucket": "shadapp-f9d92.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461634224771:android:813ed517664609a04ad1b6",
+        "android_client_info": {
+          "package_name": "com.shad.shadapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYicxVD6SINR6PuzVdVuq0hG8Px0d9fY0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
