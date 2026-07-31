@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 
@@ -140,14 +141,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text(l10n.notifications_title),
         actions: [
           if (_unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: const Text('تحديد الكل كمقروء'),
+              child: Text(l10n.notifications_markAllRead),
             ),
         ],
       ),
@@ -160,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     children: [
                       Icon(Icons.notifications_off, size: 64, color: Colors.grey[400]),
                       const SizedBox(height: 16),
-                      Text('لا توجد إشعارات', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                      Text(l10n.notifications_empty, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
                     ],
                   ),
                 )
@@ -187,7 +189,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         onDismissed: (_) => _delete(id),
                         background: Container(
                           alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
+                          padding: const EdgeInsetsDirectional.only(end: 20),
                           color: Colors.red,
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
@@ -225,13 +227,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   String _formatDate(String date) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final dt = DateTime.parse(date);
       final now = DateTime.now();
       final diff = now.difference(dt);
-      if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} د';
-      if (diff.inHours < 24) return 'منذ ${diff.inHours} س';
-      if (diff.inDays < 7) return 'منذ ${diff.inDays} ي';
+      if (diff.inMinutes < 60) return l10n.notifications_minutesAgo(diff.inMinutes);
+      if (diff.inHours < 24) return l10n.notifications_hoursAgo(diff.inHours);
+      if (diff.inDays < 7) return l10n.notifications_daysAgo(diff.inDays);
       return '${dt.day}/${dt.month}/${dt.year}';
     } catch (_) {
       return date;

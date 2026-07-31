@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ManagerDetailPage extends StatefulWidget {
   final int managerId;
@@ -37,7 +38,8 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
       _clients = (managerData['clients'] as List<dynamic>?) ?? [];
       _stats = statsData;
     } catch (e) {
-      _error = 'فشل تحميل البيانات';
+      if (!mounted) return;
+      _error = AppLocalizations.of(context)!.dataLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -52,6 +54,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final l10n = AppLocalizations.of(context)!;
     if (_error != null) {
       return Scaffold(
         body: Center(
@@ -60,7 +63,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
             const SizedBox(height: 12),
             Text(_error!, style: const TextStyle(color: ShadColors.error)),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+            ElevatedButton(onPressed: _load, child: Text(l10n.retry)),
           ]),
         ),
       );
@@ -107,22 +110,22 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
               Center(child: Text(phone, style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled, fontFamily: 'Archivo'), textDirection: TextDirection.ltr)),
             const SizedBox(height: 20),
 
-            _sectionLabel('الإحصائيات'),
+            _sectionLabel(l10n.managerDetailStats),
             Row(children: [
-              _statCard('العملاء', '$clientsCount', ShadColors.sent),
+              _statCard(l10n.managerDetailClients, '$clientsCount', ShadColors.sent),
               const SizedBox(width: 8),
-              _statCard('المساحات النشطة', '$activeWorkspaces', ShadColors.success),
+              _statCard(l10n.managerDetailActiveSpaces, '$activeWorkspaces', ShadColors.success),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _statCard('الدخل الكلي', _formatCurrency(totalRevenue), ShadColors.gold),
+              _statCard(l10n.managerDetailTotalIncome, _formatCurrency(totalRevenue), ShadColors.gold),
               const SizedBox(width: 8),
-              _statCard('مدفوعات معلقة', '$pendingPayments', ShadColors.warning),
+              _statCard(l10n.managerDetailPendingPayments, '$pendingPayments', ShadColors.warning),
             ]),
             const SizedBox(height: 20),
 
             if (contractsByStatus.isNotEmpty) ...[
-              _sectionLabel('العقود حسب الحالة'),
+              _sectionLabel(l10n.managerDetailContractsByStatus),
               const SizedBox(height: 8),
               ...contractsByStatus.entries.map((e) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -135,7 +138,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
                 child: Row(children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: _statusColor(e.key), shape: BoxShape.circle)),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(_statusLabel(e.key), style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
+                  Expanded(child: Text(_statusLabel(e.key, l10n), style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
                   Text('${e.value}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _statusColor(e.key), fontFamily: 'PlayfairDisplay')),
                 ]),
               )),
@@ -143,14 +146,14 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
             ],
 
             if (paymentsByMonth.isNotEmpty) ...[
-              _sectionLabel('الدخل الشهري'),
+              _sectionLabel(l10n.managerDetailMonthlyIncome),
               const SizedBox(height: 8),
-              SizedBox(height: 180, child: _paymentsChart(paymentsByMonth)),
+              SizedBox(height: 180, child: _paymentsChart(paymentsByMonth, l10n)),
               const SizedBox(height: 20),
             ],
 
             if (_clients.isNotEmpty) ...[
-              _sectionLabel('العملاء (${_clients.length})'),
+              _sectionLabel(l10n.managerDetailClientsWithCount(_clients.length)),
               const SizedBox(height: 8),
               ..._clients.map((c) {
                 final cName = c['company_name'] as String? ?? '';
@@ -185,7 +188,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
                         color: (wsActive ? ShadColors.success : ShadColors.textDisabled).withAlpha(20),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(wsActive ? 'نشط' : 'غير نشط',
+                      child: Text(wsActive ? l10n.managerDetailActive : l10n.managerDetailInactive,
                           style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: wsActive ? ShadColors.success : ShadColors.textDisabled)),
                     ),
                   ]),
@@ -223,9 +226,9 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
     );
   }
 
-  Widget _paymentsChart(Map<String, dynamic> data) {
+  Widget _paymentsChart(Map<String, dynamic> data, AppLocalizations l10n) {
     final entries = data.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-    if (entries.isEmpty) return const Center(child: Text('لا توجد بيانات', style: TextStyle(color: ShadColors.textDisabled)));
+    if (entries.isEmpty) return Center(child: Text(l10n.managerDetailNoData, style: const TextStyle(color: ShadColors.textDisabled)));
     final spots = entries.asMap().entries.map((e) => FlSpot(e.key.toDouble(), _toDouble(e.value.value))).toList();
 
     return LineChart(LineChartData(
@@ -265,11 +268,11 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
     return statusColors[status] ?? ShadColors.textSecondary;
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(String status, AppLocalizations l10n) {
     final labels = {
-      'draft': 'مسودة', 'sent': 'مرسل', 'client_approved': 'اعتماد العميل',
-      'company_approved': 'اعتماد الشركة', 'completed': 'مكتمل', 'archived': 'مؤرشف',
-      'client_rejected': 'مرفوض', 'edit_requested': 'يحتاج تعديل',
+      'draft': l10n.draft, 'sent': l10n.sent, 'client_approved': l10n.clientApproved,
+      'company_approved': l10n.companyApproved, 'completed': l10n.completed, 'archived': l10n.archived,
+      'client_rejected': l10n.rejected, 'edit_requested': l10n.editRequestedStatus,
     };
     return labels[status] ?? status;
   }

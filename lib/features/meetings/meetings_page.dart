@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/helpers/meeting_helpers.dart';
@@ -51,6 +52,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
+    final l10n = AppLocalizations.of(context)!;
 
     final now = DateTime.now();
     final upcoming = _meetings.where((m) {
@@ -72,18 +74,18 @@ class _MeetingsPageState extends State<MeetingsPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: _meetings.isEmpty
-          ? const EmptyState(icon: Icons.videocam_outlined, title: 'لا توجد اجتماعات')
+          ? EmptyState(icon: Icons.videocam_outlined, title: l10n.meetings_noMeetings)
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 if (upcoming.isNotEmpty) ...[
-                  Text('Upcoming / القادمة', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                  Text(l10n.meetings_upcoming, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                   const SizedBox(height: 12),
                   ...upcoming.map((m) => _meetingCard(m, true)),
                 ],
                 if (past.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('Previous / السابقة', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                  Text(l10n.meetings_previous, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                   const SizedBox(height: 12),
                   ...past.map((m) => _meetingCard(m, false)),
                 ],
@@ -139,7 +141,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 const SizedBox(height: 10),
                 Builder(
                   builder: (ctx) {
-                    final joinStatus = getMeetingJoinStatus(m['scheduled_at']);
+                    final joinStatus = getMeetingJoinStatus(m['scheduled_at'], AppLocalizations.of(ctx)!);
                     return SizedBox(
                       width: double.infinity,
                       child: joinStatus.canJoin

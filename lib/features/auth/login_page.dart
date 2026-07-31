@@ -2,6 +2,8 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/locale_provider.dart';
 import '../../core/theme.dart';
@@ -162,8 +164,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Future<void> _login() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      _error.value = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+      _error.value = l10n.enterEmailAndPassword;
       _shakeController.forward(from: 0);
       return;
     }
@@ -212,16 +215,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       if (!mounted) return;
       context.go(isClient ? '/dashboard' : '/am/dashboard');
     } on AuthException {
-      _error.value = 'انتهت الجلسة — يرجى المحاولة مرة أخرى';
+      _error.value = l10n.sessionExpiredMessage;
       _shakeController.forward(from: 0);
     } on ValidationException catch (e) {
       _error.value = e.message;
       _shakeController.forward(from: 0);
     } on ServerException {
-      _error.value = 'حدث خطأ في الخادم — حاول لاحقاً';
+      _error.value = l10n.serverErrorMessage;
       _shakeController.forward(from: 0);
     } catch (_) {
-      _error.value = 'بيانات الدخول غير صحيحة';
+      _error.value = l10n.invalidCredentialsMessage;
       _shakeController.forward(from: 0);
     } finally {
       _loading.value = false;
@@ -232,6 +235,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final size = MediaQuery.of(context).size;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
@@ -313,7 +317,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             alignment: isAr ? Alignment.topRight : Alignment.topLeft,
                             child: IconButton(
                               icon: const Icon(Icons.language, size: 20, color: Colors.white54),
-                              onPressed: () => LocaleProvider().toggle(),
+                              onPressed: () => context.read<LocaleProvider>().toggle(),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -460,7 +464,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
 
                                       _buildField(
-                                        label: isAr ? 'البريد الإلكتروني' : 'Email',
+                                        label: l10n.emailLabel,
                                         controller: _emailController,
                                         hint: 'example@domain.com',
                                         keyboardType: TextInputType.emailAddress,
@@ -469,7 +473,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       const SizedBox(height: 14),
 
                                       _buildField(
-                                        label: isAr ? 'كلمة المرور' : 'Password',
+                                        label: l10n.passwordLabel,
                                         controller: _passwordController,
                                         hint: '••••••••',
                                         obscure: true,
@@ -482,7 +486,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         builder: (context, loading, _) => _LoginButton(
                                           loading: loading,
                                           onPressed: _login,
-                                          label: isAr ? 'تسجيل الدخول' : 'Sign In',
+                                          label: l10n.loginButton,
                                         ),
                                       ),
                                       const SizedBox(height: 14),
@@ -494,7 +498,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text(
-                                          isAr ? 'نسيت كلمة المرور؟' : 'Forgot Password?',
+                                          l10n.forgotPassword,
                                           style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(100),
                                             fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
                                         ),

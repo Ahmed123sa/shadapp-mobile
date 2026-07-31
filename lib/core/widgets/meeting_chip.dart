@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 import '../helpers/meeting_helpers.dart';
 
@@ -9,7 +10,8 @@ class MeetingChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = metadata['title'] as String? ?? 'اجتماع';
+    final l10n = AppLocalizations.of(context)!;
+    final title = metadata['title'] as String? ?? l10n.meetingChipLabel;
     final link = metadata['link'] as String?;
     final scheduledAt = metadata['scheduled_at'] as String?;
     final duration = metadata['duration_minutes'] as int?;
@@ -83,7 +85,7 @@ class MeetingChip extends StatelessWidget {
             const SizedBox(width: 10),
             Builder(
               builder: (ctx) {
-                final joinStatus = getMeetingJoinStatus(scheduledAt);
+                final joinStatus = getMeetingJoinStatus(scheduledAt, l10n);
                 if (joinStatus.canJoin) {
                   return GestureDetector(
                     onTap: () async {

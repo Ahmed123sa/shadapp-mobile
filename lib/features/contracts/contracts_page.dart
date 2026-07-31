@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/status_badge.dart';
@@ -55,10 +56,7 @@ class _ContractsPageState extends State<ContractsPage> {
   }
 
   Future<void> _clientAction(int contractId, String action) async {
-    final labels = {
-      'approved': 'موافقة',
-      'edit_requested': 'طلب تعديل',
-    };
+    final l10n = AppLocalizations.of(context)!;
 
     String? reason;
 
@@ -66,11 +64,11 @@ class _ContractsPageState extends State<ContractsPage> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('موافقة على العقد'),
-          content: const Text('هل أنت متأكد من الموافقة على هذا العقد؟'),
+          title: Text(l10n.approveContractTitle),
+          content: Text(l10n.approveContractConfirm),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.confirm)),
           ],
         ),
       );
@@ -82,11 +80,11 @@ class _ContractsPageState extends State<ContractsPage> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('${labels[action] ?? action} العقد'),
-          content: const Text('هل أنت متأكد؟'),
+          title: Text(l10n.contractActionDialog(action)),
+          content: Text(l10n.areYouSure),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(labels[action] ?? action)),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.contractActionDone(action))),
           ],
         ),
       );
@@ -99,27 +97,26 @@ class _ContractsPageState extends State<ContractsPage> {
         if (reason != null && reason.isNotEmpty) 'reason': reason,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ تم ${labels[action] ?? action} العقد')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.contractActionDone(action))])));
         _load();
         widget.refreshNotifier?.value++;
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تنفيذ الإجراء')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.actionFailed)));
     }
   }
 
   Future<String?> _showReasonDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
-    final label = 'التعديلات المطلوبة';
-    final hint = 'اذكر التعديلات المطلوبة...';
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(label),
-        content: TextField(controller: controller, maxLines: 3, decoration: InputDecoration(hintText: hint)),
+        title: Text(l10n.contract_editReason),
+        content: TextField(controller: controller, maxLines: 3, decoration: InputDecoration(hintText: l10n.editReasonHint)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('تأكيد')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(l10n.confirm)),
         ],
       ),
     );
@@ -139,11 +136,11 @@ class _ContractsPageState extends State<ContractsPage> {
     if (_loading) { return const LoadingState(); }
     if (_error != null) { return ErrorState(message: _error!, onRetry: _load); }
     if (_contracts.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
-          SizedBox(height: 16),
-          Text('في انتظار استلام العقد', style: TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
+          const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
+          const SizedBox(height: 16),
+          Text(AppLocalizations.of(context)!.awaitingContracts, style: const TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
         ]),
       );
     }
@@ -160,6 +157,7 @@ class _ContractsPageState extends State<ContractsPage> {
   }
 
   Widget _contractCard(dynamic c) {
+    final l10n = AppLocalizations.of(context)!;
     final status = c['status'] as String? ?? '';
     final needsAction = status == 'sent';
     final isApproved = status == 'company_approved';
@@ -179,32 +177,32 @@ class _ContractsPageState extends State<ContractsPage> {
             Expanded(child: Text(c['title'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary))),
             if (c['contract_type'] == 'additional')
               Container(
-                margin: const EdgeInsets.only(left: 6),
+                margin: const EdgeInsetsDirectional.only(start: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [ShadColors.gold.withAlpha(50), ShadColors.gold.withAlpha(25)]),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: ShadColors.gold.withAlpha(80)),
                 ),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.add_circle_outline, size: 10, color: ShadColors.gold),
-                  SizedBox(width: 3),
-                  Text('عقد إضافي', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: ShadColors.gold)),
-                ]),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.add_circle_outline, size: 10, color: ShadColors.gold),
+                    const SizedBox(width: 3),
+                    Text(l10n.additionalContract, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                  ]),
               ),
             if (c['contract_type'] != 'additional')
               Container(
-                margin: const EdgeInsets.only(left: 6),
+                margin: const EdgeInsetsDirectional.only(start: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2A4A6A).withAlpha(60),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFF4A8AC0).withAlpha(80)),
                 ),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.description_outlined, size: 10, color: Color(0xFF4A8AC0)),
-                  SizedBox(width: 3),
-                  Text('عقد أساسي', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.description_outlined, size: 10, color: Color(0xFF4A8AC0)),
+                  const SizedBox(width: 3),
+                  Text(l10n.mainContract, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
                 ]),
               ),
             StatusBadge(status: status),
@@ -214,9 +212,9 @@ class _ContractsPageState extends State<ContractsPage> {
             Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
           ]),
           if (_clientType == 'business')
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Text('قيمة العقد غير شاملة الضريبة المضافة', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(l10n.contractValueExcludesVat, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
             ),
           if (c['start_date'] != null) ...[
             const SizedBox(height: 4),
@@ -231,7 +229,7 @@ class _ContractsPageState extends State<ContractsPage> {
                 color: ShadColors.gold.withAlpha(20),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text('سبب التعديل: ${c['edit_reason']}', style: const TextStyle(fontSize: 10, color: ShadColors.gold), maxLines: 2, overflow: TextOverflow.ellipsis),
+              child: Text(l10n.editReasonLabel(c['edit_reason'] as String), style: const TextStyle(fontSize: 10, color: ShadColors.gold), maxLines: 2, overflow: TextOverflow.ellipsis),
             ),
           ],
           if (needsAction) ...[
@@ -243,7 +241,7 @@ class _ContractsPageState extends State<ContractsPage> {
                   child: ElevatedButton.icon(
                     onPressed: () => _clientAction(c['id'], 'approved'),
                     icon: const Icon(Icons.check, size: 14),
-                    label: const Text('موافقة', style: TextStyle(fontSize: 11)),
+                    label: Text(l10n.approve, style: const TextStyle(fontSize: 11)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ShadColors.success,
                       foregroundColor: Colors.white,
@@ -260,7 +258,7 @@ class _ContractsPageState extends State<ContractsPage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _clientAction(c['id'], 'edit_requested'),
                     icon: const Icon(Icons.edit, size: 14),
-                    label: const Text('تعديل', style: TextStyle(fontSize: 11)),
+                    label: Text(l10n.edit, style: const TextStyle(fontSize: 11)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ShadColors.warning,
                       side: const BorderSide(color: ShadColors.warning),
@@ -285,7 +283,7 @@ class _ContractsPageState extends State<ContractsPage> {
                 Row(children: [
                   const Icon(Icons.check_circle, size: 16, color: ShadColors.success),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('تم اعتماد العقد من الشركة', style: const TextStyle(fontSize: 11, color: ShadColors.success))),
+                  Expanded(child: Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 11, color: ShadColors.success))),
                 ]),
                 if (widget.onGoToPayments != null) ...[
                   const SizedBox(height: 8),
@@ -294,7 +292,7 @@ class _ContractsPageState extends State<ContractsPage> {
                     child: ElevatedButton.icon(
                       onPressed: () => widget.onGoToPayments?.call(),
                       icon: const Icon(Icons.payment, size: 16),
-                      label: const Text('💳 انتقال إلى الدفع', style: TextStyle(fontSize: 12)),
+                      label: Text(l10n.goToPayment, style: const TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ShadColors.success,
                         foregroundColor: Colors.white,
@@ -315,6 +313,7 @@ class _ContractsPageState extends State<ContractsPage> {
   void _showDetailModal(dynamic c) { showModalBottomSheet(context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (_) => _ContractDetailModal(contract: c, clientType: _clientType, onAction: _clientAction, onRefresh: _load, onGoToPayments: widget.onGoToPayments)); }
 
   Future<void> _downloadPdf(String pdfUrl) async {
+    final l10n = AppLocalizations.of(context)!;
     final url = _api.resolveFileUrl(pdfUrl);
     final uri = Uri.tryParse(url);
     if (uri != null) {
@@ -322,12 +321,12 @@ class _ContractsPageState extends State<ContractsPage> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
         }
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رابط الملف غير صالح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
     }
   }
@@ -395,16 +394,17 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
       } else {
         await _api.multipartPost('/workspaces/$wsId/files', fields, file: File(pf.path!));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم رفع المستند')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل رفع المستند: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
     }
     if (mounted) setState(() => _uploading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final c = widget.contract;
     final status = c['status'] as String? ?? '';
     final clauses = c['clauses'] as List<dynamic>? ?? [];
@@ -421,7 +421,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
       maxChildSize: 0.9,
       expand: false,
       builder: (_, scrollController) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 16),
+        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 16),
         child: ListView(
           controller: scrollController,
           children: [
@@ -431,7 +431,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
               child: Row(children: [
                 const Icon(Icons.arrow_forward_ios, size: 12, color: ShadColors.textSecondary),
                 const SizedBox(width: 6),
-                Text('كل العقود', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                Text(l10n.allContracts, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
               ]),
             ),
             const SizedBox(height: 14),
@@ -456,10 +456,10 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: ShadColors.gold.withAlpha(80)),
                       ),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
-                        SizedBox(width: 4),
-                        Text('عقد خدمة إضافية', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
+                        const SizedBox(width: 4),
+                        Text(l10n.additionalServiceContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
                       ]),
                     ),
                   ),
@@ -473,10 +473,10 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFF4A8AC0).withAlpha(80)),
                       ),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.description_outlined, size: 12, color: Color(0xFF4A8AC0)),
-                        SizedBox(width: 4),
-                        Text('عقد أساسي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.description_outlined, size: 12, color: Color(0xFF4A8AC0)),
+                        const SizedBox(width: 4),
+                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
                       ]),
                     ),
                   ),
@@ -485,9 +485,9 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                 const SizedBox(height: 12),
                 Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
                 if (widget.clientType == 'business')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Text('قيمة العقد غير شاملة الضريبة المضافة', style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(l10n.contractValueExcludesVat, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
                   ),
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -518,23 +518,23 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
             const SizedBox(height: 16),
 
             // Info rows
-            Text('معلومات العقد', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+            Text(l10n.contractInfo, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
             const SizedBox(height: 8),
             if (c['start_date'] != null)
-              _infoRow('تاريخ البداية', (c['start_date'] as String).split('T')[0]),
+              _infoRow(l10n.startDate, (c['start_date'] as String).split('T')[0]),
             if (c['end_date'] != null)
-              _infoRow('تاريخ الإنتهاء', (c['end_date'] as String).split('T')[0]),
+              _infoRow(l10n.endDate, (c['end_date'] as String).split('T')[0]),
             if (c['value'] != null)
-              _infoRow('قيمة العقد', '${c['value']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
+              _infoRow(l10n.contractValue, '${c['value']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
             if (c['paid'] != null)
-              _infoRow('المدفوع', '${c['paid']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
+              _infoRow(l10n.paid, '${c['paid']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
             if (c['remaining'] != null)
-              _infoRow('المتبقي', '${c['remaining']} ${c['currency'] as String? ?? 'SAR'}'),
+              _infoRow(l10n.remaining, '${c['remaining']} ${c['currency'] as String? ?? 'SAR'}'),
             const SizedBox(height: 16),
 
             // Clauses (only in modal)
             if (clauses.isNotEmpty) ...[
-              Text('بنود العقد', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.contractClauses, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ...clauses.map((cl) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -555,7 +555,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
 
             // Required documents (only show when action is needed)
             if (requiredDocs.isNotEmpty && needsAction) ...[
-              Text('المستندات المطلوبة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.requiredDocuments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ...requiredDocs.map((doc) {
                 final docStatus = doc['status'] as String? ?? 'pending';
@@ -582,14 +582,14 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          statusLabels[docStatus] ?? docStatus,
+                          statusLabels(AppLocalizations.of(context)!)[docStatus] ?? docStatus,
                           style: TextStyle(fontSize: 10, color: docStatusColor, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ]),
                     if (doc['rejection_reason'] != null) ...[
                       const SizedBox(height: 4),
-                      Text('سبب الرفض: ${doc['rejection_reason']}', style: const TextStyle(fontSize: 11, color: ShadColors.error)),
+                      Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
                     ],
                     if (docStatus != 'approved') ...[
                       const SizedBox(height: 8),
@@ -600,7 +600,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                           icon: _uploading
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.upload_file, size: 16),
-                          label: Text(_uploading ? 'جاري الرفع...' : 'رفع المستند'),
+                          label: Text(_uploading ? l10n.uploading : l10n.uploadDocument),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ShadColors.primary,
                             side: const BorderSide(color: ShadColors.primary),
@@ -619,7 +619,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
             if (_loadingFiles) ...[
               const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
             ] else if (_uploadedFiles.isNotEmpty) ...[
-              Text('الملفات المرفوعة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.uploadedFiles, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ..._uploadedFiles.map((f) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -646,7 +646,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      statusLabels[f['status'] as String? ?? ''] ?? f['status'] ?? '',
+                      statusLabels(AppLocalizations.of(context)!)[f['status'] as String? ?? ''] ?? f['status'] ?? '',
                       style: TextStyle(fontSize: 9, color: (f['status'] as String?) == 'approved' ? ShadColors.success : ShadColors.warning),
                     ),
                   ),
@@ -657,7 +657,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
 
             // Action buttons
             if (needsAction) ...[
-              Text('الإجراءات', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               Row(children: [
                 Expanded(
@@ -667,7 +667,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                       if (context.mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.check, size: 18),
-                    label: const Text('موافقة'),
+                    label: Text(l10n.approve),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ShadColors.success,
                       foregroundColor: Colors.white,
@@ -684,7 +684,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                       if (context.mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('تعديل'),
+                    label: Text(l10n.edit),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ShadColors.warning,
                       side: const BorderSide(color: ShadColors.warning),
@@ -704,7 +704,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                 child: OutlinedButton.icon(
                   onPressed: () => _downloadPdf(c['pdf_url'] as String),
                   icon: const Icon(Icons.picture_as_pdf, size: 18),
-                  label: const Text('تحميل العقد (PDF)'),
+                  label: Text(l10n.downloadContractPdf),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ShadColors.gold,
                     side: const BorderSide(color: ShadColors.gold),
@@ -726,9 +726,9 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                 child: Column(children: [
                   const Icon(Icons.check_circle, size: 40, color: ShadColors.success),
                   const SizedBox(height: 8),
-                  Text('تم اعتماد العقد من قبل الشركة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
+                  Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
                   const SizedBox(height: 4),
-                  Text('يمكنك التوجه إلى صفحة الدفع لإتمام الدفعة', style: const TextStyle(fontSize: 12, color: ShadColors.success)),
+                  Text(l10n.goToPaymentHint, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () {
@@ -736,7 +736,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                       widget.onGoToPayments?.call();
                     },
                     icon: const Icon(Icons.payment, size: 18),
-                    label: const Text('💳 انتقال إلى الدفع'),
+                    label: Text(l10n.goToPayment),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ShadColors.success,
                       foregroundColor: Colors.white,
@@ -760,10 +760,10 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                 child: Column(children: [
                   Center(
                     child: Text(
-                      status == 'client_approved' ? 'تمت موافقتك على هذا العقد' :
-                      status == 'edit_requested' ? 'قمت بطلب تعديل العقد' :
-                      status == 'rejected' ? 'قمت برفض هذا العقد' :
-                      status == 'completed' ? 'العقد مكتمل' : '',
+                      status == 'client_approved' ? l10n.clientApprovedStatus :
+                      status == 'edit_requested' ? l10n.editRequestedStatus :
+                      status == 'rejected' ? l10n.rejectedStatus :
+                      status == 'completed' ? l10n.completedStatus : '',
                       style: const TextStyle(fontSize: 13, color: ShadColors.textSecondary),
                       textAlign: TextAlign.center,
                     ),
@@ -779,7 +779,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
                         border: Border.all(color: ShadColors.gold.withAlpha(40)),
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('سبب التعديل:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                        Text(l10n.editReasonTitle, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
                         const SizedBox(height: 4),
                         Text(c['edit_reason'] as String, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
                       ]),
@@ -823,6 +823,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
   }
 
   Future<void> _downloadFile(String fileUrl) async {
+    final l10n = AppLocalizations.of(context)!;
     if (fileUrl.isEmpty) return;
     final url = _api.resolveFileUrl(fileUrl);
     final uri = Uri.tryParse(url);
@@ -831,17 +832,18 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
         }
       }
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رابط الملف غير صالح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
     }
   }
 
   Future<void> _downloadPdf(String pdfUrl) async {
+    final l10n = AppLocalizations.of(context)!;
     final url = _api.resolveFileUrl(pdfUrl);
     final uri = Uri.tryParse(url);
     if (uri != null) {
@@ -849,12 +851,12 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
         }
       }
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رابط الملف غير صالح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import 'render_signature.dart';
 import '../../core/theme.dart';
@@ -58,7 +59,9 @@ class _SignatureTabState extends State<SignatureTab> {
       debugPrint('Failed to load existing signature: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل تحميل التوقيع: $e')),
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.signature_loadFailed('$e'))),
         );
       }
     }
@@ -80,13 +83,13 @@ class _SignatureTabState extends State<SignatureTab> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف التوقيع')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_deleted)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الحذف: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_deleteFailed)),
         );
       }
     }
@@ -103,14 +106,14 @@ class _SignatureTabState extends State<SignatureTab> {
             file: file, fileField: 'signature_image');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حفظ التوقيع')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
           );
           _loadExisting();
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('فشل الحفظ: $e')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
           );
         }
       }
@@ -127,7 +130,7 @@ class _SignatureTabState extends State<SignatureTab> {
       final pngBytes = await renderSignatureAsPng(
           strokes: _strokes, currentStroke: _currentStroke, size: size);
       final cid = _api.userId;
-      if (cid == null) throw Exception('لم يتم العثور على معرف المستخدم');
+      if (cid == null) throw Exception('User ID not found');
       final dir = Directory.systemTemp;
       final file = File(
           '${dir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
@@ -136,14 +139,14 @@ class _SignatureTabState extends State<SignatureTab> {
           file: file, fileField: 'signature_image');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ التوقيع')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
         );
         _loadExisting();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الحفظ: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
         );
       }
     }
@@ -156,19 +159,19 @@ class _SignatureTabState extends State<SignatureTab> {
     setState(() => _saving = true);
     try {
       final cid = _api.userId;
-      if (cid == null) throw Exception('لم يتم العثور على معرف المستخدم');
+      if (cid == null) throw Exception('User ID not found');
       await _api.post('/clients/$cid/sign', {'signature': text});
       if (mounted) {
         _textController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ التوقيع')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
         );
         _loadExisting();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الحفظ: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
         );
       }
     }
@@ -205,6 +208,7 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildExistingSignature() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -228,7 +232,7 @@ class _SignatureTabState extends State<SignatureTab> {
                     size: 16, color: ShadColors.gold),
               ),
               const SizedBox(width: 10),
-              const Text('التوقيع الحالي',
+              Text(l10n.signature_currentSignature,
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -282,7 +286,7 @@ class _SignatureTabState extends State<SignatureTab> {
             child: OutlinedButton.icon(
               onPressed: _deleteSignature,
               icon: const Icon(Icons.delete_outline, size: 16),
-              label: const Text('حذف التوقيع',
+              label: Text(l10n.signature_deleteSignature,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ShadColors.error,
@@ -299,6 +303,7 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildModeSelector() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -309,11 +314,11 @@ class _SignatureTabState extends State<SignatureTab> {
       child: Row(
         children: [
           Expanded(
-            child: _buildModeTab('draw', 'رسم باليد', Icons.brush_outlined),
+            child: _buildModeTab('draw', l10n.signature_drawMode, Icons.brush_outlined),
           ),
           const SizedBox(width: 4),
           Expanded(
-            child: _buildModeTab('text', 'كتابة نصية', Icons.text_fields_outlined),
+            child: _buildModeTab('text', l10n.signature_textMode, Icons.text_fields_outlined),
           ),
         ],
       ),
@@ -388,6 +393,7 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildTextArea() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -405,7 +411,7 @@ class _SignatureTabState extends State<SignatureTab> {
             color: ShadColors.gold,
             fontFamily: 'Tajawal'),
         decoration: InputDecoration(
-          hintText: 'اكتب اسمك هنا',
+          hintText: l10n.signature_typeYourName,
           hintStyle: TextStyle(
               color: ShadColors.textDisabled.withOpacity(0.5),
               fontSize: 20,
@@ -418,6 +424,7 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildActionButtons() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
@@ -430,7 +437,7 @@ class _SignatureTabState extends State<SignatureTab> {
                   borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.all(12),
             ),
-            child: const Text('مسح',
+            child: Text(l10n.signature_clear,
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
           ),
         ),
@@ -446,7 +453,7 @@ class _SignatureTabState extends State<SignatureTab> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.check, size: 18),
-            label: Text(_saving ? 'جاري الحفظ...' : 'حفظ التوقيع',
+            label: Text(_saving ? l10n.signature_saving : l10n.signature_saveSignature,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Tajawal')),
             style: ElevatedButton.styleFrom(
               backgroundColor: ShadColors.crimson,
@@ -462,10 +469,11 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildUploadButton() {
+    final l10n = AppLocalizations.of(context)!;
     return OutlinedButton.icon(
       onPressed: _pickImage,
       icon: const Icon(Icons.attach_file, size: 18),
-      label: const Text('أو ارفع صورة التوقيع',
+      label: Text(l10n.signature_orUploadImage,
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
       style: OutlinedButton.styleFrom(
         foregroundColor: ShadColors.gold,

@@ -119,11 +119,13 @@ class _ReportsTabState extends State<ReportsTab> {
       });
 
       final results = await Future.wait([reportsFuture, logsFuture]);
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       final reportsResult = results[0];
       final logsResult = results[1];
 
       if (reportsResult['error'] == true) {
-        _error = reportsResult['message']?.toString() ?? 'خطأ في تحميل التقارير';
+        _error = reportsResult['message']?.toString() ?? l10n.reportsLoadFailed;
       } else {
         _stats = reportsResult;
         final raw = reportsResult['manager_stats'];
@@ -148,7 +150,7 @@ class _ReportsTabState extends State<ReportsTab> {
             const SizedBox(height: 12),
             Text(_error!, style: ShadTypography.cardBody.copyWith(color: ShadColors.error)),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+            ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context)!.retry)),
           ],
         ),
       );
@@ -208,8 +210,8 @@ class _ReportsTabState extends State<ReportsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('التقارير', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
-                Text('آخر 30 يوم', style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
+                Text(AppLocalizations.of(context)!.reports, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
+                Text(AppLocalizations.of(context)!.reportsLast30Days, style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
               ],
             ),
           ),
@@ -220,12 +222,13 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildFilterChips() {
+    final l10n = AppLocalizations.of(context)!;
     final periods = [
-      ('all', 'الكل'),
-      ('month', 'هذا الشهر'),
-      ('3months', 'آخر 3 أشهر'),
-      ('year', 'هذه السنة'),
-      ('custom', 'مخصص'),
+      ('all', l10n.all),
+      ('month', l10n.reportsThisMonth),
+      ('3months', l10n.reportsLast3Months),
+      ('year', l10n.reportsThisYear),
+      ('custom', l10n.reportsCustom),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -274,17 +277,18 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildCustomFilterPanel() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: ShadColors.divider)),
       ),
       child: Column(
         children: [
           Row(children: [
-            _buildDateChip('من', _dateFrom, (d) { setState(() => _dateFrom = d); _load(); }),
+            _buildDateChip(l10n.auditLogFrom, _dateFrom, (d) { setState(() => _dateFrom = d); _load(); }),
             const SizedBox(width: 8),
-            _buildDateChip('إلى', _dateTo, (d) { setState(() => _dateTo = d); _load(); }),
+            _buildDateChip(l10n.auditLogTo, _dateTo, (d) { setState(() => _dateTo = d); _load(); }),
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () { _load(); },
@@ -302,24 +306,24 @@ class _ReportsTabState extends State<ReportsTab> {
           const SizedBox(height: 8),
           Row(children: [
             Expanded(child: _buildDropdown(
-              _selectedClientId, 'العميل', 'كل العملاء',
+              _selectedClientId, l10n.reportsClient, l10n.reportsAllClients,
               _clients.map((c) => MapEntry<dynamic, String>(c['id'], (c['company_name'] as String?) ?? '')).toList(),
               (v) { setState(() => _selectedClientId = v); _load(); },
             )),
             const SizedBox(width: 8),
             Expanded(child: _buildDropdown(
-              _selectedManagerId, 'المدير', 'كل المديرين',
+              _selectedManagerId, l10n.reportsManager, l10n.reportsAllManagers,
               _managers.map((m) => MapEntry<dynamic, String>(m['id'], (m['name'] as String?) ?? '')).toList(),
               (v) { setState(() => _selectedManagerId = v); _load(); },
             )),
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            _typeChip('الكل', null),
+            _typeChip(l10n.all, null),
             const SizedBox(width: 6),
-            _typeChip('شركة', 'business'),
+            _typeChip(l10n.clientTypeCompany, 'business'),
             const SizedBox(width: 6),
-            _typeChip('فرد', 'individual'),
+            _typeChip(l10n.clientTypeIndividual, 'individual'),
             const Spacer(),
             GestureDetector(
               onTap: _clearFilters,
@@ -329,7 +333,7 @@ class _ReportsTabState extends State<ReportsTab> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: ShadColors.borderLight),
                 ),
-                child: const Text('إعادة ضبط', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                child: Text(l10n.reportsReset, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
               ),
             ),
           ]),
@@ -444,6 +448,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildKpiScroll() {
+    final l10n = AppLocalizations.of(context)!;
     final c = _stats;
     final totalClients = '${c?['total_clients'] ?? 0}';
     final payments = _safeMap(c?['payments_by_month']);
@@ -454,11 +459,11 @@ class _ReportsTabState extends State<ReportsTab> {
     final activeWorkspaces = '${c?['active_workspaces'] ?? 0}';
 
     final kpis = [
-      _kpiData('العملاء', totalClients, ShadColors.success, '↑ جديد', true),
-      _kpiData('الإيرادات', '${(totalRevenue.length > 3 ? '${totalRevenue.substring(0, totalRevenue.length - 3)}K' : totalRevenue)}', ShadColors.gold, '↑ الشهر', true),
-      _kpiData('العقود', totalContracts, ShadColors.blue, '↑ نشط', true),
-      _kpiData('معلّق', pendingApprovals, ShadColors.error, 'يحتاج تصرف', false),
-      _kpiData('مساحات', activeWorkspaces, ShadColors.purple, '↑ مفعل', true),
+      _kpiData('clients', l10n.reportsClients, totalClients, ShadColors.success, l10n.reportsDeltaNew, true),
+      _kpiData('revenue', l10n.reportsRevenue, '${(totalRevenue.length > 3 ? '${totalRevenue.substring(0, totalRevenue.length - 3)}K' : totalRevenue)}', ShadColors.gold, l10n.reportsDeltaMonth, true),
+      _kpiData('contracts', l10n.reportsContracts, totalContracts, ShadColors.blue, l10n.reportsDeltaActive, true),
+      _kpiData('pending', l10n.reportsPending, pendingApprovals, ShadColors.error, l10n.reportsNeedsAction, false),
+      _kpiData('workspaces', l10n.reportsWorkspaces, activeWorkspaces, ShadColors.purple, l10n.reportsDeltaActivated, true),
     ];
 
     return Container(
@@ -472,12 +477,12 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
-  _kpiData(String label, String value, Color accent, String delta, bool isUp) {
-    return (label, value, accent, delta, isUp);
+  _kpiData(String kind, String label, String value, Color accent, String delta, bool isUp) {
+    return (kind, label, value, accent, delta, isUp);
   }
 
-  Widget _kpiCard((String, String, Color, String, bool) k) {
-    final (label, value, accent, delta, isUp) = k;
+  Widget _kpiCard((String, String, String, Color, String, bool) k) {
+    final (kind, label, value, accent, delta, isUp) = k;
     return Container(
       width: 110,
       margin: const EdgeInsetsDirectional.only(end: 10),
@@ -496,9 +501,9 @@ class _ReportsTabState extends State<ReportsTab> {
               const SizedBox(height: 5),
               Text(value, style: TextStyle(
                 fontFamily: 'Playfair Display',
-                fontSize: label == 'الإيرادات' ? 16 : 20,
+                fontSize: kind == 'revenue' ? 16 : 20,
                 fontWeight: FontWeight.w700,
-                color: label == 'معلّق' ? ShadColors.error : ShadColors.textPrimary,
+                color: kind == 'pending' ? ShadColors.error : ShadColors.textPrimary,
               )),
               const SizedBox(height: 4),
               Text(delta, style: TextStyle(
@@ -520,10 +525,11 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildRevenueChart() {
+    final l10n = AppLocalizations.of(context)!;
     final payments = _safeMap(_stats?['payments_by_month']);
     return _chartSection(
-      title: 'الإيرادات الشهرية',
-      subtitle: 'إجمالي المدفوعات المقبولة',
+      title: l10n.reportsMonthlyRevenue,
+      subtitle: l10n.reportsAcceptedPaymentsTotal,
       periodTabs: true,
       child: SizedBox(
         height: 130,
@@ -535,6 +541,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _revenueLineChart(Map<String, dynamic> data) {
+    final l10n = AppLocalizations.of(context)!;
     final entries = data.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
     final total = entries.length;
     final slice = _chartPeriod == '6m' ? total > 6 ? entries.sublist(total - 6) : entries : entries;
@@ -556,11 +563,12 @@ class _ReportsTabState extends State<ReportsTab> {
             final idx = v.toInt();
             if (idx < 0 || idx >= slice.length) return const SizedBox();
             final parts = slice[idx].key.split('-');
-            final monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+            final monthNames = [l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril, l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust, l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember];
             final m = int.tryParse(parts[1] ?? '1') ?? 1;
+            final name = monthNames[m - 1];
             return Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(monthNames[m - 1].substring(0, 2), style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)),
+              child: Text(name.length <= 2 ? name : name.substring(0, 2), style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)),
             );
           },
         )),
@@ -575,6 +583,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildContractsChart() {
+    final l10n = AppLocalizations.of(context)!;
     final contracts = _safeMap(_stats?['contracts_by_status']);
     final statusOrder = ['completed', 'sent', 'client_approved', 'company_approved', 'draft', 'archived', 'client_rejected', 'edit_requested'];
     final entries = statusOrder.where((s) => contracts.containsKey(s) && _toDouble(contracts[s]) > 0).map((s) => MapEntry(s, _toDouble(contracts[s]))).toList();
@@ -592,8 +601,8 @@ class _ReportsTabState extends State<ReportsTab> {
     };
 
     return _chartSection(
-      title: 'العقود حسب الحالة',
-      subtitle: 'التوزيع الحالي',
+      title: l10n.reportsContractsByStatus,
+      subtitle: l10n.reportsCurrentDistribution,
       child: Column(
         children: [
           SizedBox(
@@ -622,9 +631,9 @@ class _ReportsTabState extends State<ReportsTab> {
             crossAxisSpacing: 4,
             children: entries.map((e) {
               final labelMap = {
-                'completed': 'مكتمل', 'sent': 'مرسل', 'client_approved': 'موافقة عميل',
-                'company_approved': 'موافقة شركة', 'draft': 'مسودة', 'archived': 'مؤرشف',
-                'client_rejected': 'مرفوض', 'edit_requested': 'تعديل',
+                'completed': l10n.completed, 'sent': l10n.sent, 'client_approved': l10n.clientApproved,
+                'company_approved': l10n.companyApproved, 'draft': l10n.draft, 'archived': l10n.archived,
+                'client_rejected': l10n.rejected, 'edit_requested': l10n.editRequestedStatus,
               };
               return Row(children: [
                 Container(width: 8, height: 8, decoration: BoxDecoration(
@@ -641,16 +650,17 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildApprovalsChart() {
+    final l10n = AppLocalizations.of(context)!;
     final approvalStats = _safeMap(_stats?['approval_stats']);
     final labels = ['approved', 'rejected', 'pending'];
-    final displayLabels = ['مقبول', 'مرفوض', 'معلّق'];
+    final displayLabels = [l10n.approved, l10n.rejected, l10n.pending];
     final colors = [ShadColors.success, ShadColors.error, ShadColors.gold];
     final data = labels.map((k) => _toDouble(approvalStats[k])).toList();
     if (data.every((v) => v == 0)) return const SizedBox.shrink();
 
     return _chartSection(
-      title: 'الموافقات',
-      subtitle: 'مقبول / مرفوض / معلّق',
+      title: l10n.approvals,
+      subtitle: '${l10n.approved} / ${l10n.rejected} / ${l10n.pending}',
       child: SizedBox(
         height: 130,
         child: BarChart(BarChartData(
@@ -685,6 +695,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildAmLeaderboard() {
+    final l10n = AppLocalizations.of(context)!;
     final useStats = _managerStats.isNotEmpty;
     final items = useStats
         ? _managerStats
@@ -692,7 +703,7 @@ class _ReportsTabState extends State<ReportsTab> {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return _buildSection(
-      title: 'أداء مديري الحسابات',
+      title: l10n.reportsAmPerformance,
       icon: '🏆',
       child: Container(
         decoration: BoxDecoration(
@@ -703,7 +714,7 @@ class _ReportsTabState extends State<ReportsTab> {
         child: Column(
           children: List.generate(items.length > 3 ? 3 : items.length, (i) {
             final item = items[i];
-            final name = item['name'] as String? ?? 'مدير ${i + 1}';
+            final name = item['name'] as String? ?? l10n.reportsManagerFallback(i + 1);
             final initials = name.length >= 2 ? name.substring(0, 2) : name[0];
             final revenue = useStats
                 ? '${_toDouble(item['revenue']).toInt()}'
@@ -800,19 +811,20 @@ class _ReportsTabState extends State<ReportsTab> {
   }
 
   Widget _buildChartTabs() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
-        _ctBtn('6أ', _chartPeriod == '6m'),
+        _ctBtn(l10n.reportsPeriod6m, '6m', _chartPeriod == '6m'),
         const SizedBox(width: 4),
-        _ctBtn('سنة', _chartPeriod == '1y'),
+        _ctBtn(l10n.reportsPeriodYear, '1y', _chartPeriod == '1y'),
       ],
     );
   }
 
-  Widget _ctBtn(String label, bool active) {
+  Widget _ctBtn(String label, String value, bool active) {
     return GestureDetector(
       onTap: () {
-        setState(() => _chartPeriod = label == '6أ' ? '6m' : '1y');
+        setState(() => _chartPeriod = value);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -836,7 +848,7 @@ class _ReportsTabState extends State<ReportsTab> {
     required Widget child,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -866,7 +878,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
   Widget _buildAuditLogLink() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 18, 14, 0),
       child: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -885,8 +897,8 @@ class _ReportsTabState extends State<ReportsTab> {
             children: [
               const Icon(Icons.history, size: 16, color: ShadColors.gold),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('سجل التدقيق', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Expanded(
+                child: Text(AppLocalizations.of(context)!.auditLogTitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -895,12 +907,12 @@ class _ReportsTabState extends State<ReportsTab> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: ShadColors.crimsonBorder),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('عرض الكل', style: TextStyle(fontSize: 10, color: ShadColors.textPrimary)),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios, size: 8, color: ShadColors.textPrimary),
+                    Text(AppLocalizations.of(context)!.amViewAll, style: const TextStyle(fontSize: 10, color: ShadColors.textPrimary)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios, size: 8, color: ShadColors.textPrimary),
                   ],
                 ),
               ),

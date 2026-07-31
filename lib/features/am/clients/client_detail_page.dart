@@ -5,6 +5,7 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/password_field.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ClientDetailPage extends StatefulWidget {
   final int clientId;
@@ -81,9 +82,9 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     try {
       await _api.multipartPost('/clients/${widget.clientId}/profile', {}, file: file, fileField: 'avatar');
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم تغيير الصورة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailImageChanged}')));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل تغيير الصورة: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.clientDetailImageChangeFailed}: $e')));
     }
   }
 
@@ -102,11 +103,11 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
         if (_passwordCtrl.text.trim().isNotEmpty) 'password': _passwordCtrl.text.trim(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ التعديلات')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailSaved}')));
         Navigator.pop(context, true);
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل الحفظ')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientDetailSaveFailed)));
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -157,6 +158,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -164,13 +166,13 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
           icon: const Icon(Icons.arrow_forward_ios, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('تعديل العميل', style: TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(l10n.clientDetailEditTitle, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.check, size: 22),
-            tooltip: 'حفظ',
+            tooltip: l10n.clientDetailSave,
             onPressed: _saving ? null : _save,
           ),
         ],
@@ -192,7 +194,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                   ),
                   child: _avatarUrl != null
                       ? ClipOval(child: Image.network(_api.resolveFileUrl(_avatarUrl!), width: 72, height: 72, fit: BoxFit.cover))
-                      : const Center(child: Text('مح', style: TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold))),
+                      : Center(child: Text(l10n.clientDetailInitials, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold))),
                 ),
                 Positioned(
                   bottom: 0,
@@ -231,13 +233,13 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Container(width: 6, height: 6, decoration: BoxDecoration(color: _status == 'active' ? ShadColors.success : ShadColors.textDisabled, shape: BoxShape.circle)),
                 const SizedBox(width: 4),
-                Text(_status == 'active' ? 'نشط' : 'غير نشط', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _status == 'active' ? ShadColors.success : ShadColors.textDisabled)),
+                Text(_status == 'active' ? l10n.clientDetailActive : l10n.clientDetailInactive, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _status == 'active' ? ShadColors.success : ShadColors.textDisabled)),
               ]),
             ),
           ),
           const SizedBox(height: 16),
 
-          _sectionLabel('معلومات ثابتة'),
+          _sectionLabel(l10n.clientDetailFixedInfo),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 13),
             decoration: BoxDecoration(
@@ -246,16 +248,16 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
               border: Border.all(color: ShadColors.cardBorder),
             ),
             child: Column(children: [
-              _infoRow(Icons.email_outlined, 'البريد الإلكتروني', _emailCtrl.text),
+              _infoRow(Icons.email_outlined, l10n.clientDetailEmail, _emailCtrl.text),
               const Divider(height: 1, color: ShadColors.cardBorder),
-              _infoRow(Icons.calendar_today_outlined, 'تاريخ التسجيل', _formatCreatedAt()),
+              _infoRow(Icons.calendar_today_outlined, l10n.clientDetailRegisteredDate, _formatCreatedAt()),
               const Divider(height: 1, color: ShadColors.cardBorder),
-              _infoRow(Icons.bar_chart_outlined, 'حالة المساحة', _status == 'active' ? 'نشط' : 'غير نشط'),
+              _infoRow(Icons.bar_chart_outlined, l10n.clientDetailSpaceStatus, _status == 'active' ? l10n.clientDetailActive : l10n.clientDetailInactive),
             ]),
           ),
           const SizedBox(height: 16),
 
-          _sectionLabel('نوع العميل'),
+          _sectionLabel(l10n.createClientType),
           Row(children: [
             Expanded(
               child: GestureDetector(
@@ -270,7 +272,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                   child: Column(children: [
                     const Text('🏢', style: TextStyle(fontSize: 16)),
                     const SizedBox(height: 2),
-                    Text('شركة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
+                    Text(l10n.clientDetailCompany, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
                   ]),
                 ),
               ),
@@ -289,23 +291,23 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                   child: Column(children: [
                     const Text('👤', style: TextStyle(fontSize: 16)),
                     const SizedBox(height: 2),
-                    Text('فرد', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
+                    Text(l10n.clientDetailIndividual, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
                   ]),
                 ),
               ),
             ),
           ]),
           const SizedBox(height: 16),
-          _sectionLabel('البيانات القابلة للتعديل'),
-          TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'اسم الشركة')),
+          _sectionLabel(l10n.clientDetailEditableData),
+          TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCompanyName)),
           const SizedBox(height: 10),
-          TextField(controller: _personCtrl, decoration: const InputDecoration(labelText: 'الشخص المسؤول')),
+          TextField(controller: _personCtrl, decoration: InputDecoration(labelText: l10n.clientDetailContactPerson)),
           const SizedBox(height: 10),
-          TextField(controller: _phoneCtrl, decoration: const InputDecoration(labelText: 'رقم الهاتف'), keyboardType: TextInputType.phone, textDirection: TextDirection.ltr),
+          TextField(controller: _phoneCtrl, decoration: InputDecoration(labelText: l10n.clientDetailPhone), keyboardType: TextInputType.phone, textDirection: TextDirection.ltr),
           const SizedBox(height: 10),
-          TextField(controller: _countryCtrl, decoration: const InputDecoration(labelText: 'البلد')),
+          TextField(controller: _countryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCountry)),
           const SizedBox(height: 10),
-          TextField(controller: _industryCtrl, decoration: const InputDecoration(labelText: 'المجال')),
+          TextField(controller: _industryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailIndustry)),
           const SizedBox(height: 10),
           InkWell(
             onTap: () async {
@@ -322,11 +324,11 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
             },
             borderRadius: BorderRadius.circular(10),
             child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'تاريخ الميلاد'),
+              decoration: InputDecoration(labelText: l10n.clientDetailDateOfBirth),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : 'اختر التاريخ',
+                  Text(_dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : l10n.clientDetailSelectDate,
                       style: TextStyle(fontSize: 14, color: _dateOfBirthController.text.isNotEmpty ? ShadColors.textPrimary : ShadColors.textDisabled)),
                   const Icon(Icons.calendar_today, size: 18, color: ShadColors.gold),
                 ],
@@ -335,17 +337,17 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
           ),
           const SizedBox(height: 16),
 
-          _sectionLabel('إعادة تعيين كلمة المرور'),
+          _sectionLabel(l10n.clientDetailResetPassword),
           PasswordField(
             controller: _passwordCtrl,
-            labelText: 'كلمة مرور جديدة',
-            hintText: 'اتركه فارغاً إذا لم تُرِد التغيير',
+            labelText: l10n.clientDetailNewPassword,
+            hintText: l10n.clientDetailLeaveBlank,
             required: false,
           ),
           const SizedBox(height: 16),
 
           if (_subUsers.isNotEmpty) ...[
-            _sectionLabel('المستخدمون الفرعيون (${_subUsers.length})'),
+            _sectionLabel(l10n.clientDetailSubUsersCount(_subUsers.length)),
             ..._subUsers.map((su) => Container(
               margin: const EdgeInsets.only(bottom: 7),
               padding: const EdgeInsets.all(10),
@@ -392,9 +394,9 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                   : Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.check, size: 18, color: Colors.white),
                       const SizedBox(width: 8),
-                      const Text('حفظ التعديلات'),
+                      Text(l10n.clientDetailSaveChanges),
                     ]),
-            ),
+              ),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -402,7 +404,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
             height: 50,
             child: OutlinedButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              child: Text(l10n.clientDetailCancel),
             ),
           ),
         ],

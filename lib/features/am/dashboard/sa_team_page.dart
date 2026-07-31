@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaTeamPage extends StatefulWidget {
   const SaTeamPage({super.key});
@@ -60,6 +61,7 @@ class _SaTeamPageState extends State<SaTeamPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return RefreshIndicator(
       onRefresh: _load,
       child: _loading
@@ -68,7 +70,7 @@ class _SaTeamPageState extends State<SaTeamPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Row(children: [
-                  const Text('الفريق', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+                  Text(l10n.amNavTeam, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -81,10 +83,10 @@ class _SaTeamPageState extends State<SaTeamPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: ShadColors.gold.withAlpha(20), borderRadius: BorderRadius.circular(8)),
-                      child: const Row(children: [
-                        Icon(Icons.settings, size: 12, color: ShadColors.gold),
-                        SizedBox(width: 4),
-                        Text('إدارة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
+                      child: Row(children: [
+                        const Icon(Icons.settings, size: 12, color: ShadColors.gold),
+                        const SizedBox(width: 4),
+                        Text(l10n.saTeamManage, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
                       ]),
                     ),
                   ),
@@ -93,9 +95,9 @@ class _SaTeamPageState extends State<SaTeamPage> {
                 _buildSearchBar(),
                 const SizedBox(height: 12),
                 if (_filteredManagers.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('لا يوجد مديرين', style: TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: Text(l10n.saTeamNoManagers, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
                   )
                 else
                   ..._filteredManagers.map((m) => _managerCard(m)),
@@ -108,9 +110,9 @@ class _SaTeamPageState extends State<SaTeamPage> {
     return TextField(
       controller: _searchController,
       style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
-      textDirection: TextDirection.rtl,
+      textDirection: Localizations.localeOf(context).languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
       decoration: InputDecoration(
-        hintText: 'بحث بالاسم أو رقم الهاتف...',
+        hintText: AppLocalizations.of(context)!.saTeamSearchHintPhone,
         hintStyle: TextStyle(color: ShadColors.textDisabled, fontSize: 12, fontFamily: 'Archivo'),
         prefixIcon: const Icon(Icons.search, size: 18, color: ShadColors.textSecondary),
         suffixIcon: _searchController.text.isNotEmpty

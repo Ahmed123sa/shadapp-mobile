@@ -31,7 +31,7 @@ Future<Uint8List> renderSignatureAsPng({
   final picture = recorder.endRecording();
   final image = await picture.toImage(size.width.toInt(), size.height.toInt());
   final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  if (byteData == null) throw Exception('فشل تحويل الرسم');
+  if (byteData == null) throw Exception('Failed to render signature');
   return byteData.buffer.asUint8List();
 }
 

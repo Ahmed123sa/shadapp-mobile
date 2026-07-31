@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class PasswordField extends StatefulWidget {
   final TextEditingController controller;
-  final String labelText;
-  final String hintText;
+  final String? labelText;
+  final String? hintText;
   final bool showStrength;
   final bool showRequirements;
   final bool required;
@@ -14,8 +15,8 @@ class PasswordField extends StatefulWidget {
   const PasswordField({
     super.key,
     required this.controller,
-    this.labelText = 'كلمة المرور',
-    this.hintText = 'أدخل كلمة المرور',
+    this.labelText,
+    this.hintText,
     this.showStrength = true,
     this.showRequirements = true,
     this.required = true,
@@ -73,10 +74,10 @@ class _PasswordFieldState extends State<PasswordField> {
     return ShadColors.success;
   }
 
-  String _strengthLabel() {
-    if (_strength <= 1) return 'ضعيف';
-    if (_strength == 2) return 'متوسط';
-    return 'قوي';
+  String _strengthLabel(AppLocalizations l10n) {
+    if (_strength <= 1) return l10n.passwordStrengthWeak;
+    if (_strength == 2) return l10n.passwordStrengthMedium;
+    return l10n.passwordStrengthStrong;
   }
 
   double _strengthFraction() {
@@ -86,6 +87,9 @@ class _PasswordFieldState extends State<PasswordField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final effectiveLabel = widget.labelText ?? l10n.passwordFieldLabel;
+    final effectiveHint = widget.hintText ?? l10n.passwordFieldHint;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
       TextFormField(
         controller: widget.controller,
@@ -93,8 +97,8 @@ class _PasswordFieldState extends State<PasswordField> {
         enabled: widget.enabled,
         textDirection: TextDirection.ltr,
         decoration: InputDecoration(
-          labelText: widget.labelText,
-          hintText: widget.hintText,
+          labelText: effectiveLabel,
+          hintText: effectiveHint,
           suffixIcon: IconButton(
             icon: Icon(_obscured ? Icons.visibility_off : Icons.visibility, size: 18),
             onPressed: () => setState(() => _obscured = !_obscured),
@@ -103,11 +107,11 @@ class _PasswordFieldState extends State<PasswordField> {
         validator: widget.validator ??
             ((v) {
               if (v == null || v.trim().isEmpty) {
-                return widget.required ? 'كلمة المرور مطلوبة' : null;
+                return widget.required ? l10n.passwordRequired : null;
               }
-              if (v.trim().length < 8) return '8 أحرف على الأقل';
-              if (!RegExp(r'[A-Za-z]').hasMatch(v)) return 'يجب أن يحتوي على حرف إنجليزي';
-              if (!RegExp(r'[0-9]').hasMatch(v)) return 'يجب أن يحتوي على رقم';
+              if (v.trim().length < 8) return l10n.atLeast8Chars;
+              if (!RegExp(r'[A-Za-z]').hasMatch(v)) return l10n.mustContainEnglishLetter;
+              if (!RegExp(r'[0-9]').hasMatch(v)) return l10n.mustContainNumber;
               return null;
             }),
       ),
@@ -123,12 +127,12 @@ class _PasswordFieldState extends State<PasswordField> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(_strengthLabel(), style: TextStyle(fontSize: 11, color: _strengthColor())),
+        Text(_strengthLabel(l10n), style: TextStyle(fontSize: 11, color: _strengthColor())),
       ],
       const SizedBox(height: 8),
-      _RequirementItem(label: '8 أحرف على الأقل', met: _hasMinChars),
-      _RequirementItem(label: 'حرف إنجليزي واحد', met: _hasLetter),
-      _RequirementItem(label: 'رقم واحد', met: _hasDigit),
+      _RequirementItem(label: l10n.atLeast8Chars, met: _hasMinChars),
+      _RequirementItem(label: l10n.oneEnglishLetter, met: _hasLetter),
+      _RequirementItem(label: l10n.oneNumber, met: _hasDigit),
     ]);
   }
 }

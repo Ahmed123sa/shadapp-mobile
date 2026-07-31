@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 
@@ -47,9 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _api.multipartPost('/auth/me', {}, file: file, fileField: 'avatar');
       _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم تغيير الصورة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_imageChanged)])));
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تغيير الصورة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profile_imageChangeFailed)));
     }
   }
 
@@ -58,21 +59,22 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _api.put('/auth/me', {'name': _nameController.text.trim()});
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ الملف الشخصي')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_saved)])));
         Navigator.pop(context, true);
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل الحفظ')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profile_saveFailed)));
     }
     if (mounted) setState(() => _saving = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('الملف الشخصي'),),
+      appBar: AppBar(title: Text(l10n.profile_title),),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -96,15 +98,15 @@ class _ProfilePageState extends State<ProfilePage> {
             child: TextButton.icon(
               onPressed: _pickAvatar,
               icon: const Icon(Icons.camera_alt, size: 16),
-              label: const Text('تغيير الصورة'),
+              label: Text(l10n.profile_changePicture),
             ),
           ),
           const SizedBox(height: 24),
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: 'الاسم الظاهر',
-              hintText: 'الاسم الذي سيظهر في الشات',
+            decoration: InputDecoration(
+              labelText: l10n.profile_displayName,
+              hintText: l10n.profile_displayNameHint,
             ),
           ),
           const SizedBox(height: 24),
@@ -114,7 +116,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : const Text('حفظ'),
+                  : Text(l10n.profile_save),
             ),
           ),
         ],

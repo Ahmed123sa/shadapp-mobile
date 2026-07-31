@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -39,7 +40,7 @@ class _FilesTabState extends State<FilesTab> {
       _files = data['files'] as List<dynamic>? ?? [];
       _definitions = data['definitions'] as List<dynamic>? ?? [];
     } catch (_) {
-      _error = 'فشل تحميل الملفات';
+      _error = AppLocalizations.of(context)?.filesLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -58,10 +59,10 @@ class _FilesTabState extends State<FilesTab> {
     final file = File(result.files.single.path!);
     try {
       await _api.multipartPost('/workspaces/${widget.workspaceId}/files', {}, file: file);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم رفع الملف')));
+      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesUploadSuccess)])));
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل رفع الملف')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesUploadFailed)));
     }
   }
 
@@ -71,25 +72,28 @@ class _FilesTabState extends State<FilesTab> {
     final isRequired = ValueNotifier<bool>(false);
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (_, setDlgState) => AlertDialog(
-          title: const Text('إضافة تعريف مستند'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'اسم المستند *', hintText: 'مثال: عقد التأسيس')),
-            const SizedBox(height: 12),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'الوصف', hintText: 'وصف المستند...'), maxLines: 2),
-            const SizedBox(height: 12),
-            Row(children: [
-              Checkbox(value: isRequired.value, onChanged: (v) => setDlgState(() => isRequired.value = v ?? false)),
-              const Text('مطلوب'),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return StatefulBuilder(
+          builder: (_, setDlgState) => AlertDialog(
+            title: Text(l10n.filesAddDefinitionTitle),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.filesNameLabel, hintText: l10n.filesNameHint)),
+              const SizedBox(height: 12),
+              TextField(controller: descCtrl, decoration: InputDecoration(labelText: l10n.filesDescription, hintText: l10n.filesDescriptionHint), maxLines: 2),
+              const SizedBox(height: 12),
+              Row(children: [
+                Checkbox(value: isRequired.value, onChanged: (v) => setDlgState(() => isRequired.value = v ?? false)),
+                Text(l10n.filesRequired),
+              ]),
             ]),
-          ]),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('إضافة')),
-          ],
-        ),
-      ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+              ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.filesAdd)),
+            ],
+          ),
+        );
+      },
     );
     if (result != true || nameCtrl.text.trim().isEmpty || widget.workspaceId == null) return;
     try {
@@ -98,34 +102,37 @@ class _FilesTabState extends State<FilesTab> {
         'description': descCtrl.text.trim(),
         'is_required': isRequired.value,
       });
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إضافة التعريف')));
+      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesDefinitionAdded)])));
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إضافة التعريف')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesDefinitionAddFailed)));
     }
   }
 
   Future<void> _deleteDefinition(int defId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('حذف تعريف المستند'),
-        content: const Text('هل أنت متأكد من حذف هذا التعريف؟'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: const Text('حذف')),
-        ],
-      ),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(l10n.filesDeleteDefinitionTitle),
+          content: Text(l10n.filesDeleteDefinitionConfirm),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: Text(l10n.delete)),
+          ],
+        );
+      },
     );
     if (confirm != true) return;
     try {
       await _api.delete('/workspaces/${widget.workspaceId}/document-definitions/$defId');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حذف التعريف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesDefinitionDeleted)])));
         _load();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف التعريف')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesDefinitionDeleteFailed)));
     }
   }
 
@@ -136,12 +143,13 @@ class _FilesTabState extends State<FilesTab> {
         context: context,
         builder: (ctx) {
           final c = TextEditingController();
+          final l10n = AppLocalizations.of(ctx)!;
           return AlertDialog(
-            title: const Text('سبب الرفض'),
-            content: TextField(controller: c, maxLines: 3, decoration: const InputDecoration(hintText: 'اذكر سبب الرفض...')),
+            title: Text(l10n.filesRejectionReasonTitle),
+            content: TextField(controller: c, maxLines: 3, decoration: InputDecoration(hintText: l10n.filesRejectionReasonHint)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-              ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('تأكيد الرفض')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+              ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text), child: Text(l10n.filesConfirmRejection)),
             ],
           );
         },
@@ -155,7 +163,7 @@ class _FilesTabState extends State<FilesTab> {
       });
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تنفيذ الإجراء')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesActionFailed)));
     }
   }
 
@@ -174,6 +182,7 @@ class _FilesTabState extends State<FilesTab> {
 
     final isSA = _api.role == 'super_admin';
     final filtered = _filteredFiles;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -188,11 +197,11 @@ class _FilesTabState extends State<FilesTab> {
                 child: OutlinedButton.icon(
                   onPressed: _addDefinition,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('إضافة تعريف مستند'),
+                  label: Text(l10n.filesAddDefinitionTitle),
                 ),
               ),
             if (_definitions.isNotEmpty) ...[
-              Text('تعريفات المستندات المطلوبة', style: ShadTypography.sectionHeader),
+              Text(l10n.filesRequiredDefinitions, style: ShadTypography.sectionHeader),
               const SizedBox(height: 8),
               ..._definitions.map((d) => Card(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -205,7 +214,7 @@ class _FilesTabState extends State<FilesTab> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(color: ShadColors.errorLight, borderRadius: BorderRadius.circular(12)),
-                        child: Text('مطلوب', style: ShadTypography.caption.copyWith(color: ShadColors.error)),
+                        child: Text(l10n.filesRequired, style: ShadTypography.caption.copyWith(color: ShadColors.error)),
                       ),
                     if (!isSA) ...[
                       const SizedBox(width: 4),
@@ -223,19 +232,19 @@ class _FilesTabState extends State<FilesTab> {
             ],
             // Filter chips
             Row(children: [
-              _filterChip('الكل', 'all'),
+              _filterChip(l10n.all, 'all'),
               const SizedBox(width: 6),
-              _filterChip('قيد المراجعة', 'pending'),
+              _filterChip(l10n.pending, 'pending'),
               const SizedBox(width: 6),
-              _filterChip('مقبول', 'approved'),
+              _filterChip(l10n.approved, 'approved'),
               const SizedBox(width: 6),
-              _filterChip('مرفوض', 'rejected'),
+              _filterChip(l10n.rejected, 'rejected'),
             ]),
             const SizedBox(height: 12),
-            Text('الملفات المرفوعة', style: ShadTypography.sectionHeader),
+            Text(l10n.filesUploaded, style: ShadTypography.sectionHeader),
             const SizedBox(height: 8),
             if (filtered.isEmpty)
-              const EmptyState(icon: Icons.folder_outlined, title: 'لا توجد ملفات')
+              EmptyState(icon: Icons.folder_outlined, title: l10n.filesEmpty)
             else
               ...filtered.map((f) {
                 final statusColors = {'pending': ShadColors.warning, 'approved': ShadColors.success, 'rejected': ShadColors.error};
@@ -252,7 +261,7 @@ class _FilesTabState extends State<FilesTab> {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
                       } else {
                         if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesFileOpenFailed)));
                       }
                     } : null,
                     leading: const Icon(Icons.attach_file, color: ShadColors.primary),
@@ -260,7 +269,7 @@ class _FilesTabState extends State<FilesTab> {
                     subtitle: Row(children: [
                       if (fileType.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsetsDirectional.only(end: 8),
                           child: Text(fileType, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
                         ),
                       if (fileSize.isNotEmpty)
@@ -271,7 +280,7 @@ class _FilesTabState extends State<FilesTab> {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(color: sc.withAlpha(25), borderRadius: BorderRadius.circular(8)),
                           child: Text(
-                            statusLabels[f['status']] ?? f['status'],
+                            statusLabels(AppLocalizations.of(context)!)[f['status']] ?? f['status'],
                             style: ShadTypography.caption.copyWith(color: sc, fontSize: 10),
                           ),
                         ),

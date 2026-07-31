@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaClientsPage extends StatefulWidget {
   const SaClientsPage({super.key});
@@ -70,9 +71,9 @@ class _SaClientsPageState extends State<SaClientsPage> {
     return TextField(
       controller: _searchController,
       style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
-      textDirection: TextDirection.rtl,
+      textDirection: Localizations.localeOf(context).languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
       decoration: InputDecoration(
-        hintText: 'بحث بالاسم أو رقم الهاتف أو البريد...',
+        hintText: AppLocalizations.of(context)!.saClientsSearchHintPhone,
         hintStyle: TextStyle(color: ShadColors.textDisabled, fontSize: 12, fontFamily: 'Archivo'),
         prefixIcon: const Icon(Icons.search, size: 18, color: ShadColors.textSecondary),
         suffixIcon: _searchQuery.isNotEmpty
@@ -123,6 +124,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return RefreshIndicator(
       onRefresh: _load,
       child: _loading && _allClients.isEmpty
@@ -131,7 +133,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Row(children: [
-                  const Text('العملاء', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+                  Text(l10n.saClientsTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -147,9 +149,9 @@ class _SaClientsPageState extends State<SaClientsPage> {
                 _buildPillsFilter(),
                 const SizedBox(height: 12),
                 if (_filteredClients.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('لا يوجد عملاء', style: TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: Text(l10n.saClientsNoClients, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
                   )
                 else
                   ..._filteredClients.map((c) => _clientCard(c)),
@@ -159,6 +161,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   Widget _buildManagerFilter() {
+    final l10n = AppLocalizations.of(context)!;
     if (_managers.isEmpty) return const SizedBox.shrink();
     return GestureDetector(
       onTap: () {
@@ -166,12 +169,12 @@ class _SaClientsPageState extends State<SaClientsPage> {
           context: context,
           builder: (ctx) => SafeArea(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('اختر المدير', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Archivo', color: ShadColors.textPrimary)),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.saClientsSelectManager, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Archivo', color: ShadColors.textPrimary)),
               ),
               ListTile(
-                title: const Text('كل المديرين', style: TextStyle(fontFamily: 'Archivo')),
+                title: Text(l10n.saClientsAllManagers, style: const TextStyle(fontFamily: 'Archivo')),
                 trailing: _selectedManagerId == null ? const Icon(Icons.check, color: ShadColors.gold) : null,
                 onTap: () { setState(() => _selectedManagerId = null); Navigator.pop(ctx); _load(); },
               ),
@@ -198,8 +201,8 @@ class _SaClientsPageState extends State<SaClientsPage> {
           Expanded(
             child: Text(
               _selectedManagerId != null
-                  ? (_managers.firstWhere((m) => m['id'] == _selectedManagerId, orElse: () => {})['name'] ?? 'مدير')
-                  : 'كل المديرين',
+                  ? (_managers.firstWhere((m) => m['id'] == _selectedManagerId, orElse: () => {})['name'] ?? l10n.saClientsManagerLabel)
+                  : l10n.saClientsAllManagers,
               style: TextStyle(fontSize: 11, color: _selectedManagerId != null ? ShadColors.gold : ShadColors.textSecondary, fontFamily: 'Archivo'),
             ),
           ),
@@ -210,14 +213,15 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   Widget _buildPillsFilter() {
+    final l10n = AppLocalizations.of(context)!;
     final active = _allClients.where((c) => (c['workspace'] as Map<String, dynamic>?)?['status'] == 'active').length;
     final pending = _allClients.where((c) => c['signed_at'] == null).length;
     final review = _allClients.where((c) => c['signed_at'] != null && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').length;
     final filters = [
-      ('الكل', _allClients.length),
-      ('نشط', active),
-      ('بانتظار', pending),
-      ('مراجعة', review),
+      (l10n.all, _allClients.length),
+      (l10n.active, active),
+      (l10n.pending, pending),
+      (l10n.underReview, review),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -227,7 +231,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
           final (label, count) = entry.value;
           final activeFilter = _filterIndex == i;
           return Padding(
-            padding: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsetsDirectional.only(start: 6),
             child: GestureDetector(
               onTap: () => setState(() => _filterIndex = i),
               child: AnimatedContainer(
@@ -248,6 +252,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   Widget _clientCard(Map<String, dynamic> client) {
+    final l10n = AppLocalizations.of(context)!;
     final ws = client['workspace'] as Map<String, dynamic>?;
     final wsActive = ws?['status'] == 'active';
     final name = client['company_name'] as String? ?? '';
@@ -303,7 +308,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  wsActive ? 'نشط' : signedAt == null ? 'بانتظار' : 'مراجعة',
+                  wsActive ? l10n.active : signedAt == null ? l10n.pending : l10n.underReview,
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: wsActive ? ShadColors.success : signedAt == null ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo'),
                 ),
               ),
@@ -320,6 +325,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   void _showClientActions(Map<String, dynamic> client) {
+    final l10n = AppLocalizations.of(context)!;
     final clientId = int.tryParse(client['id']?.toString() ?? '') ?? 0;
     final name = client['company_name'] as String? ?? '';
     showModalBottomSheet(
@@ -333,12 +339,12 @@ class _SaClientsPageState extends State<SaClientsPage> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.edit, color: ShadColors.gold),
-            title: const Text('تعديل العميل'),
+            title: Text(l10n.clientDetailEditTitle),
             onTap: () { Navigator.pop(ctx); context.push<bool>('/am/clients/${client['id']}').then((v) { if (v == true) _load(); }); },
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: ShadColors.error),
-            title: const Text('حذف العميل', style: TextStyle(color: ShadColors.error)),
+            title: Text(l10n.saClientsDeleteTitle, style: const TextStyle(color: ShadColors.error)),
             onTap: () { Navigator.pop(ctx); _deleteClient(clientId, name); },
           ),
         ]),
@@ -347,17 +353,18 @@ class _SaClientsPageState extends State<SaClientsPage> {
   }
 
   Future<void> _deleteClient(int id, String name) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف العميل'),
-        content: Text('حذف "$name" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'),
+        title: Text(l10n.saClientsDeleteTitle),
+        content: Text(l10n.saClientsDeleteConfirmation(name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
-            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: Text(AppLocalizations.of(ctx)!.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -367,7 +374,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
       await _api.delete('/clients/$id');
       _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف العميل')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saClientsDeleteFailed)));
     }
   }
 }

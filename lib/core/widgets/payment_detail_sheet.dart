@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class PaymentDetailSheet extends StatelessWidget {
@@ -15,6 +16,7 @@ class PaymentDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final amount = payment['amount']?.toString() ?? '0';
     final currency = payment['currency']?.toString() ?? 'SAR';
     final installmentLabel = payment['installment_label']?.toString();
@@ -22,10 +24,10 @@ class PaymentDetailSheet extends StatelessWidget {
     final status = payment['status']?.toString() ?? 'scheduled';
     final notes = payment['notes']?.toString();
 
-    final statusInfo = _statusInfo(status);
+    final statusInfo = _statusInfo(status, l10n);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 24),
       decoration: BoxDecoration(
         color: ShadColors.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -60,7 +62,7 @@ class PaymentDetailSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(installmentLabel ?? 'تفاصيل الدفعة',
+                  Text(installmentLabel ?? l10n.paymentDetail_title,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
                   Text(statusInfo.$1,
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusInfo.$3)),
@@ -69,9 +71,9 @@ class PaymentDetailSheet extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 16),
-          _row('المبلغ', '$amount $currency'),
-          if (dueDate != null && dueDate.isNotEmpty) _row('تاريخ الاستحقاق', _formatDate(dueDate)),
-          if (notes != null && notes.isNotEmpty) _row('ملاحظات', notes),
+          _row(l10n.paymentDetail_amount, '$amount $currency'),
+          if (dueDate != null && dueDate.isNotEmpty) _row(l10n.paymentDetail_dueDate, _formatDate(dueDate)),
+          if (notes != null && notes.isNotEmpty) _row(l10n.paymentDetail_notes, notes),
           if (showPayButton && status == 'scheduled') ...[
             const SizedBox(height: 16),
             SizedBox(
@@ -79,7 +81,7 @@ class PaymentDetailSheet extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onPay,
                 icon: const Icon(Icons.payment, size: 16),
-                label: const Text('ادفع الآن'),
+                label: Text(l10n.paymentDetail_payNow),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ShadColors.gold,
                   foregroundColor: Colors.white,
@@ -117,16 +119,16 @@ class PaymentDetailSheet extends StatelessWidget {
     }
   }
 
-  (String, IconData, Color) _statusInfo(String status) {
+  (String, IconData, Color) _statusInfo(String status, AppLocalizations l10n) {
     switch (status) {
       case 'scheduled':
-        return ('في انتظار الدفع', Icons.schedule, ShadColors.gold);
+        return (l10n.awaitingPayment, Icons.schedule, ShadColors.gold);
       case 'pending':
-        return ('قيد المراجعة', Icons.hourglass_empty, Colors.orange);
+        return (l10n.paymentDetail_statusUnderReview, Icons.hourglass_empty, Colors.orange);
       case 'approved':
-        return ('تم الدفع', Icons.check_circle, ShadColors.success);
+        return (l10n.paymentDetail_statusPaid, Icons.check_circle, ShadColors.success);
       case 'overdue':
-        return ('متأخر', Icons.warning_amber, ShadColors.crimson);
+        return (l10n.paymentDetail_statusOverdue, Icons.warning_amber, ShadColors.crimson);
       default:
         return (status, Icons.help_outline, Colors.grey);
     }

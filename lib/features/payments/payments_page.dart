@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
@@ -75,9 +76,29 @@ class _PaymentsPageState extends State<PaymentsPage> {
     return _payments.fold<double>(0, (s, p) => s + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
 
+  String _ordinalLabel(int index) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (index) {
+      case 0: return l10n.payments_ordinalFirst;
+      case 1: return l10n.payments_ordinalSecond;
+      case 2: return l10n.payments_ordinalThird;
+      case 3: return l10n.payments_ordinalFourth;
+      case 4: return l10n.payments_ordinalFifth;
+      case 5: return l10n.payments_ordinalSixth;
+      case 6: return l10n.payments_ordinalSeventh;
+      case 7: return l10n.payments_ordinalEighth;
+      case 8: return l10n.payments_ordinalNinth;
+      case 9: return l10n.payments_ordinalTenth;
+      default: return '${index + 1}';
+    }
+  }
+
   String _installmentLabel(int index) {
-    const labels = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'];
-    return index < labels.length ? 'دفعة ${labels[index]}' : 'دفعة ${index + 1}';
+    final l10n = AppLocalizations.of(context)!;
+    if (index < 10) {
+      return l10n.payments_installmentFormat(_ordinalLabel(index));
+    }
+    return l10n.payments_installmentFormatNumbered(index + 1);
   }
 
   String _formatDate(String? dateStr) {
@@ -107,7 +128,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
         _contracts = [];
       }
     } catch (_) {
-      _error = 'فشل تحميل المدفوعات';
+      _error = AppLocalizations.of(context)!.payments_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -146,7 +167,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 80),
           children: [
             Container(
               padding: const EdgeInsets.all(20),
@@ -159,19 +180,19 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 if (isFullyPaid) ...[
                   const Icon(Icons.check_circle, size: 32, color: ShadColors.success),
                   const SizedBox(height: 8),
-                  const Text('تم الدفع بالكامل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.success, fontFamily: 'NotoSansArabic')),
+                  Text(AppLocalizations.of(context)!.payments_paidInFull, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.success, fontFamily: 'NotoSansArabic')),
                   const SizedBox(height: 4),
                   Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
                 ] else ...[
-                  Text('إجمالي المدفوع', style: TextStyle(fontSize: 12, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
+                  Text(AppLocalizations.of(context)!.payments_totalPaid, style: TextStyle(fontSize: 12, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
                   const SizedBox(height: 8),
                   Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
                   const SizedBox(height: 4),
-                  Text('من أصل ${grandTotal.toStringAsFixed(2)} $contractCur — متبقي ${(grandTotal - _totalPaid).toStringAsFixed(2)}',
+                  Text(AppLocalizations.of(context)!.payments_remainingSummary(contractCur, (grandTotal - _totalPaid).toStringAsFixed(2), grandTotal.toStringAsFixed(2)),
                     style: TextStyle(fontSize: 11, color: ShadColors.textDisabled, fontFamily: 'NotoSansArabic')),
                   if (_taxSummary != null && (_taxSummary!['tax_percentage'] ?? 0) > 0) ...[
                     const SizedBox(height: 4),
-                    Text('القيمة: ${(_taxSummary!['contracts_total'] ?? 0)} $contractCur + ضريبة ${_taxSummary!['tax_percentage']}% = ${(_taxSummary!['tax_amount'] ?? 0)} $contractCur',
+                    Text(AppLocalizations.of(context)!.payments_taxSummary(_taxSummary!['tax_amount'] ?? 0, contractCur, _taxSummary!['tax_percentage'], _taxSummary!['contracts_total'] ?? 0),
                       style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, fontFamily: 'NotoSansArabic')),
                   ],
                 ],
@@ -190,15 +211,15 @@ class _PaymentsPageState extends State<PaymentsPage> {
             const SizedBox(height: 16),
 
             Row(children: [
-              _filterChip('الكل', 'all'),
+              _filterChip(AppLocalizations.of(context)!.payments_filterAll, 'all'),
               const SizedBox(width: 8),
-              _filterChip('مقبولة', 'approved'),
+              _filterChip(AppLocalizations.of(context)!.payments_filterAccepted, 'approved'),
               const SizedBox(width: 8),
-              _filterChip('معلّقة', 'pending'),
+              _filterChip(AppLocalizations.of(context)!.payments_filterPending, 'pending'),
               const SizedBox(width: 8),
-              _filterChip('مرفوضة', 'rejected'),
+              _filterChip(AppLocalizations.of(context)!.payments_filterRejected, 'rejected'),
               const SizedBox(width: 8),
-              _filterChip('مجدولة', 'scheduled'),
+              _filterChip(AppLocalizations.of(context)!.payments_filterScheduled, 'scheduled'),
             ]),
             const SizedBox(height: 12),
 
@@ -208,7 +229,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 child: Row(children: [
                   Icon(Icons.calendar_today, size: 14, color: ShadColors.gold),
                   const SizedBox(width: 6),
-                  Text('الدفعات القادمة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
+                  Text(AppLocalizations.of(context)!.payments_upcomingPayments, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
                 ]),
               ),
               ..._scheduledPayments.map((p) => _scheduledPaymentCard(p)),
@@ -221,7 +242,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 child: Column(children: [
                   const Icon(Icons.payment_outlined, size: 48, color: ShadColors.textDisabled),
                   const SizedBox(height: 12),
-                  Text('لا توجد مدفوعات بعد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
+                  Text(AppLocalizations.of(context)!.payments_empty, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
                 ]),
               )
             else
@@ -249,20 +270,21 @@ class _PaymentsPageState extends State<PaymentsPage> {
   }
 
   void _showRequestPaymentSheet() {
-    const methodLabels = {
-      'bank_transfer': 'تحويل بنكي',
-      'swift': 'تحويل SWIFT',
-      'corporate_account': 'حساب الشركة',
-      'instapay': 'InstaPay',
-      'vodafone_cash': 'Vodafone Cash',
-      'mobile_wallet': 'محفظة إلكترونية',
+    final l10n = AppLocalizations.of(context)!;
+    final methodLabels = <String, String>{
+      'bank_transfer': l10n.payments_methodBankTransfer,
+      'swift': l10n.payments_methodSwift,
+      'corporate_account': l10n.payments_methodCorporateAccount,
+      'instapay': l10n.payments_methodInstapay,
+      'vodafone_cash': l10n.payments_methodVodafoneCash,
+      'mobile_wallet': l10n.payments_methodMobileWallet,
     };
 
     const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-    const currencyLabels = {
-      'SAR': 'ريال سعودي', 'USD': 'دولار أمريكي', 'EUR': 'يورو',
-      'AED': 'درهم إماراتي', 'EGP': 'جنيه مصري', 'KWD': 'دينار كويتي',
-      'QAR': 'ريال قطري', 'BHD': 'دينار بحريني', 'OMR': 'ريال عماني',
+    final currencyLabels = <String, String>{
+      'SAR': l10n.currency_sar, 'USD': l10n.currency_usd, 'EUR': l10n.currency_eur,
+      'AED': l10n.currency_aed, 'EGP': l10n.currency_egp, 'KWD': l10n.currency_kwd,
+      'QAR': l10n.currency_qar, 'BHD': l10n.currency_bhd, 'OMR': l10n.currency_omr,
     };
 
     final available = _availableMethods.isNotEmpty ? _availableMethods : methodLabels.keys.toList();
@@ -285,10 +307,10 @@ class _PaymentsPageState extends State<PaymentsPage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Text('طلب دفعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
+              Text(AppLocalizations.of(context)!.payments_requestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
@@ -297,7 +319,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               valueListenable: selectedCurrency,
               builder: (_, cur, __) => TextField(
                 controller: amountCtrl,
-                decoration: InputDecoration(labelText: 'المبلغ *', hintText: '0.00', prefixText: '$cur '),
+                decoration: InputDecoration(labelText: '${AppLocalizations.of(context)!.payments_amount} *', hintText: '0.00', prefixText: '$cur '),
                 keyboardType: TextInputType.number,
               ),
             ),
@@ -306,7 +328,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               valueListenable: selectedCurrency,
               builder: (_, cur, __) => DropdownButtonFormField<String>(
                 initialValue: cur,
-                decoration: const InputDecoration(labelText: 'العملة'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.payments_currency),
                 items: currencies.map((c) => DropdownMenuItem(
                   value: c,
                   child: Text('$c — ${currencyLabels[c] ?? ''}'),
@@ -319,7 +341,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               valueListenable: selectedMethod,
               builder: (_, val, __) => DropdownButtonFormField<String>(
                 initialValue: val,
-                decoration: const InputDecoration(labelText: 'طريقة الدفع'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.payments_paymentMethod),
                 items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
                 onChanged: (v) { if (v != null) selectedMethod.value = v; },
               ),
@@ -394,7 +416,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                     }
                   },
                   icon: const Icon(Icons.upload_file, size: 18),
-                  label: const Text('إرفاق إثبات'),
+                  label: Text(AppLocalizations.of(context)!.payments_attachProof),
                 ),
               ),
               const SizedBox(width: 8),
@@ -429,7 +451,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   ),
                   child: uploading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('إرسال الدفعة'),
+                      : Text(AppLocalizations.of(context)!.payments_sendPayment),
                 ),
               ),
             ),
@@ -450,12 +472,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
   ) async {
     final amount = double.tryParse(amountCtrl.text);
     if (amount == null || amount <= 0) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('يرجى إدخال مبلغ صحيح')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_enterValidAmount)));
       return;
     }
     final wsId = _api.workspaceId;
     if (wsId == null) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('مساحة العمل غير متاحة')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_workspaceUnavailable)));
       return;
     }
     uploadingNotifier.value = true;
@@ -491,12 +513,13 @@ class _PaymentsPageState extends State<PaymentsPage> {
       }
 
       if (ctx.mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('✅ تم إرسال طلب الدفعة')));
+        final l10n = AppLocalizations.of(ctx)!;
+        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_requestSent)])));
         Navigator.pop(ctx);
       }
       await _load();
     } catch (_) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('فشل إرسال الدفعة')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_sendFailed)));
     }
     uploadingNotifier.value = false;
     if (ctx.mounted) setSheetState(() {});
@@ -510,9 +533,17 @@ class _PaymentsPageState extends State<PaymentsPage> {
     final isRequested = p['requested_by_manager'] == true && p['due_date'] == null;
     final isRejected = p['status'] == 'rejected';
     final statusColor = isApproved ? ShadColors.success : isPending ? ShadColors.gold : isRequested ? ShadColors.gold : isScheduled ? ShadColors.gold : isOverdue ? ShadColors.error : isRejected ? ShadColors.error : ShadColors.textDisabled;
-    final statusText = isApproved ? 'تمت الموافقة' : isPending ? 'قيد الانتظار' : isRequested ? 'طلب دفعة' : isScheduled ? 'مجدول' : isOverdue ? 'متأخر' : isRejected ? 'مرفوض' : p['status'] ?? '';
+    final l10n = AppLocalizations.of(context)!;
+    final statusText = isApproved ? l10n.payments_statusApproved : isPending ? l10n.payments_statusPending : isRequested ? l10n.payments_statusRequested : isScheduled ? l10n.payments_statusScheduled : isOverdue ? l10n.payments_statusOverdue : isRejected ? l10n.payments_statusRejected : p['status'] ?? '';
 
-    final methodLabels = {'bank_transfer': 'تحويل بنكي', 'swift': 'SWIFT', 'corporate_account': 'حساب شركة', 'instapay': 'Instapay', 'vodafone_cash': 'فودافون كاش', 'mobile_wallet': 'محفظة موبايل'};
+    final methodLabels = <String, String>{
+      'bank_transfer': l10n.payments_methodBankTransfer,
+      'swift': l10n.payments_methodSwift,
+      'corporate_account': l10n.payments_methodCorporateAccount,
+      'instapay': l10n.payments_methodInstapay,
+      'vodafone_cash': l10n.payments_methodVodafoneCash,
+      'mobile_wallet': l10n.payments_methodMobileWallet,
+    };
 
     return InkWell(
       onTap: () => _showPaymentDetail(p),
@@ -525,9 +556,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
           border: Border.all(color: isPending ? ShadColors.gold : ShadColors.cardBorder, width: isPending ? 1.5 : 0.5),
         ),
         child: Column(children: [
-          // ── القسم العلوي: رقم الدفعة + المبلغ + الحالة ──
+          // ── Top section: installment number + amount + status ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 12),
             child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -550,7 +581,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   Row(children: [
                     Icon(Icons.calendar_today, size: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary),
                     const SizedBox(width: 4),
-                    Text('الاستحقاق: ${_formatDate(p['due_date'])}',
+                    Text(AppLocalizations.of(context)!.payments_dueDateFormat(_formatDate(p['due_date'])),
                       style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
                   ]),
                 ],
@@ -559,12 +590,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
           ]),
         ),
 
-        // ── الفاصل ──
+        // ── Divider ──
         Divider(height: 1, color: ShadColors.cardBorder),
 
-        // ── القسم السفلي: طريقة الدفع + العقد + الإثبات ──
+        // ── Bottom section: payment method + contract + proof ──
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if ((p['method_type'] ?? '').isNotEmpty)
               Padding(
@@ -595,12 +626,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       if (uri != null && await canLaunchUrl(uri)) {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
                       } else {
-                        messenger.showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                        messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.payments_fileOpenFailed)));
                       }
                     },
                     child: Row(children: [
                       Text('📎 ', style: TextStyle(fontSize: 12, fontFamily: 'NotoSansArabic')),
-                      Text('عرض إثبات الدفع', style: TextStyle(fontSize: 12, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
+                      Text(AppLocalizations.of(context)!.payments_viewProof, style: TextStyle(fontSize: 12, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
                     ]),
                   ),
                 ));
@@ -635,13 +666,14 @@ class _PaymentsPageState extends State<PaymentsPage> {
   }
 
   void _submitScheduledPayment(dynamic p) {
-    const methodLabels = {
-      'bank_transfer': 'تحويل بنكي',
-      'swift': 'SWIFT',
-      'corporate_account': 'حساب شركة',
-      'instapay': 'Instapay',
-      'vodafone_cash': 'فودافون كاش',
-      'mobile_wallet': 'محفظة موبايل',
+    final l10n = AppLocalizations.of(context)!;
+    final methodLabels = <String, String>{
+      'bank_transfer': l10n.payments_methodBankTransfer,
+      'swift': l10n.payments_methodSwift,
+      'corporate_account': l10n.payments_methodCorporateAccount,
+      'instapay': l10n.payments_methodInstapay,
+      'vodafone_cash': l10n.payments_methodVodafoneCash,
+      'mobile_wallet': l10n.payments_methodMobileWallet,
     };
 
     final available = _availableMethods.isNotEmpty ? _availableMethods : methodLabels.keys.toList();
@@ -651,7 +683,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
     final paymentId = p['id'];
     final amount = p['amount']?.toString() ?? '0';
     final currency = p['currency']?.toString() ?? 'SAR';
-    final label = p['installment_label']?.toString() ?? 'الدفعة المجدولة';
+    final label = p['installment_label']?.toString() ?? l10n.payments_scheduledPayment;
 
     showModalBottomSheet(
       context: context,
@@ -659,12 +691,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Icon(Icons.payment, size: 20, color: ShadColors.gold),
               const SizedBox(width: 8),
-              Text('دفع $label', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic')),
+              Text(l10n.payments_payScheduled(label), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic')),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
@@ -683,7 +715,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               valueListenable: selectedMethod,
               builder: (_, val, __) => DropdownButtonFormField<String>(
                 initialValue: val,
-                decoration: const InputDecoration(labelText: 'طريقة الدفع'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.payments_paymentMethodLabel),
                 items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
                 onChanged: (v) { if (v != null) selectedMethod.value = v; },
               ),
@@ -737,7 +769,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                     }
                   },
                   icon: const Icon(Icons.upload_file, size: 18),
-                  label: const Text('إرفاق إثبات الدفع'),
+                  label: Text(AppLocalizations.of(ctx)!.payments_attachProofLabel),
                 ),
               ),
               const SizedBox(width: 8),
@@ -769,7 +801,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   ),
                   child: uploading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('إرسال إثبات الدفع'),
+                      : Text(AppLocalizations.of(ctx)!.payments_sendProof),
                 ),
               ),
             ),
@@ -787,13 +819,14 @@ class _PaymentsPageState extends State<PaymentsPage> {
     String methodType,
     List<Map<String, dynamic>> proofFiles,
   ) async {
+    final l10n = AppLocalizations.of(ctx)!;
     if (proofFiles.isEmpty) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('يرجى إرفاق إثبات الدفع')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_requireProof)));
       return;
     }
     final wsId = _api.workspaceId;
     if (wsId == null) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('مساحة العمل غير متاحة')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_workspaceUnavailableMsg)));
       return;
     }
     uploadingNotifier.value = true;
@@ -816,12 +849,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
       }
 
       if (ctx.mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('✅ تم إرسال إثبات الدفع')));
+        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_proofSent)])));
         Navigator.pop(ctx);
       }
       await _load();
     } catch (_) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('فشل إرسال إثبات الدفع')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_proofSendFailed)));
     }
     uploadingNotifier.value = false;
     if (ctx.mounted) setSheetState(() {});
@@ -830,6 +863,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
   Widget _scheduledPaymentCard(dynamic p) {
     final isOverdue = p['status'] == 'overdue';
     final borderColor = isOverdue ? ShadColors.error : ShadColors.gold;
+    final l10n = AppLocalizations.of(context)!;
 
     return InkWell(
       onTap: () => _showPaymentDetail(p),
@@ -850,7 +884,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
           ),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(p['installment_label'] ?? 'دفعة مجدولة',
+            Text(p['installment_label'] ?? l10n.payments_scheduledPayment,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic')),
             const SizedBox(height: 2),
             Row(children: [
@@ -868,7 +902,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               color: (isOverdue ? ShadColors.error : ShadColors.gold).withAlpha(25),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(isOverdue ? 'متأخر' : 'مجدول',
+            child: Text(isOverdue ? l10n.payments_overdueLabel : l10n.payments_scheduledLabel,
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isOverdue ? ShadColors.error : ShadColors.gold)),
           ),
         ]),

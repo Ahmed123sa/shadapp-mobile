@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import 'api_client.dart';
 
 @pragma('vm:entry-point')
@@ -16,6 +17,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class NotificationService {
+  AppLocalizations? l10n;
+
   static final NotificationService _instance = NotificationService._();
   NotificationService._();
 
@@ -105,11 +108,11 @@ class NotificationService {
       id,
       title,
       body,
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'shadapp_channel_v2',
-          'إشعارات ShadApp',
-          channelDescription: 'إشعارات التطبيق',
+          l10n?.notificationChannelName ?? 'ShadApp Notifications',
+          channelDescription: l10n?.notificationChannelDescription ?? 'App notifications',
           importance: Importance.high,
           priority: Priority.high,
           playSound: true,

@@ -4,6 +4,7 @@ import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/reverb_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../onboarding/client_onboarding_screen.dart';
 import 'client_dashboard_screen.dart';
 
@@ -69,7 +70,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
         }
       }
     } catch (e) {
-      _error = 'فشل تحميل البيانات';
+      _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -96,7 +97,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
               const SizedBox(height: 16),
               Text(_error!, style: const TextStyle(color: ShadColors.textPrimary, fontSize: 16)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadClientData, child: const Text('إعادة المحاولة')),
+              ElevatedButton(onPressed: _loadClientData, child: Text(AppLocalizations.of(context)!.retry)),
             ]),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ShadColors {
   // Brand Core (70/20/10 Rule)
@@ -112,22 +113,22 @@ final Map<String, Color> statusColors = {
   'cancelled': ShadColors.error,
 };
 
-final Map<String, String> statusLabels = {
-  'draft': 'مسودة',
-  'sent': 'مرسل',
-  'client_approved': 'اعتماد العميل',
-  'client_rejected': 'مرفوض من العميل',
-  'company_approved': 'اعتماد الشركة',
-  'completed': 'مكتمل',
-  'archived': 'مؤرشف',
-  'pending': 'قيد الانتظار',
-  'approved': 'تمت الموافقة',
-  'rejected': 'مرفوض',
-  'edit_requested': 'طلب تعديل',
-  'active': 'نشط',
-  'inactive': 'غير نشط',
-  'scheduled': 'مجدول',
-  'cancelled': 'ملغي',
+Map<String, String> statusLabels(AppLocalizations l10n) => {
+  'draft': l10n.draft,
+  'sent': l10n.sent,
+  'client_approved': l10n.clientApproved,
+  'client_rejected': l10n.clientRejected,
+  'company_approved': l10n.companyApproved,
+  'completed': l10n.completed,
+  'archived': l10n.archived,
+  'pending': l10n.pending,
+  'approved': l10n.approved,
+  'rejected': l10n.rejected,
+  'edit_requested': l10n.editRequestedStatus,
+  'active': l10n.active,
+  'inactive': l10n.inactive,
+  'scheduled': l10n.scheduled,
+  'cancelled': l10n.cancelled,
 };
 
 class ShadTypography {

@@ -55,14 +55,15 @@ class _ContractsTabState extends State<ContractsTab> {
 
   Future<void> _action(int id, String action, {bool destructive = false}) async {
     if (destructive) {
+      final l10n = AppLocalizations.of(context)!;
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(action == 'archive' ? AppLocalizations.of(context)!.archive : AppLocalizations.of(context)!.completeComplete),
-          content: const Text('هل أنت متأكد من هذا الإجراء؟'),
+          title: Text(action == 'archive' ? l10n.archive : l10n.completeComplete),
+          content: Text(l10n.contractAreYouSure),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.confirm)),
           ],
         ),
       );
@@ -84,6 +85,7 @@ class _ContractsTabState extends State<ContractsTab> {
   }
 
   void _showContractDetail(Map<String, dynamic> c) {
+    final l10n = AppLocalizations.of(context)!;
     final clauses = (c['clauses'] as List<dynamic>?) ?? [];
     final docs = (c['required_documents'] as List<dynamic>?) ?? [];
     final hasPdf = c['pdf_url'] != null && (c['pdf_url'] as String).isNotEmpty;
@@ -108,7 +110,7 @@ class _ContractsTabState extends State<ContractsTab> {
           Expanded(
             child: ListView(
               controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 30),
               children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Expanded(child: Text(c['title'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay'))),
@@ -117,9 +119,9 @@ class _ContractsTabState extends State<ContractsTab> {
                 const SizedBox(height: 4),
                 Text('${c['value'] ?? 0} ${c['currency'] ?? 'SAR'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
                 if (_clientType == 'business')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Text('قيمة العقد غير شاملة الضريبة المضافة', style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(l10n.contractValueExclVat, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                   ),
                 const SizedBox(height: 6),
                 Row(children: [
@@ -133,17 +135,19 @@ class _ContractsTabState extends State<ContractsTab> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(color: ShadColors.gold.withAlpha(25), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('عقد إضافي', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontWeight: FontWeight.w600)),
+                      child: Text(l10n.contractExtraService, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ]),
                 const SizedBox(height: 6),
                 if (c['start_date'] != null)
-                  Text('من ${_formatDate(c['start_date'])}${c['end_date'] != null ? ' إلى ${_formatDate(c['end_date'])}' : ''}',
+                  Text(c['end_date'] != null
+                      ? l10n.contractDateRange(_formatDate(c['start_date']), _formatDate(c['end_date']))
+                      : l10n.contractDateFrom(_formatDate(c['start_date'])),
                     style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                 const SizedBox(height: 16),
                 if (clauses.isNotEmpty) ...[
-                  const Text('البنود', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                  Text(l10n.contractClausesLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
                   const SizedBox(height: 8),
                   ...clauses.map((cl) => Container(
                     margin: const EdgeInsets.only(bottom: 6),
@@ -163,7 +167,7 @@ class _ContractsTabState extends State<ContractsTab> {
                 ],
                 if (docs.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  const Text('المستندات المطلوبة', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                  Text(l10n.contractRequiredDocsLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
                   const SizedBox(height: 8),
                   ...docs.map((d) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
@@ -187,7 +191,7 @@ class _ContractsTabState extends State<ContractsTab> {
                         }
                       },
                       icon: const Icon(Icons.picture_as_pdf, size: 18),
-                      label: const Text('تحميل العقد النهائي'),
+                      label: Text(l10n.contractDownloadPdf),
                       style: ElevatedButton.styleFrom(backgroundColor: ShadColors.crimson, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                     ),
                   ),
@@ -201,14 +205,15 @@ class _ContractsTabState extends State<ContractsTab> {
   }
 
   Future<void> _deleteContract(int id) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف العقد'),
-        content: const Text('هل أنت متأكد من حذف هذا العقد؟ لا يمكن التراجع عن هذا الإجراء.'),
+        title: Text(l10n.contractDeleteTitle),
+        content: Text(l10n.contractDeleteConfirmMsg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: const Text('حذف')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: Text(l10n.delete)),
         ],
       ),
     );
@@ -216,11 +221,11 @@ class _ContractsTabState extends State<ContractsTab> {
     try {
       await _api.delete('/contracts/$id');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف العقد')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleted)));
         _load();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف العقد')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleteFailed)));
     }
   }
 
@@ -245,9 +250,9 @@ class _ContractsTabState extends State<ContractsTab> {
         builder: (ctx) => AlertDialog(
           title: Text(AppLocalizations.of(ctx)!.companyApprove),
           content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('اعتماد عقد: ${contract['title']}', style: ShadTypography.cardBody),
+            Text(AppLocalizations.of(ctx)!.companyApproveTitle(contract['title'] ?? ''), style: ShadTypography.cardBody),
             const SizedBox(height: 16),
-            const Text('سيتم استخدام توقيعك المحفوظ:', style: TextStyle(color: ShadColors.textSecondary)),
+            Text(AppLocalizations.of(ctx)!.companyApproveUseSavedSignature, style: const TextStyle(color: ShadColors.textSecondary)),
             const SizedBox(height: 8),
             if (sig.startsWith('http') || sig.startsWith('/storage'))
               ClipRRect(
@@ -289,7 +294,7 @@ class _ContractsTabState extends State<ContractsTab> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('اعتماد عقد: ${contract['title']}', style: ShadTypography.cardBody),
+            Text(AppLocalizations.of(ctx)!.companyApproveTitle(contract['title'] ?? ''), style: ShadTypography.cardBody),
             const SizedBox(height: 16),
             TextField(
               controller: signatureController,
@@ -346,6 +351,7 @@ class _ContractsTabState extends State<ContractsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSA = _api.role == 'super_admin';
     final Map<String, List<String>> actionsForStatus = {
       'draft': ['send'],
@@ -360,12 +366,12 @@ class _ContractsTabState extends State<ContractsTab> {
 
     return Stack(children: [
       if (_contracts.isEmpty)
-        Center(child: EmptyState(icon: Icons.description_outlined, title: AppLocalizations.of(context)!.noContracts, subtitle: AppLocalizations.of(context)!.noContractsSubtitle))
+        Center(child: EmptyState(icon: Icons.description_outlined, title: l10n.noContracts, subtitle: l10n.noContractsSubtitle))
       else
         RefreshIndicator(
           onRefresh: _load,
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 80),
             itemCount: _contracts.length,
             itemBuilder: (_, i) {
               final c = _contracts[i];
@@ -379,7 +385,7 @@ class _ContractsTabState extends State<ContractsTab> {
                 onTap: () => editable ? _editContract(c) : _showContractDetail(c),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+                  padding: const EdgeInsetsDirectional.fromSTEB(13, 11, 13, 11),
                   decoration: BoxDecoration(
                     color: ShadColors.card,
                     borderRadius: BorderRadius.circular(11),
@@ -405,15 +411,16 @@ class _ContractsTabState extends State<ContractsTab> {
                             if (action == 'archive') _action(c['id'], 'archive', destructive: true);
                           },
                           itemBuilder: (_) {
+                            final l10n = AppLocalizations.of(context)!;
                             final items = <PopupMenuEntry<String>>[];
                             if (c['status'] == 'draft' || c['status'] == 'edit_requested') {
-                              items.add(const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit, size: 18), title: Text('تعديل'), dense: true)));
-                              items.add(const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, size: 18, color: ShadColors.error), title: Text('حذف', style: TextStyle(color: ShadColors.error)), dense: true)));
+                              items.add(PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit, size: 18), title: Text(l10n.edit), dense: true)));
+                              items.add(PopupMenuItem(value: 'delete', child: ListTile(leading: const Icon(Icons.delete, size: 18, color: ShadColors.error), title: Text(l10n.delete, style: const TextStyle(color: ShadColors.error)), dense: true)));
                             } else {
-                              items.add(const PopupMenuItem(value: 'view', child: ListTile(leading: Icon(Icons.visibility, size: 18), title: Text('عرض التفاصيل'), dense: true)));
+                              items.add(PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.visibility, size: 18), title: Text(l10n.contractViewDetails), dense: true)));
                             }
                             if (c['status'] == 'company_approved') {
-                              items.add(const PopupMenuItem(value: 'archive', child: ListTile(leading: Icon(Icons.archive, size: 18), title: Text('أرشفة'), dense: true)));
+                              items.add(PopupMenuItem(value: 'archive', child: ListTile(leading: const Icon(Icons.archive, size: 18), title: Text(l10n.archive), dense: true)));
                             }
                             return items;
                           },
@@ -423,9 +430,9 @@ class _ContractsTabState extends State<ContractsTab> {
                       Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}',
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay', color: ShadColors.gold)),
                       if (_clientType == 'business')
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Text('قيمة العقد غير شاملة الضريبة المضافة', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(l10n.contractValueExclVat, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                         ),
                       if (actions.isNotEmpty) ...[
                         const SizedBox(height: 8),
@@ -509,7 +516,7 @@ class _ContractsTabState extends State<ContractsTab> {
                 const Icon(Icons.add, size: 18, color: Colors.white),
                 const SizedBox(width: 8),
                 Text(
-                  _wsStatus == 'active' ? 'عقد إضافي' : 'إنشاء عقد رئيسي',
+                  _wsStatus == 'active' ? l10n.contractExtraService : l10n.contractCreateMain,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ]),

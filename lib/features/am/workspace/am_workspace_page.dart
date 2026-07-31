@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
@@ -68,12 +69,13 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final isActive = _wsStatus == 'active';
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Column(children: [
         // ── Compact Header ──
         Container(
           color: const Color(0xFF0D0D0D),
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
           child: Row(children: [
             Stack(clipBehavior: Clip.none, children: [
               CircleAvatar(
@@ -107,7 +109,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Container(width: 6, height: 6, decoration: BoxDecoration(color: isActive ? ShadColors.success : ShadColors.crimson, shape: BoxShape.circle)),
                 const SizedBox(width: 4),
-                Text(isActive ? 'نشط' : 'غير نشط', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isActive ? ShadColors.success : ShadColors.crimson)),
+                Text(isActive ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isActive ? ShadColors.success : ShadColors.crimson)),
               ]),
             ),
             const SizedBox(width: 8),
@@ -134,14 +136,14 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
             unselectedLabelColor: ShadColors.textSecondary,
             labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(fontSize: 11),
-            tabs: const [
-              Tab(text: 'المحادثة'),
-              Tab(text: 'الملفات'),
-              Tab(text: 'العقود'),
-              Tab(text: 'المدفوعات'),
-              Tab(text: 'الموافقات'),
-              Tab(text: 'الاجتماعات'),
-              Tab(text: 'السجل'),
+            tabs: [
+              Tab(text: l10n.workspaceTabChat),
+              Tab(text: l10n.workspaceTabFiles),
+              Tab(text: l10n.workspaceTabContracts),
+              Tab(text: l10n.workspaceTabPayments),
+              Tab(text: l10n.workspaceTabApprovals),
+              Tab(text: l10n.workspaceTabMeetings),
+              Tab(text: l10n.workspaceTabLog),
             ],
           ),
         ),

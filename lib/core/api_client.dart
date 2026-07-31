@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ApiClient {
   String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
@@ -20,6 +21,8 @@ class ApiClient {
   String? avatarUrl;
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  AppLocalizations? l10n;
 
   static final ApiClient _instance = ApiClient._();
   ApiClient._();
@@ -248,16 +251,16 @@ class ApiClient {
     final data = response.body.isNotEmpty ? jsonDecode(response.body) as Map<String, dynamic> : <String, dynamic>{};
     if (response.statusCode == 401) {
       await clearToken();
-      throw AuthException(data['message'] ?? 'انتهت الجلسة');
+      throw AuthException(data['message'] ?? l10n?.sessionExpired ?? 'Session Expired');
     }
     if (response.statusCode == 422) {
       final errors = data['errors'] as Map<String, dynamic>?;
       final firstError = errors?.values.firstOrNull;
-      final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? 'بيانات غير صحيحة');
+      final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
       throw ValidationException(msg);
     }
     if (response.statusCode >= 400) {
-      throw ServerException(data['message'] ?? 'حدث خطأ في الخادم');
+      throw ServerException(data['message'] ?? l10n?.serverError ?? 'Server Error');
     }
     return data;
   }

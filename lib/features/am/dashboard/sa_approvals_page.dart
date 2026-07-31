@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaApprovalsPage extends StatefulWidget {
   const SaApprovalsPage({super.key});
@@ -112,6 +113,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final total = _contracts.length + _payments.length;
     return RefreshIndicator(
       onRefresh: _load,
@@ -121,7 +123,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Row(children: [
-                  Text('الموافقات المعلّقة', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+                  Text(l10n.amStatPendingApprovals, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -133,9 +135,9 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
                 _buildPillsFilter(total),
                 const SizedBox(height: 12),
                 if (_filteredItems.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('لا توجد موافقات معلّقة', style: TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
                   )
                 else
                   ..._filteredItems.map((item) => _approvalCard(item)),
@@ -145,10 +147,11 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   }
 
   Widget _buildPillsFilter(int total) {
+    final l10n = AppLocalizations.of(context)!;
     final filters = [
-      ('الكل', total),
-      ('عقود', _contracts.length),
-      ('دفعات', _payments.length),
+      (l10n.all, total),
+      (l10n.saApprovalsContracts, _contracts.length),
+      (l10n.saApprovalsPayments, _payments.length),
     ];
     return Row(
       children: filters.asMap().entries.map((entry) {
@@ -156,7 +159,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
         final (label, count) = entry.value;
         final active = _filterIndex == i;
         return Padding(
-          padding: const EdgeInsets.only(left: 6),
+          padding: const EdgeInsetsDirectional.only(start: 6),
           child: GestureDetector(
             onTap: () => setState(() => _filterIndex = i),
             child: AnimatedContainer(
@@ -176,8 +179,9 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   }
 
   Widget _approvalCard(Map<String, dynamic> item) {
+    final l10n = AppLocalizations.of(context)!;
     final isContract = item['type'] == 'contract';
-    final title = isContract ? 'اعتماد عقد — ${item['title']}' : 'اعتماد دفعة — ${item['company'] ?? ''}';
+    final title = isContract ? l10n.saApprovalsContractApprovalTitle(item['title'].toString()) : l10n.saApprovalsPaymentApprovalTitle(item['company']?.toString() ?? '');
     final subtitle = isContract
         ? '${item['company']} • ${double.tryParse(item['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${item['currency'] ?? ''}'
         : '${item['currency'] ?? ''} ${(double.tryParse(item['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}';
@@ -219,7 +223,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
                       color: (isContract ? ShadColors.gold : ShadColors.sent).withAlpha(20),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(isContract ? 'عقد' : 'دفعة', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isContract ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo')),
+                    child: Text(isContract ? l10n.saApprovalsContractLabel : l10n.saApprovalsPaymentLabel, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isContract ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo')),
                   ),
                 ]),
                 const SizedBox(height: 4),

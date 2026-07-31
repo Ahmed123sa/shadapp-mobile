@@ -73,21 +73,21 @@ class _CreateClientPageState extends State<CreateClientPage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('✓ تم إنشاء العميل بنجاح', style: TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                  Text('✓ ${AppLocalizations.of(ctx)!.createClientSuccess}', style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
                     child: Row(children: [
-                      const Text('البريد', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                      Text(AppLocalizations.of(ctx)!.createClientEmail, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                       const SizedBox(width: 8),
                       Expanded(child: Text(creds?['email'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
                       InkWell(
                         onTap: () {
                           final messenger = ScaffoldMessenger.of(ctx);
-                          messenger.showSnackBar(const SnackBar(content: Text('✅ تم نسخ البريد')));
+                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.createClientEmailCopied)])));
                         },
-                        child: const Text('نسخ', style: TextStyle(fontSize: 11, color: ShadColors.gold)),
+                        child: Text(AppLocalizations.of(ctx)!.createClientCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                       ),
                     ]),
                   ),
@@ -96,26 +96,26 @@ class _CreateClientPageState extends State<CreateClientPage> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
                     child: Row(children: [
-                      const Text('كلمة المرور', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                      Text(AppLocalizations.of(ctx)!.createClientPassword, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                       const SizedBox(width: 8),
                       Expanded(child: Text(creds?['password'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
                       InkWell(
                         onTap: () {
                           final messenger = ScaffoldMessenger.of(ctx);
-                          messenger.showSnackBar(const SnackBar(content: Text('✅ تم نسخ كلمة المرور')));
+                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.createClientPasswordCopied)])));
                         },
-                        child: const Text('نسخ', style: TextStyle(fontSize: 11, color: ShadColors.gold)),
+                        child: Text(AppLocalizations.of(ctx)!.createClientCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                       ),
                     ]),
                   ),
                   const SizedBox(height: 10),
-                  const Text('تم إرسال بيانات الدخول للعميل عبر البريد الإلكتروني', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                  Text(AppLocalizations.of(ctx)!.createClientCredentialsSent, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () { Navigator.pop(ctx); context.pop(true); },
-                      child: const Text('حسناً'),
+                      child: Text(AppLocalizations.of(ctx)!.createClientOk),
                     ),
                   ),
                 ]),
@@ -161,6 +161,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -175,7 +176,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('إضافة عميل جديد', style: TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700)),
+                Text(l10n.createClientTitle, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700)),
                 const Text('New Client', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
               ],
             ),
@@ -216,12 +217,12 @@ class _CreateClientPageState extends State<CreateClientPage> {
               child: TextButton.icon(
                 onPressed: _pickAvatar,
                 icon: const Icon(Icons.camera_alt, size: 16, color: ShadColors.gold),
-                label: const Text('إضافة صورة', style: TextStyle(color: ShadColors.gold)),
+                label: Text(l10n.createClientAddImage, style: const TextStyle(color: ShadColors.gold)),
               ),
             ),
             const SizedBox(height: 16),
 
-            _sectionLabel('نوع العميل'),
+            _sectionLabel(l10n.createClientType),
             Row(children: [
               Expanded(
                 child: GestureDetector(
@@ -236,7 +237,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                     child: Column(children: [
                       const Text('🏢', style: TextStyle(fontSize: 18)),
                       const SizedBox(height: 3),
-                      Text('شركة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
+                      Text(l10n.createClientCompany, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
                       const Text('Business', style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
                     ]),
                   ),
@@ -256,7 +257,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                     child: Column(children: [
                       const Text('👤', style: TextStyle(fontSize: 18)),
                       const SizedBox(height: 3),
-                      Text('فرد', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
+                      Text(l10n.createClientIndividual, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
                       const Text('Individual', style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
                     ]),
                   ),
@@ -265,7 +266,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
             ]),
             const SizedBox(height: 16),
 
-            _sectionLabel('بيانات الشركة'),
+            _sectionLabel(l10n.createClientCompanyData),
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(labelText: AppLocalizations.of(context)!.companyName, hintText: AppLocalizations.of(context)!.companyNameHint),
@@ -303,7 +304,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
             ),
             const SizedBox(height: 16),
 
-            _sectionLabel('تفاصيل إضافية'),
+            _sectionLabel(l10n.createClientAdditionalDetails),
             TextFormField(
               controller: _countryController,
               decoration: InputDecoration(labelText: AppLocalizations.of(context)!.country, hintText: AppLocalizations.of(context)!.countryHint),
@@ -329,11 +330,11 @@ class _CreateClientPageState extends State<CreateClientPage> {
               },
               borderRadius: BorderRadius.circular(10),
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'تاريخ الميلاد'),
+                decoration: InputDecoration(labelText: l10n.createClientDateOfBirth),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : 'اختر التاريخ',
+                    Text(_dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : l10n.createClientSelectDate,
                         style: TextStyle(fontSize: 14, color: _dateOfBirthController.text.isNotEmpty ? ShadColors.textPrimary : ShadColors.textDisabled)),
                     const Icon(Icons.calendar_today, size: 18, color: ShadColors.gold),
                   ],
@@ -352,9 +353,9 @@ class _CreateClientPageState extends State<CreateClientPage> {
               child: Row(children: [
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('كلمة المرور التلقائية', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                    Text(l10n.createClientAutoPassword, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
                     const SizedBox(height: 2),
-                    const Text('سيتم إرسالها للعميل عبر الإيميل', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                    Text(l10n.createClientAutoPasswordEmailHint, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
                   ]),
                 ),
                 Switch(
@@ -372,7 +373,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
             TextFormField(
               controller: _notesController,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'ملاحظات', hintText: 'أي معلومات إضافية عن العميل...'),
+              decoration: InputDecoration(labelText: l10n.createClientNotes, hintText: l10n.createClientNotesHint),
               onChanged: (_) {},
             ),
             const SizedBox(height: 20),
@@ -387,7 +388,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                     : Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.check, size: 18, color: Colors.white),
                         const SizedBox(width: 8),
-                        const Text('إنشاء العميل'),
+                        Text(l10n.createClientCreateButton),
                       ]),
               ),
             ),
@@ -397,7 +398,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
               height: 50,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child: Text(l10n.createClientCancel),
               ),
             ),
           ],

@@ -4,6 +4,7 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../core/widgets/shad_logo.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class CreateManagerPage extends StatefulWidget {
   final int? managerId;
@@ -61,7 +62,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         }
       }
     } catch (_) {
-      _errorMsg = 'فشل تحميل بيانات المدير';
+      if (!mounted) return;
+      _errorMsg = AppLocalizations.of(context)!.createManagerFailedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -84,7 +86,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         }
         res = await _api.put('/account-managers/${widget.managerId}', payload);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث المدير بنجاح')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.createManagerUpdated)));
           Navigator.pop(context, true);
         }
         return;
@@ -107,18 +109,18 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('تم إنشاء المدير بنجاح', style: TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                Text(AppLocalizations.of(ctx)!.createManagerCreated, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
                   child: Row(children: [
-                    const Text('البريد', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                    Text(AppLocalizations.of(ctx)!.emailLabel, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                     const SizedBox(width: 8),
                     Expanded(child: Text(creds?['email'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
                     InkWell(
-                      onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('تم نسخ البريد'))),
-                      child: const Text('نسخ', style: TextStyle(fontSize: 11, color: ShadColors.gold)),
+                      onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.createManagerEmailCopied))),
+                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                     ),
                   ]),
                 ),
@@ -127,12 +129,12 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
                   child: Row(children: [
-                    const Text('كلمة المرور', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                    Text(AppLocalizations.of(ctx)!.createManagerPassword, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                     const SizedBox(width: 8),
                     Expanded(child: Text(creds?['password'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
                     InkWell(
-                      onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('تم نسخ كلمة المرور'))),
-                      child: const Text('نسخ', style: TextStyle(fontSize: 11, color: ShadColors.gold)),
+                      onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.createManagerPasswordCopied))),
+                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                     ),
                   ]),
                 ),
@@ -141,7 +143,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () { Navigator.pop(ctx); context.pop(true); },
-                    child: const Text('حسناً'),
+                    child: Text(AppLocalizations.of(ctx)!.createManagerOk),
                   ),
                 ),
               ]),
@@ -152,7 +154,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     } on ValidationException catch (e) {
       _errorMsg = e.message;
     } catch (_) {
-      _errorMsg = _isEdit ? 'فشل تحديث المدير' : 'فشل إنشاء المدير';
+      if (!mounted) return;
+      _errorMsg = _isEdit ? AppLocalizations.of(context)!.createManagerUpdateFailed : AppLocalizations.of(context)!.createManagerCreateFailed;
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -168,6 +171,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -182,7 +186,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isEdit ? 'تعديل مدير' : 'إضافة مدير جديد',
+                Text(_isEdit ? l10n.createManagerEditTitle : l10n.createManagerCreateTitle,
                     style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700)),
                 Text(_isEdit ? 'Edit Manager' : 'New Manager',
                     style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
@@ -209,35 +213,35 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 child: Text(_errorMsg!, style: const TextStyle(color: ShadColors.error, fontSize: 12)),
               ),
 
-            _sectionLabel('البيانات الأساسية'),
+            _sectionLabel(l10n.createManagerBasicData),
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'الاسم', hintText: 'Mohamed Ali'),
+              decoration: InputDecoration(labelText: l10n.createManagerName, hintText: 'Mohamed Ali'),
               textCapitalization: TextCapitalization.words,
-              validator: (v) => v == null || v.trim().isEmpty ? 'الاسم مطلوب' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? l10n.createManagerNameRequired : null,
             ),
             const SizedBox(height: 10),
             TextFormField(
               controller: _emailCtrl,
-              decoration: const InputDecoration(labelText: 'البريد الإلكتروني', hintText: 'manager@domain.com'),
+              decoration: InputDecoration(labelText: l10n.createManagerEmailField, hintText: 'manager@domain.com'),
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'البريد الإلكتروني مطلوب';
-                if (!v.contains('@')) return 'البريد الإلكتروني غير صالح';
+                if (v == null || v.trim().isEmpty) return l10n.createManagerEmailRequired;
+                if (!v.contains('@')) return l10n.createManagerEmailInvalid;
                 return null;
               },
             ),
             const SizedBox(height: 10),
             TextFormField(
               controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'رقم الهاتف', hintText: '+966501234567'),
+              decoration: InputDecoration(labelText: l10n.createManagerPhone, hintText: '+966501234567'),
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
             ),
             const SizedBox(height: 16),
 
-            _sectionLabel('تفاصيل إضافية'),
+            _sectionLabel(l10n.createManagerAdditionalDetails),
             InkWell(
               onTap: () async {
                 final d = await showDatePicker(
@@ -245,7 +249,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                   initialDate: _dob ?? DateTime(1990),
                   firstDate: DateTime(1920),
                   lastDate: DateTime.now(),
-                  locale: const Locale('ar'),
+                  locale: Localizations.localeOf(context),
                 );
                 if (d != null) {
                   setState(() {
@@ -256,11 +260,11 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               },
               borderRadius: BorderRadius.circular(10),
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'تاريخ الميلاد'),
+                decoration: InputDecoration(labelText: l10n.createManagerDateOfBirth),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_dobController.text.isNotEmpty ? _dobController.text : 'اختر التاريخ',
+                    Text(_dobController.text.isNotEmpty ? _dobController.text : l10n.createManagerSelectDate,
                         style: TextStyle(fontSize: 14, color: _dobController.text.isNotEmpty ? ShadColors.textPrimary : ShadColors.textDisabled)),
                     const Icon(Icons.calendar_today, size: 18, color: ShadColors.gold),
                   ],
@@ -280,9 +284,9 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('كلمة المرور التلقائية', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                      Text(l10n.createManagerAutoPassword, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
                       const SizedBox(height: 2),
-                      const Text('سيتم إنشاؤها تلقائياً', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                      Text(l10n.createManagerAutoPasswordHint, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
                     ]),
                   ),
                   Switch(
@@ -298,11 +302,11 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               ],
             ],
             if (_isEdit) ...[
-              _sectionLabel('إعادة تعيين كلمة المرور'),
+              _sectionLabel(l10n.createManagerResetPassword),
               PasswordField(
                 controller: _passwordCtrl,
-                labelText: 'كلمة مرور جديدة',
-                hintText: 'اتركه فارغاً إذا لم تُرِد التغيير',
+                labelText: l10n.createManagerNewPassword,
+                hintText: l10n.createManagerLeaveBlank,
                 required: false,
               ),
             ],
@@ -318,7 +322,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                     : Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.check, size: 18, color: Colors.white),
                         const SizedBox(width: 8),
-                        Text(_isEdit ? 'حفظ التعديلات' : 'إنشاء المدير'),
+                        Text(_isEdit ? l10n.saveChanges : l10n.createManagerCreateButton),
                       ]),
               ),
             ),
@@ -328,7 +332,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               height: 50,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child: Text(l10n.cancel),
               ),
             ),
           ],

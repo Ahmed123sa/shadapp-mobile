@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class ErrorState extends StatelessWidget {
@@ -17,7 +18,7 @@ class ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.warning_rounded, size: 48, color: ShadColors.warning),
             const SizedBox(height: 16),
-            Text('تعذر تحميل البيانات', style: ShadTypography.emptyTitle, textAlign: TextAlign.center),
+            Text(AppLocalizations.of(context)!.couldNotLoadData, style: ShadTypography.emptyTitle, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(message, style: ShadTypography.emptyBody.copyWith(color: ShadColors.textSecondary), textAlign: TextAlign.center),
             if (onRetry != null) ...[
@@ -25,7 +26,7 @@ class ErrorState extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('إعادة المحاولة'),
+                label: Text(AppLocalizations.of(context)!.retry),
               ),
             ],
           ],

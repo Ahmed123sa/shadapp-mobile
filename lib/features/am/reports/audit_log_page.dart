@@ -95,7 +95,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
                               ? ListView(children: [
                                   SizedBox(
                                     height: MediaQuery.of(context).size.height * 0.3,
-                                    child: EmptyState(icon: Icons.history, title: 'لا توجد أحداث', subtitle: 'لا توجد نشاطات بعد'),
+                                    child: EmptyState(icon: Icons.history, title: AppLocalizations.of(context)!.auditLogNoEvents, subtitle: AppLocalizations.of(context)!.auditLogNoActivities),
                                   ),
                                 ])
                               : ListView(
@@ -122,13 +122,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
           const SizedBox(height: 12),
           Text(_error!, style: ShadTypography.cardBody.copyWith(color: ShadColors.error)),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+          ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context)!.auditLogRetry)),
         ],
       ),
     );
   }
 
   List<Widget> _buildGroupedLogs() {
+    final l10n = AppLocalizations.of(context)!;
     final grouped = <String, List<Map<String, dynamic>>>{};
     final dateFormat = <String, String>{};
 
@@ -143,8 +144,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
         final today = DateTime(now.year, now.month, now.day);
         final logDate = DateTime(dt.year, dt.month, dt.day);
         final diff = today.difference(logDate).inDays;
-        if (diff == 0) displayDate = 'اليوم، ${_formatDate(dt)}';
-        else if (diff == 1) displayDate = 'أمس، ${_formatDate(dt)}';
+        if (diff == 0) displayDate = '${l10n.auditLogToday}, ${_formatDate(dt)}';
+        else if (diff == 1) displayDate = '${l10n.auditLogYesterday}, ${_formatDate(dt)}';
         else displayDate = _formatDate(dt);
       }
       dateFormat[dateKey] = displayDate;
@@ -164,13 +165,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   String _formatDate(DateTime dt) {
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    final l10n = AppLocalizations.of(context)!;
+    final months = [l10n.auditLogMonthJanuary, l10n.auditLogMonthFebruary, l10n.auditLogMonthMarch, l10n.auditLogMonthApril, l10n.auditLogMonthMay, l10n.auditLogMonthJune, l10n.auditLogMonthJuly, l10n.auditLogMonthAugust, l10n.auditLogMonthSeptember, l10n.auditLogMonthOctober, l10n.auditLogMonthNovember, l10n.auditLogMonthDecember];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   Widget _buildDateDivider(String label) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 4),
       child: Row(
         children: [
           Expanded(child: Container(height: 0.5, color: ShadColors.borderLight)),
@@ -211,8 +213,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('سجل التدقيق', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
-                Text('$_total حدث مسجّل', style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
+                Text(AppLocalizations.of(context)!.auditLogTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
+                Text(AppLocalizations.of(context)!.auditLogEventCount(_total), style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
               ],
             ),
           ),
@@ -241,9 +243,9 @@ class _AuditLogPageState extends State<AuditLogPage> {
             Expanded(
               child: TextField(
                 style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
-                decoration: const InputDecoration.collapsed(
-                  hintText: 'بحث في الأحداث...',
-                  hintStyle: TextStyle(color: ShadColors.textMuted, fontSize: 12),
+                decoration: InputDecoration.collapsed(
+                  hintText: AppLocalizations.of(context)!.auditLogSearch,
+                  hintStyle: const TextStyle(color: ShadColors.textMuted, fontSize: 12),
                 ),
                 onChanged: (v) {
                   _searchQuery = v;
@@ -259,14 +261,15 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   Widget _buildFilterChips() {
+    final l10n = AppLocalizations.of(context)!;
     final chips = [
-      ('', 'الكل'),
-      ('contract', 'العقود'),
-      ('payment', 'المدفوعات'),
-      ('approval', 'الموافقات'),
-      ('meeting', 'الاجتماعات'),
-      ('login', 'تسجيل الدخول'),
-      ('client', 'العملاء'),
+      ('', l10n.auditLogFilterAll),
+      ('contract', l10n.auditLogFilterContracts),
+      ('payment', l10n.auditLogFilterPayments),
+      ('approval', l10n.auditLogFilterApprovals),
+      ('meeting', l10n.auditLogFilterMeetings),
+      ('login', l10n.auditLogFilterLogins),
+      ('client', l10n.auditLogFilterClients),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -314,9 +317,9 @@ class _AuditLogPageState extends State<AuditLogPage> {
       ),
       child: Row(
         children: [
-          Expanded(child: _dateField('من', _dateFrom, (d) { setState(() => _dateFrom = d); _page = 1; _load(); })),
+          Expanded(child: _dateField(AppLocalizations.of(context)!.auditLogFrom, _dateFrom, (d) { setState(() => _dateFrom = d); _page = 1; _load(); })),
           const SizedBox(width: 6),
-          Expanded(child: _dateField('إلى', _dateTo, (d) { setState(() => _dateTo = d); _page = 1; _load(); })),
+          Expanded(child: _dateField(AppLocalizations.of(context)!.auditLogTo, _dateTo, (d) { setState(() => _dateTo = d); _page = 1; _load(); })),
         ],
       ),
     );
@@ -363,7 +366,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     final avatarColors = _userAvatarColors(userName);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0x0AFFFFFF))),
       ),
@@ -446,14 +449,15 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   String _entityText(String action) {
-    if (action.startsWith('contract.')) return 'عقد';
-    if (action.startsWith('payment.')) return 'دفعة';
-    if (action.startsWith('client.')) return 'عميل';
-    if (action.startsWith('approval.')) return 'موافقة';
-    if (action.startsWith('meeting.')) return 'اجتماع';
-    if (action.startsWith('login')) return 'دخول';
-    if (action.startsWith('file.')) return 'ملف';
-    if (action.startsWith('workspace.')) return 'مساحة';
+    final l10n = AppLocalizations.of(context)!;
+    if (action.startsWith('contract.')) return l10n.auditLogTypeContract;
+    if (action.startsWith('payment.')) return l10n.auditLogTypePayment;
+    if (action.startsWith('client.')) return l10n.auditLogTypeClient;
+    if (action.startsWith('approval.')) return l10n.auditLogTypeApproval;
+    if (action.startsWith('meeting.')) return l10n.auditLogTypeMeeting;
+    if (action.startsWith('login')) return l10n.auditLogTypeLogin;
+    if (action.startsWith('file.')) return l10n.auditLogTypeFile;
+    if (action.startsWith('workspace.')) return l10n.auditLogTypeSpace;
     return action;
   }
 
@@ -480,11 +484,11 @@ class _AuditLogPageState extends State<AuditLogPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _pageButton('السابق', _page > 1, () => _goToPage(_page - 1)),
+          _pageButton(AppLocalizations.of(context)!.auditLogPrevious, _page > 1, () => _goToPage(_page - 1)),
           const SizedBox(width: 6),
           ..._pageNumbers(),
           const SizedBox(width: 6),
-          _pageButton('التالي', _page < _totalPages, () => _goToPage(_page + 1)),
+          _pageButton(AppLocalizations.of(context)!.auditLogNext, _page < _totalPages, () => _goToPage(_page + 1)),
         ],
       ),
     );
@@ -536,32 +540,33 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   String _auditLabel(String action) {
+    final l10n = AppLocalizations.of(context)!;
     final labels = {
-      'contract.created': 'إنشاء عقد',
-      'contract.sent': 'إرسال عقد',
-      'contract.client_approved': 'اعتماد العميل للعقد',
-      'contract.client_rejected': 'رفض العميل للعقد',
-      'contract.edit_requested': 'طلب تعديل العقد',
-      'contract.company_approved': 'اعتماد الشركة للعقد',
-      'contract.completed': 'إكمال العقد',
-      'contract.archived': 'أرشفة العقد',
-      'workspace.created': 'إنشاء مساحة عمل',
-      'workspace.activated': 'تفعيل مساحة العمل',
-      'approval.created': 'إنشاء طلب موافقة',
-      'approval.approved': 'تمت الموافقة',
-      'approval.rejected': 'تم الرفض',
-      'approval.edit_requested': 'طلب تعديل الموافقة',
-      'payment.submitted': 'تقديم دفعة',
-      'payment.approved': 'اعتماد دفعة',
-      'payment.rejected': 'رفض دفعة',
-      'file.uploaded': 'رفع ملف',
-      'file.approved': 'الموافقة على الملف',
-      'file.rejected': 'رفض الملف',
-      'login': 'تسجيل دخول',
-      'meeting.created': 'إنشاء اجتماع',
-      'meeting.updated': 'تحديث اجتماع',
-      'client.created': 'إنشاء عميل',
-      'client.deleted': 'حذف عميل',
+      'contract.created': l10n.auditLogActionCreateContract,
+      'contract.sent': l10n.auditLogActionSendContract,
+      'contract.client_approved': l10n.auditLogActionClientApprove,
+      'contract.client_rejected': l10n.auditLogActionClientReject,
+      'contract.edit_requested': l10n.auditLogActionRequestEdit,
+      'contract.company_approved': l10n.auditLogActionCompanyApprove,
+      'contract.completed': l10n.auditLogActionCompleteContract,
+      'contract.archived': l10n.auditLogActionArchiveContract,
+      'workspace.created': l10n.auditLogActionCreateSpace,
+      'workspace.activated': l10n.auditLogActionActivateSpace,
+      'approval.created': l10n.auditLogActionCreateApproval,
+      'approval.approved': l10n.auditLogActionApproved,
+      'approval.rejected': l10n.auditLogActionRejected,
+      'approval.edit_requested': l10n.auditLogActionRequestEditApproval,
+      'payment.submitted': l10n.auditLogActionSubmitPayment,
+      'payment.approved': l10n.auditLogActionApprovePayment,
+      'payment.rejected': l10n.auditLogActionRejectPayment,
+      'file.uploaded': l10n.auditLogActionUploadFile,
+      'file.approved': l10n.auditLogActionApproveFile,
+      'file.rejected': l10n.auditLogActionRejectFile,
+      'login': l10n.auditLogActionLogin,
+      'meeting.created': l10n.auditLogActionCreateMeeting,
+      'meeting.updated': l10n.auditLogActionUpdateMeeting,
+      'client.created': l10n.auditLogActionCreateClient,
+      'client.deleted': l10n.auditLogActionDeleteClient,
     };
     return labels[action] ?? action;
   }

@@ -38,12 +38,13 @@ class _ChatContractCardState extends State<ChatContractCard> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatContractCard_fileOpenFailed)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final c = widget.contract;
     final status = c['status'] as String? ?? '';
     final clauses = c['clauses'] as List<dynamic>? ?? [];
@@ -73,10 +74,10 @@ class _ChatContractCardState extends State<ChatContractCard> {
                   children: [
                     Text(c['title'] ?? '', style: ShadTypography.cardTitle),
                     const SizedBox(height: 2),
-                    Text('${c['value'] ?? 0} SAR • ${clauses.length} بند',
+                    Text(l10n.sarClauses('${c['value'] ?? 0}', '${clauses.length}'),
                       style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
                     if (widget.clientType == 'business')
-                      const Text('قيمة العقد غير شاملة الضريبة', style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
+                      Text(l10n.contractValueExcludesVat, style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
                   ],
                 ),
               ),
@@ -85,7 +86,7 @@ class _ChatContractCardState extends State<ChatContractCard> {
             if (status == 'company_approved')
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('تم اعتماد العقد — يمكنك رفع الدفعة الآن',
+                child: Text(l10n.contractApprovedUploadPayment,
                   style: const TextStyle(fontSize: 10, color: ShadColors.gold, fontWeight: FontWeight.w500)),
               ),
             if (['client_approved', 'company_approved', 'completed'].contains(status) && c['pdf_url'] != null) ...[
@@ -96,7 +97,7 @@ class _ChatContractCardState extends State<ChatContractCard> {
                   const Icon(Icons.picture_as_pdf, size: 14, color: ShadColors.error),
                   const SizedBox(width: 4),
                   Text(
-                    status == 'client_approved' ? '📄 عرض العقد الموقع' : '📄 تحميل العقد النهائي',
+                    status == 'client_approved' ? l10n.viewSignedContract : l10n.downloadFinalContract,
                     style: ShadTypography.cardBody.copyWith(color: ShadColors.primary, decoration: TextDecoration.underline, fontSize: 11),
                   ),
                 ]),
@@ -107,14 +108,14 @@ class _ChatContractCardState extends State<ChatContractCard> {
               TextButton.icon(
                 onPressed: widget.onViewClauses,
                 icon: const Icon(Icons.list_alt, size: 18),
-                label: Text(AppLocalizations.of(context)!.viewClauses),
+                label: Text(l10n.viewClauses),
               ),
               const Spacer(),
               if (showPayment)
                 ElevatedButton.icon(
                   onPressed: widget.onGoToPayments,
                   icon: const Icon(Icons.payment, size: 16),
-                  label: const Text('رفع الدفعة'),
+                  label: Text(l10n.uploadPayment),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ShadColors.crimson,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -129,7 +130,7 @@ class _ChatContractCardState extends State<ChatContractCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     textStyle: ShadTypography.cardBody.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  child: Text(AppLocalizations.of(context)!.approve),
+                  child: Text(l10n.approve),
                 ),
             ]),
           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class StatusBadge extends StatelessWidget {
@@ -10,7 +11,7 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = statusColors[status] ?? ShadColors.textDisabled;
-    final label = statusLabels[status] ?? status;
+    final label = statusLabels(AppLocalizations.of(context)!)[status] ?? status;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

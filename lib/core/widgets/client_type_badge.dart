@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class ClientTypeBadge extends StatelessWidget {
@@ -13,7 +14,8 @@ class ClientTypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (clientType == null || clientType!.isEmpty) return const SizedBox.shrink();
 
-    final label = _isBusiness ? 'شركة' : 'فردي';
+    final l10n = AppLocalizations.of(context)!;
+    final label = _isBusiness ? l10n.clientTypeCompany : l10n.clientTypeIndividual;
     final bg = _isBusiness
         ? ShadColors.gold.withAlpha(38)
         : ShadColors.textDisabled.withAlpha(38);

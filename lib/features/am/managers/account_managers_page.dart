@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/shad_logo.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class AccountManagersPage extends StatefulWidget {
   const AccountManagersPage({super.key});
@@ -29,7 +30,8 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
       final data = await _api.get('/account-managers');
       _managers = data['managers'] as List<dynamic>? ?? [];
     } catch (e) {
-      _errorMsg = 'فشل تحميل المديرين';
+      if (!mounted) return;
+      _errorMsg = AppLocalizations.of(context)!.accountManagersFailedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -38,11 +40,11 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف مدير'),
-        content: Text('هل أنت متأكد من حذف "$name"؟'),
+        title: Text(AppLocalizations.of(ctx)!.accountManagersDeleteTitle),
+        content: Text(AppLocalizations.of(ctx)!.accountManagersDeleteNameConfirmation(name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حذف')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx)!.delete)),
         ],
       ),
     );
@@ -52,12 +54,13 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
       _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف المدير')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.accountManagersDeleteFailed)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -65,7 +68,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
           children: [
             const ShadLogo(size: 24, showText: false),
             const SizedBox(width: 8),
-            const Text('إدارة المديرين', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay')),
+            Text(l10n.amManageManagers, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay')),
           ],
         ),
         actions: [
@@ -85,7 +88,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Text(_errorMsg!, style: const TextStyle(color: ShadColors.error)),
                 const SizedBox(height: 12),
-                ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                ElevatedButton(onPressed: _load, child: Text(l10n.retry)),
               ]),
             )
           : _managers.isEmpty
@@ -93,9 +96,9 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.people_outline, size: 56, color: ShadColors.textDisabled),
                   const SizedBox(height: 16),
-                  const Text('لا يوجد مديرين بعد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                  Text(l10n.accountManagersEmpty, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
                   const SizedBox(height: 8),
-                  const Text('اضغط على + لإضافة مدير جديد', style: TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
+                  Text(l10n.accountManagersAddHint, style: const TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () async {
@@ -103,7 +106,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                       if (result == true) _load();
                     },
                     icon: const Icon(Icons.person_add, size: 18),
-                    label: const Text('إضافة مدير'),
+                    label: Text(l10n.accountManagersAddButton),
                   ),
                 ]),
               )
@@ -138,7 +141,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                           if (phone != null && phone.isNotEmpty)
                             Text(phone, style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
                           Row(children: [
-                            Text('$clientCount عميل', style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                            Text(l10n.accountManagersClientCount(clientCount), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                             if (m['date_of_birth'] != null && (m['date_of_birth'] as String).isNotEmpty) ...[
                               Text(' · ', style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
                               Text((m['date_of_birth'] as String).substring(0, 10), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),

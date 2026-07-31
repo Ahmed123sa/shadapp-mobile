@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -42,7 +43,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
       final data = await _api.get('/workspaces/$wsId/approvals');
       _approvals = safeList(data['approvals']);
     } catch (_) {
-      _error = 'فشل تحميل طلبات الموافقة';
+      _error = AppLocalizations.of(context)?.approvalLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -72,14 +73,14 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
         await _api.post('/workspaces/${widget.workspaceId}/approvals', fields);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إرسال طلب الموافقة')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.approvalRequestSent)])));
         _titleController.clear();
         _descController.clear();
         setState(() { _selectedFiles = []; _selectedFileNames = []; });
         _load();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إرسال الطلب')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.approvalSendFailed)));
     }
     if (mounted) setState(() => _sending = false);
   }
@@ -91,13 +92,18 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
         if (reason != null) 'reason': reason,
       });
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(action == 'approved' ? '✅ تمت الموافقة' : '✎ تم طلب تعديل'),
+          content: Row(children: [
+            Icon(action == 'approved' ? Icons.check_circle : Icons.edit, color: action == 'approved' ? Colors.green : Colors.orange, size: 18),
+            const SizedBox(width: 8),
+            Text(action == 'approved' ? l10n.approvalApproved : l10n.approvalEditRequested),
+          ]),
         ));
         _load();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تنفيذ الإجراء')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.approvalActionFailed)));
     }
   }
 
@@ -106,12 +112,13 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
       context: context,
       builder: (ctx) {
         final c = TextEditingController();
+        final l10n = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          title: const Text('طلب تعديل'),
-          content: TextField(controller: c, maxLines: 3, decoration: const InputDecoration(hintText: 'اذكر التعديلات المطلوبة...')),
+          title: Text(l10n.approvalEditTitle),
+          content: TextField(controller: c, maxLines: 3, decoration: InputDecoration(hintText: l10n.approvalEditReasonHint)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('إرسال الطلب')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, c.text), child: Text(l10n.approvalSendDialogButton)),
           ],
         );
       },
@@ -132,6 +139,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
 
     final isSA = _api.role == 'super_admin';
+    final l10n = AppLocalizations.of(context)!;
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -144,23 +152,23 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('إنشاء طلب موافقة', style: ShadTypography.cardTitle),
+                  Text(l10n.approvalCreateTitle, style: ShadTypography.cardTitle),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'عنوان الطلب *', hintText: 'مثال: اعتماد التصميم النهائي'),
+                    decoration: InputDecoration(labelText: l10n.approvalTitleLabel, hintText: l10n.approvalTitleHint),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _descController,
-                    decoration: const InputDecoration(labelText: 'الوصف', hintText: 'تفاصيل إضافية...'),
+                    decoration: InputDecoration(labelText: l10n.approvalDescription, hintText: l10n.approvalDescriptionHint),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _pickFile,
                     icon: Icon(Icons.attach_file, size: 18),
-                    label: Text(_selectedFileNames.isNotEmpty ? '${_selectedFileNames.length} ملفات' : 'إرفاق ملفات'),
+                    label: Text(_selectedFileNames.isNotEmpty ? l10n.approvalFileCount(_selectedFileNames.length) : l10n.approvalAttachFiles),
                   ),
                   if (_selectedFileNames.isNotEmpty)
                     Padding(
@@ -186,16 +194,16 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                       onPressed: _sending ? null : _create,
                       child: _sending
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('إرسال طلب موافقة'),
+                          : Text(l10n.approvalSendButton),
                     ),
                   ),
                 ]),
               ),
             ),
-          Text('الطلبات السابقة', style: ShadTypography.sectionHeader),
+          Text(l10n.approvalPreviousRequests, style: ShadTypography.sectionHeader),
           const SizedBox(height: 8),
           if (_approvals.isEmpty)
-            const EmptyState(icon: Icons.check_circle_outlined, title: 'لا توجد طلبات موافقة')
+            EmptyState(icon: Icons.check_circle_outlined, title: l10n.approvalEmpty)
           else
             ..._approvals.map((a) {
               final hasCertificate = a['certificate'] != null && a['certificate']['pdf_url'] != null;
@@ -257,7 +265,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                                 color: ShadColors.gold.withAlpha(20),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('المرجع: ${a['reference_no']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
+                              child: Text('${l10n.approvalReference}: ${a['reference_no']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
                             ),
                           ],
                         ])),
@@ -275,7 +283,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                                 await launchUrl(uri, mode: LaunchMode.externalApplication);
                               } else {
                                 if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.approvalFileOpenFailed)));
                               }
                             },
                             child: Container(
@@ -288,7 +296,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
                                 const Icon(Icons.picture_as_pdf, size: 18, color: ShadColors.gold),
                                 const SizedBox(width: 8),
-                                Text('شهادة الموافقة', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                                Text(l10n.approvalCertificate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold)),
                               ]),
                             ),
                           ),
@@ -311,7 +319,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             ),
                             const SizedBox(width: 8),
                             Expanded(child: Text(
-                              a['action_result'] == 'approved' ? 'تمت الموافقة' : 'تم طلب التعديل',
+                              a['action_result'] == 'approved' ? l10n.approvalApproved : l10n.approvalEditRequested,
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a['action_result'] == 'approved' ? ShadColors.success : ShadColors.error),
                             )),
                           ]),
@@ -328,7 +336,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             border: Border.all(color: ShadColors.gold.withAlpha(40)),
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const Text('سبب التعديل:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                            Text(l10n.approvalEditReasonLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
                             const SizedBox(height: 4),
                             Text(a['reason'] as String, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
                           ]),
@@ -342,7 +350,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                               child: ElevatedButton.icon(
                                 onPressed: () => _respond(a['id'], 'approved', null),
                                 icon: const Icon(Icons.check, size: 15),
-                                label: const Text('موافقة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                label: Text(l10n.approve, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: ShadColors.success,
                                   foregroundColor: Colors.white,
@@ -356,7 +364,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                               child: OutlinedButton.icon(
                                 onPressed: () => _showEditRequestDialog(a['id']),
                                 icon: const Icon(Icons.edit, size: 15),
-                                label: const Text('طلب تعديل', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                label: Text(l10n.approvalRequestEdit, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

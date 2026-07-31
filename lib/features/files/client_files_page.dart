@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
@@ -43,6 +44,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
   }
 
   Future<void> _upload() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_definitions.isEmpty) {
       await _pickAndUpload(null);
       return;
@@ -57,7 +59,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Text('اختر تعريف المستند', style: ShadTypography.cardTitle),
+                Text(l10n.files_chooseDocType, style: ShadTypography.cardTitle),
                 const Spacer(),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
@@ -82,7 +84,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                     Navigator.pop(ctx);
                     _pickAndUpload(selectedDef);
                   },
-                  child: const Text('اختيار ورفع'),
+                  child: Text(l10n.files_chooseAndUpload),
                 ),
               ),
             ]),
@@ -93,6 +95,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
   }
 
   Future<void> _pickAndUpload(int? definitionId) async {
+    final l10n = AppLocalizations.of(context)!;
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
@@ -110,23 +113,24 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
       await _api.multipartPost('/workspaces/$wsId/files', fields, file: file);
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل رفع الملف: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.files_uploadFailed}: $e')));
     }
     if (mounted) setState(() => _uploading = false);
   }
 
   Future<void> _deleteFile(dynamic file) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف الملف'),
-        content: Text('هل تريد حذف "${file['name'] ?? ''}"؟'),
+        title: Text(l10n.files_deleteTitle),
+        content: Text(l10n.deleteFileConfirmation(file['name'] ?? '')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error, foregroundColor: Colors.white),
-            child: const Text('حذف'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -136,22 +140,23 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     if (wsId == null) return;
     try {
       await _api.delete('/workspaces/$wsId/files/${file['id']}');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف الملف')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.files_deleted)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حذف الملف: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileDeleteFailed(e))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
+    final l10n = AppLocalizations.of(context)!;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (_definitions.isNotEmpty) ...[
-          Text('تعريفات المستندات', style: ShadTypography.sectionHeader),
+          Text(l10n.files_docDefinitions, style: ShadTypography.sectionHeader),
           const SizedBox(height: 8),
           Wrap(spacing: 6, runSpacing: 6, children: _definitions.map<Widget>((d) =>
             Chip(
@@ -164,18 +169,18 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           const SizedBox(height: 16),
         ],
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('الملفات المرفوعة', style: ShadTypography.sectionHeader),
+          Text(l10n.files_uploadedFiles, style: ShadTypography.sectionHeader),
           TextButton.icon(
             onPressed: _uploading ? null : _upload,
             icon: _uploading
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.upload_file, size: 18),
-            label: Text(_uploading ? 'جاري الرفع...' : 'رفع ملف'),
+            label: Text(_uploading ? l10n.files_uploading : l10n.files_uploadFile),
           ),
         ]),
         const SizedBox(height: 8),
         if (_files.isEmpty && _paymentFiles.isEmpty)
-          const EmptyState(icon: Icons.folder_outlined, title: 'لا توجد ملفات')
+          EmptyState(icon: Icons.folder_outlined, title: l10n.files_noFiles)
         else
           ..._files.map((f) {
             final status = f['status'] as String? ?? 'pending';
@@ -196,7 +201,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
                   }
                 } : null,
                 child: Row(children: [
@@ -216,7 +221,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                       ),
                       if (tag.isNotEmpty)
                         Container(
-                          margin: const EdgeInsets.only(left: 8),
+                          margin: const EdgeInsetsDirectional.only(start: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: ShadColors.crimson.withAlpha(40),
@@ -245,14 +250,14 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                     if (f['rejection_reason'] != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text('سبب الرفض: ${f['rejection_reason']}', style: const TextStyle(fontSize: 11, color: ShadColors.error)),
+                        child: Text(l10n.rejectionReason(f['rejection_reason']), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
                       ),
                   ])),
                   if (status != 'approved')
                     GestureDetector(
                       onTap: () => _deleteFile(f),
                       child: const Padding(
-                        padding: EdgeInsets.only(left: 4),
+                        padding: EdgeInsetsDirectional.only(start: 4),
                         child: Icon(Icons.close, size: 18, color: ShadColors.error),
                       ),
                     ),
@@ -262,7 +267,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           }),
         if (_paymentFiles.isNotEmpty) ...[
           const SizedBox(height: 20),
-          Text('إثباتات الدفع', style: ShadTypography.sectionHeader),
+          Text(l10n.files_paymentProofs, style: ShadTypography.sectionHeader),
           const SizedBox(height: 10),
           ..._paymentFiles.map((pf) {
             final status = pf['status'] as String? ?? 'pending';
@@ -283,7 +288,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
                   }
                 } : null,
                 child: Row(children: [
@@ -302,17 +307,17 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                         child: Text(pf['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis),
                       ),
                       Container(
-                        margin: const EdgeInsets.only(left: 8),
+                        margin: const EdgeInsetsDirectional.only(start: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: ShadColors.success.withAlpha(40),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: ShadColors.success.withAlpha(70)),
                         ),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.receipt_long, size: 11, color: ShadColors.success),
-                          SizedBox(width: 4),
-                          Text('إثبات الدفع', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.success)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.receipt_long, size: 11, color: ShadColors.success),
+                          const SizedBox(width: 4),
+                          Text(l10n.files_paymentProof, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.success)),
                         ]),
                       ),
                     ]),

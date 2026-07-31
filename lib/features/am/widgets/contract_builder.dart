@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 
@@ -62,27 +63,28 @@ class _ContractBuilderState extends State<ContractBuilder> {
   }
 
   static const _currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-  static const _currencyLabels = {
-    'SAR': 'ريال سعودي', 'USD': 'دولار أمريكي', 'EUR': 'يورو',
-    'AED': 'درهم إماراتي', 'EGP': 'جنيه مصري', 'KWD': 'دينار كويتي',
-    'QAR': 'ريال قطري', 'BHD': 'دينار بحريني', 'OMR': 'ريال عماني',
-  };
   String _selectedCurrency = 'SAR';
 
-  final List<Map<String, String>> _hardcodedFixed = const [
-    {'content': 'يقر الطرفان بأهليتهما القانونية للتعاقد', 'type': 'fixed'},
-    {'content': 'يلتزم الطرف الأول بتقديم الخدمات المتفق عليها', 'type': 'fixed'},
-    {'content': 'يلتزم الطرف الثاني بسداد القيمة المتفق عليها', 'type': 'fixed'},
-    {'content': 'يلتزم الطرفان بالسرية التامة', 'type': 'fixed'},
+  Map<String, String> _currencyLabels(AppLocalizations l10n) => {
+    'SAR': l10n.contractBuilderCurrencyNameSAR, 'USD': l10n.contractBuilderCurrencyNameUSD, 'EUR': l10n.contractBuilderCurrencyNameEUR,
+    'AED': l10n.contractBuilderCurrencyNameAED, 'EGP': l10n.contractBuilderCurrencyNameEGP, 'KWD': l10n.contractBuilderCurrencyNameKWD,
+    'QAR': l10n.contractBuilderCurrencyNameQAR, 'BHD': l10n.contractBuilderCurrencyNameBHD, 'OMR': l10n.contractBuilderCurrencyNameOMR,
+  };
+
+  List<Map<String, String>> _hardcodedFixedClauses(AppLocalizations l10n) => [
+    {'content': l10n.contractBuilderClauseFallback1, 'type': 'fixed'},
+    {'content': l10n.contractBuilderClauseFallback2, 'type': 'fixed'},
+    {'content': l10n.contractBuilderClauseFallback3, 'type': 'fixed'},
+    {'content': l10n.contractBuilderClauseFallback4, 'type': 'fixed'},
   ];
 
-  final List<Map<String, dynamic>> _hardcodedOptional = const [
-    {'content': 'يحق للطرفين إنهاء العقد بإشعار خطي قبل 30 يوماً', 'selected': false},
-    {'content': 'لا تتحمل الشركة مسؤولية أي تأخير ناتج عن ظروف قاهرة', 'selected': false},
-    {'content': 'تكون حقوق الملكية الفكرية مملوكة للطرف الأول', 'selected': false},
-    {'content': 'يحق للطرف الأول تعديل الأسعار بعد 12 شهراً', 'selected': false},
-    {'content': 'يخضع العقد للقوانين واللوائح المحلية', 'selected': false},
-    {'content': 'يتم حل النزاعات عن طريق التحكيم', 'selected': false},
+  List<Map<String, dynamic>> _hardcodedOptionalClauses(AppLocalizations l10n) => [
+    {'content': l10n.contractBuilderClauseOptional1, 'selected': false},
+    {'content': l10n.contractBuilderClauseOptional2, 'selected': false},
+    {'content': l10n.contractBuilderClauseOptional3, 'selected': false},
+    {'content': l10n.contractBuilderClauseOptional4, 'selected': false},
+    {'content': l10n.contractBuilderClauseOptional5, 'selected': false},
+    {'content': l10n.contractBuilderClauseOptional6, 'selected': false},
   ];
 
   @override
@@ -129,20 +131,24 @@ class _ContractBuilderState extends State<ContractBuilder> {
         }
       }
     } catch (_) {
-      if (_fixedClauses.isEmpty) _fixedClauses = _hardcodedFixed.map((f) => Map<String, dynamic>.from(f)).toList();
-      if (_optionalClauses.isEmpty) _optionalClauses = _hardcodedOptional.map((o) => Map<String, dynamic>.from(o)).toList();
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        if (_fixedClauses.isEmpty) _fixedClauses = _hardcodedFixedClauses(l10n).map((f) => Map<String, dynamic>.from(f)).toList();
+        if (_optionalClauses.isEmpty) _optionalClauses = _hardcodedOptionalClauses(l10n).map((o) => Map<String, dynamic>.from(o)).toList();
+      }
     }
     if (mounted) setState(() => _templatesLoading = false);
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_titleController.text.trim().isEmpty || _api.workspaceId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال عنوان العقد')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderTitleRequired)));
       return;
     }
     final value = double.tryParse(_valueController.text);
     if (value == null || value <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال قيمة العقد')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderValueRequired)));
       return;
     }
 
@@ -177,7 +183,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
       if (_isEditing) {
         await _api.put('/contracts/${widget.contractId}', payload);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث العقد')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderUpdated)));
         Navigator.pop(context);
         widget.onCreated?.call();
       } else {
@@ -187,15 +193,15 @@ class _ContractBuilderState extends State<ContractBuilder> {
         try {
           await _api.post('/contracts/$contractId/send');
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إنشاء وإرسال العقد')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.contractBuilderCreatedAndSent)])));
         } catch (_) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ تم إنشاء العقد ولكن فشل الإرسال')));
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.warning, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(l10n.contractBuilderCreatedSendFailed)])));
         }
         Navigator.pop(context);
         widget.onCreated?.call();
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isEditing ? 'فشل تحديث العقد' : 'فشل إنشاء العقد')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isEditing ? l10n.contractBuilderUpdateFailed : l10n.contractBuilderCreateFailed)));
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -211,14 +217,15 @@ class _ContractBuilderState extends State<ContractBuilder> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 16),
+      padding: EdgeInsetsDirectional.fromSTEB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 16),
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(children: [
-              Text(_isEditing ? 'تعديل العقد' : widget.isAdditional ? 'إنشاء عقد خدمة إضافية' : 'إنشاء عقد جديد', style: ShadTypography.cardTitle),
+              Text(_isEditing ? l10n.contractBuilderEditTitle : widget.isAdditional ? l10n.contractBuilderCreateExtraTitle : l10n.contractBuilderCreateNewTitle, style: ShadTypography.cardTitle),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
             ]),
@@ -232,24 +239,24 @@ class _ContractBuilderState extends State<ContractBuilder> {
                 // Title
                 TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'عنوان العقد *', hintText: 'مثال: عقد صيانة إضافي'),
+                  decoration: InputDecoration(labelText: '${l10n.contractTitle} *', hintText: l10n.contractBuilderTitleHint),
                 ),
                 const SizedBox(height: 12),
 
                 // Value
                 TextField(
                   controller: _valueController,
-                  decoration: InputDecoration(labelText: 'قيمة العقد *', prefixText: '$_selectedCurrency '),
+                  decoration: InputDecoration(labelText: l10n.contractValue, prefixText: '$_selectedCurrency '),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   key: ValueKey(_selectedCurrency),
                   initialValue: _selectedCurrency,
-                  decoration: const InputDecoration(labelText: 'العملة'),
+                  decoration: InputDecoration(labelText: l10n.contractCurrency),
                   items: _currencies.map((c) => DropdownMenuItem(
                     value: c,
-                    child: Text('$c — ${_currencyLabels[c] ?? ''}'),
+                    child: Text('$c — ${_currencyLabels(l10n)[c] ?? ''}'),
                   )).toList(),
                   onChanged: (v) { if (v != null) setState(() => _selectedCurrency = v); },
                 ),
@@ -264,8 +271,8 @@ class _ContractBuilderState extends State<ContractBuilder> {
                         if (d != null) setState(() => _startDate = d);
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'تاريخ البداية'),
-                        child: Text(_startDate != null ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}' : 'اختيار تاريخ'),
+                        decoration: InputDecoration(labelText: l10n.contractStartDateLabel),
+                        child: Text(_startDate != null ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}' : l10n.contractBuilderSelectDate),
                       ),
                     ),
                   ),
@@ -277,8 +284,8 @@ class _ContractBuilderState extends State<ContractBuilder> {
                         if (d != null) setState(() => _endDate = d);
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'تاريخ النهاية'),
-                        child: Text(_endDate != null ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}' : 'اختيار تاريخ'),
+                        decoration: InputDecoration(labelText: l10n.contractEndDateLabel),
+                        child: Text(_endDate != null ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}' : l10n.contractBuilderSelectDate),
                       ),
                     ),
                   ),
@@ -286,7 +293,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
                 const SizedBox(height: 24),
 
                 // Fixed Clauses
-                Text('البنود الثابتة', style: ShadTypography.sectionHeader),
+                Text(l10n.contractBuilderFixedClauses, style: ShadTypography.sectionHeader),
                 const SizedBox(height: 8),
                 ..._fixedClauses.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -299,7 +306,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
                 const SizedBox(height: 16),
 
                 // Optional Clauses
-                Text('البنود الاختيارية', style: ShadTypography.sectionHeader),
+                Text(l10n.contractBuilderOptionalClauses, style: ShadTypography.sectionHeader),
                 const SizedBox(height: 8),
                 ..._optionalClauses.map((o) => CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
@@ -311,13 +318,13 @@ class _ContractBuilderState extends State<ContractBuilder> {
                 const SizedBox(height: 16),
 
                 // Custom Clauses
-                Text('بنود مخصصة', style: ShadTypography.sectionHeader),
+                Text(l10n.contractBuilderCustomClauses, style: ShadTypography.sectionHeader),
                 const SizedBox(height: 8),
                 Row(children: [
                   Expanded(
                     child: TextField(
                       controller: _customClauseController,
-                      decoration: const InputDecoration(hintText: 'اكتب بند جديد...', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                      decoration: InputDecoration(hintText: l10n.contractBuilderCustomClauseHint, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -348,13 +355,13 @@ class _ContractBuilderState extends State<ContractBuilder> {
                 const SizedBox(height: 16),
 
                 // Required Documents
-                Text('المستندات المطلوبة من العميل', style: ShadTypography.sectionHeader),
+                Text(l10n.contractRequiredDocs, style: ShadTypography.sectionHeader),
                 const SizedBox(height: 8),
                 Row(children: [
                   Expanded(
                     child: TextField(
                       controller: _requiredDocController,
-                      decoration: const InputDecoration(hintText: 'اسم المستند...', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                      decoration: InputDecoration(hintText: l10n.contractBuilderDocNameHint, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -392,7 +399,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text(_isEditing ? 'حفظ التعديلات' : 'إنشاء وإرسال'),
+                  : Text(_isEditing ? l10n.contractBuilderSaveChanges : l10n.contractBuilderCreateAndSend),
             ),
           ),
         ],

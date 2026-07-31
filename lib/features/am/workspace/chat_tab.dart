@@ -175,7 +175,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       _load();
     } catch (e) {
       debugPrint('[chat_tab] _saveEdit error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل التعديل: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.chatEditFailed}: $e')));
     }
   }
 
@@ -186,7 +186,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       _load();
     } catch (e) {
       debugPrint('[chat_tab] _requireAction error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل طلب الموافقة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatApprovalRequestFailed)));
     }
   }
 
@@ -198,53 +198,56 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final alreadyRequested = m['requires_action'] == true;
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            leading: const Icon(Icons.reply, size: 18),
-            title: const Text('رد', style: TextStyle(fontSize: 14)),
-            dense: true,
-            onTap: () {
-              Navigator.pop(ctx);
-              setState(() => _replyTo = m);
-            },
-          ),
-          if (canEdit)
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
             ListTile(
-              leading: const Icon(Icons.edit, size: 18),
-              title: const Text('تعديل'),
+              leading: const Icon(Icons.reply, size: 18),
+              title: Text(l10n.chatReplyAction, style: const TextStyle(fontSize: 14)),
               dense: true,
               onTap: () {
                 Navigator.pop(ctx);
-                setState(() {
-                  _editingMessage = m;
-                  _controller.text = m['message'] ?? '';
-                });
+                setState(() => _replyTo = m);
               },
             ),
-          if (!alreadyRequested && !isSA)
+            if (canEdit)
+              ListTile(
+                leading: const Icon(Icons.edit, size: 18),
+                title: Text(l10n.chatEditAction),
+                dense: true,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    _editingMessage = m;
+                    _controller.text = m['message'] ?? '';
+                  });
+                },
+              ),
+            if (!alreadyRequested && !isSA)
+              ListTile(
+                leading: const Icon(Icons.how_to_reg, color: ShadColors.primary),
+                title: Text(l10n.chatRequestClientApproval),
+                subtitle: Text(l10n.chatApprovalRequestedHint),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _requireAction(m['id']);
+                },
+              )
+            else if (alreadyRequested)
+              ListTile(
+                leading: const Icon(Icons.check_circle, color: ShadColors.success),
+                title: Text(l10n.chatApprovalAlreadyRequested),
+              ),
             ListTile(
-              leading: const Icon(Icons.how_to_reg, color: ShadColors.primary),
-              title: const Text('طلب موافقة العميل'),
-              subtitle: const Text('سيُطلب من العميل الموافقة على هذه الرسالة'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _requireAction(m['id']);
-              },
-            )
-          else if (alreadyRequested)
-            const ListTile(
-              leading: Icon(Icons.check_circle, color: ShadColors.success),
-              title: Text('تم طلب الموافقة مسبقاً'),
+              leading: const Icon(Icons.info_outline, color: ShadColors.textSecondary),
+              title: Text(l10n.chatMessageDetails),
+              subtitle: Text('${m['message'] ?? l10n.chatNoText}'),
+              onTap: () => Navigator.pop(ctx),
             ),
-          ListTile(
-            leading: const Icon(Icons.info_outline, color: ShadColors.textSecondary),
-            title: const Text('تفاصيل الرسالة'),
-            subtitle: Text('${m['message'] ?? '(بدون نص)'}'),
-            onTap: () => Navigator.pop(ctx),
-          ),
-        ]),
-      ),
+          ]),
+        );
+      },
     );
   }
 
@@ -260,7 +263,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       _load();
     } catch (e) {
       debugPrint('[chat_tab] _sendWithAttachment error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إرسال المرفق')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatAttachFailed)));
     }
   }
 
@@ -300,11 +303,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         }
       }
       if (zoomLink == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد اجتماع نشط')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatNoActiveMeeting)));
         return;
       }
       if (scheduledAt != null) {
-        final joinStatus = getMeetingJoinStatus(scheduledAt);
+        final joinStatus = getMeetingJoinStatus(scheduledAt, AppLocalizations.of(context)!);
         if (!joinStatus.canJoin) {
           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(joinStatus.label)));
           return;
@@ -425,7 +428,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                       style: const TextStyle(fontSize: 9, color: ShadColors.textMuted)),
                     if (m['edited_at'] != null) ...[
                       const SizedBox(width: 3),
-                      Text('(تم التعديل)', style: TextStyle(fontSize: 9, color: ShadColors.textMuted)),
+                      Text('(${AppLocalizations.of(context)!.chatEdited})', style: TextStyle(fontSize: 9, color: ShadColors.textMuted)),
                     ],
                     if (m['id'] != null) ...[
                       const SizedBox(width: 3),
@@ -453,11 +456,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('موافقة جديدة', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w700, color: ShadColors.gold, letterSpacing: 1.2)),
+                          Text(AppLocalizations.of(context)!.chatNewApproval, style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w700, color: ShadColors.gold, letterSpacing: 1.2)),
                           const SizedBox(height: 4),
                           Text(m['message'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay', height: 1.3)),
                         ],
@@ -470,7 +473,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                         color: ShadColors.goldSoft,
                         border: Border(top: BorderSide(color: ShadColors.goldBorder, width: 0.5)),
                       ),
-                      child: const Text('انتظار موافقة العميل', style: TextStyle(fontSize: 10, color: ShadColors.gold)),
+                      child: Text(AppLocalizations.of(context)!.chatAwaitingClientApproval, style: const TextStyle(fontSize: 10, color: ShadColors.gold)),
                     ),
                   ],
                 ),
@@ -487,7 +490,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Text(
-                    m['action_result'] == 'approved' ? '✓ تمت الموافقة' : m['action_result'] == 'rejected' ? '✗ تم الرفض' : '✎ طلب تعديل',
+                    m['action_result'] == 'approved' ? '✓ ${AppLocalizations.of(context)!.chatApprovedStatus}' : m['action_result'] == 'rejected' ? '✗ ${AppLocalizations.of(context)!.chatRejectedStatus}' : '✎ ${AppLocalizations.of(context)!.chatRequestedEditStatus}',
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: m['action_result'] == 'approved' ? ShadColors.success : m['action_result'] == 'rejected' ? ShadColors.error : ShadColors.warning),
                   ),
                 ]),
@@ -502,11 +505,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                     if (uri != null && await canLaunchUrl(uri)) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatFileOpenFailed)));
                     }
                   },
                   icon: const Icon(Icons.picture_as_pdf, size: 14),
-                  label: const Text('تحميل شهادة الموافقة'),
+                  label: Text(AppLocalizations.of(context)!.chatDownloadCertificate),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ShadColors.crimson,
                     foregroundColor: Colors.white,
@@ -621,23 +624,24 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSA = _api.role == 'super_admin';
-    final clientName = _workspaceData?['client']?['contact_person'] as String? ?? 'العميل';
+    final clientName = _workspaceData?['client']?['contact_person'] as String? ?? l10n.chatClient;
     final clientAvatarUrl = _workspaceData?['client']?['avatar_url'] as String?;
     final clientOnline = _isOnline(_workspaceData?['client']);
     final wsActive = widget.wsStatus == 'active';
 
     if (!wsActive) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock, size: 48, color: ShadColors.textDisabled),
-              SizedBox(height: 16),
-              Text('المحادثة غير متاحة — بانتظار تفعيل مساحة العمل',
-                style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
+              const Icon(Icons.lock, size: 48, color: ShadColors.textDisabled),
+              const SizedBox(height: 16),
+              Text(l10n.chatWorkspaceLocked,
+                style: const TextStyle(fontSize: 14, color: ShadColors.textSecondary),
                 textAlign: TextAlign.center),
             ],
           ),
@@ -685,7 +689,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               ClientTypeBadge(clientType: _workspaceData?['client']?['client_type'] as String?, compact: true),
             ]),
             const SizedBox(height: 1),
-            Text(clientOnline ? 'متصل الآن' : 'غير متصل',
+            Text(clientOnline ? l10n.chatOnline : l10n.chatOffline,
               style: TextStyle(fontSize: 10, color: clientOnline ? ShadColors.online : ShadColors.textDisabled)),
           ])),
           _headerIconBtn(Icons.copy_outlined, _openContracts),
@@ -741,10 +745,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             color: ShadColors.chatHeaderBg,
             border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
           ),
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.visibility, size: 14, color: ShadColors.textSecondary),
-            SizedBox(width: 8),
-            Text('عرض المحادثة فقط', style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.visibility, size: 14, color: ShadColors.textSecondary),
+            const SizedBox(width: 8),
+            Text(l10n.chatReadOnly, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
           ]),
         ),
       // Input Bar (AM only)
@@ -767,7 +771,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'طلب موافقة العميل',
+                    l10n.chatRequestClientApproval,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: _requestApproval ? FontWeight.w700 : FontWeight.w400,
@@ -779,7 +783,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             ),
             if (_replyTo != null)
               Container(
-                padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+                padding: const EdgeInsetsDirectional.fromSTEB(14, 7, 14, 7),
                 decoration: const BoxDecoration(
                   color: ShadColors.chatHeaderBg,
                   border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
@@ -790,7 +794,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                   )),
                   const SizedBox(width: 8),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_replyTo!['sender']?['name'] ?? 'Message', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.crimson)),
+                    Text(_replyTo!['sender']?['name'] ?? l10n.chatMessage, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.crimson)),
                     Text(_replyTo!['message'] ?? '', style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ])),
                   GestureDetector(
@@ -805,7 +809,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 child: Row(children: [
                   const Icon(Icons.edit, size: 14, color: ShadColors.gold),
                   const SizedBox(width: 6),
-                  const Text('تعديل الرسالة', style: TextStyle(fontSize: 12, color: ShadColors.gold)),
+                  Text(l10n.chatEditMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => setState(() { _editingMessage = null; _controller.clear(); }),
@@ -814,7 +818,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ]),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(13, 0, 13, 9),
+              padding: const EdgeInsetsDirectional.fromSTEB(13, 0, 13, 9),
               child: Row(children: [
                 Container(
                   width: 32, height: 32,
@@ -836,7 +840,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                     controller: _controller,
                     style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
                     decoration: InputDecoration(
-                      hintText: _editingMessage != null ? 'عدّل رسالتك...' : AppLocalizations.of(context)!.typeMessage,
+                      hintText: _editingMessage != null ? l10n.chatEditYourMessage : l10n.typeMessage,
                       hintStyle: const TextStyle(fontSize: 12, color: ShadColors.textDim),
                       filled: true,
                       fillColor: ShadColors.chatInputFill,
@@ -896,19 +900,20 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   }
 
   Widget _buildUpcomingMeetingBanner() {
+    final l10n = AppLocalizations.of(context)!;
     final m = _nextMeeting!;
-    final title = m['title'] as String? ?? 'اجتماع قادم';
+    final title = m['title'] as String? ?? l10n.chatUpcomingMeeting;
     final link = m['link'] as String?;
     String timeLabel = '';
     try {
       final scheduledAt = DateTime.parse(m['scheduled_at']).toLocal();
       final diff = scheduledAt.difference(DateTime.now());
       if (diff.inMinutes < 60) {
-        timeLabel = 'بعد ${diff.inMinutes} دقيقة';
+        timeLabel = l10n.chatInMinutes(diff.inMinutes);
       } else if (diff.inHours < 24) {
-        timeLabel = 'بعد ${diff.inHours} ساعة';
+        timeLabel = l10n.chatInHours(diff.inHours);
       } else {
-        timeLabel = 'بعد ${diff.inDays} يوم';
+        timeLabel = l10n.chatInDays(diff.inDays);
       }
     } catch (_) {}
     return GestureDetector(
@@ -935,7 +940,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 color: ShadColors.meetingBlue,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text('انضم', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
+              child: Text(l10n.chatJoin, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
         ]),
       ),
@@ -963,6 +968,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   }
 
   List<Widget> _buildMessageList() {
+    final l10n = AppLocalizations.of(context)!;
     final widgets = <Widget>[];
     String? lastDate;
     String? lastSenderKey;
@@ -973,7 +979,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       final dateKey = _dateKey(createdAt);
 
       if (dateKey != null && dateKey != lastDate) {
-        widgets.add(_dateSeparator(dateKey, createdAt));
+        widgets.add(_dateSeparator(dateKey, createdAt, l10n));
         lastDate = dateKey;
         lastSenderKey = null;
       }
@@ -1061,7 +1067,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         MeetingChip(metadata: metadata),
         if (m['created_at'] != null)
           Padding(
-            padding: const EdgeInsets.only(top: 3, left: 2),
+            padding: const EdgeInsetsDirectional.only(top: 3, start: 2),
             child: Text(_formatTime(m['created_at'] as String?),
               style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
           ),
@@ -1079,7 +1085,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   }
 
-  Widget _dateSeparator(String dateKey, String? iso) {
+  Widget _dateSeparator(String dateKey, String? iso, AppLocalizations l10n) {
     String label;
     if (iso == null) {
       label = '';
@@ -1091,11 +1097,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         final msgDate = DateTime(dt.year, dt.month, dt.day);
         final diff = today.difference(msgDate).inDays;
         if (diff == 0) {
-          label = 'Today';
+          label = l10n.chatToday;
         } else if (diff == 1) {
-          label = 'Yesterday';
+          label = l10n.chatYesterday;
         } else {
-          label = '${dt.day} ${_monthName(dt.month)} ${dt.year}';
+          label = '${dt.day} ${_monthName(dt.month, l10n)} ${dt.year}';
         }
       } catch (_) {
         label = '';
@@ -1114,8 +1120,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     );
   }
 
-  String _monthName(int month) {
-    const names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  String _monthName(int month, AppLocalizations l10n) {
+    final names = ['', l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril, l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust, l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember];
     return month >= 1 && month <= 12 ? names[month] : '';
   }
 }
@@ -1135,14 +1141,14 @@ class _ContractsSheet extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Text('العقود', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+            Text(AppLocalizations.of(context)!.chatContracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
             const Spacer(),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
           const Divider(),
           Expanded(
             child: contracts.isEmpty
-                ? const Center(child: Text('لا توجد عقود', style: TextStyle(color: ShadColors.textSecondary)))
+                ? Center(child: Text(AppLocalizations.of(context)!.chatNoContracts, style: const TextStyle(color: ShadColors.textSecondary)))
                 : ListView.separated(
                     controller: scrollController,
                     itemCount: contracts.length,
@@ -1151,7 +1157,7 @@ class _ContractsSheet extends StatelessWidget {
                       final c = contracts[i];
                       final status = c['status'] as String? ?? '';
                       final statusColor = statusColors[status] ?? ShadColors.textDisabled;
-                      final statusLabel = statusLabels[status] ?? status;
+                      final statusLabel = statusLabels(AppLocalizations.of(context)!)[status] ?? status;
                       return ListTile(
                         leading: const Icon(Icons.description, size: 24, color: ShadColors.gold),
                         title: Text(c['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),

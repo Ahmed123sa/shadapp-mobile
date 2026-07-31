@@ -52,7 +52,7 @@ Future<Uint8List> renderSignatureAsPng({
   final completer = Completer<Uint8List>();
   final reader = html.FileReader();
   reader.onLoad.listen((_) => completer.complete(reader.result as Uint8List));
-  reader.onError.listen((_) => completer.completeError('فشل قراءة الملف'));
+  reader.onError.listen((_) => completer.completeError('Failed to read signature file'));
   reader.readAsArrayBuffer(blob);
   return completer.future;
 }

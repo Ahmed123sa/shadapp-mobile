@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 
 class PaymentBanner extends StatelessWidget {
@@ -15,6 +16,7 @@ class PaymentBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final amount = payment['amount']?.toString() ?? '0';
     final currency = payment['currency']?.toString() ?? 'SAR';
     final dueDate = payment['due_date']?.toString();
@@ -34,34 +36,34 @@ class PaymentBanner extends StatelessWidget {
       borderColor = ShadColors.gold;
       textColor = ShadColors.gold;
       icon = Icons.request_quote;
-      title = 'طلب دفعة — $amount $currency';
+      title = l10n.paymentRequestTitle(amount, currency);
     } else if (status == 'overdue') {
       bgColor = const Color(0x14C62828);
       borderColor = ShadColors.crimson;
       textColor = ShadColors.crimson;
       icon = Icons.warning_amber;
-      title = 'دفعة متأخرة — $amount $currency';
-      subtitle = installmentLabel ?? _formatDate(dueDate);
+      title = l10n.overduePaymentTitle(amount, currency);
+      subtitle = installmentLabel ?? _formatDate(dueDate, l10n);
     } else if (status == 'scheduled') {
       bgColor = const Color(0x14D4AF37);
       borderColor = ShadColors.gold;
       textColor = ShadColors.gold;
       icon = Icons.schedule_send;
-      title = 'دفعة قادمة — $amount $currency';
-      subtitle = installmentLabel ?? _formatDate(dueDate);
+      title = l10n.scheduledPaymentTitle(amount, currency);
+      subtitle = installmentLabel ?? _formatDate(dueDate, l10n);
     } else if (status == 'pending') {
       bgColor = const Color(0x14FF9800);
       borderColor = Colors.orange;
       textColor = Colors.orange;
       icon = Icons.hourglass_empty;
-      title = 'قيد المراجعة — $amount $currency';
+      title = l10n.pendingPaymentTitle(amount, currency);
       subtitle = installmentLabel;
     } else {
       bgColor = const Color(0x144CAF50);
       borderColor = ShadColors.success;
       textColor = ShadColors.success;
       icon = Icons.check_circle;
-      title = 'تم الدفع — $amount $currency';
+      title = l10n.paidPaymentTitle(amount, currency);
       subtitle = installmentLabel;
     }
 
@@ -93,15 +95,15 @@ class PaymentBanner extends StatelessWidget {
     );
   }
 
-  String _formatDate(String dateStr) {
+  String _formatDate(String dateStr, AppLocalizations l10n) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
       final diff = dt.difference(DateTime(now.year, now.month, now.day));
-      if (diff.inDays == 0) return 'اليوم';
-      if (diff.inDays == 1) return 'بكرة';
-      if (diff.inDays < 0) return 'متأخر ${-diff.inDays} يوم';
-      return 'بعد ${diff.inDays} يوم';
+      if (diff.inDays == 0) return l10n.today;
+      if (diff.inDays == 1) return l10n.tomorrow;
+      if (diff.inDays < 0) return l10n.daysLate(-diff.inDays);
+      return l10n.inDays(diff.inDays);
     } catch (_) {
       return dateStr;
     }

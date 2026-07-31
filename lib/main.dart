@@ -27,7 +27,7 @@ void main() async {
     await Firebase.initializeApp();
     final notificationService = NotificationService();
 
-    // تُستدعى هذه الدالة عند الضغط على الإشعار (بما في ذلك cold start)
+    // Called when a notification is tapped (including cold start)
     void handleNotificationData(Map<String, String> data) {
       if (router != null) {
         _navigateFromNotification(data, router);
@@ -71,6 +71,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ContractProvider()),
         ChangeNotifierProvider(create: (_) => ClientProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider.value(value: localeProvider),
       ],
       child: ShadApp(router: router, localeProvider: localeProvider),
     ),

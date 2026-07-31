@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 
@@ -20,7 +21,7 @@ class ContractDetailModal extends StatefulWidget {
     required this.onAction,
     required this.onRefresh,
     this.onGoToPayments,
-    this.backLabel = 'كل العقود',
+    this.backLabel = '',
     this.workspaceId,
   });
 
@@ -96,17 +97,18 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       } else {
         await _api.multipartPost('/workspaces/$wsId/files', fields, file: File(pf.path!));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم رفع المستند')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
       await _loadUploadedFiles();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل رفع المستند: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
     }
     if (mounted) setState(() => _uploading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final c = _fullContract ?? widget.contract;
     final status = c['status'] as String? ?? '';
     final clauses = c['clauses'] as List<dynamic>? ?? [];
@@ -123,7 +125,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       maxChildSize: 0.9,
       expand: false,
       builder: (_, scrollController) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 16),
+        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 16),
         child: ListView(
           controller: scrollController,
           children: [
@@ -157,10 +159,10 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: ShadColors.gold.withAlpha(80)),
                       ),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
-                        SizedBox(width: 4),
-                        Text('عقد خدمة إضافية', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
+                        const SizedBox(width: 4),
+                        Text(l10n.additionalServiceContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
                       ]),
                     ),
                   ),
@@ -174,10 +176,10 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFF4A8AC0).withAlpha(80)),
                       ),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.description_outlined, size: 12, color: Color(0xFF4A8AC0)),
-                        SizedBox(width: 4),
-                        Text('عقد أساسي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.description_outlined, size: 12, color: Color(0xFF4A8AC0)),
+                        const SizedBox(width: 4),
+                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
                       ]),
                     ),
                   ),
@@ -214,23 +216,23 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
             const SizedBox(height: 16),
 
             // Info rows
-            Text('معلومات العقد', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+            Text(l10n.contractInfo, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
             const SizedBox(height: 8),
             if (c['start_date'] != null)
-              _infoRow('تاريخ البداية', (c['start_date'] as String).split('T')[0]),
+              _infoRow(l10n.startDate, (c['start_date'] as String).split('T')[0]),
             if (c['end_date'] != null)
-              _infoRow('تاريخ الإنتهاء', (c['end_date'] as String).split('T')[0]),
+              _infoRow(l10n.endDate, (c['end_date'] as String).split('T')[0]),
             if (c['value'] != null)
-              _infoRow('قيمة العقد', '${c['value']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
+              _infoRow(l10n.contractValue, '${c['value']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
             if (c['paid'] != null)
-              _infoRow('المدفوع', '${c['paid']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
+              _infoRow(l10n.paid, '${c['paid']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
             if (c['remaining'] != null)
-              _infoRow('المتبقي', '${c['remaining']} ${c['currency'] as String? ?? 'SAR'}'),
+              _infoRow(l10n.remaining, '${c['remaining']} ${c['currency'] as String? ?? 'SAR'}'),
             const SizedBox(height: 16),
 
             // Clauses (only in modal)
             if (clauses.isNotEmpty) ...[
-              Text('بنود العقد', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.contractClauses, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ...clauses.map((cl) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -251,7 +253,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
 
             // Required documents (only show when action is needed)
             if (requiredDocs.isNotEmpty && needsAction) ...[
-              Text('المستندات المطلوبة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.requiredDocuments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ...requiredDocs.map((doc) {
                 final docStatus = doc['status'] as String? ?? 'pending';
@@ -278,14 +280,14 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          statusLabels[docStatus] ?? docStatus,
+                          statusLabels(AppLocalizations.of(context)!)[docStatus] ?? docStatus,
                           style: TextStyle(fontSize: 10, color: docStatusColor, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ]),
                     if (doc['rejection_reason'] != null) ...[
                       const SizedBox(height: 4),
-                      Text('سبب الرفض: ${doc['rejection_reason']}', style: const TextStyle(fontSize: 11, color: ShadColors.error)),
+                      Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
                     ],
                     if (docStatus != 'approved') ...[
                       const SizedBox(height: 8),
@@ -296,7 +298,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                           icon: _uploading
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.upload_file, size: 16),
-                          label: Text(_uploading ? 'جاري الرفع...' : 'رفع المستند'),
+                          label: Text(_uploading ? l10n.uploading : l10n.uploadDocument),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ShadColors.primary,
                             side: const BorderSide(color: ShadColors.primary),
@@ -315,7 +317,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
             if (_loadingFiles) ...[
               const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
             ] else if (_uploadedFiles.isNotEmpty) ...[
-              Text('الملفات المرفوعة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.uploadedFiles, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               ..._uploadedFiles.map((f) {
                 final fStatus = f['status'] as String? ?? '';
@@ -345,7 +347,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      statusLabels[fStatus] ?? fStatus,
+                      statusLabels(AppLocalizations.of(context)!)[fStatus] ?? fStatus,
                       style: TextStyle(fontSize: 9, color: fStatus == 'approved' ? ShadColors.success : ShadColors.warning),
                     ),
                   ),
@@ -364,7 +366,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
 
             // Action buttons
             if (needsAction) ...[
-              Text('الإجراءات', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               const SizedBox(height: 8),
               Row(children: [
                 Expanded(
@@ -374,7 +376,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                       if (context.mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.check, size: 18),
-                    label: const Text('موافقة'),
+                    label: Text(l10n.approve),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ShadColors.success,
                       foregroundColor: Colors.white,
@@ -391,7 +393,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                       if (context.mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('تعديل'),
+                    label: Text(l10n.edit),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ShadColors.warning,
                       side: const BorderSide(color: ShadColors.warning),
@@ -411,7 +413,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                 child: OutlinedButton.icon(
                   onPressed: () => _downloadPdf(c['pdf_url'] as String),
                   icon: const Icon(Icons.picture_as_pdf, size: 18),
-                  label: const Text('تحميل العقد (PDF)'),
+                  label: Text(l10n.downloadContractPdf),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ShadColors.gold,
                     side: const BorderSide(color: ShadColors.gold),
@@ -433,9 +435,9 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                 child: Column(children: [
                   const Icon(Icons.check_circle, size: 40, color: ShadColors.success),
                   const SizedBox(height: 8),
-                  Text('تم اعتماد العقد من قبل الشركة', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
+                  Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
                   const SizedBox(height: 4),
-                  Text('يمكنك التوجه إلى صفحة الدفع لإتمام الدفعة', style: const TextStyle(fontSize: 12, color: ShadColors.success)),
+                  Text(l10n.goToPaymentHint, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () {
@@ -443,7 +445,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                       widget.onGoToPayments?.call();
                     },
                     icon: const Icon(Icons.payment, size: 18),
-                    label: const Text('💳 انتقال إلى الدفع'),
+                    label: Text(l10n.goToPayment),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ShadColors.success,
                       foregroundColor: Colors.white,
@@ -466,10 +468,10 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                 ),
                 child: Center(
                   child: Text(
-                    status == 'client_approved' ? 'تمت موافقتك على هذا العقد' :
-                    status == 'edit_requested' ? 'قمت بطلب تعديل العقد' :
-                    status == 'rejected' ? 'قمت برفض هذا العقد' :
-                    status == 'completed' ? 'العقد مكتمل' : '',
+                    status == 'client_approved' ? l10n.clientApprovedStatus :
+                    status == 'edit_requested' ? l10n.editRequestedStatus :
+                    status == 'rejected' ? l10n.rejectedStatus :
+                    status == 'completed' ? l10n.completedStatus : '',
                     style: const TextStyle(fontSize: 13, color: ShadColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),
@@ -511,6 +513,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
   }
 
   Future<void> _downloadFile(String fileUrl) async {
+    final l10n = AppLocalizations.of(context)!;
     if (fileUrl.isEmpty) return;
     final url = _api.resolveFileUrl(fileUrl);
     final uri = Uri.tryParse(url);
@@ -519,17 +522,18 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
         }
       }
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رابط الملف غير صالح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
     }
   }
 
   Future<void> _downloadPdf(String pdfUrl) async {
+    final l10n = AppLocalizations.of(context)!;
     final url = _api.resolveFileUrl(pdfUrl);
     final uri = Uri.tryParse(url);
     if (uri != null) {
@@ -537,28 +541,29 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل فتح الملف')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
         }
       }
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رابط الملف غير صالح')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
     }
   }
 
   Future<void> _deleteFile(dynamic file) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف الملف'),
-        content: Text('هل تريد حذف "${file['name'] ?? ''}"؟'),
+        title: Text(l10n.deleteFileTitle),
+        content: Text(l10n.deleteFileConfirmation(file['name'] as String? ?? '')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error, foregroundColor: Colors.white),
-            child: const Text('حذف'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -570,11 +575,11 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
 
     try {
       await _api.delete('/workspaces/$wsId/files/${file['id']}');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف الملف')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileDeleted)));
       await _loadUploadedFiles();
       widget.onRefresh();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حذف الملف: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileDeleteFailed(e.toString()))));
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 
 class _Direction {
   final String name;
@@ -39,8 +40,8 @@ class _Direction {
 final _directions = [
   _Direction(
     name: '1 — Crimson Edge',
-    thesis: 'Bauhaus جريء — زوايا حادة، borders حمرا صريحة، شخصية قوية',
-    bestFor: 'AM Dashboard — جرأة وثقة',
+    thesis: 'Bold Bauhaus — sharp corners, explicit red borders, strong personality',
+    bestFor: 'AM Dashboard — boldness and confidence',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF1C1C1C),
     cardColor: const Color(0xFF1C1C1C),
@@ -51,12 +52,12 @@ final _directions = [
     bodyFont: 'Archivo',
     useElevation: false,
     sharpBorders: true,
-    vibeWord: 'جريء',
+    vibeWord: 'Bold',
   ),
   _Direction(
     name: '2 — Dark Luxe',
-    thesis: 'Editorial فاخر — مساحات كبيرة، عناوين ضخمة، إيقاع بطيء',
-    bestFor: 'Login, Client Home — أناقة',
+    thesis: 'Luxurious Editorial — large spaces, huge headings, slow rhythm',
+    bestFor: 'Login, Client Home — elegance',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF1C1C1C),
     cardColor: const Color(0xFF2A2A2A),
@@ -67,12 +68,12 @@ final _directions = [
     bodyFont: 'Archivo',
     useElevation: false,
     sharpBorders: false,
-    vibeWord: 'فاخر',
+    vibeWord: 'Luxurious',
   ),
   _Direction(
     name: '3 — Bento Workspace',
-    thesis: 'Bento Grid — بطاقات بأحجام مختلفة، كثافة معلومات عالية',
-    bestFor: 'AM Workspace tabs — معلوماتي',
+    thesis: 'Bento Grid — cards of varying sizes, high information density',
+    bestFor: 'AM Workspace tabs — informative',
     primaryColor: const Color(0xFFB71C1C),
     surfaceColor: const Color(0xFF1C1C1C),
     cardColor: const Color(0xFF222222),
@@ -83,12 +84,12 @@ final _directions = [
     bodyFont: 'NotoSansArabic',
     useElevation: true,
     sharpBorders: false,
-    vibeWord: 'عملي',
+    vibeWord: 'Practical',
   ),
   _Direction(
     name: '4 — Swiss Minimal',
-    thesis: 'Swiss — Flat، محاذاة صارمة، spacing 8px، بدون زينة',
-    bestFor: 'Chat, Approvals — سرعة ووضوح',
+    thesis: 'Swiss — flat, strict alignment, 8px spacing, no ornamentation',
+    bestFor: 'Chat, Approvals — speed and clarity',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF141414),
     cardColor: const Color(0xFF1A1A1A),
@@ -99,12 +100,12 @@ final _directions = [
     bodyFont: 'NotoSansArabic',
     useElevation: false,
     sharpBorders: true,
-    vibeWord: 'نظيف',
+    vibeWord: 'Clean',
   ),
   _Direction(
     name: '5 — Neo-Noir',
-    thesis: 'سينمائي — Glow خفيف، Glass-morphism، immersive',
-    bestFor: 'كل الشاشات — Client و AM',
+    thesis: 'Cinematic — subtle glow, glass-morphism, immersive',
+    bestFor: 'All screens — Client and AM',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF111111),
     cardColor: const Color(0xFF1E1E1E).withAlpha(220),
@@ -116,12 +117,12 @@ final _directions = [
     bodyFont: 'Archivo',
     useElevation: true,
     sharpBorders: false,
-    vibeWord: 'غامق',
+    vibeWord: 'Dark',
   ),
   _Direction(
-    name: '6 — Crimson + Bento (مدمج)',
-    thesis: 'Bento + Crimson Edge — جرأة الـ Bauhaus مع كثافة Bento',
-    bestFor: 'AM Dashboard + Workspace — جرأة عملية',
+    name: '6 — Crimson + Bento (Combined)',
+    thesis: 'Bento + Crimson Edge — Bauhaus boldness with Bento density',
+    bestFor: 'AM Dashboard + Workspace — practical boldness',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF1C1C1C),
     cardColor: const Color(0xFF222222),
@@ -132,12 +133,12 @@ final _directions = [
     bodyFont: 'Archivo',
     useElevation: false,
     sharpBorders: true,
-    vibeWord: 'ديناميكي',
+    vibeWord: 'Dynamic',
   ),
   _Direction(
     name: '7 — Royal Noir',
-    thesis: 'Luxe — مستوحى من Patek و Bentley، فخامة هادية، تفاصيل دقيقة',
-    bestFor: 'Login, Client Home, Signature — أول إنطباع',
+    thesis: 'Luxe — inspired by Patek and Bentley, quiet luxury, precise details',
+    bestFor: 'Login, Client Home, Signature — first impression',
     primaryColor: const Color(0xFF881212),
     surfaceColor: const Color(0xFF161618),
     cardColor: const Color(0xFF1E1E22),
@@ -148,11 +149,11 @@ final _directions = [
     bodyFont: 'Archivo',
     useElevation: true,
     sharpBorders: false,
-    vibeWord: 'فخم',
+    vibeWord: 'Luxurious',
   ),
   _Direction(
     name: '8 — Executive Suite',
-    thesis: 'Corporate — بنكي، حرفي، strict alignment، كثافة عالية',
+    thesis: 'Corporate — banking, craftsmany, strict alignment, high density',
     bestFor: 'AM Dashboard, Contracts, Reports — Professional',
     primaryColor: const Color(0xFF7A1010),
     surfaceColor: const Color(0xFF1C1C1C),
@@ -164,12 +165,12 @@ final _directions = [
     bodyFont: 'NotoSansArabic',
     useElevation: false,
     sharpBorders: true,
-    vibeWord: 'حرفي',
+    vibeWord: 'Craftsmany',
   ),
   _Direction(
     name: '9 — Arabian Heritage',
-    thesis: 'عربي فاخر — Amiri calligraphic + gold + أقواس عربية',
-    bestFor: 'كل الشاشات — هوية عربية قوية مع لمسة عصرية',
+    thesis: 'Luxurious Arabic — Amiri calligraphic + gold + Arabic arches',
+    bestFor: 'All screens — strong Arabic identity with a modern touch',
     primaryColor: const Color(0xFF941414),
     surfaceColor: const Color(0xFF1A1A1A),
     cardColor: const Color(0xFF222222),
@@ -180,7 +181,7 @@ final _directions = [
     bodyFont: 'NotoSansArabic',
     useElevation: true,
     sharpBorders: false,
-    vibeWord: 'أصيل',
+    vibeWord: 'Authentic',
   ),
 ];
 
@@ -196,6 +197,7 @@ class _PreviewPageState extends State<PreviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final d = _directions[_selected];
     return Scaffold(
       backgroundColor: d.surfaceColor,
@@ -261,7 +263,7 @@ class _PreviewPageState extends State<PreviewPage> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               onPressed: () => Navigator.pop(context, _selected),
-              child: Text('اختيار هذا الاتجاه (${d.vibeWord})'),
+              child: Text('${l10n.preview_chooseDirection} (${d.vibeWord})'),
             ),
           ),
           const SizedBox(height: 32),
@@ -272,6 +274,7 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   Widget _buildInfoCard(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -284,27 +287,29 @@ class _PreviewPageState extends State<PreviewPage> {
         const SizedBox(height: 8),
         Text(d.thesis, style: TextStyle(fontSize: 14, color: const Color(0xFFA0A0A0), fontFamily: d.bodyFont)),
         const SizedBox(height: 8),
-        Text('الأنسب لـ: ${d.bestFor}', style: TextStyle(fontSize: 13, color: d.primaryColor, fontFamily: d.bodyFont, fontWeight: FontWeight.w600)),
+        Text('${l10n.preview_bestFor}: ${d.bestFor}', style: TextStyle(fontSize: 13, color: d.primaryColor, fontFamily: d.bodyFont, fontWeight: FontWeight.w600)),
       ]),
     );
   }
 
   Widget _buildPalette(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     final colors = [d.primaryColor, d.surfaceColor, d.cardColor, d.accentColor];
     if (d.secondaryAccent != null) colors.add(d.secondaryAccent!);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('الألوان', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_colors, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Row(children: colors.map((c) => Padding(
-        padding: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsetsDirectional.only(start: 8),
         child: Container(width: 40, height: 40, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(d.radius.clamp(0, 8)), border: Border.all(color: const Color(0xFF3A3A3A)))),
       )).toList()),
     ]);
   }
 
   Widget _buildCardPreview(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('بطاقة نموذجية', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_sampleCard, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Container(
         padding: const EdgeInsets.all(16),
@@ -322,45 +327,48 @@ class _PreviewPageState extends State<PreviewPage> {
             const SizedBox(height: 6),
             Container(height: 10, width: 100, decoration: BoxDecoration(color: const Color(0xFFA0A0A0).withAlpha(80), borderRadius: BorderRadius.circular(4))),
           ])),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: d.primaryColor.withAlpha(25), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Text('نشط', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: d.primaryColor))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: d.primaryColor.withAlpha(25), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Text(l10n.preview_active, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: d.primaryColor))),
         ]),
       ),
     ]);
   }
 
   Widget _buildButtons(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('الأزرار', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_buttons, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Row(children: [
         Expanded(child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(color: d.primaryColor, borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))),
-          child: Text('إجراء رئيسي', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont)),
+          child: Text(l10n.preview_primaryAction, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont)),
         )),
         const SizedBox(width: 8),
         Expanded(child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(border: Border.all(color: d.primaryColor, width: d.borderWidth), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))),
-          child: Text('إجراء ثانوي', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: d.primaryColor, fontFamily: d.bodyFont)),
+          child: Text(l10n.preview_secondaryAction, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: d.primaryColor, fontFamily: d.bodyFont)),
         )),
       ]),
     ]);
   }
 
   Widget _buildChatBubble(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('الشات', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_chat, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
-      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: d.primaryColor, borderRadius: d.sharpBorders ? BorderRadius.circular(0) : BorderRadius.only(topLeft: const Radius.circular(16), topRight: const Radius.circular(16), bottomLeft: const Radius.circular(16), bottomRight: const Radius.circular(4))), child: Text('رسالة العميل', style: TextStyle(fontSize: 14, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont))),
+      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: d.primaryColor, borderRadius: d.sharpBorders ? BorderRadius.circular(0) : BorderRadius.only(topLeft: const Radius.circular(16), topRight: const Radius.circular(16), bottomLeft: const Radius.circular(16), bottomRight: const Radius.circular(4))), child: Text(l10n.preview_clientMessage, style: TextStyle(fontSize: 14, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont))),
       const SizedBox(height: 6),
-      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: d.cardColor, borderRadius: d.sharpBorders ? BorderRadius.circular(0) : BorderRadius.only(topLeft: const Radius.circular(4), topRight: const Radius.circular(16), bottomLeft: const Radius.circular(16), bottomRight: const Radius.circular(16)), border: d.borderWidth > 0 ? Border.all(color: const Color(0xFF3A3A3A)) : null), child: Text('رسالة الـ AM', style: TextStyle(fontSize: 14, color: const Color(0xFFA0A0A0), fontFamily: d.bodyFont))),
+      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: d.cardColor, borderRadius: d.sharpBorders ? BorderRadius.circular(0) : BorderRadius.only(topLeft: const Radius.circular(4), topRight: const Radius.circular(16), bottomLeft: const Radius.circular(16), bottomRight: const Radius.circular(16)), border: d.borderWidth > 0 ? Border.all(color: const Color(0xFF3A3A3A)) : null), child: Text(l10n.preview_amMessage, style: TextStyle(fontSize: 14, color: const Color(0xFFA0A0A0), fontFamily: d.bodyFont))),
     ]);
   }
 
   Widget _buildLoginPreview(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('شاشة الدخول', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_loginScreen, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Container(
         width: double.infinity,
@@ -371,19 +379,20 @@ class _PreviewPageState extends State<PreviewPage> {
           const SizedBox(height: 12),
           Text('ShadApp', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFFF0F0F0), fontFamily: d.headingFont)),
           const SizedBox(height: 20),
-          Container(height: 44, decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: const Center(child: Text('البريد الإلكتروني', style: TextStyle(fontSize: 14, color: Color(0xFF606060))))),
+          Container(height: 44, decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Center(child: Text(l10n.preview_email, style: TextStyle(fontSize: 14, color: const Color(0xFF606060))))),
           const SizedBox(height: 12),
-          Container(height: 44, decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: const Center(child: Text('كلمة المرور', style: TextStyle(fontSize: 14, color: Color(0xFF606060))))),
+          Container(height: 44, decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Center(child: Text(l10n.preview_password, style: TextStyle(fontSize: 14, color: const Color(0xFF606060))))),
           const SizedBox(height: 16),
-          Container(height: 48, decoration: BoxDecoration(color: d.primaryColor, borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Center(child: Text('تسجيل الدخول', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont)))),
+          Container(height: 48, decoration: BoxDecoration(color: d.primaryColor, borderRadius: BorderRadius.circular(d.radius.clamp(0, 12))), child: Center(child: Text(l10n.preview_loginButton, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFFF0F0F0), fontFamily: d.bodyFont)))),
         ]),
       ),
     ]);
   }
 
   Widget _buildDashboardPreview(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('لوحة التحكم', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_dashboard, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Container(
         width: double.infinity,
@@ -421,12 +430,13 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   Widget _buildTypographySample(_Direction d) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('الخطوط', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
+      Text(l10n.preview_typography, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFA0A0A0))),
       const SizedBox(height: 8),
       Text(d.headingFont, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, fontFamily: d.headingFont, color: const Color(0xFFF0F0F0))),
       const SizedBox(height: 4),
-      Text('العناوين بـ ${d.bodyFont} نص عادي', style: TextStyle(fontSize: 14, color: const Color(0xFFA0A0A0), fontFamily: d.bodyFont)),
+      Text(l10n.preview_headingSample(d.bodyFont), style: TextStyle(fontSize: 14, color: const Color(0xFFA0A0A0), fontFamily: d.bodyFont)),
     ]);
   }
 }

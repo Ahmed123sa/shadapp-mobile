@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/password_field.dart';
 
-const List<Map<String, String>> _permissionDefs = [
-  {'key': 'can_chat', 'label': 'المحادثة'},
-  {'key': 'can_view_contracts', 'label': 'عرض العقود'},
-  {'key': 'can_approve_contracts', 'label': 'الموافقة على العقود'},
-  {'key': 'can_view_payments', 'label': 'عرض المدفوعات'},
-  {'key': 'can_upload_payment_proof', 'label': 'رفع إثبات الدفع'},
-  {'key': 'can_view_approvals', 'label': 'عرض الطلبات'},
-  {'key': 'can_respond_approvals', 'label': 'الرد على الطلبات'},
-  {'key': 'can_view_files', 'label': 'عرض الملفات'},
-  {'key': 'can_upload_files', 'label': 'رفع ملفات'},
-  {'key': 'can_view_meetings', 'label': 'عرض الاجتماعات'},
-  {'key': 'can_join_meetings', 'label': 'الانضمام للاجتماعات'},
+const List<String> _permissionKeys = [
+  'can_chat',
+  'can_view_contracts',
+  'can_approve_contracts',
+  'can_view_payments',
+  'can_upload_payment_proof',
+  'can_view_approvals',
+  'can_respond_approvals',
+  'can_view_files',
+  'can_upload_files',
+  'can_view_meetings',
+  'can_join_meetings',
 ];
 
 class SubUsersPage extends StatefulWidget {
@@ -57,6 +58,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
   }
 
   Future<void> _create() async {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -76,12 +78,13 @@ class _SubUsersPageState extends State<SubUsersPage> {
       _passwordController.clear();
       setState(() { _showForm = false; _newDob = null; });
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إنشاء المستخدم')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_createFailed)));
     }
     if (mounted) setState(() => _saving = false);
   }
 
   Future<void> _delete(int id) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await _api.delete('/sub-users/$id');
       setState(() {
@@ -89,11 +92,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
         if (_expandedId == id) _expandedId = null;
       });
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف المستخدم')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_deleteFailed)));
     }
   }
 
   Future<void> _togglePermission(int userId, String key, bool current) async {
+    final l10n = AppLocalizations.of(context)!;
     final user = _subUsers.firstWhere((u) => u['id'] == userId, orElse: () => {});
     final permissions = _getPermissions(user);
     permissions[key] = !current;
@@ -108,7 +112,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
         });
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تحديث الصلاحيات')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
     }
   }
 
@@ -128,6 +132,24 @@ class _SubUsersPageState extends State<SubUsersPage> {
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
+  String _permissionLabel(String key) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (key) {
+      case 'can_chat': return l10n.subusers_permission_chat;
+      case 'can_view_contracts': return l10n.subusers_permission_viewContracts;
+      case 'can_approve_contracts': return l10n.subusers_permission_approveContracts;
+      case 'can_view_payments': return l10n.subusers_permission_viewPayments;
+      case 'can_upload_payment_proof': return l10n.subusers_permission_uploadProof;
+      case 'can_view_approvals': return l10n.subusers_permission_viewApprovals;
+      case 'can_respond_approvals': return l10n.subusers_permission_replyApprovals;
+      case 'can_view_files': return l10n.subusers_permission_viewFiles;
+      case 'can_upload_files': return l10n.subusers_permission_uploadFiles;
+      case 'can_view_meetings': return l10n.subusers_permission_viewMeetings;
+      case 'can_join_meetings': return l10n.subusers_permission_joinMeetings;
+      default: return key;
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -139,17 +161,18 @@ class _SubUsersPageState extends State<SubUsersPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
+    final l10n = AppLocalizations.of(context)!;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('فريق العمل (${_subUsers.length})', style: ShadTypography.sectionHeader),
+          Text('${l10n.subusers_title} (${_subUsers.length})', style: ShadTypography.sectionHeader),
           if (!_isSubUser)
             TextButton.icon(
               onPressed: () => setState(() => _showForm = !_showForm),
               icon: Icon(_showForm ? Icons.close : Icons.person_add, size: 18),
-              label: Text(_showForm ? 'إلغاء' : '+ إضافة'),
+              label: Text(_showForm ? l10n.cancel : '+ ${l10n.subusers_add}'),
             ),
         ]),
         if (_showForm) ...[
@@ -160,12 +183,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
               child: Column(children: [
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'الاسم', hintText: 'اسم المستخدم'),
+                  decoration: InputDecoration(labelText: l10n.subusers_name, hintText: l10n.subusers_username),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'البريد الإلكتروني', hintText: 'email@example.com'),
+                  decoration: InputDecoration(labelText: l10n.subusers_email, hintText: l10n.subusers_emailHint),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
@@ -173,9 +196,9 @@ class _SubUsersPageState extends State<SubUsersPage> {
                 const SizedBox(height: 12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('تاريخ الميلاد (اختياري)', style: TextStyle(fontSize: 13)),
+                  title: Text(l10n.subusers_dateOfBirth, style: const TextStyle(fontSize: 13)),
                   subtitle: Text(
-                    _newDob != null ? '${_newDob!.day}/${_newDob!.month}/${_newDob!.year}' : 'لم يُحدد',
+                    _newDob != null ? '${_newDob!.day}/${_newDob!.month}/${_newDob!.year}' : l10n.subusers_notSet,
                     style: TextStyle(fontSize: 12, color: _newDob != null ? ShadColors.textPrimary : ShadColors.textDisabled),
                   ),
                   trailing: const Icon(Icons.calendar_today, size: 18),
@@ -185,7 +208,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
                       initialDate: _newDob ?? DateTime(1990),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
-                      locale: const Locale('ar'),
+                      locale: Localizations.localeOf(context),
                     );
                     if (picked != null) setState(() => _newDob = picked);
                   },
@@ -197,7 +220,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
                     onPressed: _saving ? null : _create,
                     child: _saving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('إضافة المستخدم'),
+                        : Text(l10n.subusers_addUser),
                   ),
                 ),
               ]),
@@ -206,7 +229,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
         ],
         const SizedBox(height: 16),
         if (_subUsers.isEmpty)
-          const EmptyState(icon: Icons.people_outline, title: 'لا يوجد مستخدمون تابعون')
+          EmptyState(icon: Icons.people_outline, title: l10n.subusers_noUsers)
         else
           ..._subUsers.map((u) {
             final isExpanded = _expandedId == u['id'];
@@ -224,7 +247,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
                     ),
                     title: Text(u['name'] ?? '', style: ShadTypography.cardTitle),
                     subtitle: Text(
-                      '${u['email'] ?? ''} · $activeCount/11 صلاحية',
+                      '${u['email'] ?? ''} · ${l10n.subusers_permissionsCount(activeCount)}/11',
                       style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary),
                     ),
                     trailing: Row(
@@ -250,12 +273,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
-                        children: _permissionDefs.map((def) {
-                          final val = permissions[def['key']] == true;
+                        children: _permissionKeys.map((key) {
+                          final val = permissions[key] == true;
                           return SwitchListTile(
-                            title: Text(def['label']!, style: const TextStyle(fontSize: 13)),
+                            title: Text(_permissionLabel(key), style: const TextStyle(fontSize: 13)),
                             value: val,
-                            onChanged: (v) => _togglePermission(u['id'], def['key']!, val),
+                            onChanged: (v) => _togglePermission(u['id'], key, val),
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             activeThumbColor: ShadColors.crimson,

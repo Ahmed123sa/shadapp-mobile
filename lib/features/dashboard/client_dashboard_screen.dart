@@ -4,7 +4,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/api_client.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/shad_logo.dart';
@@ -114,7 +116,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
       if (!mounted) return;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? 'إشعار جديد';
+      final l10n = AppLocalizations.of(context)!;
+      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? l10n.dashboard_newNotification;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         behavior: SnackBarBehavior.floating,
@@ -168,7 +171,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       }
       _checkAutoAdvance();
     } catch (e) {
-      _error = 'فشل تحميل البيانات';
+      _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -242,14 +245,15 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل الخروج'),
-        content: const Text('هل تريد تسجيل الخروج؟'),
+        title: Text(l10n.dashboard_logout),
+        content: Text(l10n.dashboard_logoutConfirmation),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تسجيل خروج')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.dashboard_logoutAction)),
         ],
       ),
     );
@@ -277,7 +281,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
               const SizedBox(height: 16),
               Text(_error!, style: const TextStyle(color: ShadColors.textPrimary, fontSize: 16)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadClientData, child: const Text('إعادة المحاولة')),
+              ElevatedButton(onPressed: _loadClientData, child: Text(AppLocalizations.of(context)!.retry)),
             ]),
           ),
         ),
@@ -309,7 +313,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     return Scaffold(
       appBar: AppBar(
         leading: const Padding(
-          padding: EdgeInsets.only(left: 8),
+          padding: EdgeInsetsDirectional.only(start: 8),
           child: ShadLogo(size: 28, showText: false),
         ),
         actions: [
@@ -327,13 +331,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
           ]),
           IconButton(
             icon: const Icon(Icons.language, size: 20),
-            onPressed: () => LocaleProvider().toggle(),
-            tooltip: 'تغيير اللغة',
+            onPressed: () => context.read<LocaleProvider>().toggle(),
+            tooltip: AppLocalizations.of(context)!.dashboard_changeLanguage,
           ),
-          IconButton(icon: const Icon(Icons.settings_outlined, size: 20), onPressed: () => context.push('/settings'), tooltip: 'الإعدادات'),
+          IconButton(icon: const Icon(Icons.settings_outlined, size: 20), onPressed: () => context.push('/settings'), tooltip: AppLocalizations.of(context)!.dashboard_settings),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            tooltip: 'المزيد',
+            tooltip: AppLocalizations.of(context)!.dashboard_more,
             onSelected: (value) {
               setState(() {
                 if (value == 'meetings') _selectedIndex = 5;
@@ -341,16 +345,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
                 if (value == 'subusers') _selectedIndex = 7;
               });
             },
-            itemBuilder: (context) => [
-              if (_isTabAllowedByPermission('meetings'))
-                const PopupMenuItem(value: 'meetings', child: ListTile(leading: Icon(Icons.videocam_outlined), title: Text('الاجتماعات'), dense: true)),
-              if (!_isSubUser) ...[
-                const PopupMenuItem(value: 'signature', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('التوقيع'), dense: true)),
-                const PopupMenuItem(value: 'subusers', child: ListTile(leading: Icon(Icons.people_outlined), title: Text('فريق العمل'), dense: true)),
-              ],
-            ],
+            itemBuilder: (context) {
+              final l10n = AppLocalizations.of(context)!;
+              return [
+                if (_isTabAllowedByPermission('meetings'))
+                  PopupMenuItem(value: 'meetings', child: ListTile(leading: const Icon(Icons.videocam_outlined), title: Text(l10n.dashboard_meetings), dense: true)),
+                if (!_isSubUser) ...[
+                  PopupMenuItem(value: 'signature', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l10n.signature), dense: true)),
+                  PopupMenuItem(value: 'subusers', child: ListTile(leading: const Icon(Icons.people_outlined), title: Text(l10n.dashboard_team), dense: true)),
+                ],
+              ];
+            },
           ),
-          IconButton(icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: 'تسجيل الخروج'),
+          IconButton(icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: AppLocalizations.of(context)!.dashboard_logout),
         ],
       ),
       body: Stack(
@@ -393,11 +400,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
           onDestinationSelected: (i) {
             final targetTab = allowedBottomTabs[i];
             if (_isTabLocked(targetTab)) {
+              final l10n = AppLocalizations.of(context)!;
               final reqStage = _tabRequiredStage(targetTab);
-              final stageLabels = ['', 'التوقيع', 'استلام العقد', 'موافقتك', 'اعتماد الشركة', 'إثبات الدفع', 'تفعيل المساحة'];
+              final stageLabels = ['', l10n.dashboard_stage_signature, l10n.dashboard_stage_receiveContract, l10n.dashboard_stage_yourApproval, l10n.dashboard_stage_companyApproval, l10n.dashboard_stage_paymentProof, l10n.dashboard_stage_activateSpace];
               final label = stageLabels.length > reqStage ? stageLabels[reqStage] : '';
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('هذا التبويب مقفول — يجب إكمال مرحلة "$label" أولاً'),
+                content: Text(l10n.dashboard_tabLockedMessage(label)),
                 duration: const Duration(seconds: 3),
               ));
               return;
@@ -410,7 +418,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
               NavigationDestination(
                 icon: _navIcon(_isTabLocked(idx) ? Icons.lock_outline : _tabIcons[idx], idx, isChat: idx == 2),
                 selectedIcon: _navIcon(_tabSelectedIcons[idx], idx, selected: true, isChat: idx == 2),
-                label: _tabLabels[idx],
+                label: _tabLabel(idx),
               ),
           ],
         ),
@@ -419,7 +427,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     );
   }
 
-  static const _tabLabels = ['العقود', 'الدفعة', 'الشات', 'طلبات', 'ملفات'];
+  String _tabLabel(int index) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (index) {
+      case 0: return l10n.contracts;
+      case 1: return l10n.dashboard_tab_payments;
+      case 2: return l10n.dashboard_tab_chat;
+      case 3: return l10n.dashboard_tab_approvals;
+      case 4: return l10n.dashboard_tab_files;
+      default: return '';
+    }
+  }
   static const _tabIcons = [Icons.description_outlined, Icons.payments_outlined, Icons.chat_outlined, Icons.check_circle_outlined, Icons.folder_outlined];
   static const _tabSelectedIcons = [Icons.description_rounded, Icons.payments_rounded, Icons.chat_rounded, Icons.check_circle_rounded, Icons.folder_rounded];
 

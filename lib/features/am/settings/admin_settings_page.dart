@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../signature/render_signature.dart';
@@ -78,9 +79,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final body = <String, dynamic>{'name': _nameController.text.trim()};
       if (!isAM) body['official_email'] = _emailController.text.trim();
       await _api.put('/auth/me', body);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ الإعدادات')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsSaved)])));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حفظ الإعدادات: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')));
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -88,15 +89,15 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   Future<void> _saveTax() async {
     final value = double.tryParse(_taxController.text.trim());
     if (value == null || value < 0 || value > 100) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخل نسبة صحيحة (0-100)')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settingsTaxInvalid)));
       return;
     }
     setState(() => _taxSaving = true);
     try {
       await _api.put('/settings', {'key': 'corporate_tax_percentage', 'value': value});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ نسبة الضريبة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsTaxSaved)])));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حفظ الضريبة: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsTaxSaveFailed}: $e')));
     }
     if (mounted) setState(() => _taxSaving = false);
   }
@@ -110,9 +111,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final user = response['user'] as Map<String, dynamic>?;
       if (user != null) _avatarUrl = user['avatar_url'] as String?;
       if (mounted) setState(() {});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم تغيير الصورة')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsImageChanged)])));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل تغيير الصورة: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsImageChangeFailed}: $e')));
     }
   }
 
@@ -137,11 +138,11 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         await _api.post('/auth/sign', {'signature': text});
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ التوقيع')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
         _load();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حفظ التوقيع: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.signatureSaveFailed}: $e')));
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -152,9 +153,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     try {
       await _api.delete('/auth/sign');
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حذف التوقيع')));
+      if (mounted)       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureDeleted)])));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حذف التوقيع: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.signatureDeleteFailed}: $e')));
     }
   }
 
@@ -165,11 +166,11 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     try {
       await _api.multipartPost('/auth/sign', {}, file: file, fileField: 'signature_image');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم حفظ التوقيع')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
         _load();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل حفظ التوقيع: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.signatureSaveFailed}: $e')));
     }
   }
 
@@ -197,18 +198,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final isAM = _api.role == 'account_manager';
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإعدادات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.gold)),
+        title: Text(l10n.settingsTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.gold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // ═══════════════════════════════════════
-          // Section 1: الملف الشخصي
+          // Section 1: Profile
           // ═══════════════════════════════════════
-          _sectionHeader(Icons.person_outline, 'الملف الشخصي'),
+          _sectionHeader(Icons.person_outline, l10n.settingsProfile),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
@@ -243,13 +245,13 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               const SizedBox(height: 4),
               TextButton(
                 onPressed: _pickAvatar,
-                child: const Text('تغيير الصورة', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+                child: Text(l10n.profileChangePicture, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
               ),
               const SizedBox(height: 12),
               // Name field
               _settingsField(
                 controller: _nameController,
-                label: 'الاسم',
+                label: l10n.settingsName,
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 12),
@@ -257,7 +259,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               if (!isAM)
                 _settingsField(
                   controller: _emailController,
-                  label: 'البريد الإلكتروني الرسمي',
+                  label: l10n.settingsOfficialEmail,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -275,21 +277,21 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   ),
                   child: _saving
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : const Text('حفظ التغييرات', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
+                      : Text(l10n.settingsSaveChanges, style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
                 ),
               ),
             ]),
           ),
 
           // ═══════════════════════════════════════
-          // Section 2: التوقيع (AM only)
+          // Section 2: Signature (SA only)
           // ═══════════════════════════════════════
           if (!isAM) ...[
             const SizedBox(height: 20),
-            _sectionHeader(Icons.draw_outlined, 'التوقيع'),
+            _sectionHeader(Icons.draw_outlined, l10n.signatureTitle),
             const SizedBox(height: 8),
 
-            // Card 1: التوقيع الحالي
+            // Card 1: Current signature
             if (_existingSigUrl != null || _existingSigText != null) ...[
               Container(
                 padding: const EdgeInsets.all(14),
@@ -302,7 +304,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   Row(children: [
                     Icon(Icons.verified, size: 14, color: ShadColors.success),
                     const SizedBox(width: 6),
-                    const Text('التوقيع الحالي', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
+                    Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
                     const Spacer(),
                     GestureDetector(
                       onTap: _deleteSignature,
@@ -342,7 +344,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               const SizedBox(height: 12),
             ],
 
-            // Card 2: توقيع جديد
+            // Card 2: New signature
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -355,7 +357,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   Icon(Icons.add_circle_outline, size: 14, color: ShadColors.gold),
                   const SizedBox(width: 6),
                   Text(
-                    (_existingSigUrl != null || _existingSigText != null) ? 'توقيع جديد' : 'أضف توقيعك',
+                    (_existingSigUrl != null || _existingSigText != null) ? l10n.settingsNewSignature : l10n.settingsAddYourSignature,
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo'),
                   ),
                 ]),
@@ -363,9 +365,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
                 // Mode chips
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  _modeChip('draw', 'رسم', Icons.brush),
+                  _modeChip('draw', l10n.signatureDrawMode, Icons.brush),
                   const SizedBox(width: 8),
-                  _modeChip('text', 'نص', Icons.text_fields),
+                  _modeChip('text', l10n.signatureTextMode, Icons.text_fields),
                 ]),
                 const SizedBox(height: 10),
 
@@ -375,7 +377,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   child: OutlinedButton.icon(
                     onPressed: _pickImage,
                     icon: const Icon(Icons.image, size: 16, color: ShadColors.gold),
-                    label: const Text('رفع صورة توقيع', style: TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
+                    label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: ShadColors.gold),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -387,7 +389,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
                 // Draw mode
                 if (_sigMode == 'draw') ...[
-                  _subLabel('وقّع هنا'),
+                  _subLabel(l10n.settingsSignHere),
                   const SizedBox(height: 6),
                   Container(
                     height: 180,
@@ -417,7 +419,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     Expanded(child: OutlinedButton.icon(
                       onPressed: _clearStrokes,
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('مسح', style: TextStyle(fontSize: 12)),
+                      label: Text(l10n.signatureClear, style: const TextStyle(fontSize: 12)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: ShadColors.textSecondary,
                         side: const BorderSide(color: ShadColors.cardBorder),
@@ -432,7 +434,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                         icon: _saving
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : const Icon(Icons.check_circle, size: 18),
-                        label: const Text('حفظ التوقيع', style: TextStyle(fontSize: 12)),
+                        label: Text(l10n.signatureSaveSignature, style: const TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ShadColors.crimson,
                           foregroundColor: ShadColors.textOnCrimson,
@@ -446,7 +448,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
                 // Text mode
                 if (_sigMode == 'text') ...[
-                  _subLabel('اكتب اسمك'),
+                  _subLabel(l10n.signatureTypeYourName),
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
@@ -460,9 +462,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       controller: _sigTextController,
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: ShadColors.gold),
-                      decoration: const InputDecoration(
-                        hintText: 'اكتب توقيعك',
-                        hintStyle: TextStyle(color: ShadColors.textDisabled, fontSize: 18),
+                      decoration: InputDecoration(
+                        hintText: l10n.settingsSignatureHint,
+                        hintStyle: const TextStyle(color: ShadColors.textDisabled, fontSize: 18),
                         border: InputBorder.none,
                       ),
                       maxLines: 1,
@@ -476,7 +478,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       icon: _saving
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.check_circle, size: 18),
-                      label: const Text('حفظ التوقيع', style: TextStyle(fontSize: 12)),
+                      label: Text(l10n.signatureSaveSignature, style: const TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ShadColors.crimson,
                         foregroundColor: ShadColors.textOnCrimson,
@@ -492,10 +494,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
           const SizedBox(height: 32),
 
           // ═══════════════════════════════════════
-          // Section 3: إعدادات النظام (SA only)
+          // Section 3: System settings (SA only)
           // ═══════════════════════════════════════
           if (!isAM) ...[
-            _sectionHeader(Icons.settings_suggest_outlined, 'إعدادات النظام'),
+            _sectionHeader(Icons.settings_suggest_outlined, l10n.settingsSystemSettings),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(16),
@@ -505,15 +507,15 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 border: Border.all(color: ShadColors.cardBorder),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('ضريبة الشركات', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                Text(l10n.settingsCorporateTax, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
                 const SizedBox(height: 4),
-                Text('النسبة المئوية للضريبة المضافة على قيمة العقود للعملاء من نوع شركات', style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text(l10n.settingsCorporateTaxDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: _settingsField(
                       controller: _taxController,
-                      label: 'نسبة الضريبة (%)',
+                      label: l10n.settingsTaxRate,
                       icon: Icons.percent,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
@@ -534,7 +536,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     ),
                     child: _taxSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('حفظ نسبة الضريبة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
+                        : Text(l10n.settingsSaveTax, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
                   ),
                 ),
               ]),

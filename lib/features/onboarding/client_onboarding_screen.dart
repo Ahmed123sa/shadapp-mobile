@@ -8,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
@@ -71,7 +73,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       _loadClientData();
       _contractRefreshNotifier.value++;
       if (!mounted) return;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? 'إشعار جديد';
+      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? AppLocalizations.of(context)!.onboarding_newNotification;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         behavior: SnackBarBehavior.floating,
@@ -137,12 +139,12 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           SchedulerBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('تم تفعيل مساحة العمل'),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(AppLocalizations.of(context)!.onboarding_spaceActivated),
               behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.all(12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-              duration: Duration(seconds: 3),
+              margin: const EdgeInsets.all(12),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+              duration: const Duration(seconds: 3),
             ));
           });
           Future.delayed(const Duration(milliseconds: 800), () {
@@ -152,7 +154,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       }
       _prevWsStatus = _workspace?['status'] as String? ?? '';
     } catch (e) {
-      _error = 'فشل تحميل البيانات';
+      if (mounted) _error = AppLocalizations.of(context)!.onboarding_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -173,11 +175,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل الخروج'),
-        content: const Text('هل تريد تسجيل الخروج؟'),
+        title: Text(AppLocalizations.of(ctx)!.onboarding_logout),
+        content: Text(AppLocalizations.of(ctx)!.onboarding_logoutQuestion),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تسجيل خروج')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.onboarding_cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx)!.onboarding_logoutAction)),
         ],
       ),
     );
@@ -205,7 +207,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
               const SizedBox(height: 16),
               Text(_error!, style: const TextStyle(color: ShadColors.textPrimary, fontSize: 16)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadClientData, child: const Text('إعادة المحاولة')),
+              ElevatedButton(onPressed: _loadClientData, child: Text(AppLocalizations.of(context)!.onboarding_retry)),
             ]),
           ),
         ),
@@ -229,7 +231,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
 
   Widget _buildHeader(int stage) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
       child: Row(
         children: [
           const ShadLogo(size: 28, showText: false),
@@ -240,13 +242,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           ),
           IconButton(
             icon: const Icon(Icons.language, size: 20),
-            onPressed: () => LocaleProvider().toggle(),
-            tooltip: 'تغيير اللغة',
+            onPressed: () => context.read<LocaleProvider>().toggle(),
+            tooltip: AppLocalizations.of(context)!.onboarding_changeLanguage,
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, size: 22),
             onPressed: _logout,
-            tooltip: 'تسجيل الخروج',
+            tooltip: AppLocalizations.of(context)!.onboarding_logout,
           ),
         ],
       ),
@@ -254,13 +256,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
   Widget _buildOnboardingProgress(int stage) {
-    const labels = [
-      'التوقيع',
-      'استلام العقد',
-      'موافقتك',
-      'اعتماد الشركة',
-      'إثبات الدفع',
-      'تفعيل المساحة',
+    final labels = [
+      AppLocalizations.of(context)!.onboarding_signStage,
+      AppLocalizations.of(context)!.onboarding_receiveContractStage,
+      AppLocalizations.of(context)!.onboarding_yourApprovalStage,
+      AppLocalizations.of(context)!.onboarding_companyApprovalStage,
+      AppLocalizations.of(context)!.onboarding_paymentProofStage,
+      AppLocalizations.of(context)!.onboarding_activateStage,
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -322,8 +324,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         return _buildWaitingStage(
           icon: Icons.downloading,
           iconColor: ShadColors.sent,
-          title: 'بانتظار استلام العقد',
-          subtitle: 'سيتم إرسال العقد إليك للتوقيع قريباً',
+          title: AppLocalizations.of(context)!.onboarding_waitingContract,
+          subtitle: AppLocalizations.of(context)!.onboarding_waitingContractSendMsg,
         );
       case 2:
         return _buildContractReviewStage();
@@ -331,8 +333,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         return _buildWaitingStage(
           icon: Icons.verified,
           iconColor: ShadColors.companyApproved,
-          title: 'بانتظار اعتماد الشركة',
-          subtitle: 'يقوم فريق الشركة بمراجعة طلبك',
+          title: AppLocalizations.of(context)!.onboarding_waitingCompanyApproval,
+          subtitle: AppLocalizations.of(context)!.onboarding_waitingCompanyReviewMsg,
         );
       case 4:
         return _buildPaymentStage();
@@ -340,8 +342,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         return _buildWaitingStage(
           icon: Icons.hourglass_top,
           iconColor: ShadColors.warning,
-          title: 'جاري مراجعة الدفعة',
-          subtitle: 'في انتظار تفعيل مساحة العمل',
+          title: AppLocalizations.of(context)!.onboarding_reviewingPayment,
+          subtitle: AppLocalizations.of(context)!.onboarding_waitingActivation,
         );
       default:
         return _buildSignatureStage();
@@ -363,23 +365,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: const Icon(Icons.auto_fix_high, size: 36, color: ShadColors.gold),
           ),
           const SizedBox(height: 24),
-          RichText(
-            text: TextSpan(
-              children: [
-                const TextSpan(
-                  text: 'مرحباً بك ',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
-                ),
-                TextSpan(
-                  text: _client?['contact_person'] ?? '',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay'),
-                ),
-              ],
-            ),
+          Text(
+            AppLocalizations.of(context)!.onboarding_welcomeName(_client?['contact_person'] ?? ''),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
           ),
           const SizedBox(height: 12),
           Text(
-            'من فضلك أضف توقيعك الإلكتروني',
+            AppLocalizations.of(context)!.onboarding_addSignaturePrompt,
             style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
           ),
           const SizedBox(height: 32),
@@ -391,7 +383,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 _loadClientData();
               },
               icon: const Icon(Icons.draw, size: 20),
-              label: const Text('التوقيع الآن'),
+              label: Text(AppLocalizations.of(context)!.onboarding_signNow),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShadColors.crimson,
                 foregroundColor: ShadColors.textOnCrimson,
@@ -444,7 +436,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           TextButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.headset_mic, size: 18),
-            label: const Text('تواصل مع الدعم'),
+            label: Text(AppLocalizations.of(context)!.onboarding_contactSupport),
             style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),
           ),
         ]),
@@ -467,13 +459,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: const Icon(Icons.description, size: 36, color: ShadColors.approved),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'تم استلام العقد',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+          Text(
+            AppLocalizations.of(context)!.onboarding_contractReceived,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
           ),
           const SizedBox(height: 12),
           Text(
-            'يرجى مراجعة العقد وإبداء موافقتك',
+            AppLocalizations.of(context)!.onboarding_reviewContractPrompt,
             style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
           ),
           const SizedBox(height: 32),
@@ -491,7 +483,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 }
               },
               icon: const Icon(Icons.visibility, size: 20),
-              label: const Text('معاينة العقد'),
+              label: Text(AppLocalizations.of(context)!.onboarding_previewContract),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ShadColors.gold,
                 side: const BorderSide(color: ShadColors.gold),
@@ -506,7 +498,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: ElevatedButton.icon(
               onPressed: () => _respondToContract('approved'),
               icon: const Icon(Icons.thumb_up, size: 20),
-              label: const Text('موافقة'),
+              label: Text(AppLocalizations.of(context)!.onboarding_approve),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShadColors.crimson,
                 foregroundColor: ShadColors.textOnCrimson,
@@ -519,7 +511,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           TextButton.icon(
             onPressed: () => _respondToContract('edit_requested'),
             icon: const Icon(Icons.edit_note, size: 18),
-            label: const Text('طلب تعديل'),
+            label: Text(AppLocalizations.of(context)!.onboarding_requestEdit),
             style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),
           ),
         ],
@@ -532,10 +524,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => ContractDetailModal(
-        contract: c,
-        workspaceId: _workspace?['id'] as int?,
-        backLabel: 'العودة',
+        builder: (_) => ContractDetailModal(
+          contract: c,
+          workspaceId: _workspace?['id'] as int?,
+          backLabel: AppLocalizations.of(context)!.onboarding_back,
         onAction: (id, action) async {
           Navigator.pop(context);
           await _respondToContractById(id, action);
@@ -564,11 +556,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       reason = await showDialog<String>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('التعديلات المطلوبة'),
-          content: TextField(controller: controller, maxLines: 3, decoration: const InputDecoration(hintText: 'اذكر التعديلات المطلوبة...')),
+          title: Text(AppLocalizations.of(ctx)!.requiredEdits),
+          content: TextField(controller: controller, maxLines: 3, decoration: InputDecoration(hintText: AppLocalizations.of(ctx)!.editRequestHint2)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('تأكيد')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(ctx)!.onboarding_cancel)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(AppLocalizations.of(ctx)!.onboarding_confirmAction)),
           ],
         ),
       );
@@ -582,13 +574,17 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       _contractRefreshNotifier.value++;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(action == 'approved' ? '✅ تمت الموافقة على العقد' : '📝 تم إرسال طلب التعديل'),
+          content: Row(children: [
+            Icon(action == 'approved' ? Icons.check_circle : Icons.edit, color: action == 'approved' ? Colors.green : Colors.orange, size: 18),
+            const SizedBox(width: 8),
+            Text(action == 'approved' ? AppLocalizations.of(context)!.onboarding_approvedMessage : AppLocalizations.of(context)!.onboarding_editSentMessage),
+          ]),
           duration: const Duration(seconds: 2),
         ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.onboarding_failedWithError(e.toString()))));
       }
     }
   }
@@ -645,13 +641,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: const Icon(Icons.payment, size: 36, color: ShadColors.warning),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'إتمام الدفع',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+          Text(
+            AppLocalizations.of(context)!.onboarding_completePayment,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
           ),
           const SizedBox(height: 8),
           Text(
-            'يرجى تأكيد الدفع لتفعيل مساحة العمل',
+            AppLocalizations.of(context)!.onboarding_confirmPaymentToActivate,
             style: TextStyle(fontSize: 13, color: ShadColors.textSecondary),
           ),
           const SizedBox(height: 24),
@@ -668,10 +664,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: Column(children: [
               Text('${paidAmount.toStringAsFixed(2)} $currency', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
               const SizedBox(height: 4),
-              Text('من أصل ${grandTotal.toStringAsFixed(2)} $currency — متبقي ${remaining.toStringAsFixed(2)}', style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+              Text(AppLocalizations.of(context)!.payments_remainingSummary(currency, remaining.toStringAsFixed(2), grandTotal.toStringAsFixed(2)), style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
               if (taxAmount > 0) ...[
                 const SizedBox(height: 4),
-                Text('القيمة: ${totalAmount.toStringAsFixed(2)} + ضريبة $taxPercentage% = ${taxAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
+                Text(AppLocalizations.of(context)!.payments_taxSummary(taxAmount.toStringAsFixed(2), currency, taxPercentage, totalAmount.toStringAsFixed(2)), style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
               ],
               const SizedBox(height: 14),
               ClipRRect(
@@ -698,7 +694,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 border: Border.all(color: ShadColors.cardBorder),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('تفاصيل العقد', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                Text(AppLocalizations.of(context)!.onboarding_contractDetails, style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                 const SizedBox(height: 10),
                 if (startDate != null)
                   Padding(
@@ -706,14 +702,14 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                     child: Row(children: [
                       Icon(Icons.calendar_today, size: 14, color: ShadColors.textDisabled),
                       const SizedBox(width: 8),
-                      Text('تاريخ البداية: $startDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
+                      Text('${AppLocalizations.of(context)!.onboarding_startDate}: $startDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
                     ]),
                   ),
                 if (endDate != null)
                   Row(children: [
                     Icon(Icons.calendar_today, size: 14, color: ShadColors.textDisabled),
                     const SizedBox(width: 8),
-                    Text('تاريخ الإنتهاء: $endDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
+                    Text('${AppLocalizations.of(context)!.onboarding_endDate}: $endDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
                   ]),
               ]),
             ),
@@ -721,22 +717,22 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
 
           // Payment info cards
           Row(children: [
-            Expanded(child: _paymentInfoTile('المبلغ', totalAmount.toStringAsFixed(0), ShadColors.gold)),
+            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_amount, totalAmount.toStringAsFixed(0), ShadColors.gold)),
             const SizedBox(width: 12),
-            Expanded(child: _paymentInfoTile('العملة', currency, ShadColors.textPrimary)),
+            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_currency, currency, ShadColors.textPrimary)),
           ]),
           const SizedBox(height: 12),
           Row(children: [
             if (taxAmount > 0)
-              Expanded(child: _paymentInfoTile('الضريبة', taxAmount.toStringAsFixed(0), ShadColors.error)),
+              Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_tax, taxAmount.toStringAsFixed(0), ShadColors.error)),
             if (taxAmount > 0) const SizedBox(width: 12),
-            Expanded(child: _paymentInfoTile('الإجمالي', grandTotal.toStringAsFixed(0), ShadColors.gold)),
+            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_total, grandTotal.toStringAsFixed(0), ShadColors.gold)),
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _paymentInfoTile('المدفوع', paidAmount.toStringAsFixed(0), ShadColors.success)),
+            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_paidAmount, paidAmount.toStringAsFixed(0), ShadColors.success)),
             const SizedBox(width: 12),
-            Expanded(child: _paymentInfoTile('المتبقي', remaining.toStringAsFixed(0), ShadColors.warning)),
+            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_remainingAmount2, remaining.toStringAsFixed(0), ShadColors.warning)),
           ]),
           const SizedBox(height: 28),
 
@@ -746,7 +742,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             child: ElevatedButton.icon(
               onPressed: () => _showPaymentBottomSheet(remaining > 0 ? remaining : grandTotal, ws?['id']),
               icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text('إرسال دفعة'),
+              label: Text(AppLocalizations.of(context)!.onboarding_sendPayment),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShadColors.crimson,
                 foregroundColor: ShadColors.textOnCrimson,
@@ -777,20 +773,20 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
   void _showPaymentBottomSheet(double suggestedAmount, int? workspaceId) {
-    const methodLabels = {
-      'bank_transfer': 'تحويل بنكي',
-      'swift': 'تحويل SWIFT',
-      'corporate_account': 'حساب الشركة',
-      'instapay': 'InstaPay',
-      'vodafone_cash': 'Vodafone Cash',
-      'mobile_wallet': 'محفظة إلكترونية',
+    final methodLabels = {
+      'bank_transfer': AppLocalizations.of(context)!.payments_methodBankTransfer,
+      'swift': AppLocalizations.of(context)!.payments_methodSwift,
+      'corporate_account': AppLocalizations.of(context)!.payments_methodCorporateAccount,
+      'instapay': AppLocalizations.of(context)!.payments_methodInstapay,
+      'vodafone_cash': AppLocalizations.of(context)!.payments_methodVodafoneCash,
+      'mobile_wallet': AppLocalizations.of(context)!.payments_methodMobileWallet,
     };
 
     const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-    const currencyLabels = {
-      'SAR': 'ريال سعودي', 'USD': 'دولار أمريكي', 'EUR': 'يورو',
-      'AED': 'درهم إماراتي', 'EGP': 'جنيه مصري', 'KWD': 'دينار كويتي',
-      'QAR': 'ريال قطري', 'BHD': 'دينار بحريني', 'OMR': 'ريال عماني',
+    final currencyLabels = {
+      'SAR': AppLocalizations.of(context)!.currency_sar, 'USD': AppLocalizations.of(context)!.currency_usd, 'EUR': AppLocalizations.of(context)!.currency_eur,
+      'AED': AppLocalizations.of(context)!.currency_aed, 'EGP': AppLocalizations.of(context)!.currency_egp, 'KWD': AppLocalizations.of(context)!.currency_kwd,
+      'QAR': AppLocalizations.of(context)!.currency_qar, 'BHD': AppLocalizations.of(context)!.currency_bhd, 'OMR': AppLocalizations.of(context)!.currency_omr,
     };
 
     final amountCtrl = TextEditingController(text: suggestedAmount > 0 ? suggestedAmount.toStringAsFixed(0) : '');
@@ -805,11 +801,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Text('طلب دفعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
+                Text(AppLocalizations.of(ctx)!.onboarding_requestPaymentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
                 const Spacer(),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
@@ -818,7 +814,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 valueListenable: selectedCurrency,
                 builder: (_, cur, __) => TextField(
                   controller: amountCtrl,
-                  decoration: InputDecoration(labelText: 'المبلغ *', hintText: '0.00', prefixText: '$cur '),
+                  decoration: InputDecoration(labelText: '${AppLocalizations.of(ctx)!.onboarding_amountField} *', hintText: '0.00', prefixText: '$cur '),
                   keyboardType: TextInputType.number,
                 ),
               ),
@@ -827,7 +823,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 valueListenable: selectedCurrency,
                 builder: (_, cur, __) => DropdownButtonFormField<String>(
                   initialValue: cur,
-                  decoration: const InputDecoration(labelText: 'العملة'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_currencyField),
                   items: currencies.map((c) => DropdownMenuItem(
                     value: c,
                     child: Text('$c — ${currencyLabels[c] ?? ''}'),
@@ -840,7 +836,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 valueListenable: selectedMethod,
                 builder: (_, val, __) => DropdownButtonFormField<String>(
                   initialValue: val,
-                  decoration: const InputDecoration(labelText: 'طريقة الدفع'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_paymentMethodField),
                   items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
                   onChanged: (v) { if (v != null) selectedMethod.value = v; },
                 ),
@@ -848,7 +844,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
               const SizedBox(height: 16),
 
               // Proof files section
-              Text('إثبات الدفع', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary)),
+              Text(AppLocalizations.of(ctx)!.onboarding_proofField, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary)),
               const SizedBox(height: 8),
 
               if (proofFiles.isNotEmpty) ...[
@@ -921,7 +917,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                       }
                     },
                     icon: const Icon(Icons.upload_file, size: 18),
-                    label: const Text('إرفاق ملف'),
+                    label: Text(AppLocalizations.of(ctx)!.onboarding_attachFile),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -941,13 +937,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                     }
                   },
                   icon: const Icon(Icons.camera_alt, size: 18),
-                  label: const Text('تصوير'),
+                  label: Text(AppLocalizations.of(ctx)!.onboarding_takePhoto),
                 ),
               ]),
               if (proofFiles.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('${proofFiles.length} ملف(ات) مرفق(ة)', style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+                  child: Text(AppLocalizations.of(ctx)!.onboarding_filesAttached(proofFiles.length), style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
                 ),
               const SizedBox(height: 20),
               ValueListenableBuilder<bool>(
@@ -961,7 +957,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                     ),
                     child: uploading
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('إرسال الدفعة'),
+                        : Text(AppLocalizations.of(ctx)!.onboarding_sendPayment),
                   ),
                 ),
               ),
@@ -984,11 +980,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   ) async {
     final amount = double.tryParse(amountCtrl.text);
     if (amount == null || amount <= 0) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('يرجى إدخال مبلغ صحيح')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_enterValidAmount)));
       return;
     }
     if (workspaceId == null) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('مساحة العمل غير متاحة')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_workspaceUnavailable)));
       return;
     }
     uploadingNotifier.value = true;
@@ -1024,12 +1020,12 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       }
 
       if (ctx.mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('✅ تم إرسال طلب الدفعة')));
+        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.onboarding_paymentSent)])));
         Navigator.pop(ctx);
       }
       _loadClientData();
     } catch (_) {
-      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('فشل إرسال الدفعة')));
+      if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_paymentFailed)));
     }
     uploadingNotifier.value = false;
     if (ctx.mounted) setSheetState(() {});

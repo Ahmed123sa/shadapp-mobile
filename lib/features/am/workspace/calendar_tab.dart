@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -34,8 +35,11 @@ class _CalendarTabState extends State<CalendarTab> {
     if (wsId == null) return;
     setState(() => _loading = true);
     _events = [];
+    AppLocalizations? l10n;
     try {
       final meetingsData = await _api.get('/workspaces/$wsId/meetings');
+      if (!mounted) return;
+      l10n = AppLocalizations.of(context)!;
       for (final m in _extractList(meetingsData['meetings'])) {
         _events.add({
           'id': m['id'],
@@ -58,7 +62,7 @@ class _CalendarTabState extends State<CalendarTab> {
         if (c['start_date'] != null) {
           _events.add({
             'id': c['id'],
-            'title': 'بداية: ${c['title']}',
+            'title': '${l10n!.calendarStart}: ${c['title']}',
             'type': 'contract_start',
             'status': c['status'],
             'date': c['start_date'],
@@ -68,7 +72,7 @@ class _CalendarTabState extends State<CalendarTab> {
         if (c['end_date'] != null) {
           _events.add({
             'id': c['id'],
-            'title': 'نهاية: ${c['title']}',
+            'title': '${l10n!.calendarEnd}: ${c['title']}',
             'type': 'contract_deadline',
             'status': c['status'],
             'date': c['end_date'],
@@ -86,7 +90,7 @@ class _CalendarTabState extends State<CalendarTab> {
         if (p['created_at'] != null) {
           _events.add({
             'id': p['id'],
-            'title': 'دفعة: ${double.tryParse(p['amount']?.toString() ?? '0')?.toStringAsFixed(0) ?? '0'} ${p['currency'] ?? 'SAR'}',
+            'title': '${l10n!.calendarPayment}: ${double.tryParse(p['amount']?.toString() ?? '0')?.toStringAsFixed(0) ?? '0'} ${p['currency'] ?? 'SAR'}',
             'type': 'payment',
             'status': p['status'],
             'date': p['created_at'],
@@ -104,7 +108,7 @@ class _CalendarTabState extends State<CalendarTab> {
         if (a['created_at'] != null) {
           _events.add({
             'id': a['id'],
-            'title': 'موافقة: ${a['title']}',
+            'title': '${l10n!.calendarApproval}: ${a['title']}',
             'type': 'approval',
             'status': a['status'],
             'date': a['created_at'],
@@ -131,20 +135,20 @@ class _CalendarTabState extends State<CalendarTab> {
     return _events.where((e) => e['type'] == _filter || (_filter == 'contract' && (e['type'] == 'contract_start' || e['type'] == 'contract_deadline'))).toList();
   }
 
-  String _formatDate(String? dt) {
+  String _formatDate(String? dt, AppLocalizations l10n) {
     if (dt == null) return '';
     try {
       final parsed = DateTime.parse(dt).toLocal();
-      final weekdays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      final weekdays = [l10n.weekdaySunday, l10n.weekdayMonday, l10n.weekdayTuesday, l10n.weekdayWednesday, l10n.weekdayThursday, l10n.weekdayFriday, l10n.weekdaySaturday];
       final wd = weekdays[parsed.weekday % 7];
-      return '$wd، ${parsed.year}/${parsed.month}/${parsed.day}';
+      return l10n.calendarDateFormat(wd, parsed.year, parsed.month, parsed.day);
     } catch (_) { return dt; }
   }
 
-  Map<String, List<Map<String, dynamic>>> get _groupedByDate {
+  Map<String, List<Map<String, dynamic>>> _groupedByDate(AppLocalizations l10n) {
     final map = <String, List<Map<String, dynamic>>>{};
     for (final e in _filtered) {
-      final date = _formatDate(e['date']);
+      final date = _formatDate(e['date'], l10n);
       map.putIfAbsent(date, () => []).add(e);
     }
     return map;
@@ -175,36 +179,37 @@ class _CalendarTabState extends State<CalendarTab> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(children: [
-            _filterChip('كل الأحداث', 'all'),
+            _filterChip(l10n.calendarAllEvents, 'all'),
             const SizedBox(width: 8),
-            _filterChip('اجتماعات', 'meeting'),
+            _filterChip(l10n.calendarMeetings, 'meeting'),
             const SizedBox(width: 8),
-            _filterChip('مدفوعات', 'payment'),
+            _filterChip(l10n.calendarPayments, 'payment'),
             const SizedBox(width: 8),
-            _filterChip('موافقات', 'approval'),
+            _filterChip(l10n.calendarApprovals, 'approval'),
           ]),
         ),
       ),
       // Legend
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
         child: Row(children: [
-          _legendDot(ShadColors.primary, 'اجتماع'),
+          _legendDot(ShadColors.primary, l10n.calendarMeeting),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.success, 'بداية عقد'),
+          _legendDot(ShadColors.success, l10n.calendarContractStartLegend),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.error, 'نهاية عقد'),
+          _legendDot(ShadColors.error, l10n.calendarContractEndLegend),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.gold, 'دفعة'),
+          _legendDot(ShadColors.gold, l10n.calendarPayment),
           const SizedBox(width: 12),
-          _legendDot(const Color(0xFF9C27B0), 'موافقة'),
+          _legendDot(const Color(0xFF9C27B0), l10n.calendarApproval),
         ]),
       ),
       Expanded(
@@ -212,13 +217,13 @@ class _CalendarTabState extends State<CalendarTab> {
           ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               const Icon(Icons.calendar_month_outlined, size: 56, color: ShadColors.textDisabled),
               const SizedBox(height: 12),
-              Text('لا توجد أحداث', style: ShadTypography.emptyTitle),
+              Text(l10n.calendarEmpty, style: ShadTypography.emptyTitle),
             ]))
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: _groupedByDate.entries.map((entry) {
+                children: _groupedByDate(l10n).entries.map((entry) {
                   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(entry.key, style: ShadTypography.sectionHeader),
                     const SizedBox(height: 8),
@@ -230,7 +235,7 @@ class _CalendarTabState extends State<CalendarTab> {
                           child: Icon(_eventIcon(e), size: 18, color: _eventColor(e)),
                         ),
                         title: Text(e['title'] ?? '', style: ShadTypography.cardTitle),
-                        subtitle: Text(_formatDate(e['date']), style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
+                        subtitle: Text(_formatDate(e['date'], l10n), style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
                       ),
                     )),
                     const SizedBox(height: 12),

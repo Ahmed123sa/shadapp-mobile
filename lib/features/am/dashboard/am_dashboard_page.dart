@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/locale_provider.dart';
@@ -60,7 +61,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
       if (!mounted) return;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? 'إشعار جديد';
+      final msg = (payload['data'] as Map?)?['message'] as String? ?? AppLocalizations.of(context)!.amNewNotification;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         behavior: SnackBarBehavior.floating,
@@ -167,7 +168,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         if (!mounted) return;
         context.push('/am/workspace/${newWs['id']}');
       } catch (_) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إنشاء مساحة العمل')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amWorkspaceCreateFailed)));
       }
       return;
     }
@@ -281,7 +282,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       return ws != null;
     }).toList();
     if (clients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد عملاء متاحين')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amNoClientsAvailable)));
       return;
     }
     showModalBottomSheet(
@@ -289,7 +290,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _CreateMeetingSheet(clients: clients, onCreated: () {
         Navigator.pop(ctx);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إنشاء الاجتماع')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
       }),
     );
   }
@@ -311,7 +312,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
           children: [
             if (!_isSA && _api.avatarUrl != null && _api.avatarUrl!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsetsDirectional.only(start: 8),
                 child: CircleAvatar(
                   radius: 18,
                   backgroundColor: ShadColors.crimson,
@@ -331,7 +332,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
           ],
         ),
         leading: const Padding(
-          padding: EdgeInsets.only(left: 8),
+          padding: EdgeInsetsDirectional.only(start: 8),
           child: ShadLogo(size: 28, showText: false),
         ),
         actions: [
@@ -347,7 +348,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                 ),
               ),
           ]),
-          IconButton(icon: const Icon(Icons.language, size: 20), onPressed: () => LocaleProvider().toggle(), tooltip: 'تغيير اللغة'),
+          IconButton(icon: const Icon(Icons.language, size: 20), onPressed: () => context.read<LocaleProvider>().toggle(), tooltip: loc.amChangeLanguage),
           IconButton(icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: loc.logout),
         ],
       ),
@@ -385,30 +386,30 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                       NavigationDestination(
                         icon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home_outlined)) : const Icon(Icons.home_outlined),
                         selectedIcon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home, color: ShadColors.gold)) : const Icon(Icons.home, color: ShadColors.gold),
-                        label: 'الرئيسية',
+                        label: loc.amNavHome,
                       ),
                       NavigationDestination(
                         icon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle_outline)) : const Icon(Icons.check_circle_outline),
                         selectedIcon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle, color: ShadColors.gold)) : const Icon(Icons.check_circle, color: ShadColors.gold),
-                        label: 'الموافقات',
+                        label: loc.amNavApprovals,
                       ),
-                      const NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people, color: ShadColors.gold), label: 'العملاء'),
-                      const NavigationDestination(icon: Icon(Icons.supervisor_account_outlined), selectedIcon: Icon(Icons.supervisor_account, color: ShadColors.gold), label: 'الفريق'),
-                      const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings, color: ShadColors.gold), label: 'الإعدادات'),
+                      NavigationDestination(icon: const Icon(Icons.people_outline), selectedIcon: const Icon(Icons.people, color: ShadColors.gold), label: loc.amNavClients),
+                      NavigationDestination(icon: const Icon(Icons.supervisor_account_outlined), selectedIcon: const Icon(Icons.supervisor_account, color: ShadColors.gold), label: loc.amNavTeam),
+                      NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings, color: ShadColors.gold), label: loc.amNavSettings),
                     ]
                   : [
                       NavigationDestination(
                         icon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home_outlined)) : const Icon(Icons.home_outlined),
                         selectedIcon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home, color: ShadColors.gold)) : const Icon(Icons.home, color: ShadColors.gold),
-                        label: 'الرئيسية',
+                        label: loc.amNavHome,
                       ),
                       NavigationDestination(
                         icon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle_outline)) : const Icon(Icons.check_circle_outline),
                         selectedIcon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle, color: ShadColors.gold)) : const Icon(Icons.check_circle, color: ShadColors.gold),
-                        label: 'الموافقات',
+                        label: loc.amNavApprovals,
                       ),
-                      const NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people, color: ShadColors.gold), label: 'العملاء'),
-                      const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings, color: ShadColors.gold), label: 'الإعدادات'),
+                      NavigationDestination(icon: const Icon(Icons.people_outline), selectedIcon: const Icon(Icons.people, color: ShadColors.gold), label: loc.amNavClients),
+                      NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings, color: ShadColors.gold), label: loc.amNavSettings),
                     ],
             ),
     );
@@ -417,6 +418,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
 
 
   Widget _buildAmHomeTab() {
+    final l10n = AppLocalizations.of(context)!;
     final totalClients = _allClients.length;
     final activeContracts = _allContracts.where((c) => c['status'] == 'company_approved' || c['status'] == 'completed').length;
     final totalPending = _pendingContracts.length + _pendingPayments.length;
@@ -424,42 +426,42 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       padding: const EdgeInsets.all(16),
       children: [
         Row(children: [
-          Expanded(child: _homeStatCard('إجمالي العملاء', '$totalClients', Icons.people, ShadColors.sent)),
+          Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$totalClients', Icons.people, ShadColors.sent)),
           const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('العقود النشطة', '$activeContracts', Icons.description, ShadColors.gold)),
+          Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$activeContracts', Icons.description, ShadColors.gold)),
         ]),
         const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: _homeStatCard('مدفوعات معلقة', '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
+          Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
           const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('موافقات معلّقة', '$totalPending', Icons.pending_actions, ShadColors.crimson)),
+          Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$totalPending', Icons.pending_actions, ShadColors.crimson)),
         ]),
         const SizedBox(height: 8),
         Row(children: [
           if (_isSA)
-            Expanded(child: _homeStatCard('التقارير', '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
+            Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
           if (_isSA) const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('الاجتماعات', '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
+          Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
         ]),
         const SizedBox(height: 20),
         Row(children: [
-          const Text('آخر الموافقات المعلّقة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() => _selectedIndex = 1),
-            child: const Text('عرض الكل', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
           ),
         ]),
         const SizedBox(height: 8),
         if (_pendingContracts.isEmpty && _pendingPayments.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('لا توجد موافقات معلّقة', style: TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
           )
         else ...[
           if (_pendingContracts.isNotEmpty)
             ..._pendingContracts.take(2).map((c) => _approvalItem(
-              title: 'اعتماد عقد — ${c['title'] ?? ''}',
+              title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
               subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
               isContract: true,
             )),
@@ -467,7 +469,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
             ..._pendingPayments.take(2).map((p) {
               final client = p['workspace']?['client'] as Map<String, dynamic>?;
               return _approvalItem(
-                title: 'اعتماد دفعة — ${client?['company_name'] ?? 'عميل'}',
+                title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
                 subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
                 isContract: false,
               );
@@ -475,11 +477,11 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ],
         const SizedBox(height: 20),
         Row(children: [
-          const Text('العملاء', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          Text(l10n.amClients, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() => _selectedIndex = 2),
-            child: const Text('عرض الكل', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
           ),
         ]),
         const SizedBox(height: 8),
@@ -512,6 +514,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   }
 
   Widget _buildHomeTab() {
+    final l10n = AppLocalizations.of(context)!;
     final totalClients = _allManagers.fold<int>(0, (sum, m) => sum + ((m['managed_clients_count'] as int? ?? 0)));
     final activeContracts = _allContracts.where((c) => c['status'] == 'company_approved' || c['status'] == 'completed').length;
     final totalPending = _pendingContracts.length + _pendingPayments.length;
@@ -520,42 +523,42 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       children: [
         // Stats Grid 3x2
         Row(children: [
-          Expanded(child: _homeStatCard('إجمالي العملاء', '$totalClients', Icons.people, ShadColors.sent)),
+          Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$totalClients', Icons.people, ShadColors.sent)),
           const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('العقود النشطة', '$activeContracts', Icons.description, ShadColors.gold)),
+          Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$activeContracts', Icons.description, ShadColors.gold)),
         ]),
         const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: _homeStatCard('مدفوعات معلقة', '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
+          Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
           const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('موافقات معلّقة', '$totalPending', Icons.pending_actions, ShadColors.crimson)),
+          Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$totalPending', Icons.pending_actions, ShadColors.crimson)),
         ]),
         const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: _homeStatCard('التقارير', '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
+          Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
           const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('الاجتماعات', '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
+          Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
         ]),
         const SizedBox(height: 20),
         // Latest Pending Approvals
         Row(children: [
-          const Text('آخر الموافقات المعلّقة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() => _selectedIndex = 1),
-            child: const Text('عرض الكل', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
           ),
         ]),
         const SizedBox(height: 8),
         if (_pendingContracts.isEmpty && _pendingPayments.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('لا توجد موافقات معلّقة', style: TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
           )
         else ...[
           if (_pendingContracts.isNotEmpty)
             ..._pendingContracts.take(2).map((c) => _approvalItem(
-              title: 'اعتماد عقد — ${c['title'] ?? ''}',
+              title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
               subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
               isContract: true,
             )),
@@ -563,7 +566,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
             ..._pendingPayments.take(2).map((p) {
               final client = p['workspace']?['client'] as Map<String, dynamic>?;
               return _approvalItem(
-                title: 'اعتماد دفعة — ${client?['company_name'] ?? 'عميل'}',
+                title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
                 subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
                 isContract: false,
               );
@@ -572,11 +575,11 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         const SizedBox(height: 20),
         // Team Section
         Row(children: [
-          const Text('فريق العمل', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          Text(l10n.amNavTeam, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
           const Spacer(),
           GestureDetector(
             onTap: () => setState(() => _selectedIndex = 3),
-            child: const Text('عرض الكل', style: TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
           ),
         ]),
         const SizedBox(height: 8),
@@ -663,15 +666,15 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       final totalManagers = _allManagers.length;
       final totalClients = _allManagers.fold<int>(0, (sum, m) => sum + (int.tryParse(m['managed_clients_count']?.toString() ?? '') ?? 0));
       final stats = [
-        ('إجمالي المديرين', '$totalManagers', Icons.admin_panel_settings, ShadColors.sent),
-        ('إجمالي العملاء', '$totalClients', Icons.people, ShadColors.companyApproved),
+        (loc2.amTotalManagers, '$totalManagers', Icons.admin_panel_settings, ShadColors.sent),
+        (loc2.amTotalClientsStat, '$totalClients', Icons.people, ShadColors.companyApproved),
       ];
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: stats.map((s) {
           final (label, value, icon, color) = s;
           return Padding(
-            padding: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsetsDirectional.only(start: 8),
             child: _statCard(label, value, icon, color),
           );
         }).toList()),
@@ -695,7 +698,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       child: Row(children: stats.map((s) {
         final (label, value, icon, color) = s;
         return Padding(
-          padding: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsetsDirectional.only(start: 8),
           child: _statCard(label, value, icon, color),
         );
       }).toList()),
@@ -738,7 +741,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         builder: (_) => _AllContractsSheet(contracts: contracts),
       );
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تحميل العقود')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amContractsLoadFailed)));
     }
   }
 
@@ -757,7 +760,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       );
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تحميل الاجتماعات')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingsLoadFailed)));
     }
   }
 
@@ -768,27 +771,27 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       if (isSA)
         SizedBox(
           width: double.infinity,
-          child: _featuredCard(Icons.payments, 'مدفوعات معلقة', _showPendingPayments),
+          child: _featuredCard(Icons.payments, loc2.amStatPendingPayments, _showPendingPayments),
         ),
       if (isSA)
         const SizedBox(height: 8),
       if (isSA)
         SizedBox(
           width: double.infinity,
-          child: _featuredCard(Icons.description, 'كل العقود', _showAllContracts),
+          child: _featuredCard(Icons.description, loc2.amAllContracts, _showAllContracts),
         ),
       if (isSA)
         const SizedBox(height: 8),
       if (isSA)
         SizedBox(
           width: double.infinity,
-          child: _featuredCard(Icons.videocam, 'كل الاجتماعات', _showAllMeetings),
+          child: _featuredCard(Icons.videocam, loc2.amAllMeetings, _showAllMeetings),
         ),
       if (isSA)
         const SizedBox(height: 8),
       Row(children: [
         if (isSA)
-          Expanded(child: _featuredCard(Icons.manage_accounts, 'إدارة المديرين', () => context.push('/am/managers'))),
+          Expanded(child: _featuredCard(Icons.manage_accounts, loc2.amManageManagers, () => context.push('/am/managers'))),
         if (!isSA)
           Expanded(child: _featuredCard(Icons.person_add, loc2.createNewClient, () async { await context.push('/am/clients/create'); _load(); })),
         const SizedBox(width: 8),
@@ -797,15 +800,15 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         const SizedBox(height: 8),
         Row(children: [
           if (_isSA)
-            Expanded(child: _homeStatCard('التقارير', '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
+            Expanded(child: _homeStatCard(loc2.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
           if (_isSA) const SizedBox(width: 8),
-          Expanded(child: _homeStatCard('الاجتماعات', '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
+          Expanded(child: _homeStatCard(loc2.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
         ]),
-      const SizedBox(height: 8),
-      SizedBox(
-        width: double.infinity,
-        child: _featuredCard(Icons.history, 'سجل النشاطات', () => context.push('/am/audit-logs')),
-      ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: _featuredCard(Icons.history, loc2.amActivityLog, () => context.push('/am/audit-logs')),
+        ),
       const SizedBox(height: 8),
       if (!isSA)
         SizedBox(
@@ -815,7 +818,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       const SizedBox(height: 8),
       SizedBox(
         width: double.infinity,
-        child: _featuredCard(Icons.settings, 'الإعدادات', () => context.push('/am/settings')),
+        child: _featuredCard(Icons.settings, loc2.amSettings, () => context.push('/am/settings')),
       ),
     ]);
   }
@@ -863,7 +866,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       );
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تحميل العملاء')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amClientsLoadFailed)));
     }
   }
 
@@ -914,6 +917,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   }
 
   Widget _clientCard(Map<String, dynamic> client) {
+    final l10n = AppLocalizations.of(context)!;
     final ws = client['workspace'] as Map<String, dynamic>?;
     final wsStatus = ws?['status'] as String? ?? 'inactive';
     final wsActive = wsStatus == 'active';
@@ -933,7 +937,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         borderRadius: BorderRadius.circular(10),
         onTap: () => _openClient(client),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
           child: Column(children: [
             Row(children: [
               CircleAvatar(
@@ -966,7 +970,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  wsActive ? 'نشـط' : 'غير نشط',
+                  wsActive ? l10n.amStatusActive : l10n.amStatusInactive,
                   style: TextStyle(
                     fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3,
                     color: wsActive ? ShadColors.success : ShadColors.textDisabled,
@@ -980,10 +984,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
               spacing: 6,
               runSpacing: 4,
               children: [
-                _statusChip(Icons.description_outlined, signedAt != null ? 'متعاقد' : 'غير متعاقد', signedAt != null ? ShadColors.success : ShadColors.textDisabled),
-                _statusChip(Icons.payment, paymentStatus == 'approved' ? 'مدفوع' : paymentStatus == 'pending' ? 'معلق' : '—',
+                _statusChip(Icons.description_outlined, signedAt != null ? l10n.amStatusContracted : l10n.amStatusNotContracted, signedAt != null ? ShadColors.success : ShadColors.textDisabled),
+                _statusChip(Icons.payment, paymentStatus == 'approved' ? l10n.amStatusPaid : paymentStatus == 'pending' ? l10n.amStatusPending : '—',
                   paymentStatus == 'approved' ? ShadColors.success : paymentStatus == 'pending' ? ShadColors.warning : ShadColors.textDisabled),
-                _statusChip(wsActive ? Icons.check_circle : Icons.schedule, wsActive ? 'نشـط' : 'معلق',
+                _statusChip(wsActive ? Icons.check_circle : Icons.schedule, wsActive ? l10n.amStatusActive : l10n.amStatusPending,
                   wsActive ? ShadColors.success : ShadColors.textDisabled),
               ],
             ),
@@ -1090,7 +1094,7 @@ class _PendingListSheetState extends State<_PendingListSheet> {
             child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _items == null || _items!.isEmpty
-                ? const Center(child: Text('لا توجد عناصر', style: TextStyle(color: ShadColors.textSecondary)))
+                ? Center(child: Text(AppLocalizations.of(context)!.amNoItems, style: const TextStyle(color: ShadColors.textSecondary)))
                 : ListView.separated(
                     controller: scrollController,
                     itemCount: _items!.length,
@@ -1127,19 +1131,20 @@ class _ManagerClientsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('عملاء $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+          Text('${l10n.amClients} $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
           const Spacer(),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
         if (clients.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text('لا يوجد عملاء', style: TextStyle(color: ShadColors.textSecondary))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.amNoClientsAvailable, style: const TextStyle(color: ShadColors.textSecondary))),
           )
         else
           Container(
@@ -1169,7 +1174,7 @@ class _ManagerClientsSheet extends StatelessWidget {
                       color: ws?['status'] == 'active' ? ShadColors.success.withAlpha(25) : ShadColors.cardBorder,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(ws?['status'] == 'active' ? 'نشط' : 'غير مفعل', style: TextStyle(fontSize: 10, color: ws?['status'] == 'active' ? ShadColors.success : ShadColors.textSecondary)),
+                    child: Text(ws?['status'] == 'active' ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, color: ws?['status'] == 'active' ? ShadColors.success : ShadColors.textSecondary)),
                   ),
                   onTap: () => onClientTap(c),
                 );
@@ -1187,19 +1192,20 @@ class _PendingPaymentsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Text('مدفوعات معلقة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+          Text(l10n.amPendingPaymentsLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
           const Spacer(),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
         if (payments.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text('لا توجد مدفوعات معلقة', style: TextStyle(color: ShadColors.textSecondary))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.amNoPendingPayments, style: const TextStyle(color: ShadColors.textSecondary))),
           )
         else
           Container(
@@ -1214,7 +1220,7 @@ class _PendingPaymentsSheet extends StatelessWidget {
                 final amount = double.tryParse(p['amount']?.toString() ?? '') ?? 0;
                 return ListTile(
                   leading: const Icon(Icons.payments, size: 24, color: ShadColors.warning),
-                  title: Text(client?['company_name'] as String? ?? 'عميل', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  title: Text(client?['company_name'] as String? ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                   subtitle: Text('${p['currency'] ?? 'SAR'} ${amount.toStringAsFixed(2)} • ${p['method_type'] ?? ''}', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                   trailing: Text(p['created_at'] != null ? _formatDate(p['created_at']) : '', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
                 );
@@ -1241,19 +1247,20 @@ class _AllContractsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Text('كل العقود', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+          Text(l10n.amAllContracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
           const Spacer(),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
         if (contracts.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text('لا توجد عقود', style: TextStyle(color: ShadColors.textSecondary))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.amNoContracts, style: const TextStyle(color: ShadColors.textSecondary))),
           )
         else
           Container(
@@ -1267,7 +1274,7 @@ class _AllContractsSheet extends StatelessWidget {
                 final client = c['workspace']?['client'] as Map<String, dynamic>?;
                 final status = c['status'] as String? ?? '';
                 final statusColor = status == 'completed' ? ShadColors.success : status == 'sent' || status == 'client_approved' ? ShadColors.warning : ShadColors.textSecondary;
-                final statusLabel = status == 'draft' ? 'مسودة' : status == 'sent' ? 'مرسل' : status == 'client_approved' ? 'موافقة العميل' : status == 'company_approved' ? 'اعتماد الشركة' : status == 'completed' ? 'مكتمل' : status;
+                final statusLabel = _contractStatusLabel(status, l10n);
                 return ListTile(
                   leading: const Icon(Icons.description, size: 24, color: ShadColors.gold),
                   title: Text(c['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
@@ -1293,6 +1300,7 @@ class _AllMeetingsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       maxChildSize: 0.85,
@@ -1309,7 +1317,7 @@ class _AllMeetingsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(children: [
-            const Text('الاجتماعات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+            Text(l10n.amStatMeetings, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1324,13 +1332,13 @@ class _AllMeetingsSheet extends StatelessWidget {
             child: meetings.isEmpty
                 ? Center(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Text('لا توجد اجتماعات', style: TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
+                      Text(l10n.amNoMeetings, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
                       if (onCreate != null) ...[
                         const SizedBox(height: 12),
                         ElevatedButton.icon(
                           onPressed: () { Navigator.pop(context); onCreate?.call(); },
                           icon: const Icon(Icons.add, size: 16),
-                          label: const Text('إنشاء اجتماع'),
+                          label: Text(l10n.createMeeting),
                         ),
                       ],
                     ]),
@@ -1344,7 +1352,7 @@ class _AllMeetingsSheet extends StatelessWidget {
                       final client = m['workspace']?['client'] as Map<String, dynamic>?;
                       final status = m['status'] as String? ?? '';
                       final statusColor = status == 'completed' ? ShadColors.success : status == 'scheduled' ? ShadColors.sent : ShadColors.textSecondary;
-                      final statusLabel = status == 'scheduled' ? 'مجدول' : status == 'completed' ? 'مكتمل' : status == 'cancelled' ? 'ملغي' : status;
+                      final statusLabel = status == 'scheduled' ? l10n.scheduled : status == 'completed' ? l10n.completed : status == 'cancelled' ? l10n.cancelled : status;
                       String? dateStr;
                       try {
                         final dt = DateTime.parse(m['scheduled_at'] ?? '');
@@ -1427,7 +1435,7 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
   Future<void> _save() async {
     final ws = _selectedClient?['workspace'] as Map<String, dynamic>?;
     if (_titleController.text.trim().isEmpty || ws == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال عنوان الاجتماع واختيار العميل')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingValidation)));
       return;
     }
     setState(() => _saving = true);
@@ -1446,25 +1454,26 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
       });
       widget.onCreated();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إنشاء الاجتماع')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingCreateFailed)));
     }
     if (mounted) setState(() => _saving = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+      padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Text('إنشاء اجتماع', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+          Text(l10n.createMeeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
           const Spacer(),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
         DropdownButtonFormField(
-          decoration: const InputDecoration(labelText: 'العميل *'),
+          decoration: InputDecoration(labelText: l10n.amClientRequired),
           items: widget.clients.map((c) => DropdownMenuItem(
             value: c,
             child: Text(c['company_name'] ?? ''),
@@ -1474,7 +1483,7 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
         const SizedBox(height: 12),
         TextField(
           controller: _titleController,
-          decoration: const InputDecoration(labelText: 'عنوان الاجتماع *', hintText: 'مثال: اجتماع المتابعة الأسبوعي'),
+          decoration: InputDecoration(labelText: l10n.amMeetingTitle, hintText: l10n.amMeetingTitleHint),
         ),
         const SizedBox(height: 12),
         Row(children: [
@@ -1485,7 +1494,7 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
                 if (d != null) setState(() => _selectedDate = d);
               },
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'التاريخ'),
+                decoration: InputDecoration(labelText: l10n.amDate),
                 child: Text('${_selectedDate.year}/${_selectedDate.month}/${_selectedDate.day}'),
               ),
             ),
@@ -1498,7 +1507,7 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
                 if (t != null) setState(() => _selectedTime = t);
               },
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'الوقت'),
+                decoration: InputDecoration(labelText: l10n.amTime),
                 child: Text('${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
               ),
             ),
@@ -1506,15 +1515,15 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
         ]),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
-          decoration: const InputDecoration(labelText: 'المدة (دقائق)'),
+          decoration: InputDecoration(labelText: l10n.amDurationMinutes),
           initialValue: _duration,
-          items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d دقيقة'))).toList(),
+          items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d ${l10n.amMinutes}'))).toList(),
           onChanged: (v) => setState(() => _duration = v),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _notesController,
-          decoration: const InputDecoration(labelText: 'ملاحظات'),
+          decoration: InputDecoration(labelText: l10n.amNotes),
           maxLines: 2,
         ),
         const SizedBox(height: 16),
@@ -1524,12 +1533,35 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
             onPressed: _saving ? null : _save,
             child: _saving
               ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-              : const Text('إنشاء الاجتماع'),
+              : Text(l10n.createMeeting),
           ),
         ),
         ],
       ),
       ),
     );
+  }
+}
+
+String _contractStatusLabel(String status, AppLocalizations l10n) {
+  switch (status) {
+    case 'draft':
+      return l10n.draft;
+    case 'sent':
+      return l10n.sent;
+    case 'client_approved':
+      return l10n.clientApproved;
+    case 'company_approved':
+      return l10n.companyApproved;
+    case 'completed':
+      return l10n.completed;
+    case 'archived':
+      return l10n.archived;
+    case 'rejected':
+      return l10n.rejected;
+    case 'edit_requested':
+      return l10n.editRequestedStatus;
+    default:
+      return status;
   }
 }
