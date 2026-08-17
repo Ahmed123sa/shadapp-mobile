@@ -46,3 +46,8 @@ app.*.map.json
 
 # Environment
 .env
+# assets/env.txt is loaded via flutter_dotenv and bundled into whatever
+# build you run — never commit real backend hosts/keys here. Each
+# developer/CI job should copy assets/env.txt.example to assets/env.txt
+# and fill in the right values for their target (dev vs. production).
+assets/env.txt

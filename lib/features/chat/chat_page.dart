@@ -306,6 +306,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Future<void> _openLatestZoomLink() async {
     try {
       final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/meetings');
+      if (!mounted) return;
       final meetings = safeList(data['meetings']);
       String? zoomLink;
       String? scheduledAt;

@@ -2194,6 +2194,86 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adminSettings_saveTax => 'حفظ إعدادات الضريبة';
 
   @override
+  String get adminSettings_clauses => 'بنود العقد';
+
+  @override
+  String get adminSettings_clausesDescription =>
+      'البنود الثابتة تُضاف تلقائيًا إلى أي عقد جديد.';
+
+  @override
+  String get adminSettings_addClause => 'إضافة بند';
+
+  @override
+  String get adminSettings_editClause => 'تعديل بند';
+
+  @override
+  String get adminSettings_clauseName => 'الاسم';
+
+  @override
+  String get adminSettings_clauseNamePh => 'اسم البند';
+
+  @override
+  String get adminSettings_clauseOrderSaved => 'تم حفظ الترتيب';
+
+  @override
+  String get adminSettings_clauseType => 'النوع';
+
+  @override
+  String get adminSettings_clauseCategory => 'التصنيف';
+
+  @override
+  String get adminSettings_clauseContent => 'المحتوى';
+
+  @override
+  String get adminSettings_clauseContentPh => 'نص البند';
+
+  @override
+  String get adminSettings_clauseFixed => 'ثابت';
+
+  @override
+  String get adminSettings_clauseOptional => 'متغير';
+
+  @override
+  String get adminSettings_clauseAdded => 'تمت إضافة البند';
+
+  @override
+  String get adminSettings_clauseUpdated => 'تم تحديث البند';
+
+  @override
+  String get adminSettings_clauseDeleted => 'تم حذف البند';
+
+  @override
+  String get adminSettings_clauseDeleteConfirm =>
+      'حذف هذا البند؟ العقود الحالية لن تتأثر.';
+
+  @override
+  String get adminSettings_clauseActive => 'مفعّل';
+
+  @override
+  String get adminSettings_clauseInactive => 'معطّل';
+
+  @override
+  String get adminSettings_clauseToggleOff => 'تعطيل';
+
+  @override
+  String get adminSettings_clauseToggleOn => 'تفعيل';
+
+  @override
+  String get adminSettings_clauseMoveUp => 'تحريك لأعلى';
+
+  @override
+  String get adminSettings_clauseMoveDown => 'تحريك لأسفل';
+
+  @override
+  String get adminSettings_clauseSaveOrder => 'حفظ الترتيب';
+
+  @override
+  String get adminSettings_clausesEmpty => 'لا توجد بنود بعد — أضف أول بند.';
+
+  @override
+  String get adminSettings_clausesLoadFailed => 'فشل تحميل البنود';
+
+  @override
   String get auditLog_noEvents => 'لا توجد أحداث';
 
   @override
@@ -4990,6 +5070,88 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get workspaceTabPayments => 'المدفوعات';
+
+  @override
+  String get workspaceTabClientProfile => 'البروفايل';
+
+  @override
+  String get clientProfileContactInfo => 'بيانات التواصل';
+
+  @override
+  String get clientProfileCompany => 'الشركة';
+
+  @override
+  String get clientProfileContactPerson => 'الشخص المسؤول';
+
+  @override
+  String get clientProfileEmail => 'البريد الإلكتروني';
+
+  @override
+  String get clientProfilePhone => 'الهاتف';
+
+  @override
+  String get clientProfileCountry => 'الدولة';
+
+  @override
+  String get clientProfileIndustry => 'القطاع';
+
+  @override
+  String get clientProfileClientType => 'نوع العميل';
+
+  @override
+  String get clientProfileContracts => 'العقود';
+
+  @override
+  String get clientProfileDraft => 'مسودة';
+
+  @override
+  String get clientProfileInProgress => 'قيد التنفيذ';
+
+  @override
+  String get clientProfileCompleted => 'مكتملة';
+
+  @override
+  String get clientProfileTotalValue => 'إجمالي القيمة';
+
+  @override
+  String get clientProfileTotalPaid => 'إجمالي المدفوع';
+
+  @override
+  String get clientProfilePending => 'مستحقات';
+
+  @override
+  String get clientProfileMeetings => 'اجتماعات';
+
+  @override
+  String get clientProfileApprovals => 'موافقات';
+
+  @override
+  String get clientProfileLocation => 'الموقع';
+
+  @override
+  String get clientProfileNotSet => 'لم يتم تسجيل الموقع بعد';
+
+  @override
+  String get clientProfileCheckIn => 'تسجيل الموقع';
+
+  @override
+  String get clientProfileCheckInSuccess => 'تم تحديث الموقع بنجاح';
+
+  @override
+  String get clientProfileCheckInFailed =>
+      'تعذر الحصول على الموقع. تحقق من الصلاحيات.';
+
+  @override
+  String get clientProfileOpenMaps => 'فتح في خرائط جوجل';
+
+  @override
+  String get clientProfileLastUpdated => 'آخر تحديث';
+
+  @override
+  String get clientProfileEdit => 'تعديل الملف';
+
+  @override
+  String get clientProfileLoadFailed => 'فشل تحميل الملف';
 
   @override
   String get amActivityLog => 'سجل النشاطات';

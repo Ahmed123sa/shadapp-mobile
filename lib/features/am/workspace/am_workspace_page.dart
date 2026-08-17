@@ -10,6 +10,7 @@ import 'contracts_tab.dart';
 import 'payments_tab.dart';
 import 'approvals_tab.dart';
 import 'meetings_tab.dart';
+import 'client_profile_tab.dart';
 
 class AmWorkspacePage extends StatefulWidget {
   final int? workspaceId;
@@ -32,7 +33,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this, initialIndex: widget.initialTabIndex.clamp(0, 6));
+    _tabController = TabController(length: 8, vsync: this, initialIndex: widget.initialTabIndex.clamp(0, 7));
     _tabController.addListener(_onTabChanged);
     _fetchWorkspace();
   }
@@ -144,6 +145,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
               Tab(text: l10n.workspaceTabApprovals),
               Tab(text: l10n.workspaceTabMeetings),
               Tab(text: l10n.workspaceTabLog),
+              Tab(text: l10n.workspaceTabClientProfile),
             ],
           ),
         ),
@@ -159,6 +161,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
               ApprovalsTab(workspaceId: widget.workspaceId),
               MeetingsTab(workspaceId: widget.workspaceId),
               CalendarTab(workspaceId: widget.workspaceId),
+              ClientProfileTab(workspaceId: widget.workspaceId),
             ],
           ),
         ),

@@ -413,7 +413,7 @@ class _SignatureTabState extends State<SignatureTab> {
         decoration: InputDecoration(
           hintText: l10n.signature_typeYourName,
           hintStyle: TextStyle(
-              color: ShadColors.textDisabled.withOpacity(0.5),
+              color: ShadColors.textDisabled.withValues(alpha: 0.5),
               fontSize: 20,
               fontFamily: 'Tajawal'),
           border: InputBorder.none,

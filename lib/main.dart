@@ -1,5 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +19,23 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: 'assets/env.txt');
+
+  // Fail loudly instead of silently shipping a release build that talks to
+  // localhost. assets/env.txt is a local dev file (gitignored) — a real
+  // deployment must bundle a production env.txt with a real API_BASE_URL
+  // before running `flutter build`. See assets/env.txt.example.
+  if (kReleaseMode) {
+    final apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final isLocalOrInsecure = apiBaseUrl.contains('localhost') ||
+        apiBaseUrl.contains('127.0.0.1') ||
+        apiBaseUrl.startsWith('http://');
+    if (apiBaseUrl.isEmpty || isLocalOrInsecure) {
+      throw StateError(
+        'Refusing to run a release build with API_BASE_URL="$apiBaseUrl". '
+        'Bundle a production assets/env.txt (HTTPS, real host) before building for release.',
+      );
+    }
+  }
 
   Map<String, String>? pendingNotifData;
   GoRouter? router;

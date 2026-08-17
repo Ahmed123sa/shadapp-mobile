@@ -40,7 +40,7 @@ class _FilesTabState extends State<FilesTab> {
       _files = data['files'] as List<dynamic>? ?? [];
       _definitions = data['definitions'] as List<dynamic>? ?? [];
     } catch (_) {
-      _error = AppLocalizations.of(context)?.filesLoadFailed;
+      if (mounted) _error = AppLocalizations.of(context)?.filesLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }

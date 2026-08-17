@@ -311,25 +311,6 @@ class _ContractsPageState extends State<ContractsPage> {
   }
 
   void _showDetailModal(dynamic c) { showModalBottomSheet(context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (_) => _ContractDetailModal(contract: c, clientType: _clientType, onAction: _clientAction, onRefresh: _load, onGoToPayments: widget.onGoToPayments)); }
-
-  Future<void> _downloadPdf(String pdfUrl) async {
-    final l10n = AppLocalizations.of(context)!;
-    final url = _api.resolveFileUrl(pdfUrl);
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      try {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
-        }
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
-      }
-    }
-  }
 }
 
 class _ContractDetailModal extends StatefulWidget {

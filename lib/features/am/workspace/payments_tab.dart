@@ -44,7 +44,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
       final rawContracts = results[1]['contracts'];
       _contracts = rawContracts is List ? rawContracts : (rawContracts is Map ? (rawContracts['data'] ?? []) as List : []);
     } catch (_) {
-      _error = AppLocalizations.of(context)?.paymentsFailedToLoad;
+      if (mounted) _error = AppLocalizations.of(context)?.paymentsFailedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }

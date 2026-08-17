@@ -39,7 +39,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
           : await _api.get('/workspaces/${widget.workspaceId ?? _api.workspaceId}/meetings');
       _meetings = safeList(data['meetings']);
     } catch (_) {
-      _error = AppLocalizations.of(context)?.amMeetingsLoadFailed;
+      if (mounted) _error = AppLocalizations.of(context)?.amMeetingsLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }

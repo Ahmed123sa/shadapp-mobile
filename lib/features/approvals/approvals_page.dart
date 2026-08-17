@@ -40,7 +40,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
       final data = await _api.get('/workspaces/$wsId/approvals');
       _approvals = safeList(data['approvals']);
     } catch (_) {
-      _error = AppLocalizations.of(context)!.approvals_failedToLoad;
+      if (mounted) _error = AppLocalizations.of(context)!.approvals_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }

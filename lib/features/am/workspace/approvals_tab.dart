@@ -43,7 +43,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
       final data = await _api.get('/workspaces/$wsId/approvals');
       _approvals = safeList(data['approvals']);
     } catch (_) {
-      _error = AppLocalizations.of(context)?.approvalLoadFailed;
+      if (mounted) _error = AppLocalizations.of(context)?.approvalLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }

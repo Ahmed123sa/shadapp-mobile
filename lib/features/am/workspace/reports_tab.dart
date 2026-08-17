@@ -4,7 +4,6 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../reports/audit_log_page.dart';
 
 class ReportsTab extends StatefulWidget {
@@ -17,7 +16,6 @@ class ReportsTab extends StatefulWidget {
 class _ReportsTabState extends State<ReportsTab> {
   final _api = ApiClient();
   Map<String, dynamic>? _stats;
-  List<dynamic> _logs = [];
   bool _loading = true;
 
   double _toDouble(dynamic value) => num.tryParse(value?.toString() ?? '')?.toDouble() ?? 0;
@@ -38,7 +36,6 @@ class _ReportsTabState extends State<ReportsTab> {
   List<Map<String, dynamic>> _clients = [];
   List<Map<String, dynamic>> _managers = [];
   List<Map<String, dynamic>> _managerStats = [];
-  bool _loadingClients = false;
   String _chartPeriod = '1y';
 
   @override
@@ -74,16 +71,12 @@ class _ReportsTabState extends State<ReportsTab> {
     return '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}';
   }
 
-  bool get _hasActiveFilters => _selectedPeriod != 'all' || _selectedClientId != null || _clientType != null || _selectedManagerId != null;
-
   Future<void> _loadClients() async {
-    _loadingClients = true;
     try {
       final data = await _api.get('/clients');
       final list = safeList(data['clients']);
       _clients = list.cast<Map<String, dynamic>>();
     } catch (_) {}
-    _loadingClients = false;
   }
 
   Future<void> _loadManagers() async {
@@ -111,18 +104,11 @@ class _ReportsTabState extends State<ReportsTab> {
     setState(() { if (_stats == null) _loading = true; _error = null; });
     try {
       final query = _buildFilterQuery();
-      final reportsFuture = _api.get('/reports$query').catchError((e) {
+      final reportsResult = await _api.get('/reports$query').catchError((e) {
         return <String, dynamic>{'error': true, 'message': e.toString()};
       });
-      final logsFuture = _api.get('/audit-logs').catchError((e) {
-        return <String, dynamic>{'logs': []};
-      });
-
-      final results = await Future.wait([reportsFuture, logsFuture]);
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
-      final reportsResult = results[0];
-      final logsResult = results[1];
 
       if (reportsResult['error'] == true) {
         _error = reportsResult['message']?.toString() ?? l10n.reportsLoadFailed;
@@ -131,7 +117,6 @@ class _ReportsTabState extends State<ReportsTab> {
         final raw = reportsResult['manager_stats'];
         if (raw is List) _managerStats = raw.cast<Map<String, dynamic>>();
       }
-      _logs = safeList(logsResult['logs']);
     } catch (e) {
       if (mounted) _error = AppLocalizations.of(context)!.errorOccurred;
     }
@@ -395,7 +380,7 @@ class _ReportsTabState extends State<ReportsTab> {
                 onTap: () { onSelect(null); Navigator.pop(ctx); },
               ),
               ...items.map((e) => ListTile(
-                title: Text(e.value ?? '', style: const TextStyle(fontSize: 12)),
+                title: Text(e.value, style: const TextStyle(fontSize: 12)),
                 trailing: selected == e.key ? const Icon(Icons.check, size: 16, color: ShadColors.gold) : null,
                 onTap: () { onSelect(e.key); Navigator.pop(ctx); },
               )),
@@ -416,7 +401,7 @@ class _ReportsTabState extends State<ReportsTab> {
           Expanded(
             child: Text(
               selected != null
-                  ? items.firstWhere((e) => e.key == selected, orElse: () => MapEntry(null, selected.toString())).value ?? selected.toString()
+                  ? items.firstWhere((e) => e.key == selected, orElse: () => MapEntry(null, selected.toString())).value
                   : hint,
               style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary),
               overflow: TextOverflow.ellipsis,
@@ -460,7 +445,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
     final kpis = [
       _kpiData('clients', l10n.reportsClients, totalClients, ShadColors.success, l10n.reportsDeltaNew, true),
-      _kpiData('revenue', l10n.reportsRevenue, '${(totalRevenue.length > 3 ? '${totalRevenue.substring(0, totalRevenue.length - 3)}K' : totalRevenue)}', ShadColors.gold, l10n.reportsDeltaMonth, true),
+      _kpiData('revenue', l10n.reportsRevenue, totalRevenue.length > 3 ? '${totalRevenue.substring(0, totalRevenue.length - 3)}K' : totalRevenue, ShadColors.gold, l10n.reportsDeltaMonth, true),
       _kpiData('contracts', l10n.reportsContracts, totalContracts, ShadColors.blue, l10n.reportsDeltaActive, true),
       _kpiData('pending', l10n.reportsPending, pendingApprovals, ShadColors.error, l10n.reportsNeedsAction, false),
       _kpiData('workspaces', l10n.reportsWorkspaces, activeWorkspaces, ShadColors.purple, l10n.reportsDeltaActivated, true),
@@ -564,7 +549,7 @@ class _ReportsTabState extends State<ReportsTab> {
             if (idx < 0 || idx >= slice.length) return const SizedBox();
             final parts = slice[idx].key.split('-');
             final monthNames = [l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril, l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust, l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember];
-            final m = int.tryParse(parts[1] ?? '1') ?? 1;
+            final m = int.tryParse(parts.length > 1 ? parts[1] : '1') ?? 1;
             final name = monthNames[m - 1];
             return Padding(
               padding: const EdgeInsets.only(top: 4),

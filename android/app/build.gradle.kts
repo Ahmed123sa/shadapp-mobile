@@ -1,8 +1,21 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+}
+
+// Release signing config is loaded from android/key.properties, which is
+// gitignored and must be created locally / in CI secrets. It is NOT
+// committed. See android/key.properties.example for the expected format.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -27,11 +40,34 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Uses the real release keystore when android/key.properties is
+            // present (required for any Play Store upload). Falls back to
+            // the debug key only so that local `flutter run --release`
+            // keeps working before a keystore has been generated — this
+            // fallback must NOT be relied on for an actual release build.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            // NOTE: minifyEnabled/shrinkResources deliberately left off here.
+            // Turning those on is worth doing, but needs a real device/QA
+            // pass first (R8 can strip reflection-based plugin code silently)
+            // — do that as its own change with proguard-rules.pro (already
+            // scaffolded) once someone can actually run the release build.
         }
     }
 }

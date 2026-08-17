@@ -8,6 +8,12 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Shadapp Client</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is used to record the client check-in location for site visits.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ShadApp needs access to your photo library to upload documents and files.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ShadApp needs access to your camera to take photos of documents to upload.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

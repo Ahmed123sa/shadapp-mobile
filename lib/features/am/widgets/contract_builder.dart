@@ -155,8 +155,10 @@ class _ContractBuilderState extends State<ContractBuilder> {
     setState(() => _saving = true);
 
     final clauses = <Map<String, dynamic>>[];
-    for (final f in _fixedClauses) {
-      clauses.add({'content': f['content'], 'type': 'fixed', 'sort_order': clauses.length + 1});
+    if (_isEditing) {
+      for (final f in _fixedClauses) {
+        clauses.add({'content': f['content'], 'type': 'fixed', 'sort_order': clauses.length + 1});
+      }
     }
     for (final o in _optionalClauses) {
       if (o['selected'] == true) {

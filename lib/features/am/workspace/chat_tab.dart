@@ -290,6 +290,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     if (wsId == null) return;
     try {
       final data = await _api.get('/workspaces/$wsId/meetings');
+      if (!mounted) return;
       final meetings = safeList(data['meetings']);
       String? zoomLink;
       String? scheduledAt;
@@ -505,6 +506,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                     if (uri != null && await canLaunchUrl(uri)) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } else {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatFileOpenFailed)));
                     }
                   },
@@ -986,7 +988,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
 
       final senderType = m['sender_type'] as String?;
       final isClient = senderType == 'App\\Models\\Client' || senderType == 'App\\Models\\SubUser';
-      final isSubUserSender = senderType == 'App\\Models\\SubUser';
       final senderKey = '${senderType}_${m['sender_id']}';
       final isPending = m['requires_action'] == true && m['action_taken'] != true;
       final contract = m['contract'] as Map<String, dynamic>?;

@@ -70,7 +70,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
         }
       }
     } catch (e) {
-      _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
+      if (mounted) _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }

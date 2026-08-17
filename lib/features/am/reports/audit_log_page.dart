@@ -144,9 +144,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
         final today = DateTime(now.year, now.month, now.day);
         final logDate = DateTime(dt.year, dt.month, dt.day);
         final diff = today.difference(logDate).inDays;
-        if (diff == 0) displayDate = '${l10n.auditLogToday}, ${_formatDate(dt)}';
-        else if (diff == 1) displayDate = '${l10n.auditLogYesterday}, ${_formatDate(dt)}';
-        else displayDate = _formatDate(dt);
+        if (diff == 0) {
+          displayDate = '${l10n.auditLogToday}, ${_formatDate(dt)}';
+        } else if (diff == 1) {
+          displayDate = '${l10n.auditLogYesterday}, ${_formatDate(dt)}';
+        } else {
+          displayDate = _formatDate(dt);
+        }
       }
       dateFormat[dateKey] = displayDate;
       grouped.putIfAbsent(dateKey, () => []);
@@ -508,7 +512,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     if (end < _totalPages) {
       widgets.add(Padding(
         padding: const EdgeInsetsDirectional.only(end: 4),
-        child: Text('…${_totalPages}', style: const TextStyle(fontSize: 10, color: ShadColors.textMuted)),
+        child: Text('…$_totalPages', style: const TextStyle(fontSize: 10, color: ShadColors.textMuted)),
       ));
     }
     return widgets;
@@ -529,14 +533,6 @@ class _AuditLogPageState extends State<AuditLogPage> {
         )),
       ),
     );
-  }
-
-  Color _auditColor(String action) {
-    if (action.contains('approved') || action.contains('completed') || action.contains('activated')) return ShadColors.success;
-    if (action.contains('rejected') || action.contains('deleted')) return ShadColors.error;
-    if (action.contains('sent') || action.contains('created') || action.contains('uploaded')) return ShadColors.blue;
-    if (action.contains('archived')) return ShadColors.orange;
-    return ShadColors.textSecondary;
   }
 
   String _auditLabel(String action) {

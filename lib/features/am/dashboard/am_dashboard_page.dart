@@ -26,7 +26,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   final _searchController = TextEditingController();
   final _isSA = ApiClient().role == 'super_admin';
   List<dynamic> _allClients = [];
-  List<dynamic> _filteredClients = [];
   List<dynamic> _allManagers = [];
   List<dynamic> _pendingPayments = [];
   List<Map<String, dynamic>> _pendingContracts = [];
@@ -114,16 +113,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   }
 
   void _filter() {
-    final query = _searchController.text.trim().toLowerCase();
-    setState(() {
-      _filteredClients = query.isEmpty
-          ? List.from(_allClients)
-          : _allClients.where((c) {
-              final name = (c['company_name'] as String? ?? '').toLowerCase();
-              final person = (c['contact_person'] as String? ?? '').toLowerCase();
-              return name.contains(query) || person.contains(query);
-            }).toList();
-    });
+    // Triggers a rebuild so any UI reading _searchController.text directly
+    // picks up the new query. The previous version of this method computed
+    // a _filteredClients list that nothing in build() ever read.
+    setState(() {});
   }
 
   Future<void> _loadNotifs() async {
@@ -202,18 +195,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _PendingPaymentsSheet(payments: _pendingPayments),
-    );
-  }
-
-  void _showPendingApprovals() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _PendingListSheet(
-        title: AppLocalizations.of(context)!.pendingApprovalRequests,
-        fetch: () => _fetchAllApprovals(),
-      ),
     );
   }
 
@@ -638,97 +619,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     );
   }
 
-  Widget _buildSearchBar() {
-    final loc2 = AppLocalizations.of(context)!;
-    return TextField(
-      controller: _searchController,
-      decoration: InputDecoration(
-        hintText: loc2.searchClients,
-        prefixIcon: const Icon(Icons.search, size: 20),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 18),
-                onPressed: () { _searchController.clear(); _filter(); },
-              )
-            : null,
-        filled: true,
-        fillColor: ShadColors.card,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-      ),
-    );
-  }
-
-  Widget _buildQuickStats() {
-    final loc2 = AppLocalizations.of(context)!;
-    final isSA = _api.role == 'super_admin';
-    if (isSA) {
-      final totalManagers = _allManagers.length;
-      final totalClients = _allManagers.fold<int>(0, (sum, m) => sum + (int.tryParse(m['managed_clients_count']?.toString() ?? '') ?? 0));
-      final stats = [
-        (loc2.amTotalManagers, '$totalManagers', Icons.admin_panel_settings, ShadColors.sent),
-        (loc2.amTotalClientsStat, '$totalClients', Icons.people, ShadColors.companyApproved),
-      ];
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: stats.map((s) {
-          final (label, value, icon, color) = s;
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(start: 8),
-            child: _statCard(label, value, icon, color),
-          );
-        }).toList()),
-      );
-    }
-    final totalClients = _allClients.length;
-    final activeWorkspaces = _allClients.where((c) {
-      final ws = c['workspace'] as Map<String, dynamic>?;
-      return ws?['status'] == 'active';
-    }).length;
-    final pendingPayments = _allClients.where((c) => c['payment_status'] == 'pending').length;
-    final signed = _allClients.where((c) => c['signed_at'] != null).length;
-    final stats = [
-      (loc2.totalClients, '$totalClients', Icons.people, ShadColors.sent),
-      (loc2.activeWorkspaces, '$activeWorkspaces', Icons.workspaces, ShadColors.success),
-      (loc2.pendingPayments, '$pendingPayments', Icons.payments, ShadColors.warning),
-      (loc2.signed, '$signed', Icons.download_done, ShadColors.companyApproved),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(children: stats.map((s) {
-        final (label, value, icon, color) = s;
-        return Padding(
-          padding: const EdgeInsetsDirectional.only(start: 8),
-          child: _statCard(label, value, icon, color),
-        );
-      }).toList()),
-    );
-  }
-
-  Widget _statCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(icon, size: 18, color: color),
-            const Spacer(),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color, fontFamily: 'PlayfairDisplay')),
-          ]),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        ],
-      ),
-    );
-  }
-
   Future<void> _showAllContracts() async {
     try {
       final data = await _api.get('/all-contracts');
@@ -762,88 +652,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingsLoadFailed)));
     }
-  }
-
-  Widget _buildFeaturedCards() {
-    final loc2 = AppLocalizations.of(context)!;
-    final isSA = _api.role == 'super_admin';
-    return Column(children: [
-      if (isSA)
-        SizedBox(
-          width: double.infinity,
-          child: _featuredCard(Icons.payments, loc2.amStatPendingPayments, _showPendingPayments),
-        ),
-      if (isSA)
-        const SizedBox(height: 8),
-      if (isSA)
-        SizedBox(
-          width: double.infinity,
-          child: _featuredCard(Icons.description, loc2.amAllContracts, _showAllContracts),
-        ),
-      if (isSA)
-        const SizedBox(height: 8),
-      if (isSA)
-        SizedBox(
-          width: double.infinity,
-          child: _featuredCard(Icons.videocam, loc2.amAllMeetings, _showAllMeetings),
-        ),
-      if (isSA)
-        const SizedBox(height: 8),
-      Row(children: [
-        if (isSA)
-          Expanded(child: _featuredCard(Icons.manage_accounts, loc2.amManageManagers, () => context.push('/am/managers'))),
-        if (!isSA)
-          Expanded(child: _featuredCard(Icons.person_add, loc2.createNewClient, () async { await context.push('/am/clients/create'); _load(); })),
-        const SizedBox(width: 8),
-        Expanded(child: _featuredCard(Icons.pending_actions, loc2.pendingApprovalContracts, _showPendingContracts)),
-      ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          if (_isSA)
-            Expanded(child: _homeStatCard(loc2.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
-          if (_isSA) const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(loc2.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
-        ]),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: _featuredCard(Icons.history, loc2.amActivityLog, () => context.push('/am/audit-logs')),
-        ),
-      const SizedBox(height: 8),
-      if (!isSA)
-        SizedBox(
-          width: double.infinity,
-          child: _featuredCard(Icons.add_circle, loc2.createMeeting, _createMeeting),
-        ),
-      const SizedBox(height: 8),
-      SizedBox(
-        width: double.infinity,
-        child: _featuredCard(Icons.settings, loc2.amSettings, () => context.push('/am/settings')),
-      ),
-    ]);
-  }
-
-  Widget _featuredCard(IconData icon, String label, VoidCallback? onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          child: Row(children: [
-            Icon(icon, size: 20, color: ShadColors.gold),
-            const SizedBox(width: 8),
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: ShadColors.textPrimary, fontFamily: 'Archivo'), overflow: TextOverflow.ellipsis)),
-            const Icon(Icons.chevron_left, size: 18, color: ShadColors.textDisabled),
-          ]),
-        ),
-      ),
-    );
   }
 
   void _showManagerClients(Map<String, dynamic> manager) async {
@@ -1035,19 +843,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     );
   }
 
-  Widget _buildNoResults() {
-    final loc2 = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        const Icon(Icons.search_off, size: 56, color: ShadColors.textDisabled),
-        const SizedBox(height: 16),
-        Text(loc2.noResults, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-        const SizedBox(height: 8),
-        Text(loc2.noClientWithName, style: TextStyle(fontSize: 14, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-      ]),
-    );
-  }
 }
 
 class _PendingListSheet extends StatefulWidget {

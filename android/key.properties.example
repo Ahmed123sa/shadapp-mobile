@@ -1,0 +1,14 @@
+# Copy this file to android/key.properties and fill in real values.
+# android/key.properties is gitignored — never commit real signing credentials.
+#
+# Generate a release keystore with:
+#   keytool -genkey -v -keystore ~/shadapp-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias shadapp
+#
+# Keep the keystore file and these passwords backed up somewhere safe.
+# Losing them means you can never update the app on the Play Store again
+# under the same listing.
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=shadapp
+storeFile=/absolute/path/to/shadapp-release.jks

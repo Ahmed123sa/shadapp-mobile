@@ -4382,6 +4382,162 @@ abstract class AppLocalizations {
   /// **'Save Tax Settings'**
   String get adminSettings_saveTax;
 
+  /// No description provided for @adminSettings_clauses.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract Clauses'**
+  String get adminSettings_clauses;
+
+  /// No description provided for @adminSettings_clausesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed clauses are automatically added to every new contract.'**
+  String get adminSettings_clausesDescription;
+
+  /// No description provided for @adminSettings_addClause.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Clause'**
+  String get adminSettings_addClause;
+
+  /// No description provided for @adminSettings_editClause.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Clause'**
+  String get adminSettings_editClause;
+
+  /// No description provided for @adminSettings_clauseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get adminSettings_clauseName;
+
+  /// No description provided for @adminSettings_clauseNamePh.
+  ///
+  /// In en, this message translates to:
+  /// **'Clause name'**
+  String get adminSettings_clauseNamePh;
+
+  /// No description provided for @adminSettings_clauseOrderSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Order saved'**
+  String get adminSettings_clauseOrderSaved;
+
+  /// No description provided for @adminSettings_clauseType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get adminSettings_clauseType;
+
+  /// No description provided for @adminSettings_clauseCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get adminSettings_clauseCategory;
+
+  /// No description provided for @adminSettings_clauseContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get adminSettings_clauseContent;
+
+  /// No description provided for @adminSettings_clauseContentPh.
+  ///
+  /// In en, this message translates to:
+  /// **'Clause text'**
+  String get adminSettings_clauseContentPh;
+
+  /// No description provided for @adminSettings_clauseFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed'**
+  String get adminSettings_clauseFixed;
+
+  /// No description provided for @adminSettings_clauseOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get adminSettings_clauseOptional;
+
+  /// No description provided for @adminSettings_clauseAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Clause added'**
+  String get adminSettings_clauseAdded;
+
+  /// No description provided for @adminSettings_clauseUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Clause updated'**
+  String get adminSettings_clauseUpdated;
+
+  /// No description provided for @adminSettings_clauseDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Clause deleted'**
+  String get adminSettings_clauseDeleted;
+
+  /// No description provided for @adminSettings_clauseDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this clause? Existing contracts are not affected.'**
+  String get adminSettings_clauseDeleteConfirm;
+
+  /// No description provided for @adminSettings_clauseActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get adminSettings_clauseActive;
+
+  /// No description provided for @adminSettings_clauseInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get adminSettings_clauseInactive;
+
+  /// No description provided for @adminSettings_clauseToggleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate'**
+  String get adminSettings_clauseToggleOff;
+
+  /// No description provided for @adminSettings_clauseToggleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get adminSettings_clauseToggleOn;
+
+  /// No description provided for @adminSettings_clauseMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get adminSettings_clauseMoveUp;
+
+  /// No description provided for @adminSettings_clauseMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get adminSettings_clauseMoveDown;
+
+  /// No description provided for @adminSettings_clauseSaveOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save order'**
+  String get adminSettings_clauseSaveOrder;
+
+  /// No description provided for @adminSettings_clausesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No clauses yet — add your first template.'**
+  String get adminSettings_clausesEmpty;
+
+  /// No description provided for @adminSettings_clausesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load clauses'**
+  String get adminSettings_clausesLoadFailed;
+
   /// No description provided for @auditLog_noEvents.
   ///
   /// In en, this message translates to:
@@ -9671,6 +9827,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payments'**
   String get workspaceTabPayments;
+
+  /// No description provided for @workspaceTabClientProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get workspaceTabClientProfile;
+
+  /// No description provided for @clientProfileContactInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Information'**
+  String get clientProfileContactInfo;
+
+  /// No description provided for @clientProfileCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get clientProfileCompany;
+
+  /// No description provided for @clientProfileContactPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person'**
+  String get clientProfileContactPerson;
+
+  /// No description provided for @clientProfileEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get clientProfileEmail;
+
+  /// No description provided for @clientProfilePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get clientProfilePhone;
+
+  /// No description provided for @clientProfileCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get clientProfileCountry;
+
+  /// No description provided for @clientProfileIndustry.
+  ///
+  /// In en, this message translates to:
+  /// **'Industry'**
+  String get clientProfileIndustry;
+
+  /// No description provided for @clientProfileClientType.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Type'**
+  String get clientProfileClientType;
+
+  /// No description provided for @clientProfileContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracts'**
+  String get clientProfileContracts;
+
+  /// No description provided for @clientProfileDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'draft'**
+  String get clientProfileDraft;
+
+  /// No description provided for @clientProfileInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'in progress'**
+  String get clientProfileInProgress;
+
+  /// No description provided for @clientProfileCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get clientProfileCompleted;
+
+  /// No description provided for @clientProfileTotalValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Value'**
+  String get clientProfileTotalValue;
+
+  /// No description provided for @clientProfileTotalPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Paid'**
+  String get clientProfileTotalPaid;
+
+  /// No description provided for @clientProfilePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get clientProfilePending;
+
+  /// No description provided for @clientProfileMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'meetings'**
+  String get clientProfileMeetings;
+
+  /// No description provided for @clientProfileApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'approvals'**
+  String get clientProfileApprovals;
+
+  /// No description provided for @clientProfileLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get clientProfileLocation;
+
+  /// No description provided for @clientProfileNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Location not recorded yet'**
+  String get clientProfileNotSet;
+
+  /// No description provided for @clientProfileCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in Location'**
+  String get clientProfileCheckIn;
+
+  /// No description provided for @clientProfileCheckInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Location updated successfully'**
+  String get clientProfileCheckInSuccess;
+
+  /// No description provided for @clientProfileCheckInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to get location. Check permissions.'**
+  String get clientProfileCheckInFailed;
+
+  /// No description provided for @clientProfileOpenMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Google Maps'**
+  String get clientProfileOpenMaps;
+
+  /// No description provided for @clientProfileLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated'**
+  String get clientProfileLastUpdated;
+
+  /// No description provided for @clientProfileEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get clientProfileEdit;
+
+  /// No description provided for @clientProfileLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load profile'**
+  String get clientProfileLoadFailed;
 
   /// No description provided for @amActivityLog.
   ///

@@ -23,7 +23,6 @@ class _SettingsPageState extends State<SettingsPage> {
   String? _avatarUrl;
   String? _clientType;
   DateTime? _dateOfBirth;
-  String? _originalEmail;
   bool get _isSubUser => _api.role == 'sub_user';
 
   @override
@@ -50,7 +49,6 @@ class _SettingsPageState extends State<SettingsPage> {
           final data = await _api.get('/sub-users/$sid');
           final su = data['sub_user'] as Map<String, dynamic>? ?? {};
           _emailController.text = su['email'] as String? ?? '';
-          _originalEmail = su['email'] as String?;
           _phoneController.text = su['phone'] as String? ?? '';
           if (su['date_of_birth'] != null) {
             _dateOfBirth = DateTime.tryParse(su['date_of_birth']);
@@ -69,7 +67,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _avatarUrl = client['avatar_url'] as String?;
       _clientType = client['client_type'] as String?;
       _emailController.text = client['email'] as String? ?? '';
-      _originalEmail = client['email'] as String?;
       if (client['date_of_birth'] != null) {
         _dateOfBirth = DateTime.tryParse(client['date_of_birth'].toString());
       }
@@ -87,29 +84,6 @@ class _SettingsPageState extends State<SettingsPage> {
       locale: Localizations.localeOf(context),
     );
     if (picked != null) setState(() => _dateOfBirth = picked);
-  }
-
-  Future<String?> _showPasswordDialog() async {
-    final ctrl = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: Text(l10n.settings_passwordConfirm),
-          content: TextField(
-            controller: ctrl,
-            obscureText: true,
-            decoration: InputDecoration(hintText: l10n.settings_enterCurrentPassword),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.settings_cancel)),
-            TextButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: Text(l10n.settings_confirm)),
-          ],
-        );
-      },
-    );
-    return result;
   }
 
   Future<void> _pickAvatar() async {

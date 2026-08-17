@@ -128,7 +128,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
         _contracts = [];
       }
     } catch (_) {
-      _error = AppLocalizations.of(context)!.payments_failedToLoad;
+      if (mounted) _error = AppLocalizations.of(context)!.payments_failedToLoad;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -623,10 +623,11 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       final resolved = _api.resolveFileUrl(url);
                       final uri = Uri.tryParse(resolved);
                       final messenger = ScaffoldMessenger.of(context);
+                      final failedMsg = AppLocalizations.of(context)!.payments_fileOpenFailed;
                       if (uri != null && await canLaunchUrl(uri)) {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
                       } else {
-                        messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.payments_fileOpenFailed)));
+                        messenger.showSnackBar(SnackBar(content: Text(failedMsg)));
                       }
                     },
                     child: Row(children: [
@@ -646,7 +647,6 @@ class _PaymentsPageState extends State<PaymentsPage> {
   void _showPaymentDetail(dynamic p) {
     final status = p['status']?.toString() ?? '';
     final isScheduled = status == 'scheduled' || status == 'overdue';
-    final isDirectRequest = isScheduled && p['requested_by_manager'] == true && p['due_date'] == null;
 
     showModalBottomSheet(
       context: context,

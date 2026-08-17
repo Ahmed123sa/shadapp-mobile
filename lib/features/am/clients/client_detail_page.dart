@@ -317,10 +317,12 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                 firstDate: DateTime(1950),
                 lastDate: DateTime.now(),
               );
-              if (d != null) setState(() {
-                _dateOfBirth = d;
-                _dateOfBirthController.text = '${d.year}/${d.month}/${d.day}';
-              });
+              if (d != null) {
+                setState(() {
+                  _dateOfBirth = d;
+                  _dateOfBirthController.text = '${d.year}/${d.month}/${d.day}';
+                });
+              }
             },
             borderRadius: BorderRadius.circular(10),
             child: InputDecorator(

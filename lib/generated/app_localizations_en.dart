@@ -2197,6 +2197,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSettings_saveTax => 'Save Tax Settings';
 
   @override
+  String get adminSettings_clauses => 'Contract Clauses';
+
+  @override
+  String get adminSettings_clausesDescription =>
+      'Fixed clauses are automatically added to every new contract.';
+
+  @override
+  String get adminSettings_addClause => 'Add Clause';
+
+  @override
+  String get adminSettings_editClause => 'Edit Clause';
+
+  @override
+  String get adminSettings_clauseName => 'Name';
+
+  @override
+  String get adminSettings_clauseNamePh => 'Clause name';
+
+  @override
+  String get adminSettings_clauseOrderSaved => 'Order saved';
+
+  @override
+  String get adminSettings_clauseType => 'Type';
+
+  @override
+  String get adminSettings_clauseCategory => 'Category';
+
+  @override
+  String get adminSettings_clauseContent => 'Content';
+
+  @override
+  String get adminSettings_clauseContentPh => 'Clause text';
+
+  @override
+  String get adminSettings_clauseFixed => 'Fixed';
+
+  @override
+  String get adminSettings_clauseOptional => 'Optional';
+
+  @override
+  String get adminSettings_clauseAdded => 'Clause added';
+
+  @override
+  String get adminSettings_clauseUpdated => 'Clause updated';
+
+  @override
+  String get adminSettings_clauseDeleted => 'Clause deleted';
+
+  @override
+  String get adminSettings_clauseDeleteConfirm =>
+      'Delete this clause? Existing contracts are not affected.';
+
+  @override
+  String get adminSettings_clauseActive => 'Active';
+
+  @override
+  String get adminSettings_clauseInactive => 'Inactive';
+
+  @override
+  String get adminSettings_clauseToggleOff => 'Deactivate';
+
+  @override
+  String get adminSettings_clauseToggleOn => 'Activate';
+
+  @override
+  String get adminSettings_clauseMoveUp => 'Move up';
+
+  @override
+  String get adminSettings_clauseMoveDown => 'Move down';
+
+  @override
+  String get adminSettings_clauseSaveOrder => 'Save order';
+
+  @override
+  String get adminSettings_clausesEmpty =>
+      'No clauses yet — add your first template.';
+
+  @override
+  String get adminSettings_clausesLoadFailed => 'Failed to load clauses';
+
+  @override
   String get auditLog_noEvents => 'No events found';
 
   @override
@@ -5012,6 +5093,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceTabPayments => 'Payments';
+
+  @override
+  String get workspaceTabClientProfile => 'Profile';
+
+  @override
+  String get clientProfileContactInfo => 'Contact Information';
+
+  @override
+  String get clientProfileCompany => 'Company';
+
+  @override
+  String get clientProfileContactPerson => 'Contact Person';
+
+  @override
+  String get clientProfileEmail => 'Email';
+
+  @override
+  String get clientProfilePhone => 'Phone';
+
+  @override
+  String get clientProfileCountry => 'Country';
+
+  @override
+  String get clientProfileIndustry => 'Industry';
+
+  @override
+  String get clientProfileClientType => 'Client Type';
+
+  @override
+  String get clientProfileContracts => 'Contracts';
+
+  @override
+  String get clientProfileDraft => 'draft';
+
+  @override
+  String get clientProfileInProgress => 'in progress';
+
+  @override
+  String get clientProfileCompleted => 'Completed';
+
+  @override
+  String get clientProfileTotalValue => 'Total Value';
+
+  @override
+  String get clientProfileTotalPaid => 'Total Paid';
+
+  @override
+  String get clientProfilePending => 'Pending';
+
+  @override
+  String get clientProfileMeetings => 'meetings';
+
+  @override
+  String get clientProfileApprovals => 'approvals';
+
+  @override
+  String get clientProfileLocation => 'Location';
+
+  @override
+  String get clientProfileNotSet => 'Location not recorded yet';
+
+  @override
+  String get clientProfileCheckIn => 'Check-in Location';
+
+  @override
+  String get clientProfileCheckInSuccess => 'Location updated successfully';
+
+  @override
+  String get clientProfileCheckInFailed =>
+      'Unable to get location. Check permissions.';
+
+  @override
+  String get clientProfileOpenMaps => 'Open in Google Maps';
+
+  @override
+  String get clientProfileLastUpdated => 'Last updated';
+
+  @override
+  String get clientProfileEdit => 'Edit Profile';
+
+  @override
+  String get clientProfileLoadFailed => 'Failed to load profile';
 
   @override
   String get amActivityLog => 'Activity Log';
