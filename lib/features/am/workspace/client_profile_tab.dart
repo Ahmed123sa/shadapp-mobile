@@ -7,6 +7,7 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/loading_state.dart';
+import 'location_picker_page.dart';
 
 class ClientProfileTab extends StatefulWidget {
   final int? workspaceId;
@@ -94,6 +95,36 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
     }
   }
 
+  Future<void> _pickOnMap(AppLocalizations l10n) async {
+    final loc = _location['latitude'] != null && _location['longitude'] != null
+        ? _location
+        : null;
+    final result = await Navigator.push<PickedLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationPickerPage(
+          initialLat: loc != null ? (loc['latitude'] as num).toDouble() : null,
+          initialLng: loc != null ? (loc['longitude'] as num).toDouble() : null,
+        ),
+      ),
+    );
+    if (result == null || _clientId == null) return;
+    try {
+      await _api.post('/clients/$_clientId/location', {
+        'latitude': result.latitude,
+        'longitude': result.longitude,
+        if (result.address != null) 'address': result.address,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.clientProfileCheckInSuccess)));
+      await _load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.clientProfileCheckInFailed)));
+      }
+    }
+  }
+
   Future<void> _openMaps(String? url) async {
     if (url == null || url.isEmpty) return;
     final uri = Uri.parse(url);
@@ -168,7 +199,14 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                   const Icon(Icons.location_on_outlined, size: 18, color: ShadColors.crimson),
                   const SizedBox(width: 6),
                   Expanded(child: Text(l10n.clientProfileLocation, style: ShadTypography.sectionHeader)),
-                  if (_isAM && _clientId != null)
+                  if (_isAM && _clientId != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: () => _pickOnMap(l10n),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+                      icon: const Icon(Icons.map_outlined, size: 14),
+                      label: Text(l10n.clientProfilePickOnMap, style: const TextStyle(fontSize: 11)),
+                    ),
+                    const SizedBox(width: 6),
                     FilledButton.icon(
                       onPressed: _checkingIn ? null : () => _checkIn(l10n),
                       style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
@@ -177,6 +215,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                           : const Icon(Icons.my_location, size: 14),
                       label: Text(l10n.clientProfileCheckIn, style: const TextStyle(fontSize: 11)),
                     ),
+                  ],
                 ]),
                 const Divider(height: 20),
                 if (hasLocation) ...[

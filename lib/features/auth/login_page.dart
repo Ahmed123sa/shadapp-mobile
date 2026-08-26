@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -181,9 +182,22 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       Map<String, dynamic> data;
       bool isClient = false;
 
+      // Staff and clients authenticate against different endpoints, so a
+      // failure on the staff route is expected for client accounts and we fall
+      // through to the client route.
+      //
+      // The fallback is deliberately narrow: only a credential rejection means
+      // "maybe they're a client, try the other endpoint". Retrying after a
+      // connection failure or a rate-limit would just burn a second request and
+      // replace the real cause with whatever the second attempt happened to
+      // return — which is how a stopped server ended up being reported as a
+      // wrong password.
       try {
         data = await _api.post('/auth/login', body);
-      } on Exception {
+      } on ValidationException {
+        data = await _api.post('/auth/client/login', body);
+        isClient = true;
+      } on AuthException {
         data = await _api.post('/auth/client/login', body);
         isClient = true;
       }
@@ -214,17 +228,28 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
       if (!mounted) return;
       context.go(isClient ? '/dashboard' : '/am/dashboard');
-    } on AuthException {
-      _error.value = l10n.sessionExpiredMessage;
+    } on ValidationException {
+      // The only case that genuinely means the email/password were rejected.
+      _error.value = l10n.invalidCredentialsMessage;
       _shakeController.forward(from: 0);
-    } on ValidationException catch (e) {
-      _error.value = e.message;
+    } on AuthException {
+      _error.value = l10n.invalidCredentialsMessage;
+      _shakeController.forward(from: 0);
+    } on RateLimitException {
+      _error.value = l10n.tooManyAttemptsMessage;
+      _shakeController.forward(from: 0);
+    } on ConnectionException {
+      _error.value = l10n.connectionFailedMessage;
       _shakeController.forward(from: 0);
     } on ServerException {
       _error.value = l10n.serverErrorMessage;
       _shakeController.forward(from: 0);
-    } catch (_) {
-      _error.value = l10n.invalidCredentialsMessage;
+    } catch (e) {
+      // Anything reaching here is unclassified, so don't guess at a cause the
+      // way this used to by blaming the credentials. Surface the real error in
+      // debug builds so it can actually be diagnosed.
+      debugPrint('Unhandled login error: $e');
+      _error.value = kDebugMode ? '$e' : l10n.serverErrorMessage;
       _shakeController.forward(from: 0);
     } finally {
       _loading.value = false;
@@ -492,14 +517,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       const SizedBox(height: 14),
 
                                       TextButton(
-                                        onPressed: () {},
+                                        // This button existed but was wired to
+                                        // an empty callback — it looked
+                                        // functional and silently did nothing.
+                                        onPressed: () => context.push('/forgot-password'),
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero, minimumSize: Size.zero,
                                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text(
                                           l10n.forgotPassword,
-                                          style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(100),
+                                          style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(160),
                                             fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
                                         ),
                                       ),

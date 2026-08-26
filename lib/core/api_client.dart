@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -7,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'reverb_service.dart';
 
 class ApiClient {
   String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
@@ -139,44 +141,69 @@ class ApiClient {
     if (!multipart) headers['Content-Type'] = 'application/json';
     final token = await getToken();
     if (token != null) headers['Authorization'] = 'Bearer $token';
+    // Lets broadcast(...)->toOthers() on the backend exclude this exact
+    // connection. Without it, sending a chat message delivers it back to the
+    // sender's own socket on top of whatever the HTTP response already
+    // showed — a visible duplicate. Harmless to send on every request; only
+    // endpoints that actually broadcast read it.
+    final socketId = ReverbService().socketId;
+    if (socketId != null) headers['X-Socket-Id'] = socketId;
     return headers;
   }
 
-  Future<Map<String, dynamic>> get(String path) async {
-    final response = await http.get(Uri.parse('$baseUrl$path'), headers: await _headers()).timeout(_timeout);
+  /// Runs an HTTP call and converts "never got a response" failures into a
+  /// [ConnectionException]. Without this, a stopped server, a DNS/CORS problem
+  /// or a timeout surfaces as a raw SocketException/ClientException that
+  /// callers can't distinguish from an application-level error.
+  Future<Map<String, dynamic>> _send(Future<http.Response> Function() call) async {
+    http.Response response;
+    try {
+      response = await call().timeout(_timeout);
+    } on SocketException catch (e) {
+      throw ConnectionException(e.message.isNotEmpty ? e.message : 'Network unreachable');
+    } on http.ClientException catch (e) {
+      throw ConnectionException(e.message);
+    } on TimeoutException {
+      throw ConnectionException('Request timed out after ${_timeout.inSeconds}s');
+    }
     return _handle(response);
+  }
+
+  Future<Map<String, dynamic>> get(String path) async {
+    final headers = await _headers();
+    return _send(() => http.get(Uri.parse('$baseUrl$path'), headers: headers));
   }
 
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) async {
-    final response = await http.post(
+    final headers = await _headers();
+    return _send(() => http.post(
       Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
+      headers: headers,
       body: body != null ? jsonEncode(body) : null,
-    ).timeout(_timeout);
-    return _handle(response);
+    ));
   }
 
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
-    final response = await http.put(
+    final headers = await _headers();
+    return _send(() => http.put(
       Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
+      headers: headers,
       body: jsonEncode(body),
-    ).timeout(_timeout);
-    return _handle(response);
+    ));
   }
 
   Future<Map<String, dynamic>> patch(String path, [Map<String, dynamic>? body]) async {
-    final response = await http.patch(
+    final headers = await _headers();
+    return _send(() => http.patch(
       Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
+      headers: headers,
       body: body != null ? jsonEncode(body) : null,
-    ).timeout(_timeout);
-    return _handle(response);
+    ));
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
-    final response = await http.delete(Uri.parse('$baseUrl$path'), headers: await _headers()).timeout(_timeout);
-    return _handle(response);
+    final headers = await _headers();
+    return _send(() => http.delete(Uri.parse('$baseUrl$path'), headers: headers));
   }
 
   Future<Map<String, dynamic>> multipartPut(String path, Map<String, dynamic> fields,
@@ -248,7 +275,18 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> _handle(http.Response response) async {
-    final data = response.body.isNotEmpty ? jsonDecode(response.body) as Map<String, dynamic> : <String, dynamic>{};
+    // A non-JSON body (an HTML error page from the web server, a proxy notice,
+    // an empty 502) would otherwise blow up in jsonDecode and surface as an
+    // unrelated error far from its cause.
+    Map<String, dynamic> data;
+    try {
+      data = response.body.isNotEmpty
+          ? jsonDecode(response.body) as Map<String, dynamic>
+          : <String, dynamic>{};
+    } catch (_) {
+      data = <String, dynamic>{};
+    }
+
     if (response.statusCode == 401) {
       await clearToken();
       throw AuthException(data['message'] ?? l10n?.sessionExpired ?? 'Session Expired');
@@ -258,6 +296,13 @@ class ApiClient {
       final firstError = errors?.values.firstOrNull;
       final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
       throw ValidationException(msg);
+    }
+    // 429 is its own case: the credentials may be perfectly correct, the
+    // caller just tripped Laravel's `throttle` middleware. Reporting it as a
+    // generic server error (or worse, as bad credentials) sends people off
+    // re-checking a password that was never the problem.
+    if (response.statusCode == 429) {
+      throw RateLimitException(data['message'] ?? 'Too many requests');
     }
     if (response.statusCode >= 400) {
       throw ServerException(data['message'] ?? l10n?.serverError ?? 'Server Error');
@@ -289,6 +334,26 @@ class ValidationException implements Exception {
 class ServerException implements Exception {
   final String message;
   ServerException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// HTTP 429 — Laravel's `throttle` middleware rejected the request. Distinct
+/// from a credential problem, which is what it used to be reported as.
+class RateLimitException implements Exception {
+  final String message;
+  RateLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// The request never produced an HTTP response at all: server unreachable,
+/// DNS/CORS failure, or timeout. Previously these fell through to a generic
+/// catch that displayed "invalid email or password", which pointed users at
+/// entirely the wrong problem.
+class ConnectionException implements Exception {
+  final String message;
+  ConnectionException(this.message);
   @override
   String toString() => message;
 }

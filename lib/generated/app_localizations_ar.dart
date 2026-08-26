@@ -270,6 +270,35 @@ class AppLocalizationsAr extends AppLocalizations {
   String get industryHint => 'مثال: تقنية معلومات';
 
   @override
+  String get address => 'العنوان';
+
+  @override
+  String get addressHint => 'الشارع، المدينة، المنطقة...';
+
+  @override
+  String get forgotPasswordTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'اكتب بريدك الإلكتروني وهنبعتلك رابط لإعادة التعيين.';
+
+  @override
+  String get forgotPasswordSubmit => 'إرسال الرابط';
+
+  @override
+  String get forgotPasswordSending => 'جاري الإرسال...';
+
+  @override
+  String get forgotPasswordSent =>
+      'لو بريدك مسجل عندنا، هيوصلك رابط إعادة التعيين. افتحه من أي متصفح، اختر كلمة مرور جديدة، وبعدين ارجع سجّل دخولك.';
+
+  @override
+  String get forgotPasswordBackToLogin => 'الرجوع لتسجيل الدخول';
+
+  @override
+  String get forgotPasswordEnterEmail => 'من فضلك اكتب بريدك الإلكتروني.';
+
+  @override
   String get contractValue => 'قيمة العقد *';
 
   @override
@@ -442,6 +471,14 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get invalidCredentialsMessage =>
       'البريد الإلكتروني أو كلمة المرور غير صحيحة. حاول مرة أخرى.';
+
+  @override
+  String get connectionFailedMessage =>
+      'تعذّر الوصول إلى الخادم. تأكد من اتصالك ومن أن الخادم يعمل.';
+
+  @override
+  String get tooManyAttemptsMessage =>
+      'محاولات تسجيل دخول كثيرة. انتظر دقيقة ثم حاول مرة أخرى.';
 
   @override
   String get loginSuccess => 'تم تسجيل الدخول بنجاح';
@@ -3900,6 +3937,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clientDetailCountry => 'البلد';
 
   @override
+  String get clientDetailAddress => 'العنوان';
+
+  @override
   String get clientDetailDateOfBirth => 'تاريخ الميلاد';
 
   @override
@@ -5146,6 +5186,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get clientProfileLastUpdated => 'آخر تحديث';
+
+  @override
+  String get clientProfilePickOnMap => 'تحديد على الخريطة';
+
+  @override
+  String get locationPickerTitle => 'تحديد موقع العميل';
+
+  @override
+  String get locationPickerHint =>
+      'دوّر عن العنوان أو دوس على الخريطة لتحديد المكان، وتقدر تدوس تاني تظبطه.';
+
+  @override
+  String get locationPickerSearchPh => 'دوّر عن عنوان...';
+
+  @override
+  String get locationPickerSearchBtn => 'بحث';
+
+  @override
+  String get locationPickerSearchNoResults => 'مفيش نتائج';
+
+  @override
+  String get locationPickerSearchFailed => 'فشل البحث، حاول تاني';
+
+  @override
+  String get locationPickerAddressLabel => 'العنوان';
+
+  @override
+  String get locationPickerConfirm => 'حفظ الموقع';
 
   @override
   String get clientProfileEdit => 'تعديل الملف';

@@ -20,6 +20,10 @@ class ReverbService {
   int? _currentUserId;
   bool _isClientChannel = false;
   String? _socketId;
+
+  /// Exposed so ApiClient can attach X-Socket-Id to outgoing requests — see
+  /// the header wiring in api_client.dart's _headers() for why.
+  String? get socketId => _socketId;
   DateTime _lastNotifTime = DateTime.now().subtract(const Duration(seconds: 1));
   void Function(Map<String, dynamic>)? onMessageReceived;
   void Function(Map<String, dynamic>)? onMessageUpdated;
@@ -95,7 +99,14 @@ class ReverbService {
               _subscribePrivateChannel(channel);
             }
             if (_currentWorkspaceId != null) {
-              _subscribe('workspace.$_currentWorkspaceId');
+              // Must go through the authenticated path — see
+              // _subscribePrivateChannel for why. This used to call
+              // _subscribe() directly, which asked Reverb for the *public*
+              // "workspace.{id}" channel and skipped auth entirely: with the
+              // server broadcasting on the matching private channel, that
+              // meant workspace chat/payment events were reachable by
+              // anyone who could guess a workspace id.
+              _subscribePrivateChannel('workspace.$_currentWorkspaceId');
             }
           } else if (event == 'message.sent') {
             final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
@@ -139,9 +150,22 @@ class ReverbService {
     return null;
   }
 
+  /// Subscribes to `private-{channel}` after authorizing with the backend.
+  ///
+  /// Every channel this app uses (`App.Models.User.*`, `App.Models.Client.*`,
+  /// `workspace.*`) is declared private in routes/channels.php on the server,
+  /// which is where the actual access check happens — a workspace channel is
+  /// only granted to the manager or client who owns it. This method has no
+  /// fallback to a plain/public subscription on purpose: subscribing to the
+  /// public channel name skips that check completely, so silently falling
+  /// back to it on any failure (missing socket id, auth error, network
+  /// error) would mean "couldn't prove I'm allowed in" quietly turns into
+  /// "let me in anyway". If auth fails, retry once the socket is ready
+  /// rather than degrade to an unauthenticated subscription.
   Future<void> _subscribePrivateChannel(String channel) async {
     if (_socketId == null) {
-      _subscribe(channel);
+      // Not connected yet — pusher:connection_established will retry this
+      // once we have a socket id.
       return;
     }
     try {
@@ -153,16 +177,10 @@ class ReverbService {
       final auth = response['auth'] as String?;
       if (auth != null) {
         _send({'event': 'pusher:subscribe', 'data': {'channel': 'private-$channel', 'auth': auth}});
-      } else {
-        _subscribe(channel);
       }
     } catch (_) {
-      _subscribe(channel);
+      // Intentionally no fallback subscription — see the doc comment above.
     }
-  }
-
-  void _subscribe(String channel) {
-    _send({'event': 'pusher:subscribe', 'data': {'channel': channel}});
   }
 
   void _send(Map<String, dynamic> data) {

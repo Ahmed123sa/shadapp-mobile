@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'api_client.dart';
 import '../features/auth/login_page.dart';
+import '../features/auth/forgot_password_page.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/am/dashboard/am_dashboard_page.dart';
 import '../features/am/clients/create_client_page.dart';
@@ -24,6 +25,7 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
     routes: [
       GoRoute(path: '/preview', builder: (_, __) => const PreviewPage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordPage()),
       GoRoute(path: '/dashboard', builder: (_, state) {
         final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 2;
         return DashboardPage(initialTab: tab);

@@ -620,6 +620,60 @@ abstract class AppLocalizations {
   /// **'Example: Information Technology'**
   String get industryHint;
 
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @addressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Street, city, area...'**
+  String get addressHint;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and we\'ll send you a reset link.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @forgotPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Link'**
+  String get forgotPasswordSubmit;
+
+  /// No description provided for @forgotPasswordSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get forgotPasswordSending;
+
+  /// No description provided for @forgotPasswordSent.
+  ///
+  /// In en, this message translates to:
+  /// **'If your email is registered, a reset link is on its way. Open it on this device or any browser, set a new password, then come back and sign in.'**
+  String get forgotPasswordSent;
+
+  /// No description provided for @forgotPasswordBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get forgotPasswordBackToLogin;
+
+  /// No description provided for @forgotPasswordEnterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email address.'**
+  String get forgotPasswordEnterEmail;
+
   /// No description provided for @contractValue.
   ///
   /// In en, this message translates to:
@@ -961,6 +1015,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid email or password. Please try again.'**
   String get invalidCredentialsMessage;
+
+  /// No description provided for @connectionFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Check your connection and make sure the server is running.'**
+  String get connectionFailedMessage;
+
+  /// No description provided for @tooManyAttemptsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many login attempts. Please wait a minute and try again.'**
+  String get tooManyAttemptsMessage;
 
   /// No description provided for @loginSuccess.
   ///
@@ -7589,6 +7655,12 @@ abstract class AppLocalizations {
   /// **'Country'**
   String get clientDetailCountry;
 
+  /// No description provided for @clientDetailAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get clientDetailAddress;
+
   /// No description provided for @clientDetailDateOfBirth.
   ///
   /// In en, this message translates to:
@@ -9977,6 +10049,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last updated'**
   String get clientProfileLastUpdated;
+
+  /// No description provided for @clientProfilePickOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on Map'**
+  String get clientProfilePickOnMap;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Client Location'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for the address or tap the map to place the pin. Tap again to adjust it.'**
+  String get locationPickerHint;
+
+  /// No description provided for @locationPickerSearchPh.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for an address...'**
+  String get locationPickerSearchPh;
+
+  /// No description provided for @locationPickerSearchBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get locationPickerSearchBtn;
+
+  /// No description provided for @locationPickerSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get locationPickerSearchNoResults;
+
+  /// No description provided for @locationPickerSearchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Search failed, try again'**
+  String get locationPickerSearchFailed;
+
+  /// No description provided for @locationPickerAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get locationPickerAddressLabel;
+
+  /// No description provided for @locationPickerConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Location'**
+  String get locationPickerConfirm;
 
   /// No description provided for @clientProfileEdit.
   ///

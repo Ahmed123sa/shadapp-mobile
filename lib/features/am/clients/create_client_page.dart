@@ -24,6 +24,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
   final _phoneController = TextEditingController();
   final _countryController = TextEditingController();
   final _industryController = TextEditingController();
+  final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
   final _dateOfBirthController = TextEditingController();
   final _notesController = TextEditingController();
@@ -47,6 +48,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
         'phone': _phoneController.text.trim(),
         'country': _countryController.text.trim(),
         'industry': _industryController.text.trim(),
+        if (_addressController.text.trim().isNotEmpty) 'address': _addressController.text.trim(),
         'client_type': _isBusiness ? 'business' : 'individual',
         if (_dateOfBirth != null) 'date_of_birth': _dateOfBirth!.toIso8601String(),
         if (!_autoPassword) 'password': _passwordController.text.trim(),
@@ -146,6 +148,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
     _phoneController.dispose();
     _countryController.dispose();
     _industryController.dispose();
+    _addressController.dispose();
     _passwordController.dispose();
     _dateOfBirthController.dispose();
     _notesController.dispose();
@@ -313,6 +316,12 @@ class _CreateClientPageState extends State<CreateClientPage> {
             TextFormField(
               controller: _industryController,
               decoration: InputDecoration(labelText: AppLocalizations.of(context)!.industry, hintText: AppLocalizations.of(context)!.industryHint),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _addressController,
+              maxLines: 2,
+              decoration: InputDecoration(labelText: AppLocalizations.of(context)!.address, hintText: AppLocalizations.of(context)!.addressHint),
             ),
             const SizedBox(height: 10),
             InkWell(

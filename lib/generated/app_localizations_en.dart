@@ -270,6 +270,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get industryHint => 'Example: Information Technology';
 
   @override
+  String get address => 'Address';
+
+  @override
+  String get addressHint => 'Street, city, area...';
+
+  @override
+  String get forgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email and we\'ll send you a reset link.';
+
+  @override
+  String get forgotPasswordSubmit => 'Send Reset Link';
+
+  @override
+  String get forgotPasswordSending => 'Sending...';
+
+  @override
+  String get forgotPasswordSent =>
+      'If your email is registered, a reset link is on its way. Open it on this device or any browser, set a new password, then come back and sign in.';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Back to sign in';
+
+  @override
+  String get forgotPasswordEnterEmail => 'Please enter your email address.';
+
+  @override
   String get contractValue => 'Contract Value *';
 
   @override
@@ -442,6 +471,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get invalidCredentialsMessage =>
       'Invalid email or password. Please try again.';
+
+  @override
+  String get connectionFailedMessage =>
+      'Could not reach the server. Check your connection and make sure the server is running.';
+
+  @override
+  String get tooManyAttemptsMessage =>
+      'Too many login attempts. Please wait a minute and try again.';
 
   @override
   String get loginSuccess => 'Login successful';
@@ -3912,6 +3949,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientDetailCountry => 'Country';
 
   @override
+  String get clientDetailAddress => 'Address';
+
+  @override
   String get clientDetailDateOfBirth => 'Date of Birth';
 
   @override
@@ -5169,6 +5209,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clientProfileLastUpdated => 'Last updated';
+
+  @override
+  String get clientProfilePickOnMap => 'Pick on Map';
+
+  @override
+  String get locationPickerTitle => 'Set Client Location';
+
+  @override
+  String get locationPickerHint =>
+      'Search for the address or tap the map to place the pin. Tap again to adjust it.';
+
+  @override
+  String get locationPickerSearchPh => 'Search for an address...';
+
+  @override
+  String get locationPickerSearchBtn => 'Search';
+
+  @override
+  String get locationPickerSearchNoResults => 'No results found';
+
+  @override
+  String get locationPickerSearchFailed => 'Search failed, try again';
+
+  @override
+  String get locationPickerAddressLabel => 'Address';
+
+  @override
+  String get locationPickerConfirm => 'Save Location';
 
   @override
   String get clientProfileEdit => 'Edit Profile';

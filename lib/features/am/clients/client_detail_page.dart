@@ -23,6 +23,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
   final _phoneCtrl = TextEditingController();
   final _countryCtrl = TextEditingController();
   final _industryCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _dateOfBirthController = TextEditingController();
   DateTime? _dateOfBirth;
@@ -49,6 +50,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     _phoneCtrl.dispose();
     _countryCtrl.dispose();
     _industryCtrl.dispose();
+    _addressCtrl.dispose();
     _passwordCtrl.dispose();
     _dateOfBirthController.dispose();
     super.dispose();
@@ -63,6 +65,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
       _phoneCtrl.text = (client['phone'] as String? ?? '');
       _countryCtrl.text = (client['country'] as String? ?? '');
       _industryCtrl.text = (client['industry'] as String? ?? '');
+      _addressCtrl.text = (client['address'] as String? ?? '');
       _dateOfBirthController.text = (client['date_of_birth'] as String? ?? '');
       _emailCtrl.text = (client['email'] as String? ?? '');
       _status = client['status'] as String? ?? 'inactive';
@@ -98,6 +101,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
         'phone': _phoneCtrl.text.trim(),
         'country': _countryCtrl.text.trim(),
         'industry': _industryCtrl.text.trim(),
+        'address': _addressCtrl.text.trim(),
         if (_dateOfBirth != null) 'date_of_birth': _dateOfBirth!.toIso8601String(),
         'client_type': _isBusiness ? 'business' : 'individual',
         if (_passwordCtrl.text.trim().isNotEmpty) 'password': _passwordCtrl.text.trim(),
@@ -308,6 +312,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
           TextField(controller: _countryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCountry)),
           const SizedBox(height: 10),
           TextField(controller: _industryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailIndustry)),
+          const SizedBox(height: 10),
+          TextField(controller: _addressCtrl, maxLines: 2, decoration: InputDecoration(labelText: l10n.clientDetailAddress)),
           const SizedBox(height: 10),
           InkWell(
             onTap: () async {
