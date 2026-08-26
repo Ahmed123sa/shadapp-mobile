@@ -290,7 +290,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgotPasswordSent =>
-      'If your email is registered, a reset link is on its way. Open it on this device or any browser, set a new password, then come back and sign in.';
+      'The reset link has been sent to your email. Open it and set a new password, then come back and sign in.';
 
   @override
   String get forgotPasswordBackToLogin => 'Back to sign in';

@@ -659,7 +659,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgotPasswordSent.
   ///
   /// In en, this message translates to:
-  /// **'If your email is registered, a reset link is on its way. Open it on this device or any browser, set a new password, then come back and sign in.'**
+  /// **'The reset link has been sent to your email. Open it and set a new password, then come back and sign in.'**
   String get forgotPasswordSent;
 
   /// No description provided for @forgotPasswordBackToLogin.

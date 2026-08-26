@@ -290,7 +290,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get forgotPasswordSent =>
-      'لو بريدك مسجل عندنا، هيوصلك رابط إعادة التعيين. افتحه من أي متصفح، اختر كلمة مرور جديدة، وبعدين ارجع سجّل دخولك.';
+      'تم إرسال الرابط لإيميلك. افتحه واختر كلمة مرور جديدة، وبعدين ارجع سجّل دخولك.';
 
   @override
   String get forgotPasswordBackToLogin => 'الرجوع لتسجيل الدخول';
