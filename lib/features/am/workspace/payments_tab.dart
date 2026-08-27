@@ -6,12 +6,23 @@ import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/payment_provider.dart';
 
 class PaymentsTab extends StatefulWidget {
   final int? workspaceId;
   final VoidCallback? onWorkspaceUpdate;
   final ApiClient? api;
-  const PaymentsTab({super.key, this.workspaceId, this.onWorkspaceUpdate, this.api});
+  final PaymentProvider? paymentProvider;
+  final ContractProvider? contractProvider;
+  const PaymentsTab({
+    super.key,
+    this.workspaceId,
+    this.onWorkspaceUpdate,
+    this.api,
+    this.paymentProvider,
+    this.contractProvider,
+  });
 
   @override
   State<PaymentsTab> createState() => _PaymentsTabState();
@@ -19,6 +30,8 @@ class PaymentsTab extends StatefulWidget {
 
 class _PaymentsTabState extends State<PaymentsTab> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   List<dynamic> _payments = [];
   List<dynamic> _contracts = [];
   Map<String, dynamic>? _taxSummary;
@@ -36,14 +49,17 @@ class _PaymentsTabState extends State<PaymentsTab> {
     if (wsId == null) return;
     setState(() { if (_payments.isEmpty) _loading = true; _error = null; });
     try {
-      final results = await Future.wait<Map<String, dynamic>>([
-        _api.get('/workspaces/$wsId/payments'),
-        _api.get('/workspaces/$wsId/contracts'),
+      // Future.wait (not sequential) so a contracts-fetch failure aborts the
+      // whole load and surfaces `_error` — unlike payments_page.dart, which
+      // treats that failure as "no contracts" and keeps going.
+      final results = await Future.wait<dynamic>([
+        _paymentProvider.fetchWorkspaceEnvelope(wsId),
+        _contractProvider.fetchWorkspaceContractsRaw(wsId),
       ]);
-      _payments = (results[0]['payments'] as List<dynamic>?) ?? [];
-      _taxSummary = results[0]['tax_summary'] as Map<String, dynamic>?;
-      final rawContracts = results[1]['contracts'];
-      _contracts = rawContracts is List ? rawContracts : (rawContracts is Map ? (rawContracts['data'] ?? []) as List : []);
+      final paymentsResult = results[0] as Map<String, dynamic>;
+      _payments = (paymentsResult['payments'] as List<dynamic>?) ?? [];
+      _taxSummary = paymentsResult['tax_summary'] as Map<String, dynamic>?;
+      _contracts = results[1] as List<dynamic>;
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)?.paymentsFailedToLoad;
     }

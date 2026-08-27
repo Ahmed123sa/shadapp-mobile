@@ -6,8 +6,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/data/payment_repository.dart';
 import 'package:shadapp_client/features/am/workspace/payments_tab.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:shadapp_client/providers/contract_provider.dart';
+import 'package:shadapp_client/providers/payment_provider.dart';
 import '../helpers/mock_http_client.dart';
 
 void main() {
@@ -19,7 +22,17 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: PaymentsTab(workspaceId: 5, api: api)),
+      // paymentProvider/contractProvider must be wired to the same mocked
+      // `api`, otherwise they fall back to real providers backed by the real
+      // ApiClient() singleton and the test hangs on a real network call.
+      home: Scaffold(
+        body: PaymentsTab(
+          workspaceId: 5,
+          api: api,
+          paymentProvider: PaymentProvider(repository: PaymentRepository(api: api)),
+          contractProvider: ContractProvider(api: api),
+        ),
+      ),
     ));
     await tester.pumpAndSettle();
   }
