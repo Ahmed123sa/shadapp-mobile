@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/client_repository.dart';
-import 'package:shadapp_client/data/contract_repository.dart';
 import 'package:shadapp_client/data/payment_repository.dart';
 import 'package:shadapp_client/features/am/dashboard/sa_approvals_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
