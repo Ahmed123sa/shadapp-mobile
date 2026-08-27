@@ -40,6 +40,29 @@ void main() {
     expect(manager.managedClientsCount, 3);
   });
 
+  test('fetchOneRaw returns the raw envelope, including sibling clients list', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"manager":{"id":5,"name":"Ahmed"},"clients":[{"id":1,"company_name":"Acme"}]}'),
+    );
+
+    final raw = await repo.fetchOneRaw(5);
+
+    expect(raw['manager']['name'], 'Ahmed');
+    expect(raw['clients'], hasLength(1));
+  });
+
+  test('fetchStats hits /account-managers/:id/stats and returns the raw map', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"clients_count":4,"total_revenue":"1500"}'),
+    );
+
+    final stats = await repo.fetchStats(5);
+
+    expect(stats['clients_count'], 4);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/account-managers/5/stats'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('create posts the body and returns the raw response (credentials included)', () async {
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
       (_) async => jsonResponse('{"manager":{"id":9,"name":"New Mgr"},"credentials":{"email":"e@x.com","password":"pw"}}'),

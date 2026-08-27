@@ -40,6 +40,26 @@ void main() {
     expect(provider.error, isNotNull);
   });
 
+  test('fetchManagerRaw delegates to the repository', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"manager":{"id":5,"name":"Ahmed"},"clients":[]}'),
+    );
+
+    final raw = await provider.fetchManagerRaw(5);
+
+    expect(raw['manager']['name'], 'Ahmed');
+  });
+
+  test('fetchManagerStats delegates to the repository', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"clients_count":2}'),
+    );
+
+    final stats = await provider.fetchManagerStats(5);
+
+    expect(stats['clients_count'], 2);
+  });
+
   test('deleteManager removes the manager from the in-memory list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"managers":[{"id":1,"name":"Ahmed"},{"id":2,"name":"Sara"}]}'),

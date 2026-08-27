@@ -2,10 +2,6 @@ import '../core/api_client.dart';
 import '../models/manager.dart';
 
 /// Wraps every `/account-managers` HTTP call behind a typed interface.
-/// The `/account-managers/:id/stats` sub-resource (manager_detail_page.dart)
-/// is left as a direct ApiClient call for now — it returns a different,
-/// dashboard-shaped payload, not a Manager, and doesn't belong in this
-/// repository.
 class ManagerRepository {
   final ApiClient _api;
   ManagerRepository({ApiClient? api}) : _api = api ?? ApiClient();
@@ -20,6 +16,16 @@ class ManagerRepository {
     final data = res['manager'] as Map<String, dynamic>? ?? res;
     return Manager.fromJson(data);
   }
+
+  /// Raw `/account-managers/:id` envelope instead of a typed [Manager] —
+  /// manager_detail_page.dart also needs the sibling `clients` list from the
+  /// same response, which isn't part of the [Manager] model.
+  Future<Map<String, dynamic>> fetchOneRaw(int id) => _api.get('/account-managers/$id');
+
+  /// `/account-managers/:id/stats` returns a different, dashboard-shaped
+  /// payload (revenue/workspace counts, charts data), not a Manager — raw
+  /// map, no model, same reasoning as DashboardRepository.fetchBadgeCounts.
+  Future<Map<String, dynamic>> fetchStats(int id) => _api.get('/account-managers/$id/stats');
 
   /// Returns the raw response — callers need the one-time `credentials`
   /// alongside the created manager, same reasoning as ClientRepository.create.

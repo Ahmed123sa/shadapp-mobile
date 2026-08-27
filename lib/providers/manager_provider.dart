@@ -30,6 +30,12 @@ class ManagerProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>> createManager(Map<String, dynamic> body) => _repo.create(body);
 
+  /// Raw envelope (including sibling `clients` list) — see
+  /// [ManagerRepository.fetchOneRaw].
+  Future<Map<String, dynamic>> fetchManagerRaw(int id) => _repo.fetchOneRaw(id);
+
+  Future<Map<String, dynamic>> fetchManagerStats(int id) => _repo.fetchStats(id);
+
   Future<Map<String, dynamic>> updateManager(int id, Map<String, dynamic> body) => _repo.update(id, body);
 
   Future<void> deleteManager(int id) async {

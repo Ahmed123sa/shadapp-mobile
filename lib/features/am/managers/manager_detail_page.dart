@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
+import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ManagerDetailPage extends StatefulWidget {
   final int managerId;
-  const ManagerDetailPage({super.key, required this.managerId});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ManagerProvider instead of hitting the network.
+  final ManagerProvider? managerProvider;
+  final ApiClient? api;
+  const ManagerDetailPage({super.key, required this.managerId, this.managerProvider, this.api});
 
   @override
   State<ManagerDetailPage> createState() => _ManagerDetailPageState();
 }
 
 class _ManagerDetailPageState extends State<ManagerDetailPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
   Map<String, dynamic>? _manager;
   Map<String, dynamic>? _stats;
   List<dynamic> _clients = [];
@@ -29,8 +35,8 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final managerFuture = _api.get('/account-managers/${widget.managerId}');
-      final statsFuture = _api.get('/account-managers/${widget.managerId}/stats');
+      final managerFuture = _managerProvider.fetchManagerRaw(widget.managerId);
+      final statsFuture = _managerProvider.fetchManagerStats(widget.managerId);
       final results = await Future.wait([managerFuture, statsFuture]);
       final managerData = results[0];
       final statsData = results[1];
