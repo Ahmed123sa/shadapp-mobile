@@ -2,32 +2,36 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
-import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
+import '../../../models/manager.dart';
+import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaTeamPage extends StatefulWidget {
-  const SaTeamPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ManagerProvider instead of hitting the network.
+  final ManagerProvider? managerProvider;
+  final ApiClient? api;
+  const SaTeamPage({super.key, this.managerProvider, this.api});
 
   @override
   State<SaTeamPage> createState() => _SaTeamPageState();
 }
 
 class _SaTeamPageState extends State<SaTeamPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
   final _searchController = TextEditingController();
-  List<dynamic> _managers = [];
+  List<Manager> _managers = [];
   String _searchQuery = '';
   bool _loading = true;
   Timer? _debounce;
 
-  List<dynamic> get _filteredManagers {
+  List<Manager> get _filteredManagers {
     if (_searchQuery.isEmpty) return _managers;
     final q = _searchQuery.toLowerCase();
     return _managers.where((m) {
-      final name = (m['name'] as String? ?? '').toLowerCase();
-      final email = (m['email'] as String? ?? '').toLowerCase();
-      return name.contains(q) || email.contains(q);
+      return m.name.toLowerCase().contains(q) || (m.email ?? '').toLowerCase().contains(q);
     }).toList();
   }
 
@@ -46,12 +50,8 @@ class _SaTeamPageState extends State<SaTeamPage> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    try {
-      final data = await _api.get('/account-managers');
-      _managers = data['managers'] as List<dynamic>? ?? [];
-    } catch (e, s) {
-      AppLog.error('sa_team_page._load', e, s);
-    }
+    await _managerProvider.fetchManagers();
+    _managers = _managerProvider.managers;
     if (mounted) setState(() => _loading = false);
   }
 
@@ -144,14 +144,14 @@ class _SaTeamPageState extends State<SaTeamPage> {
     );
   }
 
-  Widget _managerCard(Map<String, dynamic> manager) {
-    final name = manager['name'] as String? ?? '';
-    final email = manager['email'] as String? ?? '';
-    final phone = manager['phone'] as String?;
-    final clientCount = int.tryParse(manager['managed_clients_count']?.toString() ?? '') ?? 0;
-    final avatarUrl = manager['avatar_url'] as String?;
+  Widget _managerCard(Manager manager) {
+    final name = manager.name;
+    final email = manager.email ?? '';
+    final phone = manager.phone;
+    final clientCount = manager.managedClientsCount;
+    final avatarUrl = manager.avatarUrl;
     final initials = name.isNotEmpty ? name.substring(0, name.length.clamp(0, 2)).toUpperCase() : '?';
-    final mgrId = int.tryParse(manager['id']?.toString() ?? '') ?? 0;
+    final mgrId = manager.id;
 
     return GestureDetector(
       onTap: () => context.push('/am/managers/$mgrId/detail'),
