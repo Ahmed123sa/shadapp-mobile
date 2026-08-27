@@ -109,4 +109,43 @@ void main() {
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/7/review'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  test('schedulePayments posts installments to /workspaces/:id/payments/schedule', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.schedulePayments(5, [
+      {'amount': 100.0, 'currency': 'SAR', 'due_date': '2026-02-01', 'installment_label': 'First'},
+    ]);
+
+    expect(sentBody!['installments'], hasLength(1));
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments/schedule'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('updatePaymentSchedule puts to /payments/:id/schedule', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.updatePaymentSchedule(9, {'amount': 200.0});
+
+    expect(sentBody, {'amount': 200.0});
+    verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/9/schedule'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('deletePaymentSchedule calls DELETE /payments/:id/schedule', () async {
+    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer((_) async => jsonResponse('{}'));
+
+    await provider.deletePaymentSchedule(9);
+
+    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/9/schedule'))),
+        headers: any(named: 'headers'))).called(1);
+  });
 }

@@ -24,6 +24,16 @@ class PaymentProvider extends ChangeNotifier {
   /// AM-side approve/reject decision — see [PaymentRepository.review].
   Future<Map<String, dynamic>> reviewPayment(int paymentId, String action) => _repo.review(paymentId, action);
 
+  /// Creates an installment schedule — see [PaymentRepository.schedule].
+  Future<void> schedulePayments(int workspaceId, List<Map<String, dynamic>> installments) =>
+      _repo.schedule(workspaceId, installments);
+
+  /// See [PaymentRepository.updateSchedule].
+  Future<void> updatePaymentSchedule(int paymentId, Map<String, dynamic> data) => _repo.updateSchedule(paymentId, data);
+
+  /// See [PaymentRepository.deleteSchedule].
+  Future<void> deletePaymentSchedule(int paymentId) => _repo.deleteSchedule(paymentId);
+
   /// Raw envelope — see [PaymentRepository.fetchForWorkspaceEnvelope].
   /// payments_page.dart owns its own loading/error state for this combined
   /// load, so this pass-through doesn't touch [_payments]/[_isLoading].

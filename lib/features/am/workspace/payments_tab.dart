@@ -533,7 +533,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      await _api.post('/workspaces/$wsId/payments/schedule', {'installments': installments});
+      await _paymentProvider.schedulePayments(wsId, installments);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsScheduledSuccess)])));
         _load();
@@ -549,7 +549,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
   Future<void> _updateSchedule(int paymentId, Map<String, dynamic> data) async {
     try {
-      await _api.put('/payments/$paymentId/schedule', data);
+      await _paymentProvider.updatePaymentSchedule(paymentId, data);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentUpdated)])));
         _load();
@@ -575,7 +575,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     );
     if (confirm != true) return;
     try {
-      await _api.delete('/payments/$paymentId/schedule');
+      await _paymentProvider.deletePaymentSchedule(paymentId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentCleared)])));
         _load();
