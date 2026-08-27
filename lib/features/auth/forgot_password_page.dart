@@ -4,6 +4,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/shad_logo.dart';
+import '../../providers/auth_provider.dart';
 
 /// Request a password reset link.
 ///
@@ -14,7 +15,12 @@ import '../../core/widgets/shad_logo.dart';
 /// the new password.
 class ForgotPasswordPage extends StatefulWidget {
   final ApiClient? api;
-  const ForgotPasswordPage({super.key, this.api});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // AuthProvider; defaults to wrapping whatever ApiClient (real or test
+  // double) is passed via [api], so existing tests that only supply [api]
+  // keep working unchanged.
+  final AuthProvider? authProvider;
+  const ForgotPasswordPage({super.key, this.api, this.authProvider});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -23,6 +29,7 @@ class ForgotPasswordPage extends StatefulWidget {
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final AuthProvider _authProvider = widget.authProvider ?? AuthProvider(api: _api);
 
   bool _loading = false;
   bool _sent = false;
@@ -48,8 +55,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       _error = null;
     });
 
-    final body = {'email': email};
-
     // Both endpoints get called, deliberately.
     //
     // Staff and clients live in separate tables behind separate reset
@@ -64,9 +69,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     var anySucceeded = false;
     Object? lastError;
 
-    for (final path in ['/auth/forgot-password', '/auth/client/forgot-password']) {
+    for (final action in [_authProvider.requestPasswordReset, _authProvider.requestClientPasswordReset]) {
       try {
-        await _api.post(path, body);
+        await action(email);
         anySucceeded = true;
       } catch (e) {
         lastError = e;

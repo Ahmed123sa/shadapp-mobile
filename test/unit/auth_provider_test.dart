@@ -220,6 +220,21 @@ void main() {
     });
   });
 
+  group('requestPasswordReset / requestClientPasswordReset', () {
+    test('post the email to the staff and client endpoints respectively', () async {
+      final calledPaths = <String>[];
+      when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+        calledPaths.add((inv.positionalArguments[0] as Uri).path);
+        return jsonResponse('{}');
+      });
+
+      await provider.requestPasswordReset('a@a.com');
+      await provider.requestClientPasswordReset('a@a.com');
+
+      expect(calledPaths, containsAll(['/auth/forgot-password', '/auth/client/forgot-password']));
+    });
+  });
+
   group('logout', () {
     test('clears local state and the token even if the server call fails', () async {
       when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))

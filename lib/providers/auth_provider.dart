@@ -146,6 +146,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>> updateProfile({required String name}) => _api.put('/auth/me', {'name': name});
 
+  /// Staff-side password reset request — forgot_password_page.dart calls
+  /// this and [requestClientPasswordReset] together, since it has no way to
+  /// know upfront which table the email belongs to.
+  Future<void> requestPasswordReset(String email) => _api.post('/auth/forgot-password', {'email': email});
+
+  Future<void> requestClientPasswordReset(String email) => _api.post('/auth/client/forgot-password', {'email': email});
+
   Future<void> logout() async {
     try {
       await _api.post('/auth/logout');
