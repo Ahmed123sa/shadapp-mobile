@@ -4,18 +4,22 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../core/widgets/shad_logo.dart';
+import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class CreateManagerPage extends StatefulWidget {
   final int? managerId;
-  const CreateManagerPage({super.key, this.managerId});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ManagerProvider instead of hitting the network.
+  final ManagerProvider? managerProvider;
+  const CreateManagerPage({super.key, this.managerId, this.managerProvider});
 
   @override
   State<CreateManagerPage> createState() => _CreateManagerPageState();
 }
 
 class _CreateManagerPageState extends State<CreateManagerPage> {
-  final _api = ApiClient();
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -49,7 +53,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   Future<void> _loadManager() async {
     setState(() => _loading = true);
     try {
-      final data = await _api.get('/account-managers/${widget.managerId}');
+      final data = await _managerProvider.fetchManagerRaw(widget.managerId!);
       final m = data['manager'] as Map<String, dynamic>? ?? data;
       _nameCtrl.text = (m['name'] as String?) ?? '';
       _emailCtrl.text = (m['email'] as String?) ?? '';
@@ -84,7 +88,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         if (_passwordCtrl.text.trim().isNotEmpty) {
           payload['password'] = _passwordCtrl.text.trim();
         }
-        res = await _api.put('/account-managers/${widget.managerId}', payload);
+        res = await _managerProvider.updateManager(widget.managerId!, payload);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.createManagerUpdated)));
           Navigator.pop(context, true);
@@ -94,7 +98,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         if (!_autoPassword) {
           payload['password'] = _passwordCtrl.text.trim();
         }
-        res = await _api.post('/account-managers', payload);
+        res = await _managerProvider.createManager(payload);
       }
       final creds = (res['credentials'] is Map) ? res['credentials'] as Map<String, dynamic> : null;
       if (mounted) {
