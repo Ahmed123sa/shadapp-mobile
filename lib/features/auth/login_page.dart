@@ -8,10 +8,15 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/locale_provider.dart';
 import '../../core/theme.dart';
+import '../../providers/auth_provider.dart';
 
 class LoginPage extends StatefulWidget {
   final ApiClient? api;
-  const LoginPage({super.key, this.api});
+  // Optional so existing call sites (and the widget tests, which pump
+  // LoginPage(api: api) with no provider tree above it) keep working
+  // unchanged — defaults to an AuthProvider built from the same ApiClient.
+  final AuthProvider? authProvider;
+  const LoginPage({super.key, this.api, this.authProvider});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -21,6 +26,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final AuthProvider _authProvider = widget.authProvider ?? AuthProvider(api: _api);
   bool _passwordVisible = false;
   final ValueNotifier<String?> _error = ValueNotifier<String?>(null);
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
@@ -175,59 +181,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _loading.value = true;
     _error.value = null;
     try {
-      final body = {
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text,
-      };
-
-      Map<String, dynamic> data;
-      bool isClient = false;
-
-      // Staff and clients authenticate against different endpoints, so a
-      // failure on the staff route is expected for client accounts and we fall
-      // through to the client route.
-      //
-      // The fallback is deliberately narrow: only a credential rejection means
-      // "maybe they're a client, try the other endpoint". Retrying after a
-      // connection failure or a rate-limit would just burn a second request and
-      // replace the real cause with whatever the second attempt happened to
-      // return — which is how a stopped server ended up being reported as a
-      // wrong password.
-      try {
-        data = await _api.post('/auth/login', body);
-      } on ValidationException {
-        data = await _api.post('/auth/client/login', body);
-        isClient = true;
-      } on AuthException {
-        data = await _api.post('/auth/client/login', body);
-        isClient = true;
-      }
-
-      await _api.setToken(data['token']);
-
-      if (isClient) {
-        final loginType = data['login_type'] as String? ?? 'client';
-        if (loginType == 'sub_user') {
-          await _api.setRole('sub_user');
-          final subUser = data['sub_user'] as Map<String, dynamic>;
-          final clientData = data['client'] as Map<String, dynamic>;
-          final wsId = data['workspace_id'] as int?;
-          await _api.setUserData(id: clientData['id'] as int, name: subUser['name'] as String, workspace: wsId);
-          await _api.setSubUserId(subUser['id'] as int);
-        } else {
-          await _api.setRole('client');
-          final client = data['client'] as Map<String, dynamic>;
-          final wsId = data['workspace_id'] as int?;
-          await _api.setUserData(id: client['id'], name: client['company_name'], workspace: wsId);
-        }
-      } else {
-        final user = data['user'] as Map<String, dynamic>;
-        final role = user['role'] as String;
-        await _api.setRole(role);
-        await _api.setUserData(id: user['id'], name: user['name'], avatar: user['avatar_url'] as String?);
-      }
+      // Staff-vs-client endpoint selection, the sub_user branch, and storing
+      // the token/role/user data all live in AuthProvider.authenticate() now
+      // — this screen only reacts to success/failure. See AuthProvider for
+      // the exact fallback rules (they're unchanged from what used to be
+      // inline here).
+      await _authProvider.authenticate(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
       if (!mounted) return;
+      final isClient = _authProvider.role == 'client' || _authProvider.role == 'sub_user';
       context.go(isClient ? '/dashboard' : '/am/dashboard');
     } on ValidationException {
       // The only case that genuinely means the email/password were rejected.
