@@ -3,17 +3,28 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
+import '../../models/app_notification.dart';
+import '../../providers/notification_provider.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // NotificationProvider instead of hitting the network — same pattern used
+  // for LoginPage/CreateClientPage/AccountManagersPage.
+  final NotificationProvider? notificationProvider;
+  // Only used to read the current role for navigation routing (_resolveRoute)
+  // — the provider owns the actual /notifications calls now.
+  final ApiClient? api;
+  const NotificationsPage({super.key, this.notificationProvider, this.api});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final _api = ApiClient();
-  List<dynamic> _notifications = [];
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final NotificationProvider _notificationProvider =
+      widget.notificationProvider ?? NotificationProvider();
+  List<AppNotification> _notifications = [];
   int _unreadCount = 0;
   bool _loading = true;
 
@@ -24,35 +35,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _load() async {
-    try {
-      final data = await _api.get('/notifications');
-      if (!mounted) return;
-      setState(() {
-        _notifications = data['notifications'] as List<dynamic>? ?? [];
-        _unreadCount = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-    }
+    await _notificationProvider.fetchNotificationList();
+    if (!mounted) return;
+    setState(() {
+      _notifications = _notificationProvider.notifications;
+      _unreadCount = _notificationProvider.serverUnreadCount;
+      _loading = false;
+    });
   }
 
   Future<void> _markAsRead(String id) async {
-    await _api.post('/notifications/$id/read');
+    await _notificationProvider.markRead(id);
     _load();
   }
 
   Future<void> _markAllAsRead() async {
-    await _api.post('/notifications/read-all');
+    await _notificationProvider.markAllRead();
     _load();
   }
 
-  void _navigateToNotification(Map<String, dynamic> data, String id) {
+  void _navigateToNotification(String? workspaceId, String? clientId, String? type) {
     if (!mounted) return;
     final role = _api.role;
-    final clientId = data['client_id'];
-    final route = _resolveRoute(role, data, clientId);
+    final route = _resolveRoute(role, workspaceId, clientId, type);
     if (route != null) context.push(route);
   }
 
@@ -65,14 +70,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return 0;
   }
 
-  String? _resolveRoute(String? role, Map<String, dynamic> data, dynamic clientId) {
+  String? _resolveRoute(String? role, String? workspaceId, String? clientId, String? type) {
     final isAdmin = role == 'account_manager' || role == 'super_admin';
-    final workspaceId = data['workspace_id'];
-    final type = data['type'] as String?;
-    if (isAdmin && workspaceId != null && workspaceId.toString().isNotEmpty) {
+    if (isAdmin && workspaceId != null && workspaceId.isNotEmpty) {
       return '/am/workspace/$workspaceId?tab=${_tabIndexForType(type)}';
     }
-    if (clientId != null && clientId.toString().isNotEmpty) {
+    if (clientId != null && clientId.isNotEmpty) {
       if (isAdmin) return '/am/clients/$clientId';
       return '/dashboard';
     }
@@ -80,7 +83,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _delete(String id) async {
-    await _api.delete('/notifications/$id');
+    await _notificationProvider.deleteNotification(id);
     if (mounted) _load();
   }
 
@@ -174,14 +177,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final notif = _notifications[index];
-                      final data = notif['data'] as Map<String, dynamic>? ?? {};
-                      final type = data['type'] as String?;
-                      final title = data['title'] as String? ?? '';
-                      final message = data['message'] as String? ?? '';
-                      final readAt = notif['read_at'];
-                      final isUnread = readAt == null;
-                      final id = notif['id'] as String? ?? '';
-                      final createdAt = notif['created_at'] as String? ?? '';
+                      final type = notif.type;
+                      final title = notif.title;
+                      final message = notif.message;
+                      final isUnread = notif.isUnread;
+                      final id = notif.id;
+                      final createdAt = notif.createdAt;
 
                       return Dismissible(
                         key: Key(id),
@@ -215,7 +216,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 : null,
                             onTap: () {
                               if (isUnread) _markAsRead(id);
-                              _navigateToNotification(data, id);
+                              _navigateToNotification(notif.workspaceId, notif.clientId, notif.type);
                             },
                           ),
                         ),

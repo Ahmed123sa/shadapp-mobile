@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/data/notification_repository.dart';
 import 'package:shadapp_client/providers/notification_provider.dart';
 import '../helpers/mock_http_client.dart';
 
@@ -15,7 +16,7 @@ void main() {
 
   setUp(() {
     httpClient = MockHttpClient();
-    provider = NotificationProvider(api: buildTestApiClient(client: httpClient));
+    provider = NotificationProvider(repository: NotificationRepository(api: buildTestApiClient(client: httpClient)));
   });
 
   test('fetchNotifications counts only unread (read_at == null) items', () async {
