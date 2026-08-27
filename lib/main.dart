@@ -23,6 +23,7 @@ import 'providers/manager_provider.dart';
 import 'providers/meeting_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/payment_provider.dart';
+import 'providers/report_provider.dart';
 import 'providers/file_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/signature_provider.dart';
@@ -126,6 +127,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MeetingProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => ReportProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => SubUserProvider()),

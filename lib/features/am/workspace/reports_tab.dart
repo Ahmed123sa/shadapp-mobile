@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../core/api_client.dart';
-import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../models/client.dart';
+import '../../../models/manager.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/manager_provider.dart';
+import '../../../providers/report_provider.dart';
 import '../reports/audit_log_page.dart';
 
 class ReportsTab extends StatefulWidget {
-  const ReportsTab({super.key});
+  final ClientProvider? clientProvider;
+  final ManagerProvider? managerProvider;
+  final ReportProvider? reportProvider;
+
+  const ReportsTab({super.key, this.clientProvider, this.managerProvider, this.reportProvider});
 
   @override
   State<ReportsTab> createState() => _ReportsTabState();
 }
 
 class _ReportsTabState extends State<ReportsTab> {
-  final _api = ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
+  late final ReportProvider _reportProvider = widget.reportProvider ?? ReportProvider();
   Map<String, dynamic>? _stats;
   bool _loading = true;
 
@@ -34,8 +43,8 @@ class _ReportsTabState extends State<ReportsTab> {
   int? _selectedClientId;
   String? _clientType;
   int? _selectedManagerId;
-  List<Map<String, dynamic>> _clients = [];
-  List<Map<String, dynamic>> _managers = [];
+  List<Client> _clients = [];
+  List<Manager> _managers = [];
   List<Map<String, dynamic>> _managerStats = [];
   String _chartPeriod = '1y';
 
@@ -47,49 +56,45 @@ class _ReportsTabState extends State<ReportsTab> {
     _loadManagers();
   }
 
-  String _buildFilterQuery() {
-    final params = <String, String>{};
+  /// Resolves the date range implied by [_selectedPeriod] (or the explicit
+  /// custom pickers) — the client/type/manager filters are passed straight
+  /// through to [ReportProvider.fetch] separately.
+  (String?, String?) _resolveDateRange() {
     if (_selectedPeriod == 'month') {
       final now = DateTime.now();
-      params['date_from'] = DateTime(now.year, now.month, 1).toIso8601String().substring(0, 10);
-      params['date_to'] = now.toIso8601String().substring(0, 10);
+      return (
+        DateTime(now.year, now.month, 1).toIso8601String().substring(0, 10),
+        now.toIso8601String().substring(0, 10),
+      );
     } else if (_selectedPeriod == '3months') {
       final now = DateTime.now();
-      params['date_from'] = DateTime(now.year, now.month - 2, 1).toIso8601String().substring(0, 10);
-      params['date_to'] = now.toIso8601String().substring(0, 10);
+      return (
+        DateTime(now.year, now.month - 2, 1).toIso8601String().substring(0, 10),
+        now.toIso8601String().substring(0, 10),
+      );
     } else if (_selectedPeriod == 'year') {
       final now = DateTime.now();
-      params['date_from'] = DateTime(now.year, 1, 1).toIso8601String().substring(0, 10);
-      params['date_to'] = now.toIso8601String().substring(0, 10);
+      return (
+        DateTime(now.year, 1, 1).toIso8601String().substring(0, 10),
+        now.toIso8601String().substring(0, 10),
+      );
     } else if (_selectedPeriod == 'custom') {
-      if (_dateFrom != null) params['date_from'] = _dateFrom!.toIso8601String().substring(0, 10);
-      if (_dateTo != null) params['date_to'] = _dateTo!.toIso8601String().substring(0, 10);
+      return (
+        _dateFrom?.toIso8601String().substring(0, 10),
+        _dateTo?.toIso8601String().substring(0, 10),
+      );
     }
-    if (_selectedClientId != null) params['client_id'] = _selectedClientId.toString();
-    if (_clientType != null) params['client_type'] = _clientType!;
-    if (_selectedManagerId != null) params['manager_id'] = _selectedManagerId.toString();
-    if (params.isEmpty) return '';
-    return '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}';
+    return (null, null);
   }
 
   Future<void> _loadClients() async {
-    try {
-      final data = await _api.get('/clients');
-      final list = safeList(data['clients']);
-      _clients = list.cast<Map<String, dynamic>>();
-    } catch (e, s) {
-      AppLog.error('reports_tab._loadClients', e, s);
-    }
+    await _clientProvider.fetchClients();
+    _clients = _clientProvider.clients;
   }
 
   Future<void> _loadManagers() async {
-    try {
-      final data = await _api.get('/account-managers');
-      final list = data['managers'] as List<dynamic>? ?? [];
-      _managers = list.cast<Map<String, dynamic>>();
-    } catch (e, s) {
-      AppLog.error('reports_tab._loadManagers', e, s);
-    }
+    await _managerProvider.fetchManagers();
+    _managers = _managerProvider.managers;
   }
 
   void _clearFilters() {
@@ -108,10 +113,14 @@ class _ReportsTabState extends State<ReportsTab> {
   Future<void> _load() async {
     setState(() { if (_stats == null) _loading = true; _error = null; });
     try {
-      final query = _buildFilterQuery();
-      final reportsResult = await _api.get('/reports$query').catchError((e) {
-        return <String, dynamic>{'error': true, 'message': e.toString()};
-      });
+      final (dateFrom, dateTo) = _resolveDateRange();
+      final reportsResult = await _reportProvider.fetch(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        clientId: _selectedClientId,
+        clientType: _clientType,
+        managerId: _selectedManagerId,
+      );
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
 
@@ -297,13 +306,13 @@ class _ReportsTabState extends State<ReportsTab> {
           Row(children: [
             Expanded(child: _buildDropdown(
               _selectedClientId, l10n.reportsClient, l10n.reportsAllClients,
-              _clients.map((c) => MapEntry<dynamic, String>(c['id'], (c['company_name'] as String?) ?? '')).toList(),
+              _clients.map((c) => MapEntry<dynamic, String>(c.id, c.companyName)).toList(),
               (v) { setState(() => _selectedClientId = v); _load(); },
             )),
             const SizedBox(width: 8),
             Expanded(child: _buildDropdown(
               _selectedManagerId, l10n.reportsManager, l10n.reportsAllManagers,
-              _managers.map((m) => MapEntry<dynamic, String>(m['id'], (m['name'] as String?) ?? '')).toList(),
+              _managers.map((m) => MapEntry<dynamic, String>(m.id, m.name)).toList(),
               (v) { setState(() => _selectedManagerId = v); _load(); },
             )),
           ]),
@@ -687,9 +696,13 @@ class _ReportsTabState extends State<ReportsTab> {
   Widget _buildAmLeaderboard() {
     final l10n = AppLocalizations.of(context)!;
     final useStats = _managerStats.isNotEmpty;
+    // Only `name` is read from `items` when falling back to `_managers`
+    // (the `revenue`/pct branches below all check `useStats` first), so a
+    // minimal map preserves the original bracket-access shape here without
+    // needing a second typed code path.
     final items = useStats
         ? _managerStats
-        : _managers;
+        : _managers.map((m) => {'name': m.name}).toList();
     if (items.isEmpty) return const SizedBox.shrink();
 
     return _buildSection(
