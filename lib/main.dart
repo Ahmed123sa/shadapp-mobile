@@ -15,6 +15,7 @@ import 'core/locale_provider.dart';
 import 'core/notification_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/contract_provider.dart';
+import 'providers/approval_provider.dart';
 import 'providers/client_provider.dart';
 import 'providers/manager_provider.dart';
 import 'providers/notification_provider.dart';
@@ -112,6 +113,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ContractProvider()),
         ChangeNotifierProvider(create: (_) => ClientProvider()),
         ChangeNotifierProvider(create: (_) => ManagerProvider()),
+        ChangeNotifierProvider(create: (_) => ApprovalProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider.value(value: localeProvider),
       ],
