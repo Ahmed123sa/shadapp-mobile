@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 
 class ContractDetailModal extends StatefulWidget {
@@ -61,7 +62,9 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
         }
       }
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('contract_detail_modal._loadFullContract', e, s);
+    }
   }
 
   Future<void> _loadUploadedFiles() async {
@@ -73,7 +76,9 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       final allFiles = safeList(data['files']);
       final contractId = widget.contract['id'];
       _uploadedFiles = allFiles.where((f) => f['contract_id'] == contractId).toList();
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('contract_detail_modal._loadFiles', e, s);
+    }
     if (mounted) setState(() => _loadingFiles = false);
   }
 

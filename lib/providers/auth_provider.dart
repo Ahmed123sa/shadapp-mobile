@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../core/app_log.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiClient _api;
@@ -70,7 +71,11 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     try {
       await _api.post('/auth/logout');
-    } catch (_) {}
+    } catch (e, s) {
+      // Deliberately non-blocking: the local token is cleared either way, so
+      // the user is logged out of this device even if the server call fails.
+      AppLog.error('AuthProvider.logout', e, s);
+    }
     await _api.clearToken();
     _isLoggedIn = false;
     _role = null;

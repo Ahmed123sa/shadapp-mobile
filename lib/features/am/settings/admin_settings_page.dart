@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../signature/render_signature.dart';
 
@@ -64,13 +65,17 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
           _existingSigText = sigData;
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('admin_settings._load(profile)', e, s);
+    }
     if (_api.role == 'super_admin') {
       try {
         final settingsData = await _api.get('/settings');
         final settings = settingsData['settings'] as Map<String, dynamic>? ?? {};
         _taxController.text = (settings['corporate_tax_percentage']?['value'] ?? '15').toString();
-      } catch (_) {}
+      } catch (e, s) {
+        AppLog.error('admin_settings._load(settings)', e, s);
+      }
       await _loadClauses();
     }
     if (mounted) setState(() => _loading = false);

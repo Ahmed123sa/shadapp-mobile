@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../core/widgets/shad_logo.dart';
@@ -61,7 +62,11 @@ class _CreateClientPageState extends State<CreateClientPage> {
       if (clientId != null && _avatarFile != null) {
         try {
           await _api.multipartPost('/clients/$clientId/profile', {}, file: _avatarFile!, fileField: 'avatar');
-        } catch (_) {}
+        } catch (e, s) {
+          // The client itself was created successfully; only the avatar
+          // upload failed, so this deliberately doesn't fail the whole flow.
+          AppLog.error('create_client_page._submit(avatar)', e, s);
+        }
       }
       if (mounted) {
         try {
@@ -125,7 +130,9 @@ class _CreateClientPageState extends State<CreateClientPage> {
               ),
             ),
           );
-        } catch (_) {}
+        } catch (e, s) {
+          AppLog.error('create_client_page._submit(successDialog)', e, s);
+        }
       }
     } on ValidationException catch (e) {
       _errorMsg = e.message;

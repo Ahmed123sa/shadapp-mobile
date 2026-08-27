@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
@@ -39,7 +40,9 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
       _files = safeList(data['files']);
       _definitions = safeList(data['definitions']);
       _paymentFiles = safeList(data['paymentFiles']);
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('client_files_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

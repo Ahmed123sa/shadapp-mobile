@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -37,7 +38,9 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = data['user'] as Map<String, dynamic>? ?? {};
       _nameController.text = (user['name'] as String? ?? '');
       _avatarUrl = user['avatar_url'] as String?;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('profile_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

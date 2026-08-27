@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'api_client.dart';
+import 'app_log.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -78,7 +79,12 @@ class NotificationService {
           try {
             final data = Map<String, String>.from(jsonDecode(payloadStr));
             onLocalNotificationTapped?.call(data);
-          } catch (_) {}
+          } catch (e, s) {
+            // A malformed payload means the tap can't be routed anywhere.
+            // Worth knowing about: it means the sender and this app disagree
+            // about the notification data shape.
+            AppLog.error('NotificationService.onNotificationTapped', e, s);
+          }
         }
       },
     );
@@ -130,7 +136,9 @@ class NotificationService {
         'token': token,
         'device_type': deviceType,
       });
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('NotificationService._registerToken', e, s);
+    }
   }
 
   String _getDeviceType() {

@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'app_log.dart';
 import 'reverb_service.dart';
 
 /// Read before dotenv.load() has run (in plain `flutter test`, it never
@@ -147,7 +148,11 @@ class ApiClient {
         'token': token,
         'device_type': deviceType,
       });
-    } catch (_) {}
+    } catch (e, s) {
+      // Non-fatal: the user just won't get push notifications on this
+      // device until the token is registered on a later launch.
+      AppLog.error('ApiClient.registerFcmToken', e, s);
+    }
   }
 
   String resolveFileUrl(String url) {

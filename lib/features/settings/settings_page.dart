@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/client_type_badge.dart';
 
@@ -53,7 +54,9 @@ class _SettingsPageState extends State<SettingsPage> {
           if (su['date_of_birth'] != null) {
             _dateOfBirth = DateTime.tryParse(su['date_of_birth']);
           }
-        } catch (_) {}
+        } catch (e, s) {
+          AppLog.error('settings_page._load(subUser)', e, s);
+        }
       }
       if (mounted) setState(() => _loading = false);
       return;
@@ -70,7 +73,9 @@ class _SettingsPageState extends State<SettingsPage> {
       if (client['date_of_birth'] != null) {
         _dateOfBirth = DateTime.tryParse(client['date_of_birth'].toString());
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('settings_page._load(client)', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

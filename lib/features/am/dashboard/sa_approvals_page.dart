@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -46,10 +47,13 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
           'type': 'payment',
           'workspace_id': p['workspace_id'] ?? p['workspace']?['id'],
         }).toList();
-      } catch (_) {
+      } catch (e, s) {
+        AppLog.error('sa_approvals_page._load(payments)', e, s);
         _payments = [];
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('sa_approvals_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -95,11 +99,15 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
               });
             }
           }
-        } catch (_) {
+        } catch (e, s) {
+          // One workspace failing shouldn't drop the whole list.
+          AppLog.error('sa_approvals_page._loadApprovals(workspace)', e, s);
           continue;
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('sa_approvals_page._loadApprovals', e, s);
+    }
     return results;
   }
 

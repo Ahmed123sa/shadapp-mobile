@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -200,19 +201,25 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     try {
       final data = await _api.get('/notifications');
       _unreadNotifs = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('client_dashboard._loadNotifs(unread)', e, s);
+    }
     try {
       final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/chat');
       final messages = safeList(data['messages']);
       _unreadChat = messages.where((m) => m['sender_type'] != 'App\\Models\\Client' && m['read_at'] == null).length;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('client_dashboard._loadNotifs(chat)', e, s);
+    }
     try {
       final data = await _api.get('/badge-counts');
       _badgeContracts = int.tryParse(data['contracts']?.toString() ?? '') ?? 0;
       _badgePayments = int.tryParse(data['payments']?.toString() ?? '') ?? 0;
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
       _badgeFiles = int.tryParse(data['files']?.toString() ?? '') ?? 0;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('client_dashboard._loadNotifs(badges)', e, s);
+    }
     if (mounted) setState(() {});
   }
 
@@ -223,7 +230,11 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       if (su != null) {
         _subUserPermissions = Map<String, dynamic>.from(su['permissions'] as Map? ?? {});
       }
-    } catch (_) {}
+    } catch (e, s) {
+      // Permissions stay at their (restrictive) defaults, which is the safe
+      // direction to fail in — but it should never happen silently.
+      AppLog.error('client_dashboard._loadSubUserPermissions', e, s);
+    }
     if (mounted) setState(() {});
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -47,7 +48,9 @@ class _SaClientsPageState extends State<SaClientsPage> {
       final data = await _api.get('/clients$query');
       final clients = safeList(data['clients']);
       if (mounted) setState(() { _allClients = clients.cast<Map<String, dynamic>>(); });
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('sa_clients_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -57,7 +60,9 @@ class _SaClientsPageState extends State<SaClientsPage> {
       final list = data['managers'] as List<dynamic>? ?? [];
       _managers = list.cast<Map<String, dynamic>>();
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('sa_clients_page._loadManagers', e, s);
+    }
   }
 
   void _onSearchChanged(String value) {

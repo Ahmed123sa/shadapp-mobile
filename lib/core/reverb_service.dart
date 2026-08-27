@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'api_client.dart';
+import 'app_log.dart';
 
 class ReverbService {
   static final ReverbService _instance = ReverbService._();
@@ -188,15 +189,23 @@ class ReverbService {
       if (auth != null) {
         _send({'event': 'pusher:subscribe', 'data': {'channel': 'private-$channel', 'auth': auth}});
       }
-    } catch (_) {
+    } catch (e, s) {
       // Intentionally no fallback subscription — see the doc comment above.
+      // Still logged: "realtime silently stopped working" is otherwise one
+      // of the hardest things in this app to diagnose from a bug report.
+      AppLog.error('ReverbService._subscribePrivateChannel($channel)', e, s);
     }
   }
 
   void _send(Map<String, dynamic> data) {
     try {
       _channel?.sink.add(jsonEncode(data));
-    } catch (_) {}
+    } catch (_) {
+      // Deliberately silent, and deliberately not reported: this fires on
+      // every keepalive ping that lands on a socket which closed a moment
+      // ago. onDone/onError already trigger a reconnect, so there is
+      // nothing to do here and reporting it would just be noise.
+    }
   }
 
   Future<void> _reconnect() async {

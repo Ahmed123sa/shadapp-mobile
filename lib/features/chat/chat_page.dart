@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/reverb_service.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/chat_contract_card.dart';
@@ -160,7 +161,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Future<void> _markRead() async {
     try {
       await _api.post('/workspaces/${_api.workspaceIdSafe}/chat/mark-read', {});
-    } catch (_) {}
+    } catch (e, s) {
+      // Cosmetic only — the unread badge stays until the next successful
+      // mark-read. Not worth interrupting the user for.
+      AppLog.error('chat_page._markRead', e, s);
+    }
   }
 
   void _scrollToBottom() {
@@ -573,7 +578,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       } else {
         timeLabel = AppLocalizations.of(context)!.inDays(diff.inDays);
       }
-    } catch (_) {}
+    } catch (_) {
+      // An unparseable/missing date just leaves the relative label off.
+      // Runs inside build(), so reporting it would fire on every frame.
+    }
     return GestureDetector(
       onTap: link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null,
       child: Container(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/locale_provider.dart';
 import '../../../core/reverb_service.dart';
@@ -81,13 +82,15 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         try {
           final allContractsData = await _api.get('/all-contracts');
           _allContracts = safeList(allContractsData['contracts']);
-        } catch (_) {
+        } catch (e, s) {
+          AppLog.error('am_dashboard._load(allContracts)', e, s);
           _allContracts = [];
         }
         try {
           final pData = await _api.get('/payments/pending');
           _pendingPayments = safeList(pData['payments']);
-        } catch (_) {
+        } catch (e, s) {
+          AppLog.error('am_dashboard._load(pendingPayments)', e, s);
           _pendingPayments = [];
         }
       } else {
@@ -98,17 +101,21 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         try {
           final pData = await _api.get('/payments/pending');
           _pendingPayments = safeList(pData['payments']);
-        } catch (_) {
+        } catch (e, s) {
+          AppLog.error('am_dashboard._load(pendingPayments)', e, s);
           _pendingPayments = [];
         }
         try {
           final allContractsData = await _api.get('/all-contracts');
           _allContracts = safeList(allContractsData['contracts']);
-        } catch (_) {
+        } catch (e, s) {
+          AppLog.error('am_dashboard._load(allContracts)', e, s);
           _allContracts = [];
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('am_dashboard._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -123,12 +130,16 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     try {
       final data = await _api.get('/notifications');
       _unreadNotifs = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('am_dashboard._loadNotifs(unread)', e, s);
+    }
     try {
       final data = await _api.get('/badge-counts');
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
       _badgeChat = int.tryParse(data['chat']?.toString() ?? '') ?? 0;
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('am_dashboard._loadNotifs(badges)', e, s);
+    }
     if (mounted) setState(() {});
   }
 
@@ -193,11 +204,15 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
               });
             }
           }
-        } catch (_) {
+        } catch (e, s) {
+          // One workspace failing shouldn't drop the whole list.
+          AppLog.error('am_dashboard._fetchAllContracts(workspace)', e, s);
           continue;
         }
       }
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('am_dashboard._fetchAllContracts', e, s);
+    }
     return results;
   }
 
@@ -900,7 +915,12 @@ class _AllMeetingsSheet extends StatelessWidget {
                       try {
                         final dt = DateTime.parse(m['scheduled_at'] ?? '');
                         dateStr = '${dt.year}/${dt.month}/${dt.day}';
-                      } catch (_) {}
+                      } catch (_) {
+                        // A meeting with no/invalid date just renders without
+                        // one. Not reported: this is normal for drafts, and
+                        // it runs inside a list builder, so a bad record
+                        // would report on every rebuild.
+                      }
                       final wsId = m['workspace_id'] ?? m['workspace']?['id'];
                       return InkWell(
                         borderRadius: BorderRadius.circular(10),

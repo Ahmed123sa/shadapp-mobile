@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -76,7 +77,9 @@ class _ReportsTabState extends State<ReportsTab> {
       final data = await _api.get('/clients');
       final list = safeList(data['clients']);
       _clients = list.cast<Map<String, dynamic>>();
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('reports_tab._loadClients', e, s);
+    }
   }
 
   Future<void> _loadManagers() async {
@@ -84,7 +87,9 @@ class _ReportsTabState extends State<ReportsTab> {
       final data = await _api.get('/account-managers');
       final list = data['managers'] as List<dynamic>? ?? [];
       _managers = list.cast<Map<String, dynamic>>();
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('reports_tab._loadManagers', e, s);
+    }
   }
 
   void _clearFilters() {

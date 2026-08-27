@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
@@ -53,7 +54,9 @@ class _SubUsersPageState extends State<SubUsersPage> {
     try {
       final data = await _api.get('/clients/$cid/sub-users');
       _subUsers = data['sub_users'] as List<dynamic>? ?? [];
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('subusers_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

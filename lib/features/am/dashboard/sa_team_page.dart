@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
@@ -48,7 +49,9 @@ class _SaTeamPageState extends State<SaTeamPage> {
     try {
       final data = await _api.get('/account-managers');
       _managers = data['managers'] as List<dynamic>? ?? [];
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('sa_team_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

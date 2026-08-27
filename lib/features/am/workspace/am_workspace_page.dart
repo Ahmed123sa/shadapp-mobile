@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import 'chat_tab.dart';
@@ -64,7 +65,9 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         _clientAvatar = client?['avatar_url'] as String?;
         _clientType = client?['client_type'] as String?;
       });
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('am_workspace_page._loadWorkspace', e, s);
+    }
   }
 
   @override

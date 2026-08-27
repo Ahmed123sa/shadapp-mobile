@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/password_field.dart';
@@ -74,7 +75,9 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
       _avatarUrl = client['avatar_url'] as String?;
       _createdAt = client['created_at'] as String?;
       _subUsers = client['sub_users'] as List<dynamic>? ?? [];
-    } catch (_) {}
+    } catch (e, s) {
+      AppLog.error('client_detail_page._load', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

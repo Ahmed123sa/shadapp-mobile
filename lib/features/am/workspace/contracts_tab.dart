@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -239,7 +240,10 @@ class _ContractsTabState extends State<ContractsTab> {
       if (user != null) {
         savedSignature = user['signature_data'] as String?;
       }
-    } catch (_) {}
+    } catch (e, s) {
+      // Falls through to the manual signature pad, which is a safe default.
+      AppLog.error('contracts_tab._loadSavedSignature', e, s);
+    }
 
     if (!mounted) return;
 
