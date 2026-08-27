@@ -6,16 +6,22 @@ import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/client_type_badge.dart';
+import '../../providers/settings_provider.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // SettingsProvider instead of hitting the network.
+  final SettingsProvider? settingsProvider;
+  final ApiClient? api;
+  const SettingsPage({super.key, this.settingsProvider, this.api});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final SettingsProvider _settingsProvider = widget.settingsProvider ?? SettingsProvider();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -47,8 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final sid = _api.subUserId;
       if (sid != null) {
         try {
-          final data = await _api.get('/sub-users/$sid');
-          final su = data['sub_user'] as Map<String, dynamic>? ?? {};
+          final su = await _settingsProvider.fetchSubUser(sid);
           _emailController.text = su['email'] as String? ?? '';
           _phoneController.text = su['phone'] as String? ?? '';
           if (su['date_of_birth'] != null) {
@@ -64,8 +69,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final cid = _api.userId;
     if (cid == null) return;
     try {
-      final data = await _api.get('/clients/$cid');
-      final client = data['client'] as Map<String, dynamic>? ?? {};
+      final client = await _settingsProvider.fetchClient(cid);
       _nameController.text = (client['contact_person'] as String? ?? '');
       _avatarUrl = client['avatar_url'] as String?;
       _clientType = client['client_type'] as String?;
@@ -99,17 +103,14 @@ class _SettingsPageState extends State<SettingsPage> {
       if (_isSubUser) {
         final sid = _api.subUserId;
         if (sid == null) return;
-        await _api.multipartPost('/sub-users/$sid/profile', {}, file: file, fileField: 'avatar');
-        final data = await _api.get('/sub-users/$sid');
-        final su = data['sub_user'] as Map<String, dynamic>?;
-        if (su != null) {
-          _avatarUrl = su['avatar_url'] as String?;
-          await _api.setUserData(avatar: _avatarUrl);
-        }
+        await _settingsProvider.uploadSubUserAvatar(sid, file);
+        final su = await _settingsProvider.fetchSubUser(sid);
+        _avatarUrl = su['avatar_url'] as String?;
+        await _api.setUserData(avatar: _avatarUrl);
       } else {
         final cid = _api.userId;
         if (cid == null) return;
-        await _api.multipartPost('/clients/$cid/profile', {}, file: file, fileField: 'avatar');
+        await _settingsProvider.uploadClientAvatar(cid, file);
         _load();
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_imageChanged)])));
@@ -130,7 +131,7 @@ class _SettingsPageState extends State<SettingsPage> {
           'phone': _phoneController.text.trim(),
         };
         if (_dateOfBirth != null) body['date_of_birth'] = _dateOfBirth!.toIso8601String().substring(0, 10);
-        await _api.put('/sub-users/$sid/profile', body);
+        await _settingsProvider.updateSubUserProfile(sid, body);
         await _api.setUserData(name: _nameController.text.trim());
       } else {
         final cid = _api.userId;
@@ -139,7 +140,7 @@ class _SettingsPageState extends State<SettingsPage> {
           'contact_person': _nameController.text.trim(),
         };
         if (_dateOfBirth != null) body['date_of_birth'] = _dateOfBirth!.toIso8601String().substring(0, 10);
-        await _api.put('/clients/$cid/profile', body);
+        await _settingsProvider.updateClientProfile(cid, body);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_saved)])));
