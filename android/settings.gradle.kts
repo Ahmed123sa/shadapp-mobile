@@ -22,6 +22,11 @@ plugins {
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Uploads the mapping/symbol files Crashlytics needs to turn an
+    // obfuscated release stack trace back into readable line numbers.
+    // Dart-side crash reporting works without it; release builds are
+    // unreadable without it.
+    id("com.google.firebase.crashlytics") version "3.0.2" apply false
 }
 
 include(":app")

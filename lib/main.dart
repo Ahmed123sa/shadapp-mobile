@@ -1,5 +1,8 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show FlutterError, kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -42,6 +45,26 @@ void main() async {
 
   if (!kIsWeb) {
     await Firebase.initializeApp();
+
+    // Crashlytics has no web implementation, so this whole block stays
+    // inside the !kIsWeb branch. Two handlers are needed and they catch
+    // different things: FlutterError.onError covers errors thrown inside
+    // the widget/framework layer, while PlatformDispatcher.onError covers
+    // everything else that reaches the root zone (async gaps, isolate
+    // errors). Wiring only the first one silently misses most real crashes.
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+    // Debug runs would otherwise fill the dashboard with crashes from code
+    // that is actively being edited.
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(kReleaseMode);
+
     final notificationService = NotificationService();
 
     // Called when a notification is tapped (including cold start)
