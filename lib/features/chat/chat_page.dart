@@ -1010,10 +1010,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   onPressed: () async {
                     final url = _api.resolveFileUrl(m['approval']['certificate']['pdf_url'] as String);
                     final uri = Uri.tryParse(url);
-                    if (uri != null && await canLaunchUrl(uri)) {
+                    final canLaunch = uri != null && await canLaunchUrl(uri);
+                    if (canLaunch) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } else {
-                      if (!context.mounted) return;
+                      // See the matching comment in chat_tab.dart: this
+                      // method takes no `context` param, so it's the
+                      // State's own context — guard with `mounted`, not
+                      // `context.mounted`.
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.fileOpenFailed)));
                     }
                   },

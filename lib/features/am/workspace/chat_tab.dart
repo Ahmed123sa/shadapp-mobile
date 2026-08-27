@@ -503,10 +503,17 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                   onPressed: () async {
                     final url = _api.resolveFileUrl(m['approval']['certificate']['pdf_url'] as String);
                     final uri = Uri.tryParse(url);
-                    if (uri != null && await canLaunchUrl(uri)) {
+                    final canLaunch = uri != null && await canLaunchUrl(uri);
+                    if (canLaunch) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } else {
-                      if (!context.mounted) return;
+                      // This method takes no `context` parameter, so
+                      // `context` here resolves to the State's own
+                      // `context` getter — the analyzer wants the matching
+                      // State `mounted` getter as the guard, not
+                      // `context.mounted`, or it doesn't recognize the
+                      // guard as related to this use.
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatFileOpenFailed)));
                     }
                   },

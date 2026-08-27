@@ -170,34 +170,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     context.push('/am/workspace/${ws['id']}');
   }
 
-  void _showPendingContracts() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _PendingListSheet(
-        title: AppLocalizations.of(context)!.pendingApprovalContracts,
-        fetch: () => _fetchAllContracts(['sent', 'client_approved']),
-      ),
-    );
-  }
-
-  Future<void> _showPendingPayments() async {
-    try {
-      final data = await _api.get('/payments/pending');
-      _pendingPayments = data['payments'] as List<dynamic>? ?? [];
-    } catch (_) {
-      _pendingPayments = [];
-    }
-    if (!mounted) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _PendingPaymentsSheet(payments: _pendingPayments),
-    );
-  }
-
   Future<List<Map<String, dynamic>>> _fetchAllContracts(List<String> statuses) async {
     final results = <Map<String, dynamic>>[];
     try {
@@ -218,34 +190,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                 'company': client['company_name'] ?? '',
                 'client': client,
                 'workspace_id': ws['id'],
-              });
-            }
-          }
-        } catch (_) {
-          continue;
-        }
-      }
-    } catch (_) {}
-    return results;
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchAllApprovals() async {
-    final results = <Map<String, dynamic>>[];
-    try {
-      final data = await _api.get('/clients');
-      final clients = safeList(data['clients']);
-      for (final client in clients) {
-        final ws = client['workspace'] as Map<String, dynamic>?;
-        if (ws == null) continue;
-        try {
-          final approvalsData = await _api.get('/workspaces/${ws['id']}/approvals');
-          final approvals = safeList(approvalsData['approvals']);
-          for (final a in approvals) {
-            if (a['status'] == 'pending') {
-              results.add({
-                'title': a['title'] ?? '',
-                'company': client['company_name'] ?? '',
-                'client': client,
               });
             }
           }
@@ -619,22 +563,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     );
   }
 
-  Future<void> _showAllContracts() async {
-    try {
-      final data = await _api.get('/all-contracts');
-      final contracts = safeList(data['contracts']);
-      if (!mounted) return;
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (_) => _AllContractsSheet(contracts: contracts),
-      );
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amContractsLoadFailed)));
-    }
-  }
-
   Future<void> _showAllMeetings() async {
     try {
       final data = await _api.get('/all-meetings');
@@ -845,79 +773,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
 
 }
 
-class _PendingListSheet extends StatefulWidget {
-  final String title;
-  final Future<List<Map<String, dynamic>>> Function() fetch;
-  const _PendingListSheet({required this.title, required this.fetch});
-
-  @override
-  State<_PendingListSheet> createState() => _PendingListSheetState();
-}
-
-class _PendingListSheetState extends State<_PendingListSheet> {
-  List<Map<String, dynamic>>? _items;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final items = await widget.fetch();
-    if (mounted) setState(() { _items = items; _loading = false; });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      maxChildSize: 0.8,
-      minChildSize: 0.3,
-      expand: false,
-      builder: (_, scrollController) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-          ]),
-          const Divider(),
-          Expanded(
-            child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _items == null || _items!.isEmpty
-                ? Center(child: Text(AppLocalizations.of(context)!.amNoItems, style: const TextStyle(color: ShadColors.textSecondary)))
-                : ListView.separated(
-                    controller: scrollController,
-                    itemCount: _items!.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final item = _items![i];
-                      return ListTile(
-                        leading: const Icon(Icons.circle, size: 8, color: ShadColors.warning),
-                        title: Text(item['title'] ?? '', style: const TextStyle(fontSize: 14, color: ShadColors.textPrimary)),
-                        subtitle: Text(item['company'] ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                        onTap: () {
-                          final client = item['client'] as Map<String, dynamic>?;
-                          final clientId = client?['id'];
-                          if (clientId != null) {
-                            Navigator.pop(context);
-                            context.push('/am/clients/$clientId');
-                          }
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
 class _ManagerClientsSheet extends StatelessWidget {
   final String managerName;
   final List<dynamic> clients;
@@ -972,113 +827,6 @@ class _ManagerClientsSheet extends StatelessWidget {
                     child: Text(ws?['status'] == 'active' ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, color: ws?['status'] == 'active' ? ShadColors.success : ShadColors.textSecondary)),
                   ),
                   onTap: () => onClientTap(c),
-                );
-              },
-            ),
-          ),
-      ]),
-    );
-  }
-}
-
-class _PendingPaymentsSheet extends StatelessWidget {
-  final List<dynamic> payments;
-  const _PendingPaymentsSheet({required this.payments});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(l10n.amPendingPaymentsLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
-        if (payments.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text(l10n.amNoPendingPayments, style: const TextStyle(color: ShadColors.textSecondary))),
-          )
-        else
-          Container(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: payments.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final p = payments[i];
-                final client = p['workspace']?['client'] as Map<String, dynamic>?;
-                final amount = double.tryParse(p['amount']?.toString() ?? '') ?? 0;
-                return ListTile(
-                  leading: const Icon(Icons.payments, size: 24, color: ShadColors.warning),
-                  title: Text(client?['company_name'] as String? ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  subtitle: Text('${p['currency'] ?? 'SAR'} ${amount.toStringAsFixed(2)} • ${p['method_type'] ?? ''}', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                  trailing: Text(p['created_at'] != null ? _formatDate(p['created_at']) : '', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                );
-              },
-            ),
-          ),
-      ]),
-    );
-  }
-
-  String _formatDate(String dateStr) {
-    try {
-      final dt = DateTime.parse(dateStr);
-      return '${dt.year}/${dt.month}/${dt.day}';
-    } catch (_) {
-      return '';
-    }
-  }
-}
-
-class _AllContractsSheet extends StatelessWidget {
-  final List<dynamic> contracts;
-  const _AllContractsSheet({required this.contracts});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(l10n.amAllContracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
-        if (contracts.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text(l10n.amNoContracts, style: const TextStyle(color: ShadColors.textSecondary))),
-          )
-        else
-          Container(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: contracts.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final c = contracts[i];
-                final client = c['workspace']?['client'] as Map<String, dynamic>?;
-                final status = c['status'] as String? ?? '';
-                final statusColor = status == 'completed' ? ShadColors.success : status == 'sent' || status == 'client_approved' ? ShadColors.warning : ShadColors.textSecondary;
-                final statusLabel = _contractStatusLabel(status, l10n);
-                return ListTile(
-                  leading: const Icon(Icons.description, size: 24, color: ShadColors.gold),
-                  title: Text(c['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  subtitle: Text(client?['company_name'] as String? ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: statusColor.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-                    child: Text(statusLabel, style: TextStyle(fontSize: 10, color: statusColor)),
-                  ),
                 );
               },
             ),
@@ -1338,25 +1086,3 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
   }
 }
 
-String _contractStatusLabel(String status, AppLocalizations l10n) {
-  switch (status) {
-    case 'draft':
-      return l10n.draft;
-    case 'sent':
-      return l10n.sent;
-    case 'client_approved':
-      return l10n.clientApproved;
-    case 'company_approved':
-      return l10n.companyApproved;
-    case 'completed':
-      return l10n.completed;
-    case 'archived':
-      return l10n.archived;
-    case 'rejected':
-      return l10n.rejected;
-    case 'edit_requested':
-      return l10n.editRequestedStatus;
-    default:
-      return status;
-  }
-}

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shadapp_client/core/widgets/meeting_chip.dart';
 import '../helpers/pump_app.dart';

@@ -512,23 +512,32 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     );
   }
 
+  // Both methods below deliberately keep the try/catch free of any
+  // BuildContext use and check `context.mounted` once, straight-line, right
+  // after it — the analyzer's use_build_context_synchronously check doesn't
+  // reliably associate a `mounted` guard placed *inside* a catch block with
+  // the async gap in the try above it, and flags it as an "unrelated" guard
+  // even though it is one. Doing the mounted check after the try/catch has
+  // fully exited sidesteps that, with no behavior change.
   Future<void> _downloadFile(String fileUrl) async {
     final l10n = AppLocalizations.of(context)!;
     if (fileUrl.isEmpty) return;
     final url = _api.resolveFileUrl(fileUrl);
     final uri = Uri.tryParse(url);
-    if (uri != null) {
-      try {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
-        }
-      }
-    } else {
-      if (context.mounted) {
+    if (uri == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
+      return;
+    }
+    var launchFailed = false;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launchFailed = true;
+    }
+    if (launchFailed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
     }
   }
 
@@ -536,18 +545,20 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     final l10n = AppLocalizations.of(context)!;
     final url = _api.resolveFileUrl(pdfUrl);
     final uri = Uri.tryParse(url);
-    if (uri != null) {
-      try {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
-        }
-      }
-    } else {
-      if (context.mounted) {
+    if (uri == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
       }
+      return;
+    }
+    var launchFailed = false;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launchFailed = true;
+    }
+    if (launchFailed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
     }
   }
 
