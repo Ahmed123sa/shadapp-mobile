@@ -7,11 +7,17 @@ import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../core/widgets/shad_logo.dart';
+import '../../../data/client_repository.dart';
+import '../../../providers/client_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
- 
+
 class CreateClientPage extends StatefulWidget {
   final ApiClient? api;
-  const CreateClientPage({super.key, this.api});
+  // Optional, same pattern as LoginPage.authProvider — defaults to a
+  // ClientProvider built from the same ApiClient, so existing tests that
+  // pump CreateClientPage(api: api) keep working unchanged.
+  final ClientProvider? clientProvider;
+  const CreateClientPage({super.key, this.api, this.clientProvider});
 
   @override
   State<CreateClientPage> createState() => _CreateClientPageState();
@@ -19,6 +25,8 @@ class CreateClientPage extends StatefulWidget {
 
 class _CreateClientPageState extends State<CreateClientPage> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final ClientProvider _clientProvider =
+      widget.clientProvider ?? ClientProvider(repository: ClientRepository(api: _api));
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _personController = TextEditingController();
@@ -43,7 +51,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
     _errorMsg = null;
     final failMsg = AppLocalizations.of(context)!.clientCreateFailed;
     try {
-      final res = await _api.post('/clients', {
+      final res = await _clientProvider.createClient({
         'company_name': _nameController.text.trim(),
         'contact_person': _personController.text.trim(),
         'email': _emailController.text.trim(),
@@ -61,7 +69,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
       final clientId = res['client']?['id'] as int?;
       if (clientId != null && _avatarFile != null) {
         try {
-          await _api.multipartPost('/clients/$clientId/profile', {}, file: _avatarFile!, fileField: 'avatar');
+          await _clientProvider.uploadAvatar(clientId, _avatarFile!);
         } catch (e, s) {
           // The client itself was created successfully; only the avatar
           // upload failed, so this deliberately doesn't fail the whole flow.
