@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../data/payment_repository.dart';
 
@@ -36,4 +38,16 @@ class PaymentProvider extends ChangeNotifier {
   /// Every pending payment across every page — see
   /// [PaymentRepository.fetchAllPendingRaw].
   Future<List<dynamic>> fetchAllPendingRaw() => _repo.fetchAllPendingRaw();
+
+  /// Creates a new payment request — see [PaymentRepository.create].
+  /// payments_page.dart owns its own sheet/loading state, so this
+  /// pass-through doesn't touch [_payments].
+  Future<Map<String, dynamic>> createPayment(
+    int workspaceId,
+    Map<String, dynamic> fields, {
+    List<File>? files,
+    List<Uint8List>? bytesFiles,
+    List<String>? bytesNames,
+  }) =>
+      _repo.create(workspaceId, fields, files: files, bytesFiles: bytesFiles, bytesNames: bytesNames);
 }

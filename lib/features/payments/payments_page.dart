@@ -12,10 +12,12 @@ import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
+import '../../providers/payment_provider.dart';
 
 class PaymentsPage extends StatefulWidget {
   final ApiClient? api;
-  const PaymentsPage({super.key, this.api});
+  final PaymentProvider? paymentProvider;
+  const PaymentsPage({super.key, this.api, this.paymentProvider});
 
   @override
   State<PaymentsPage> createState() => _PaymentsPageState();
@@ -23,6 +25,7 @@ class PaymentsPage extends StatefulWidget {
 
 class _PaymentsPageState extends State<PaymentsPage> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
   List<dynamic> _payments = [];
   List<dynamic> _contracts = [];
   List<String> _availableMethods = [];
@@ -494,24 +497,13 @@ class _PaymentsPageState extends State<PaymentsPage> {
       final bytesFiles = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['bytes'] as Uint8List).toList();
       final bytesNames = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['name'] as String? ?? 'file.jpg').toList();
 
-      if (nativeFiles.isNotEmpty) {
-        await _api.multipartPost(
-          '/workspaces/$wsId/payments',
-          fields,
-          multipleFiles: nativeFiles,
-          multipleFileField: 'proof_files[]',
-        );
-      } else if (bytesFiles.isNotEmpty) {
-        await _api.multipartPost(
-          '/workspaces/$wsId/payments',
-          fields,
-          multipleBytes: bytesFiles,
-          multipleBytesNames: bytesNames,
-          multipleFileField: 'proof_files[]',
-        );
-      } else {
-        await _api.post('/workspaces/$wsId/payments', fields);
-      }
+      await _paymentProvider.createPayment(
+        wsId,
+        fields,
+        files: nativeFiles.isNotEmpty ? nativeFiles : null,
+        bytesFiles: bytesFiles.isNotEmpty ? bytesFiles : null,
+        bytesNames: bytesFiles.isNotEmpty ? bytesNames : null,
+      );
 
       if (ctx.mounted) {
         final l10n = AppLocalizations.of(ctx)!;

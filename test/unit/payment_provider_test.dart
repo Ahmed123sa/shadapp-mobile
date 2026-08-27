@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/payment_repository.dart';
@@ -51,5 +53,19 @@ void main() {
     final all = await provider.fetchAllPendingRaw();
 
     expect(all, hasLength(2));
+  });
+
+  test('createPayment posts a plain JSON body to /workspaces/:id/payments when there are no files', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.createPayment(5, {'amount': 250.0, 'currency': 'SAR', 'method_type': 'bank_transfer'});
+
+    expect(sentBody, {'amount': 250.0, 'currency': 'SAR', 'method_type': 'bank_transfer'});
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 }
