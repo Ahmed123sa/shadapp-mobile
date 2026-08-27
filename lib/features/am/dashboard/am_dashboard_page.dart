@@ -302,7 +302,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-              backgroundColor: const Color(0xFF0D0D0D),
+              backgroundColor: ShadColors.surfaceDarker,
               indicatorColor: ShadColors.crimson.withAlpha(40),
               height: 65,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

@@ -159,7 +159,7 @@ class _CalendarTabState extends State<CalendarTab> {
       case 'meeting': return ShadColors.primary;
       case 'contract_start': return ShadColors.success;
       case 'contract_deadline': return ShadColors.error;
-      case 'approval': return const Color(0xFF9C27B0);
+      case 'approval': return ShadColors.calendarMeeting;
       case 'payment': return ShadColors.gold;
       default: return ShadColors.textSecondary;
     }
@@ -209,7 +209,7 @@ class _CalendarTabState extends State<CalendarTab> {
           const SizedBox(width: 12),
           _legendDot(ShadColors.gold, l10n.calendarPayment),
           const SizedBox(width: 12),
-          _legendDot(const Color(0xFF9C27B0), l10n.calendarApproval),
+          _legendDot(ShadColors.calendarMeeting, l10n.calendarApproval),
         ]),
       ),
       Expanded(

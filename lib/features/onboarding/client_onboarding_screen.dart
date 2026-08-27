@@ -281,7 +281,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                         ? ShadColors.crimson
                         : current
                             ? ShadColors.gold
-                            : const Color(0xFF2A2A2A),
+                            : ShadColors.cardBorder,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -657,7 +657,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D0D0D),
+              color: ShadColors.surfaceDarker,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: ShadColors.cardBorder),
             ),
@@ -675,7 +675,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 6,
-                  backgroundColor: const Color(0xFF2A2A2A),
+                  backgroundColor: ShadColors.cardBorder,
                   valueColor: const AlwaysStoppedAnimation(ShadColors.gold),
                 ),
               ),

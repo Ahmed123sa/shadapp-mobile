@@ -143,7 +143,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D0D0D),
+                color: ShadColors.surfaceDarker,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: ShadColors.cardBorder),
               ),
@@ -172,14 +172,14 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2A4A6A).withAlpha(60),
+                        color: ShadColors.infoBg.withAlpha(60),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFF4A8AC0).withAlpha(80)),
+                        border: Border.all(color: ShadColors.infoAccent.withAlpha(80)),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.description_outlined, size: 12, color: Color(0xFF4A8AC0)),
+                        const Icon(Icons.description_outlined, size: 12, color: ShadColors.infoAccent),
                         const SizedBox(width: 4),
-                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF4A8AC0))),
+                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.infoAccent)),
                       ]),
                     ),
                   ),
@@ -193,7 +193,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 6,
-                    backgroundColor: const Color(0xFF2A2A2A),
+                    backgroundColor: ShadColors.cardBorder,
                     valueColor: const AlwaysStoppedAnimation(ShadColors.gold),
                   ),
                 ),
@@ -205,7 +205,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                     child: Container(
                       height: 5, margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: BoxDecoration(
-                        color: done ? ShadColors.crimson : current ? ShadColors.gold : const Color(0xFF2A2A2A),
+                        color: done ? ShadColors.crimson : current ? ShadColors.gold : ShadColors.cardBorder,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),

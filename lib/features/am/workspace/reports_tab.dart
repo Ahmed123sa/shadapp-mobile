@@ -709,8 +709,8 @@ class _ReportsTabState extends State<ReportsTab> {
                 : (100 - i * 15).clamp(10, 100);
             final rankColors = [
               (ShadColors.goldSoft, ShadColors.gold, ShadColors.gold),
-              (const Color(0x1EC0C0C0), const Color(0xFFC0C0C0), const Color(0xFFC0C0C0)),
-              (const Color(0x1ECD7F32), const Color(0xFFCD7F32), const Color(0xFFCD7F32)),
+              (ShadColors.silverSoft, ShadColors.silver, ShadColors.silver),
+              (ShadColors.bronzeSoft, ShadColors.bronze, ShadColors.bronze),
             ];
             final (bgColor, borderColor, textColor) = i < 3 ? rankColors[i] : (ShadColors.cardBorder, ShadColors.cardBorder, ShadColors.textSecondary);
             final isLast = i == (items.length > 3 ? 2 : items.length - 1);

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../../core/theme.dart';
 
 Future<Uint8List> renderSignatureAsPng({
   required List<List<Offset>> strokes,
@@ -18,7 +19,7 @@ Future<Uint8List> renderSignatureAsPng({
   }
 
   final paint = Paint()
-    ..color = const Color(0xFFC8A461)
+    ..color = ShadColors.signatureInk
     ..strokeWidth = 3
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.stroke;

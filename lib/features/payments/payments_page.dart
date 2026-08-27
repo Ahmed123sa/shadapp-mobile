@@ -172,7 +172,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D0D0D),
+                color: ShadColors.surfaceDarker,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: ShadColors.cardBorder),
               ),

@@ -569,7 +569,7 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = const Color(0xCC2A2A2A);
+    final bgPaint = Paint()..color = ShadColors.signatureOverlay;
     for (double x = 12; x < size.width; x += 24) {
       for (double y = 12; y < size.height; y += 24) {
         canvas.drawCircle(Offset(x, y), 1, bgPaint);
@@ -577,7 +577,7 @@ class _SignaturePainter extends CustomPainter {
     }
 
     final linePaint = Paint()
-      ..color = const Color(0x802A2A2A)
+      ..color = ShadColors.signatureOverlaySoft
       ..strokeWidth = 1;
     canvas.drawLine(
         Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), linePaint);

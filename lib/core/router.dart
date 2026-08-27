@@ -13,7 +13,6 @@ import '../features/am/workspace/am_workspace_page.dart';
 import '../features/am/reports/reports_page.dart';
 import '../features/am/settings/admin_settings_page.dart';
 import '../features/signature/signature_page.dart';
-import '../features/preview/preview_page.dart';
 import '../features/notifications/notifications_page.dart';
 import '../features/am/reports/audit_log_page.dart';
 import '../features/profile/profile_page.dart';
@@ -23,7 +22,6 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: [
-      GoRoute(path: '/preview', builder: (_, __) => const PreviewPage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordPage()),
       GoRoute(path: '/dashboard', builder: (_, state) {

@@ -264,7 +264,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: ShadColors.surfaceDarker,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -277,9 +277,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 decoration: BoxDecoration(gradient: LinearGradient(
                   begin: Alignment.topLeft, end: Alignment.bottomRight,
                   colors: [
-                    Color.lerp(const Color(0xFF1A1A1A), const Color(0xFF1E1418), t)!,
-                    Color.lerp(const Color(0xFF0D0D0D), const Color(0xFF120E0E), t)!,
-                    Color.lerp(const Color(0xFF141414), const Color(0xFF1A1414), t)!,
+                    for (var i = 0; i < ShadColors.loginGradientFrom.length; i++)
+                      Color.lerp(ShadColors.loginGradientFrom[i], ShadColors.loginGradientTo[i], t)!,
                   ],
                 )),
               );
@@ -361,7 +360,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(28),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1E1E1E).withAlpha(180),
+                                      color: ShadColors.card.withAlpha(180),
                                       borderRadius: BorderRadius.circular(24),
                                       border: Border.all(
                                         width: 1,

@@ -78,6 +78,51 @@ class ShadColors {
   static const Color crimsonSoft = Color(0x2E941414);
   static const Color crimsonBorder = Color(0x52941414);
 
+  // Translucent white overlays, used for hairline dividers and subtle
+  // surfaces layered over the dark background. Kept as fixed alpha values
+  // rather than withAlpha() calls so they stay consistent everywhere.
+  static const Color overlayFaint = Color(0x0AFFFFFF);
+  static const Color overlaySoft = Color(0x12FFFFFF);
+  static const Color overlayMedium = Color(0x1CFFFFFF);
+
+  // "Action taken" confirmation chip in chat (approved/rejected/edited).
+  static const Color actionTakenBg = Color(0x1497C459);
+  static const Color actionTakenBorder = Color(0x3397C459);
+
+  // Signature pad overlays, and the ink colour the signature is drawn in.
+  static const Color signatureOverlay = Color(0xCC2A2A2A);
+  static const Color signatureOverlaySoft = Color(0x802A2A2A);
+  static const Color signatureInk = Color(0xFFC8A461);
+
+  // Contract "pending signature" callout
+  static const Color infoBg = Color(0xFF2A4A6A);
+  static const Color infoAccent = Color(0xFF4A8AC0);
+
+  // Meeting highlight in the calendar
+  static const Color calendarMeeting = Color(0xFF9C27B0);
+
+  // Leaderboard medal tints in the reports tab
+  static const Color silver = Color(0xFFC0C0C0);
+  static const Color silverSoft = Color(0x1EC0C0C0);
+  static const Color bronze = Color(0xFFCD7F32);
+  static const Color bronzeSoft = Color(0x1ECD7F32);
+
+  static const Color meetingBlueSoft = Color(0x1485B7EB);
+
+  // Login screen's slow "breathing" background. The two lists are the start
+  // and end of the animation — Color.lerp walks between them, so they must
+  // stay the same length and order.
+  static const List<Color> loginGradientFrom = [
+    Color(0xFF1A1A1A),
+    Color(0xFF0D0D0D),
+    Color(0xFF141414),
+  ];
+  static const List<Color> loginGradientTo = [
+    Color(0xFF1E1418),
+    Color(0xFF120E0E),
+    Color(0xFF1A1414),
+  ];
+
   // Legacy aliases for backward compatibility
   static const Color primary = Color(0xFF941414);
   static const Color primaryLight = Color(0xFFB71C1C);

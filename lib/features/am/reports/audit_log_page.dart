@@ -372,7 +372,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x0AFFFFFF))),
+        border: Border(bottom: BorderSide(color: ShadColors.overlayFaint)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

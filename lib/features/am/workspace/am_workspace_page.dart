@@ -75,7 +75,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
       body: Column(children: [
         // ── Compact Header ──
         Container(
-          color: const Color(0xFF0D0D0D),
+          color: ShadColors.surfaceDarker,
           padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
           child: Row(children: [
             Stack(clipBehavior: Clip.none, children: [
@@ -127,7 +127,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         ),
         // ── Tab Bar ──
         Container(
-          color: const Color(0xFF0D0D0D),
+          color: ShadColors.surfaceDarker,
           child: TabBar(
             controller: _tabController,
             isScrollable: false,

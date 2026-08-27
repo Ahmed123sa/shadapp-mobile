@@ -373,7 +373,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             bottomLeft: Radius.circular(isClient ? 12 : 3),
             bottomRight: Radius.circular(isClient ? 3 : 12),
           ),
-          border: isClient ? null : Border.all(color: const Color(0x1CFFFFFF), width: 0.5),
+          border: isClient ? null : Border.all(color: ShadColors.overlayMedium, width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,9 +485,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0x1497C459),
+                  color: ShadColors.actionTakenBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0x3397C459), width: 0.5),
+                  border: Border.all(color: ShadColors.actionTakenBorder, width: 0.5),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Text(
@@ -832,7 +832,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 Container(
                   width: 32, height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: ShadColors.overlayFaint,
                     borderRadius: BorderRadius.circular(9),
                     border: Border.all(color: ShadColors.cardBorder, width: 0.5),
                   ),
@@ -856,11 +856,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0x12FFFFFF), width: 1),
+                        borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0x12FFFFFF), width: 1),
+                        borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
@@ -899,7 +899,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       child: Container(
         width: 28, height: 28,
         decoration: BoxDecoration(
-          color: const Color(0x0AFFFFFF),
+          color: ShadColors.overlayFaint,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: ShadColors.cardBorder, width: 0.5),
         ),
@@ -931,7 +931,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0x1485B7EB),
+          color: ShadColors.meetingBlueSoft,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
         ),
@@ -1118,12 +1118,12 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(children: [
-        const Expanded(child: Divider(color: Color(0x1CFFFFFF), thickness: 0.5, height: 1)),
+        const Expanded(child: Divider(color: ShadColors.overlayMedium, thickness: 0.5, height: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(label, style: const TextStyle(fontSize: 9, color: ShadColors.textMuted)),
         ),
-        const Expanded(child: Divider(color: Color(0x1CFFFFFF), thickness: 0.5, height: 1)),
+        const Expanded(child: Divider(color: ShadColors.overlayMedium, thickness: 0.5, height: 1)),
       ]),
     );
   }
