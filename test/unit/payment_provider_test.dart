@@ -94,4 +94,19 @@ void main() {
     expect(data['tax_summary']['tax_percentage'], 15);
     expect(provider.payments, isEmpty); // pass-through must not touch provider-managed state
   });
+
+  test('reviewPayment posts the action to /payments/:id/review', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{"workspace":{"status":"active"}}');
+    });
+
+    final data = await provider.reviewPayment(7, 'approved');
+
+    expect(sentBody, {'action': 'approved'});
+    expect(data['workspace']['status'], 'active');
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/7/review'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
 }

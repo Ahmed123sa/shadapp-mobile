@@ -130,7 +130,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     );
     if (confirm != true) return;
     try {
-      final data = await _api.post('/payments/$id/review', {'action': displayAction});
+      final data = await _paymentProvider.reviewPayment(id, displayAction);
       if (mounted) {
         final wsActive = data['workspace']?['status'] == 'active';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

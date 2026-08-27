@@ -21,6 +21,9 @@ class PaymentProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// AM-side approve/reject decision — see [PaymentRepository.review].
+  Future<Map<String, dynamic>> reviewPayment(int paymentId, String action) => _repo.review(paymentId, action);
+
   /// Raw envelope — see [PaymentRepository.fetchForWorkspaceEnvelope].
   /// payments_page.dart owns its own loading/error state for this combined
   /// load, so this pass-through doesn't touch [_payments]/[_isLoading].
