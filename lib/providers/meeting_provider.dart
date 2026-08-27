@@ -41,4 +41,20 @@ class MeetingProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Raw meeting list — see [MeetingRepository.fetchForWorkspaceRaw].
+  /// am/workspace/meetings_tab.dart owns its own loading/error state, so
+  /// these pass-throughs (like the mutations below) don't touch [_meetings].
+  Future<List<dynamic>> fetchForWorkspaceRaw(int workspaceId) => _repo.fetchForWorkspaceRaw(workspaceId);
+
+  Future<List<dynamic>> fetchAllWorkspacesRaw() => _repo.fetchAllWorkspacesRaw();
+
+  Future<void> cancelMeeting(int meetingId) => _repo.cancel(meetingId);
+
+  Future<void> completeMeeting(int meetingId) => _repo.complete(meetingId);
+
+  Future<void> createMeeting(int workspaceId, Map<String, dynamic> payload) => _repo.create(workspaceId, payload);
+
+  Future<void> updateMeeting(int workspaceId, int meetingId, Map<String, dynamic> payload) =>
+      _repo.update(workspaceId, meetingId, payload);
 }

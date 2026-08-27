@@ -9,10 +9,14 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/meeting_provider.dart';
 
 class MeetingsTab extends StatefulWidget {
   final int? workspaceId;
-  const MeetingsTab({super.key, this.workspaceId});
+  final MeetingProvider? meetingProvider;
+  final ContractProvider? contractProvider;
+  const MeetingsTab({super.key, this.workspaceId, this.meetingProvider, this.contractProvider});
 
   @override
   State<MeetingsTab> createState() => _MeetingsTabState();
@@ -20,6 +24,8 @@ class MeetingsTab extends StatefulWidget {
 
 class _MeetingsTabState extends State<MeetingsTab> {
   final _api = ApiClient();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   List<dynamic> _meetings = [];
   bool _loading = true;
   String? _error;
@@ -34,10 +40,9 @@ class _MeetingsTabState extends State<MeetingsTab> {
     final isSA = _api.role == 'super_admin';
     setState(() { if (_meetings.isEmpty) _loading = true; _error = null; });
     try {
-      final data = isSA
-          ? await _api.get('/all-meetings')
-          : await _api.get('/workspaces/${widget.workspaceId ?? _api.workspaceId}/meetings');
-      _meetings = safeList(data['meetings']);
+      _meetings = isSA
+          ? await _meetingProvider.fetchAllWorkspacesRaw()
+          : await _meetingProvider.fetchForWorkspaceRaw((widget.workspaceId ?? _api.workspaceId)!);
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)?.amMeetingsLoadFailed;
     }
@@ -49,7 +54,12 @@ class _MeetingsTabState extends State<MeetingsTab> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => _CreateMeetingForm(workspaceId: widget.workspaceId, onCreated: _load),
+      builder: (_) => _CreateMeetingForm(
+        workspaceId: widget.workspaceId,
+        onCreated: _load,
+        meetingProvider: _meetingProvider,
+        contractProvider: _contractProvider,
+      ),
     );
   }
 
@@ -58,7 +68,12 @@ class _MeetingsTabState extends State<MeetingsTab> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => _EditMeetingForm(meeting: m, workspaceId: widget.workspaceId, onUpdated: _load),
+      builder: (_) => _EditMeetingForm(
+        meeting: m,
+        workspaceId: widget.workspaceId,
+        onUpdated: _load,
+        meetingProvider: _meetingProvider,
+      ),
     );
   }
 
@@ -81,7 +96,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
     );
     if (confirm != true) return;
     try {
-      await _api.patch('/meetings/${m['id']}/cancel', {});
+      await _meetingProvider.cancelMeeting(m['id'] as int);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingCancelSuccess)])));
         _load();
@@ -110,7 +125,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
     );
     if (confirm != true) return;
     try {
-      await _api.patch('/meetings/${m['id']}/complete', {});
+      await _meetingProvider.completeMeeting(m['id'] as int);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingCompleteSuccess)])));
         _load();
@@ -317,7 +332,9 @@ class _MeetingsTabState extends State<MeetingsTab> {
 class _CreateMeetingForm extends StatefulWidget {
   final int? workspaceId;
   final VoidCallback onCreated;
-  const _CreateMeetingForm({this.workspaceId, required this.onCreated});
+  final MeetingProvider? meetingProvider;
+  final ContractProvider? contractProvider;
+  const _CreateMeetingForm({this.workspaceId, required this.onCreated, this.meetingProvider, this.contractProvider});
 
   @override
   State<_CreateMeetingForm> createState() => _CreateMeetingFormState();
@@ -325,6 +342,8 @@ class _CreateMeetingForm extends StatefulWidget {
 
 class _CreateMeetingFormState extends State<_CreateMeetingForm> {
   final _api = ApiClient();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _date = DateTime.now().add(const Duration(days: 1));
@@ -344,23 +363,20 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
   Future<void> _loadContracts() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
-    try {
-      final data = await _api.get('/workspaces/$wsId/contracts');
-      if (mounted) {
-        setState(() {
-          _contracts = safeList(data['contracts'])
-              .where((c) => c['status'] == 'active' || c['status'] == 'company_approved')
-              .toList();
-          _loadingContracts = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingContracts = false);
+    await _contractProvider.fetchContracts(wsId);
+    if (mounted) {
+      setState(() {
+        _contracts = _contractProvider.contracts
+            .where((c) => c['status'] == 'active' || c['status'] == 'company_approved')
+            .toList();
+        _loadingContracts = false;
+      });
     }
   }
 
   Future<void> _submit() async {
-    if (_titleController.text.trim().isEmpty || (widget.workspaceId ?? _api.workspaceId) == null) return;
+    final wsId = widget.workspaceId ?? _api.workspaceId;
+    if (_titleController.text.trim().isEmpty || wsId == null) return;
     setState(() => _saving = true);
     final scheduledAt = DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
     final tzOffset = scheduledAt.timeZoneOffset;
@@ -369,7 +385,7 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
     final tzMinutes = (tzOffset.inMinutes.abs() % 60).toString().padLeft(2, '0');
     final scheduledAtIso = '${scheduledAt.toIso8601String()}$tzSign$tzHours:$tzMinutes';
     try {
-      await _api.post('/workspaces/${widget.workspaceId ?? _api.workspaceId}/meetings', {
+      await _meetingProvider.createMeeting(wsId, {
         'title': _titleController.text.trim(),
         'scheduled_at': scheduledAtIso,
         'duration_minutes': _duration,
@@ -484,7 +500,8 @@ class _EditMeetingForm extends StatefulWidget {
   final dynamic meeting;
   final int? workspaceId;
   final VoidCallback onUpdated;
-  const _EditMeetingForm({required this.meeting, this.workspaceId, required this.onUpdated});
+  final MeetingProvider? meetingProvider;
+  const _EditMeetingForm({required this.meeting, this.workspaceId, required this.onUpdated, this.meetingProvider});
 
   @override
   State<_EditMeetingForm> createState() => _EditMeetingFormState();
@@ -492,6 +509,7 @@ class _EditMeetingForm extends StatefulWidget {
 
 class _EditMeetingFormState extends State<_EditMeetingForm> {
   final _api = ApiClient();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   late final TextEditingController _titleController;
   late final TextEditingController _notesController;
   late DateTime _date;
@@ -528,7 +546,7 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      await _api.put('/workspaces/$wsId/meetings/${widget.meeting['id']}', {
+      await _meetingProvider.updateMeeting(wsId, widget.meeting['id'] as int, {
         'title': _titleController.text.trim(),
         'scheduled_at': scheduledAtIso,
         'duration_minutes': _duration,

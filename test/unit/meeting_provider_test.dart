@@ -39,4 +39,35 @@ void main() {
 
     expect(provider.error, isNotNull);
   });
+
+  test('fetchForWorkspaceRaw returns the raw meeting maps without touching .meetings', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"meetings":[{"id":1,"notes":"bring laptop"}]}'),
+    );
+
+    final meetings = await provider.fetchForWorkspaceRaw(5);
+
+    expect(meetings.first['notes'], 'bring laptop');
+    expect(provider.meetings, isEmpty);
+  });
+
+  test('cancelMeeting hits the cancel endpoint', () async {
+    when(() => httpClient.patch(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => jsonResponse('{}'));
+
+    await provider.cancelMeeting(9);
+
+    verify(() => httpClient.patch(any(that: predicate<Uri>((u) => u.path.endsWith('/meetings/9/cancel'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('createMeeting posts to /workspaces/:id/meetings', () async {
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => jsonResponse('{}'));
+
+    await provider.createMeeting(5, {'title': 'Kickoff'});
+
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
 }
