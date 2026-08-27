@@ -16,6 +16,7 @@ import 'core/notification_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/contract_provider.dart';
 import 'providers/client_provider.dart';
+import 'providers/manager_provider.dart';
 import 'providers/notification_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
@@ -110,6 +111,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ContractProvider()),
         ChangeNotifierProvider(create: (_) => ClientProvider()),
+        ChangeNotifierProvider(create: (_) => ManagerProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider.value(value: localeProvider),
       ],

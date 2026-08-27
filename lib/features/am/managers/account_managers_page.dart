@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/shad_logo.dart';
+import '../../../models/manager.dart';
+import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class AccountManagersPage extends StatefulWidget {
-  const AccountManagersPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ManagerProvider instead of hitting the network — same pattern as
+  // LoginPage.authProvider / CreateClientPage.clientProvider.
+  final ManagerProvider? managerProvider;
+  const AccountManagersPage({super.key, this.managerProvider});
 
   @override
   State<AccountManagersPage> createState() => _AccountManagersPageState();
 }
 
 class _AccountManagersPageState extends State<AccountManagersPage> {
-  final _api = ApiClient();
-  List<dynamic> _managers = [];
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
+  List<Manager> _managers = [];
   bool _loading = true;
   String? _errorMsg;
 
@@ -26,12 +31,12 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
 
   Future<void> _load() async {
     setState(() { _loading = true; _errorMsg = null; });
-    try {
-      final data = await _api.get('/account-managers');
-      _managers = data['managers'] as List<dynamic>? ?? [];
-    } catch (e) {
+    await _managerProvider.fetchManagers();
+    if (_managerProvider.error != null) {
       if (!mounted) return;
       _errorMsg = AppLocalizations.of(context)!.accountManagersFailedToLoad;
+    } else {
+      _managers = _managerProvider.managers;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -50,7 +55,10 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
     );
     if (confirm != true) return;
     try {
-      await _api.delete('/account-managers/$id');
+      // deleteManager() already removes the item locally, but the original
+      // screen always did a full reload after a successful delete — kept
+      // as-is so the network call sequence (DELETE then GET) is unchanged.
+      await _managerProvider.deleteManager(id);
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -116,12 +124,12 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                   padding: const EdgeInsets.all(16),
                   itemCount: _managers.length,
                   itemBuilder: (_, i) {
-                    final m = _managers[i] as Map<String, dynamic>;
-                    final name = m['name'] as String? ?? '';
-                    final email = m['email'] as String? ?? '';
-                    final mgrId = int.tryParse(m['id']?.toString() ?? '') ?? 0;
-                    final clientCount = int.tryParse(m['managed_clients_count']?.toString() ?? '') ?? 0;
-                    final phone = m['phone'] as String?;
+                    final m = _managers[i];
+                    final name = m.name;
+                    final email = m.email ?? '';
+                    final mgrId = m.id;
+                    final clientCount = m.managedClientsCount;
+                    final phone = m.phone;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
@@ -142,9 +150,9 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                             Text(phone, style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
                           Row(children: [
                             Text(l10n.accountManagersClientCount(clientCount), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                            if (m['date_of_birth'] != null && (m['date_of_birth'] as String).isNotEmpty) ...[
+                            if (m.dateOfBirth != null && m.dateOfBirth!.isNotEmpty) ...[
                               Text(' · ', style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
-                              Text((m['date_of_birth'] as String).substring(0, 10), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                              Text(m.dateOfBirth!.substring(0, 10), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
                             ],
                           ]),
                         ]),
