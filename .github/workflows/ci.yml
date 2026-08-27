@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # assets/env.txt is gitignored (see env.txt.example) and is only ever
+      # read at runtime by dotenv.load() in main.dart, which no test calls —
+      # but it's still declared as a pubspec asset, so `flutter pub get`
+      # expects the file to exist on disk. A placeholder is enough for CI.
+      - name: Create placeholder env file
+        run: cp assets/env.txt.example assets/env.txt
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
