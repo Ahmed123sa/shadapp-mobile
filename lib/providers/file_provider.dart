@@ -25,4 +25,9 @@ class FileProvider extends ChangeNotifier {
 
   Future<void> reviewFile(dynamic fileId, {required String action, String? reason}) =>
       _repo.reviewFile(fileId, action: action, reason: reason);
+
+  Future<Map<String, dynamic>> createDefinition(int workspaceId, Map<String, dynamic> body) =>
+      _repo.createDefinition(workspaceId, body);
+
+  Future<void> deleteDefinition(int workspaceId, int definitionId) => _repo.deleteDefinition(workspaceId, definitionId);
 }

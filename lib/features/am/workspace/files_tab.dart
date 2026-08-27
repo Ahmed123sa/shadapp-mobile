@@ -8,17 +8,23 @@ import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../providers/file_provider.dart';
 
 class FilesTab extends StatefulWidget {
   final int? workspaceId;
-  const FilesTab({super.key, this.workspaceId});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // FileProvider instead of hitting the network.
+  final FileProvider? fileProvider;
+  final ApiClient? api;
+  const FilesTab({super.key, this.workspaceId, this.fileProvider, this.api});
 
   @override
   State<FilesTab> createState() => _FilesTabState();
 }
 
 class _FilesTabState extends State<FilesTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider();
   List<dynamic> _definitions = [];
   List<dynamic> _files = [];
   bool _loading = true;
@@ -36,7 +42,7 @@ class _FilesTabState extends State<FilesTab> {
     if (wsId == null) return;
     setState(() { if (_files.isEmpty) _loading = true; _error = null; });
     try {
-      final data = await _api.get('/workspaces/$wsId/files');
+      final data = await _fileProvider.fetchWorkspaceFiles(wsId);
       _files = data['files'] as List<dynamic>? ?? [];
       _definitions = data['definitions'] as List<dynamic>? ?? [];
     } catch (_) {
@@ -58,7 +64,7 @@ class _FilesTabState extends State<FilesTab> {
     if (result == null || result.files.isEmpty || widget.workspaceId == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/workspaces/${widget.workspaceId}/files', {}, file: file);
+      await _fileProvider.uploadFile(widget.workspaceId!, {}, file: file);
       if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesUploadSuccess)])));
       _load();
     } catch (_) {
@@ -97,7 +103,7 @@ class _FilesTabState extends State<FilesTab> {
     );
     if (result != true || nameCtrl.text.trim().isEmpty || widget.workspaceId == null) return;
     try {
-      await _api.post('/workspaces/${widget.workspaceId}/document-definitions', {
+      await _fileProvider.createDefinition(widget.workspaceId!, {
         'name': nameCtrl.text.trim(),
         'description': descCtrl.text.trim(),
         'is_required': isRequired.value,
@@ -126,7 +132,7 @@ class _FilesTabState extends State<FilesTab> {
     );
     if (confirm != true) return;
     try {
-      await _api.delete('/workspaces/${widget.workspaceId}/document-definitions/$defId');
+      await _fileProvider.deleteDefinition(widget.workspaceId!, defId);
       if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesDefinitionDeleted)])));
         _load();
@@ -157,10 +163,7 @@ class _FilesTabState extends State<FilesTab> {
       if (reason == null) return;
     }
     try {
-      await _api.post('/files/$fileId/review', {
-        'action': action,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      });
+      await _fileProvider.reviewFile(fileId, action: action, reason: reason);
       _load();
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesActionFailed)));

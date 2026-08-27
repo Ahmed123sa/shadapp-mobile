@@ -43,4 +43,13 @@ class FileRepository {
           if (reason != null && reason.isNotEmpty) 'reason': reason,
         },
       );
+
+  /// The `/workspaces/:id/document-definitions` sub-resource, used by the
+  /// AM-side am/workspace/files_tab.dart to manage which document types a
+  /// workspace requires — not needed by the client-side file screens.
+  Future<Map<String, dynamic>> createDefinition(int workspaceId, Map<String, dynamic> body) =>
+      _api.post('/workspaces/$workspaceId/document-definitions', body);
+
+  Future<void> deleteDefinition(int workspaceId, int definitionId) =>
+      _api.delete('/workspaces/$workspaceId/document-definitions/$definitionId');
 }

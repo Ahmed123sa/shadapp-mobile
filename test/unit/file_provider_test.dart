@@ -29,6 +29,27 @@ void main() {
     expect(res['files'], hasLength(1));
   });
 
+  test('createDefinition delegates to the repository', () async {
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{"definition":{"id":1}}'),
+    );
+
+    final res = await provider.createDefinition(5, {'name': 'Passport'});
+
+    expect(res['definition']['id'], 1);
+  });
+
+  test('deleteDefinition delegates to the repository', () async {
+    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{}'),
+    );
+
+    await provider.deleteDefinition(5, 3);
+
+    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/document-definitions/3'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('deleteFile delegates to the repository', () async {
     when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{}'),
