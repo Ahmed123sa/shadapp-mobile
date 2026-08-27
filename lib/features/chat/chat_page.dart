@@ -17,8 +17,13 @@ import '../../core/helpers/realtime_poller.dart';
 
 class ChatPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
+  // Step 0 of the state-layer migration plan: lets widget tests suppress the
+  // fallback-refresh Timer so `pumpAndSettle` doesn't hang on a pending
+  // periodic timer. Defaults to true — zero behavior change for every
+  // existing call site.
+  final bool enablePolling;
 
-  const ChatPage({super.key, this.onGoToPayments});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -76,6 +81,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _startPolling() {
+    if (!widget.enablePolling) return;
     _poller.start();
   }
 

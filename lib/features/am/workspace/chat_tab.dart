@@ -19,7 +19,12 @@ import '../../../core/widgets/payment_detail_sheet.dart';
 class ChatTab extends StatefulWidget {
   final int? workspaceId;
   final String? wsStatus;
-  const ChatTab({super.key, this.workspaceId, this.wsStatus});
+  // Step 0 of the state-layer migration plan: lets widget tests suppress the
+  // fallback-refresh Timer so `pumpAndSettle` doesn't hang on a pending
+  // periodic timer. Defaults to true — zero behavior change for every
+  // existing call site.
+  final bool enablePolling;
+  const ChatTab({super.key, this.workspaceId, this.wsStatus, this.enablePolling = true});
 
   @override
   State<ChatTab> createState() => _ChatTabState();
@@ -87,6 +92,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   }
 
   void _startPolling() {
+    if (!widget.enablePolling) return;
     _poller.start();
   }
 

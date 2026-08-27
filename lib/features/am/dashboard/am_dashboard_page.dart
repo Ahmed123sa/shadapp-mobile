@@ -16,7 +16,12 @@ import 'sa_team_page.dart';
 import '../settings/admin_settings_page.dart';
 
 class AmDashboardPage extends StatefulWidget {
-  const AmDashboardPage({super.key});
+  // Step 0 of the state-layer migration plan: lets widget tests suppress the
+  // 60s notification/refresh Timer so `pumpAndSettle` doesn't hang on a
+  // pending periodic timer. Defaults to true — zero behavior change for
+  // every existing call site.
+  final bool enablePolling;
+  const AmDashboardPage({super.key, this.enablePolling = true});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
@@ -46,11 +51,13 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     _loadNotifs();
     _searchController.addListener(_filter);
     _setupRealtimeNotifications();
-    _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      _loadNotifs();
-      _pollTick++;
-      if (_pollTick % 5 == 0) _load();
-    });
+    if (widget.enablePolling) {
+      _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+        _loadNotifs();
+        _pollTick++;
+        if (_pollTick % 5 == 0) _load();
+      });
+    }
   }
 
   void _setupRealtimeNotifications() {
