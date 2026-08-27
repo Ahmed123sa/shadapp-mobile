@@ -9,16 +9,22 @@ import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/status_badge.dart';
+import '../../providers/file_provider.dart';
 
 class ClientFilesPage extends StatefulWidget {
-  const ClientFilesPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // FileProvider instead of hitting the network.
+  final FileProvider? fileProvider;
+  final ApiClient? api;
+  const ClientFilesPage({super.key, this.fileProvider, this.api});
 
   @override
   State<ClientFilesPage> createState() => _ClientFilesPageState();
 }
 
 class _ClientFilesPageState extends State<ClientFilesPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider();
   List<dynamic> _files = [];
   List<dynamic> _definitions = [];
   List<dynamic> _paymentFiles = [];
@@ -36,7 +42,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     if (wsId == null) return;
     setState(() => _loading = true);
     try {
-      final data = await _api.get('/workspaces/$wsId/files');
+      final data = await _fileProvider.fetchWorkspaceFiles(wsId);
       _files = safeList(data['files']);
       _definitions = safeList(data['definitions']);
       _paymentFiles = safeList(data['paymentFiles']);
@@ -113,7 +119,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     try {
       final fields = <String, dynamic>{};
       if (definitionId != null) fields['document_definition_id'] = definitionId;
-      await _api.multipartPost('/workspaces/$wsId/files', fields, file: file);
+      await _fileProvider.uploadFile(wsId, fields, file: file);
       _load();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.files_uploadFailed}: $e')));
@@ -142,7 +148,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     final wsId = _api.workspaceId;
     if (wsId == null) return;
     try {
-      await _api.delete('/workspaces/$wsId/files/${file['id']}');
+      await _fileProvider.deleteFile(wsId, file['id']);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.files_deleted)));
       _load();
     } catch (e) {

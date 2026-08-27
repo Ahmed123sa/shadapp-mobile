@@ -22,6 +22,7 @@ import 'providers/manager_provider.dart';
 import 'providers/meeting_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/payment_provider.dart';
+import 'providers/file_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/signature_provider.dart';
 import 'providers/sub_user_provider.dart';
@@ -127,6 +128,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => SubUserProvider()),
         ChangeNotifierProvider(create: (_) => SignatureProvider()),
+        ChangeNotifierProvider(create: (_) => FileProvider()),
         ChangeNotifierProvider.value(value: localeProvider),
       ],
       child: ShadApp(router: router, localeProvider: localeProvider),
