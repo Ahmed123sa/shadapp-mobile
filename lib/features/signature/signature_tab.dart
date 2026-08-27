@@ -3,18 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../providers/client_provider.dart';
+import '../../providers/signature_provider.dart';
 import 'render_signature.dart';
 import '../../core/theme.dart';
 
 class SignatureTab extends StatefulWidget {
-  const SignatureTab({super.key});
+  // Optional so this screen can be pumped in a widget test with mocked
+  // providers instead of hitting the network.
+  final ClientProvider? clientProvider;
+  final SignatureProvider? signatureProvider;
+  final ApiClient? api;
+  const SignatureTab({super.key, this.clientProvider, this.signatureProvider, this.api});
 
   @override
   State<SignatureTab> createState() => _SignatureTabState();
 }
 
 class _SignatureTabState extends State<SignatureTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
+  late final SignatureProvider _signatureProvider = widget.signatureProvider ?? SignatureProvider();
   final _textController = TextEditingController();
   final List<List<Offset>> _strokes = [];
   List<Offset> _currentStroke = [];
@@ -41,7 +50,7 @@ class _SignatureTabState extends State<SignatureTab> {
     try {
       final cid = _api.userId;
       if (cid == null) return;
-      final data = await _api.get('/clients/$cid');
+      final data = await _clientProvider.fetchClientRaw(cid);
       final client = data['client'] as Map<String, dynamic>?;
       final sigData = client?['signature_data'] as String?;
       setState(() {
@@ -76,7 +85,7 @@ class _SignatureTabState extends State<SignatureTab> {
     try {
       final cid = _api.userId;
       if (cid == null) return;
-      await _api.delete('/clients/$cid/sign');
+      await _signatureProvider.deleteSignature(cid);
       setState(() {
         _existingSigUrl = null;
         _existingSigText = null;
@@ -102,8 +111,7 @@ class _SignatureTabState extends State<SignatureTab> {
         final file = File(result.files.single.path!);
         final cid = _api.userId;
         if (cid == null) return;
-        await _api.multipartPost('/clients/$cid/sign', {},
-            file: file, fileField: 'signature_image');
+        await _signatureProvider.uploadImage(cid, file);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
@@ -135,8 +143,7 @@ class _SignatureTabState extends State<SignatureTab> {
       final file = File(
           '${dir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(pngBytes);
-      await _api.multipartPost('/clients/$cid/sign', {},
-          file: file, fileField: 'signature_image');
+      await _signatureProvider.uploadImage(cid, file);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
@@ -160,7 +167,7 @@ class _SignatureTabState extends State<SignatureTab> {
     try {
       final cid = _api.userId;
       if (cid == null) throw Exception('User ID not found');
-      await _api.post('/clients/$cid/sign', {'signature': text});
+      await _signatureProvider.saveText(cid, text);
       if (mounted) {
         _textController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
