@@ -833,13 +833,14 @@ class _PaymentsPageState extends State<PaymentsPage> {
       final bytesFiles = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['bytes'] as Uint8List).toList();
       final bytesNames = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['name'] as String? ?? 'file.jpg').toList();
 
-      if (nativeFiles.isNotEmpty) {
-        await _api.multipartPut('/workspaces/$wsId/payments/$paymentId', fields, multipleFiles: nativeFiles, multipleFileField: 'proof_files[]');
-      } else if (bytesFiles.isNotEmpty) {
-        await _api.multipartPut('/workspaces/$wsId/payments/$paymentId', fields, multipleBytes: bytesFiles, multipleBytesNames: bytesNames, multipleFileField: 'proof_files[]');
-      } else {
-        await _api.put('/workspaces/$wsId/payments/$paymentId', fields);
-      }
+      await _paymentProvider.uploadPaymentProof(
+        wsId,
+        paymentId,
+        methodType,
+        files: nativeFiles.isNotEmpty ? nativeFiles : null,
+        bytesFiles: bytesFiles.isNotEmpty ? bytesFiles : null,
+        bytesNames: bytesFiles.isNotEmpty ? bytesNames : null,
+      );
 
       if (ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_proofSent)])));

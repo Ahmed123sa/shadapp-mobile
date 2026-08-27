@@ -161,4 +161,30 @@ void main() {
     expect(find.text('Please enter a valid amount'), findsOneWidget);
     verifyNever(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')));
   });
+
+  testWidgets('paying a scheduled payment without attaching proof shows a validation message and does not call the API', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      return jsonResponse(
+        '{"payments":[{"id":9,"amount":300,"currency":"SAR","status":"scheduled","requested_by_manager":true,'
+        '"installment_label":"Installment 2"}],"available_methods":["bank_transfer"],"tax_summary":null}',
+      );
+    });
+
+    await pumpPage(tester, api);
+    // Opens the scheduled-payment detail sheet, then its "Pay Now" action.
+    await tester.tap(find.text('Installment 2').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Pay Now'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Proof'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Payment proof is required'), findsOneWidget);
+    verifyNever(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body')));
+  });
 }

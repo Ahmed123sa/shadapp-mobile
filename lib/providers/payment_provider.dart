@@ -50,4 +50,16 @@ class PaymentProvider extends ChangeNotifier {
     List<String>? bytesNames,
   }) =>
       _repo.create(workspaceId, fields, files: files, bytesFiles: bytesFiles, bytesNames: bytesNames);
+
+  /// Uploads proof for an existing (e.g. scheduled) payment — see
+  /// [PaymentRepository.uploadProof].
+  Future<Map<String, dynamic>> uploadPaymentProof(
+    int workspaceId,
+    dynamic paymentId,
+    String methodType, {
+    List<File>? files,
+    List<Uint8List>? bytesFiles,
+    List<String>? bytesNames,
+  }) =>
+      _repo.uploadProof(workspaceId, paymentId, methodType, files: files, bytesFiles: bytesFiles, bytesNames: bytesNames);
 }

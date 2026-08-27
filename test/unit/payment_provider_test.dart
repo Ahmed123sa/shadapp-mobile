@@ -68,4 +68,18 @@ void main() {
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  test('uploadPaymentProof puts a plain JSON body to /workspaces/:id/payments/:id when there are no files', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.uploadPaymentProof(5, 9, 'bank_transfer');
+
+    expect(sentBody, {'method_type': 'bank_transfer'});
+    verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments/9'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
 }
