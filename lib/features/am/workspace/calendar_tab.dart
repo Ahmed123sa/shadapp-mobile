@@ -3,17 +3,40 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../providers/approval_provider.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/meeting_provider.dart';
+import '../../../providers/payment_provider.dart';
 
 class CalendarTab extends StatefulWidget {
   final int? workspaceId;
-  const CalendarTab({super.key, this.workspaceId});
+  // Optional so this screen can be pumped in a widget test with mocked
+  // providers instead of hitting the network.
+  final MeetingProvider? meetingProvider;
+  final ContractProvider? contractProvider;
+  final PaymentProvider? paymentProvider;
+  final ApprovalProvider? approvalProvider;
+  final ApiClient? api;
+  const CalendarTab({
+    super.key,
+    this.workspaceId,
+    this.meetingProvider,
+    this.contractProvider,
+    this.paymentProvider,
+    this.approvalProvider,
+    this.api,
+  });
 
   @override
   State<CalendarTab> createState() => _CalendarTabState();
 }
 
 class _CalendarTabState extends State<CalendarTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
+  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
+  late final ApprovalProvider _approvalProvider = widget.approvalProvider ?? ApprovalProvider();
   List<Map<String, dynamic>> _events = [];
   bool _loading = true;
   String _filter = 'all';
@@ -24,100 +47,75 @@ class _CalendarTabState extends State<CalendarTab> {
     _load();
   }
 
-  List<dynamic> _extractList(dynamic raw) {
-    if (raw is List) return raw;
-    if (raw is Map && raw['data'] is List) return raw['data'] as List;
-    return [];
-  }
-
   Future<void> _load() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     setState(() => _loading = true);
     _events = [];
-    AppLocalizations? l10n;
-    try {
-      final meetingsData = await _api.get('/workspaces/$wsId/meetings');
-      if (!mounted) return;
-      l10n = AppLocalizations.of(context)!;
-      for (final m in _extractList(meetingsData['meetings'])) {
+
+    await _meetingProvider.fetchForWorkspace(wsId);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    for (final m in _meetingProvider.meetings) {
+      _events.add({
+        'id': m.id,
+        'title': m.title,
+        'type': 'meeting',
+        'status': m.status,
+        'date': m.scheduledAt,
+      });
+    }
+
+    await _contractProvider.fetchContracts(wsId);
+    for (final c in _contractProvider.contracts) {
+      if (c['start_date'] != null) {
         _events.add({
-          'id': m['id'],
-          'title': m['title'],
-          'type': 'meeting',
-          'status': m['status'],
-          'date': m['scheduled_at'],
-          'duration': m['duration'],
-          'notes': m['notes'],
-          'link': m['link'],
+          'id': c['id'],
+          'title': '${l10n.calendarStart}: ${c['title']}',
+          'type': 'contract_start',
+          'status': c['status'],
+          'date': c['start_date'],
+          'ref': c['reference_no'],
         });
       }
-    } catch (e) {
-      debugPrint('Calendar: failed to load meetings: $e');
+      if (c['end_date'] != null) {
+        _events.add({
+          'id': c['id'],
+          'title': '${l10n.calendarEnd}: ${c['title']}',
+          'type': 'contract_deadline',
+          'status': c['status'],
+          'date': c['end_date'],
+          'ref': c['reference_no'],
+        });
+      }
     }
 
-    try {
-      final contractsData = await _api.get('/workspaces/$wsId/contracts');
-      for (final c in _extractList(contractsData['contracts'])) {
-        if (c['start_date'] != null) {
-          _events.add({
-            'id': c['id'],
-            'title': '${l10n!.calendarStart}: ${c['title']}',
-            'type': 'contract_start',
-            'status': c['status'],
-            'date': c['start_date'],
-            'ref': c['reference_no'],
-          });
-        }
-        if (c['end_date'] != null) {
-          _events.add({
-            'id': c['id'],
-            'title': '${l10n!.calendarEnd}: ${c['title']}',
-            'type': 'contract_deadline',
-            'status': c['status'],
-            'date': c['end_date'],
-            'ref': c['reference_no'],
-          });
-        }
+    await _paymentProvider.fetchForWorkspace(wsId);
+    for (final p in _paymentProvider.payments) {
+      if (p['created_at'] != null) {
+        _events.add({
+          'id': p['id'],
+          'title': '${l10n.calendarPayment}: ${double.tryParse(p['amount']?.toString() ?? '0')?.toStringAsFixed(0) ?? '0'} ${p['currency'] ?? 'SAR'}',
+          'type': 'payment',
+          'status': p['status'],
+          'date': p['created_at'],
+          'ref': p['method_type'] ?? '',
+        });
       }
-    } catch (e) {
-      debugPrint('Calendar: failed to load contracts: $e');
     }
 
-    try {
-      final paymentsData = await _api.get('/workspaces/$wsId/payments');
-      for (final p in _extractList(paymentsData['payments'])) {
-        if (p['created_at'] != null) {
-          _events.add({
-            'id': p['id'],
-            'title': '${l10n!.calendarPayment}: ${double.tryParse(p['amount']?.toString() ?? '0')?.toStringAsFixed(0) ?? '0'} ${p['currency'] ?? 'SAR'}',
-            'type': 'payment',
-            'status': p['status'],
-            'date': p['created_at'],
-            'ref': p['method_type'] ?? '',
-          });
-        }
+    await _approvalProvider.fetchApprovals(wsId);
+    for (final a in _approvalProvider.approvals) {
+      if (a.createdAt != null) {
+        _events.add({
+          'id': a.id,
+          'title': '${l10n.calendarApproval}: ${a.title}',
+          'type': 'approval',
+          'status': a.status,
+          'date': a.createdAt,
+          'ref': a.referenceNo,
+        });
       }
-    } catch (e) {
-      debugPrint('Calendar: failed to load payments: $e');
-    }
-
-    try {
-      final approvalsData = await _api.get('/workspaces/$wsId/approvals');
-      for (final a in _extractList(approvalsData['approvals'])) {
-        if (a['created_at'] != null) {
-          _events.add({
-            'id': a['id'],
-            'title': '${l10n!.calendarApproval}: ${a['title']}',
-            'type': 'approval',
-            'status': a['status'],
-            'date': a['created_at'],
-            'ref': a['reference_no'],
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Calendar: failed to load approvals: $e');
     }
 
     _events.sort((a, b) {
