@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/password_field.dart';
+import '../../providers/sub_user_provider.dart';
 
 const List<String> _permissionKeys = [
   'can_chat',
@@ -22,14 +23,19 @@ const List<String> _permissionKeys = [
 ];
 
 class SubUsersPage extends StatefulWidget {
-  const SubUsersPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // SubUserProvider instead of hitting the network.
+  final SubUserProvider? subUserProvider;
+  final ApiClient? api;
+  const SubUsersPage({super.key, this.subUserProvider, this.api});
 
   @override
   State<SubUsersPage> createState() => _SubUsersPageState();
 }
 
 class _SubUsersPageState extends State<SubUsersPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final SubUserProvider _subUserProvider = widget.subUserProvider ?? SubUserProvider();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -52,8 +58,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
     if (cid == null) return;
     setState(() => _loading = true);
     try {
-      final data = await _api.get('/clients/$cid/sub-users');
-      _subUsers = data['sub_users'] as List<dynamic>? ?? [];
+      _subUsers = await _subUserProvider.fetchForClient(cid);
     } catch (e, s) {
       AppLog.error('subusers_page._load', e, s);
     }
@@ -74,7 +79,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
         'name': name, 'email': email, 'password': password,
       };
       if (_newDob != null) body['date_of_birth'] = _newDob!.toIso8601String().substring(0, 10);
-      final data = await _api.post('/clients/$cid/sub-users', body);
+      final data = await _subUserProvider.create(cid, body);
       _subUsers.add(data['sub_user']);
       _nameController.clear();
       _emailController.clear();
@@ -89,7 +94,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
   Future<void> _delete(int id) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      await _api.delete('/sub-users/$id');
+      await _subUserProvider.delete(id);
       setState(() {
         _subUsers.removeWhere((u) => u['id'] == id);
         if (_expandedId == id) _expandedId = null;
@@ -105,9 +110,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
     final permissions = _getPermissions(user);
     permissions[key] = !current;
     try {
-      final data = await _api.patch('/sub-users/$userId/permissions', {
-        'permissions': permissions,
-      });
+      final data = await _subUserProvider.updatePermissions(userId, permissions);
       final idx = _subUsers.indexWhere((u) => u['id'] == userId);
       if (idx != -1) {
         setState(() {
