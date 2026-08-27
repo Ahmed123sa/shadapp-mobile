@@ -65,6 +65,18 @@ void main() {
     expect(raw['client']['workspace']['status'], 'active');
   });
 
+  test('updateClient puts the body and returns the parsed client', () async {
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{"client":{"id":5,"company_name":"Renamed"}}'),
+    );
+
+    final client = await provider.updateClient(5, {'company_name': 'Renamed'});
+
+    expect(client.companyName, 'Renamed');
+    verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/5'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
   test('deleteClient removes the client from the in-memory list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),

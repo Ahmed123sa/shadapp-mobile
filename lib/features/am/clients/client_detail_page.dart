@@ -6,18 +6,24 @@ import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/password_field.dart';
+import '../../../providers/client_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class ClientDetailPage extends StatefulWidget {
   final int clientId;
-  const ClientDetailPage({super.key, required this.clientId});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ClientProvider instead of hitting the network.
+  final ClientProvider? clientProvider;
+  final ApiClient? api;
+  const ClientDetailPage({super.key, required this.clientId, this.clientProvider, this.api});
 
   @override
   State<ClientDetailPage> createState() => _ClientDetailPageState();
 }
 
 class _ClientDetailPageState extends State<ClientDetailPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
   final _nameCtrl = TextEditingController();
   final _personCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -59,7 +65,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
 
   Future<void> _load() async {
     try {
-      final data = await _api.get('/clients/${widget.clientId}');
+      final data = await _clientProvider.fetchClientRaw(widget.clientId);
       final client = data['client'] as Map<String, dynamic>? ?? {};
       _nameCtrl.text = (client['company_name'] as String? ?? '');
       _personCtrl.text = (client['contact_person'] as String? ?? '');
@@ -86,7 +92,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     if (result == null || result.files.single.path == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/clients/${widget.clientId}/profile', {}, file: file, fileField: 'avatar');
+      await _clientProvider.uploadAvatar(widget.clientId, file);
       await _load();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailImageChanged}')));
     } catch (e) {
@@ -97,7 +103,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _api.put('/clients/${widget.clientId}', {
+      await _clientProvider.updateClient(widget.clientId, {
         'company_name': _nameCtrl.text.trim(),
         'contact_person': _personCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
