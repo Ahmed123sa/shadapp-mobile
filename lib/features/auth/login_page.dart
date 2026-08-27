@@ -10,7 +10,8 @@ import '../../core/locale_provider.dart';
 import '../../core/theme.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final ApiClient? api;
+  const LoginPage({super.key, this.api});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -19,7 +20,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   bool _passwordVisible = false;
   final ValueNotifier<String?> _error = ValueNotifier<String?>(null);
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);

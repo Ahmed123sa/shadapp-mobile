@@ -6,12 +6,25 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'reverb_service.dart';
 
+/// Read before dotenv.load() has run (in plain `flutter test`, it never
+/// does — there's no widget-binding bootstrap to call it) throws
+/// NotInitializedError instead of returning null like a normal missing key.
+/// Falling back here means both real startup ordering mistakes and the test
+/// environment get the same safe default instead of a crash.
+String _defaultBaseUrl() {
+  try {
+    return dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
+  } catch (_) {
+    return 'http://localhost:8000/api';
+  }
+}
+
 class ApiClient {
-  String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
+  String baseUrl = _defaultBaseUrl();
   final Duration _timeout = const Duration(seconds: 30);
   String? _token;
   int? userId;
@@ -22,12 +35,33 @@ class ApiClient {
   String? userName;
   String? avatarUrl;
 
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage;
+  final http.Client _httpClient;
 
   AppLocalizations? l10n;
 
   static final ApiClient _instance = ApiClient._();
-  ApiClient._();
+  ApiClient._() : _httpClient = http.Client(), _secureStorage = const FlutterSecureStorage();
+
+  /// Test-only constructor. Bypasses the app-wide singleton and never touches
+  /// the real secure-storage platform channel — supplying the token directly
+  /// and an injected [client]/[secureStorage] lets unit tests exercise
+  /// request building and status code handling in plain `flutter test`
+  /// (SharedPreferences still needs `SharedPreferences.setMockInitialValues`
+  /// in the test's setUp, since that path is a static call this class
+  /// doesn't own).
+  @visibleForTesting
+  ApiClient.forTesting({
+    required http.Client client,
+    FlutterSecureStorage? secureStorage,
+    String? token,
+    String? baseUrlOverride,
+  })  : _httpClient = client,
+        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _token = token {
+    if (baseUrlOverride != null) baseUrl = baseUrlOverride;
+  }
+
   factory ApiClient() => _instance;
 
   Future<void> init() async {
@@ -118,7 +152,15 @@ class ApiClient {
 
   String resolveFileUrl(String url) {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    final base = baseUrl.replaceFirst('/api', '');
+    // Anchored to the end on purpose: replaceFirst('/api', '') matched the
+    // *first* occurrence anywhere in the string, which silently mangled the
+    // host itself whenever the API domain contained "api" right after the
+    // scheme — e.g. https://api.shadapp.com/api (a completely realistic
+    // production value) lost the "/" after "https:" instead of the trailing
+    // "/api", producing "https:/.shadapp.com/api/...".
+    final base = RegExp(r'/api/?$').hasMatch(baseUrl)
+        ? baseUrl.replaceFirst(RegExp(r'/api/?$'), '')
+        : baseUrl;
     String cleaned = url;
     if (cleaned.startsWith('/')) cleaned = cleaned.substring(1);
     if (cleaned.startsWith('storage/')) {
@@ -171,12 +213,12 @@ class ApiClient {
 
   Future<Map<String, dynamic>> get(String path) async {
     final headers = await _headers();
-    return _send(() => http.get(Uri.parse('$baseUrl$path'), headers: headers));
+    return _send(() => _httpClient.get(Uri.parse('$baseUrl$path'), headers: headers));
   }
 
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) async {
     final headers = await _headers();
-    return _send(() => http.post(
+    return _send(() => _httpClient.post(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
@@ -185,7 +227,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
     final headers = await _headers();
-    return _send(() => http.put(
+    return _send(() => _httpClient.put(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: jsonEncode(body),
@@ -194,7 +236,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> patch(String path, [Map<String, dynamic>? body]) async {
     final headers = await _headers();
-    return _send(() => http.patch(
+    return _send(() => _httpClient.patch(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
@@ -203,7 +245,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) async {
     final headers = await _headers();
-    return _send(() => http.delete(Uri.parse('$baseUrl$path'), headers: headers));
+    return _send(() => _httpClient.delete(Uri.parse('$baseUrl$path'), headers: headers));
   }
 
   Future<Map<String, dynamic>> multipartPut(String path, Map<String, dynamic> fields,
@@ -222,7 +264,7 @@ class ApiClient {
         request.files.add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
       }
     }
-    final streamed = await request.send().timeout(_timeout);
+    final streamed = await _httpClient.send(request).timeout(_timeout);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }
@@ -254,7 +296,7 @@ class ApiClient {
       }
       request.files.add(await http.MultipartFile.fromPath(fileField, file.path));
     }
-    final streamed = await request.send().timeout(_timeout);
+    final streamed = await _httpClient.send(request).timeout(_timeout);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }
@@ -269,7 +311,7 @@ class ApiClient {
       }
       request.files.add(await http.MultipartFile.fromPath(fileField, file.path));
     }
-    final streamed = await request.send().timeout(_timeout);
+    final streamed = await _httpClient.send(request).timeout(_timeout);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }

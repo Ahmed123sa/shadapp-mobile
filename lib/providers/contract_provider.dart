@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 
 class ContractProvider extends ChangeNotifier {
-  final ApiClient _api = ApiClient();
+  final ApiClient _api;
+  ContractProvider({ApiClient? api}) : _api = api ?? ApiClient();
   List<dynamic> _contracts = [];
   bool _isLoading = false;
   String? _error;

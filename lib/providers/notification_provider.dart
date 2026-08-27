@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 
 class NotificationProvider extends ChangeNotifier {
-  final ApiClient _api = ApiClient();
+  final ApiClient _api;
+  NotificationProvider({ApiClient? api}) : _api = api ?? ApiClient();
   int _unreadCount = 0;
   List<dynamic> _notifications = [];
   bool _isLoading = false;

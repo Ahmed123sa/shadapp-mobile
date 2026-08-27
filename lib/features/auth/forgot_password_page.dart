@@ -13,7 +13,8 @@ import '../../core/widgets/shad_logo.dart';
 /// password change happens on the web, and the user then signs in here with
 /// the new password.
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({super.key});
+  final ApiClient? api;
+  const ForgotPasswordPage({super.key, this.api});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -21,7 +22,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
 
   bool _loading = false;
   bool _sent = false;

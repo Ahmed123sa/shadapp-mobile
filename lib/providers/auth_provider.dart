@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final ApiClient _api = ApiClient();
+  final ApiClient _api;
+  AuthProvider({ApiClient? api}) : _api = api ?? ApiClient();
   bool _isLoading = false;
   String? _error;
   bool _isLoggedIn = false;

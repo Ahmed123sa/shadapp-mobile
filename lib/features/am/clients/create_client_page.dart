@@ -9,14 +9,15 @@ import '../../../core/widgets/shad_logo.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
  
 class CreateClientPage extends StatefulWidget {
-  const CreateClientPage({super.key});
+  final ApiClient? api;
+  const CreateClientPage({super.key, this.api});
 
   @override
   State<CreateClientPage> createState() => _CreateClientPageState();
 }
 
 class _CreateClientPageState extends State<CreateClientPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _personController = TextEditingController();

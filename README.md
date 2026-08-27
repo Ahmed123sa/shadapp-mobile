@@ -63,6 +63,49 @@ flutter test                 # tests
 
 ---
 
+## Tests
+
+```bash
+flutter test
+```
+
+`test/unit/` covers pure logic and the providers/`ApiClient` with `mocktail`
+(no real network, no real secure storage/SharedPreferences). `test/widget/`
+covers individual widgets and a few full screens (login, forgot password,
+create client) with `flutter_test`.
+
+Two things every widget test needs, both under `test/helpers/`:
+
+- `pumpWithLocalizations()` (`pump_app.dart`) — every widget reads strings via
+  `AppLocalizations.of(context)!`, which throws without the same
+  `localizationsDelegates`/`supportedLocales` `main.dart` wires up.
+- `buildTestApiClient()` (`mock_http_client.dart`) — `ApiClient` is normally a
+  singleton (`ApiClient()`) that touches real secure storage and the network.
+  `ApiClient.forTesting(client:, secureStorage:, token:)` and this helper
+  exist specifically to make it injectable; `LoginPage`, `ForgotPasswordPage`
+  and `CreateClientPage` each take an optional `api:` constructor param for
+  the same reason. New screens that call the API should follow this pattern
+  rather than reaching for the `ApiClient()` singleton directly, or they
+  can't be widget-tested without hitting the network.
+
+Two Flutter/package gotchas that cost real debugging time here, worth
+knowing before adding more tests:
+
+- **Never `pumpAndSettle()` a screen with a repeating animation or an open
+  dialog awaiting dismissal** (a spinner, a `..repeat()` `AnimationController`,
+  a success dialog nobody taps "OK" on) — it never "settles" and the test
+  hangs until timeout. Use bounded `pump()`/`pump(duration)` calls instead.
+- **A plain (non-`.builder`) `ListView` still only builds children near the
+  viewport.** At the default test surface size (800×600), fields and buttons
+  below the fold in a long form genuinely aren't in the widget tree yet.
+  Either scroll to them or grow the test viewport
+  (`tester.view.physicalSize = ...`, reset via `addTearDown`).
+
+Not yet covered: most of the remaining screens/tabs beyond what's listed
+above. Same patterns apply — add as they change or as time allows.
+
+---
+
 ## Release builds
 
 `main.dart` refuses to start a **release** build when `API_BASE_URL` still
