@@ -22,8 +22,14 @@ class ChatPage extends StatefulWidget {
   // periodic timer. Defaults to true — zero behavior change for every
   // existing call site.
   final bool enablePolling;
+  // Step 0 of the state-layer migration plan: lets widget tests inject a
+  // ReverbService.forTesting() instance instead of the real singleton, so
+  // pumping this screen never opens a real WebSocket. Defaults to null,
+  // which falls back to the real singleton — zero behavior change for every
+  // existing call site.
+  final ReverbService? reverb;
 
-  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -46,6 +52,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Map<String, dynamic>? _editingMessage;
   Map<String, dynamic>? _workspaceData;
   Map<String, dynamic>? _nextMeeting;
+  late final ReverbService _reverb = widget.reverb ?? ReverbService();
   Map<String, dynamic>? _nextPayment;
 
   @override
@@ -57,7 +64,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _startPolling();
     _scrollController.addListener(_onScroll);
     final wsId = _api.workspaceIdSafe;
-    final reverb = ReverbService();
+    final reverb = _reverb;
     reverb.onMessageReceived = (payload) {
       final msg = payload['message'] as Map<String, dynamic>?;
       if (msg != null && mounted) {
@@ -104,9 +111,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _scrollController.dispose();
     final cid = _api.userId;
     if (cid != null) {
-      ReverbService().connectForClient(cid);
+      _reverb.connectForClient(cid);
     } else {
-      ReverbService().disconnect();
+      _reverb.disconnect();
     }
     super.dispose();
   }

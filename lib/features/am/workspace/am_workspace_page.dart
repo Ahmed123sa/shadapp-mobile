@@ -4,6 +4,7 @@ import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import '../../../core/reverb_service.dart';
 import 'chat_tab.dart';
 import 'files_tab.dart';
 import 'calendar_tab.dart';
@@ -16,7 +17,14 @@ import 'client_profile_tab.dart';
 class AmWorkspacePage extends StatefulWidget {
   final int? workspaceId;
   final int initialTabIndex;
-  const AmWorkspacePage({super.key, this.workspaceId, this.initialTabIndex = 0});
+  // Step 0 of the state-layer migration plan: this screen doesn't call
+  // ReverbService itself, but it embeds ChatTab (which does) inside an
+  // IndexedStack — passed through so widget tests can inject
+  // ReverbService.forTesting() and never open a real WebSocket. Defaults to
+  // null, which falls back to the real singleton — zero behavior change for
+  // every existing call site.
+  final ReverbService? reverb;
+  const AmWorkspacePage({super.key, this.workspaceId, this.initialTabIndex = 0, this.reverb});
 
   @override
   State<AmWorkspacePage> createState() => _AmWorkspacePageState();
@@ -157,7 +165,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
           child: IndexedStack(
             index: _tabController.index,
             children: [
-              ChatTab(wsStatus: _wsStatus, workspaceId: widget.workspaceId),
+              ChatTab(wsStatus: _wsStatus, workspaceId: widget.workspaceId, reverb: widget.reverb),
               FilesTab(workspaceId: widget.workspaceId),
               ContractsTab(workspaceId: widget.workspaceId),
               PaymentsTab(onWorkspaceUpdate: _fetchWorkspace, workspaceId: widget.workspaceId),

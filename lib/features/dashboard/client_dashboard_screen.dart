@@ -22,7 +22,13 @@ import '../signature/signature_tab.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   final int initialTab;
-  const ClientDashboardScreen({super.key, this.initialTab = 2});
+  // Step 0 of the state-layer migration plan: lets widget tests inject a
+  // ReverbService.forTesting() instance instead of the real singleton, so
+  // pumping this screen (and the ChatPage tab it embeds) never opens a real
+  // WebSocket. Defaults to null, which falls back to the real singleton —
+  // zero behavior change for every existing call site.
+  final ReverbService? reverb;
+  const ClientDashboardScreen({super.key, this.initialTab = 2, this.reverb});
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -49,6 +55,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   StreamSubscription? _fcmSubscription;
   Map<String, dynamic> _subUserPermissions = {};
   bool get _isSubUser => _api.role == 'sub_user';
+  late final ReverbService _reverb = widget.reverb ?? ReverbService();
 
   int _computeStage() {
     final client = _client;
@@ -112,7 +119,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   void _setupRealtimeNotifications() {
     final cid = _api.userId;
     if (cid == null) return;
-    final reverb = ReverbService();
+    final reverb = _reverb;
     reverb.connectForClient(cid);
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
@@ -306,7 +313,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     final pages = <Widget>[
       ContractsPage(onGoToPayments: _goToPayments, refreshNotifier: _contractRefreshNotifier),
       const PaymentsPage(),
-      ChatPage(onGoToPayments: _goToPayments),
+      ChatPage(onGoToPayments: _goToPayments, reverb: widget.reverb),
       ApprovalsPage(workspaceId: _workspace?['id'] as int?),
       const ClientFilesPage(),
     ];

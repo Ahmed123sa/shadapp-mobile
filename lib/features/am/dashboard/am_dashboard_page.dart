@@ -21,7 +21,13 @@ class AmDashboardPage extends StatefulWidget {
   // pending periodic timer. Defaults to true — zero behavior change for
   // every existing call site.
   final bool enablePolling;
-  const AmDashboardPage({super.key, this.enablePolling = true});
+  // Step 0 of the state-layer migration plan: lets widget tests inject a
+  // ReverbService.forTesting() instance instead of the real singleton, so
+  // pumping this screen never opens a real WebSocket. Defaults to null,
+  // which falls back to the real singleton — zero behavior change for every
+  // existing call site.
+  final ReverbService? reverb;
+  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
@@ -60,10 +66,12 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     }
   }
 
+  late final ReverbService _reverb = widget.reverb ?? ReverbService();
+
   void _setupRealtimeNotifications() {
     final uid = _api.userId;
     if (uid == null) return;
-    final reverb = ReverbService();
+    final reverb = _reverb;
     reverb.connectForUser(uid);
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();

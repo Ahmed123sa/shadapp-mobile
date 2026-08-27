@@ -10,7 +10,13 @@ import 'client_dashboard_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   final int initialTab;
-  const DashboardPage({super.key, this.initialTab = 0});
+  // Step 0 of the state-layer migration plan: lets widget tests inject a
+  // ReverbService.forTesting() instance instead of the real singleton, so
+  // pumping this screen (and the ClientDashboardScreen it can render) never
+  // opens a real WebSocket. Defaults to null, which falls back to the real
+  // singleton — zero behavior change for every existing call site.
+  final ReverbService? reverb;
+  const DashboardPage({super.key, this.initialTab = 0, this.reverb});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -22,6 +28,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   bool _loading = true;
   String? _error;
   StreamSubscription? _fcmSubscription;
+  late final ReverbService _reverb = widget.reverb ?? ReverbService();
 
   @override
   void initState() {
@@ -34,7 +41,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   void _setupRealtime() {
     final cid = _api.userId;
     if (cid == null) return;
-    final reverb = ReverbService();
+    final reverb = _reverb;
     reverb.connectForClient(cid);
     reverb.onContractStatusChanged = () => _loadClientData();
     _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
@@ -105,7 +112,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     }
 
     if (_isActiveWorkspace) {
-      return ClientDashboardScreen(initialTab: widget.initialTab);
+      return ClientDashboardScreen(initialTab: widget.initialTab, reverb: widget.reverb);
     }
 
     return const ClientOnboardingScreen();
