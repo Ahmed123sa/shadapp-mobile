@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../data/contract_repository.dart';
 
 class ContractProvider extends ChangeNotifier {
-  final ApiClient _api;
-  ContractProvider({ApiClient? api}) : _api = api ?? ApiClient();
+  final ContractRepository _repo;
+  // Constructor signature deliberately unchanged (still takes ApiClient?,
+  // not ContractRepository?) — this provider is already wired into
+  // main.dart and covered by an existing test file; building the
+  // repository internally means neither has to change for this refactor.
+  ContractProvider({ApiClient? api}) : _repo = ContractRepository(api: api);
   List<dynamic> _contracts = [];
   bool _isLoading = false;
   String? _error;
@@ -17,8 +22,7 @@ class ContractProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final res = await _api.get('/workspaces/$workspaceId/contracts');
-      _contracts = safeList(res['contracts']);
+      _contracts = await _repo.fetchForWorkspace(workspaceId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -32,8 +36,7 @@ class ContractProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final res = await _api.get('/contracts');
-      _contracts = safeList(res['contracts']);
+      _contracts = await _repo.fetchAll();
     } catch (e) {
       _error = e.toString();
     } finally {
