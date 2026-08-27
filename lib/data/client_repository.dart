@@ -74,6 +74,20 @@ class ClientRepository {
 
   Future<void> delete(int id) => _api.delete('/clients/$id');
 
+  /// Raw `/clients/:id/profile` envelope (client/stats/location) — backs
+  /// am/workspace/client_profile_tab.dart.
+  Future<Map<String, dynamic>> fetchProfile(int clientId) => _api.get('/clients/$clientId/profile');
+
+  /// [address] is only included when the caller resolved one (e.g. via the
+  /// map picker's reverse geocoding) — matches the two original inline call
+  /// sites in client_profile_tab.dart exactly.
+  Future<void> updateLocation(int clientId, {required double latitude, required double longitude, String? address}) =>
+      _api.post('/clients/$clientId/location', {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (address != null) 'address': address,
+      });
+
   Future<void> uploadAvatar(int clientId, File file) =>
       _api.multipartPost('/clients/$clientId/profile', {}, file: file, fileField: 'avatar');
 }

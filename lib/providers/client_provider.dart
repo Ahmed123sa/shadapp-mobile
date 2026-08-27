@@ -52,6 +52,13 @@ class ClientProvider extends ChangeNotifier {
   /// [ClientRepository.fetchAllPaginatedRaw].
   Future<List<dynamic>> fetchAllClientsPaginatedRaw() => _repo.fetchAllPaginatedRaw();
 
+  /// Raw `/clients/:id/profile` envelope — see [ClientRepository.fetchProfile].
+  Future<Map<String, dynamic>> fetchClientProfile(int clientId) => _repo.fetchProfile(clientId);
+
+  /// See [ClientRepository.updateLocation].
+  Future<void> updateClientLocation(int clientId, {required double latitude, required double longitude, String? address}) =>
+      _repo.updateLocation(clientId, latitude: latitude, longitude: longitude, address: address);
+
   Future<void> deleteClient(int id) async {
     await _repo.delete(id);
     _clients = _clients.where((c) => c.id != id).toList();

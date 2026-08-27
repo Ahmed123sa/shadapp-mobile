@@ -53,6 +53,44 @@ void main() {
     verify(() => httpClient.get(any(), headers: any(named: 'headers'))).called(1);
   });
 
+  test('fetchProfile hits /clients/:id/profile', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"client":{"id":9},"stats":{},"location":{}}'),
+    );
+
+    final data = await repo.fetchProfile(9);
+
+    expect(data['client']['id'], 9);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/profile'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
+  test('updateLocation omits address when not provided', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await repo.updateLocation(9, latitude: 24.7, longitude: 46.6);
+
+    expect(sentBody, {'latitude': 24.7, 'longitude': 46.6});
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/location'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('updateLocation includes address when provided', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await repo.updateLocation(9, latitude: 24.7, longitude: 46.6, address: 'Riyadh');
+
+    expect(sentBody, {'latitude': 24.7, 'longitude': 46.6, 'address': 'Riyadh'});
+  });
+
   test('fetchAll parses the client list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/client_repository.dart';
@@ -88,6 +89,28 @@ void main() {
     expect(client.companyName, 'Renamed');
     verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/5'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('fetchClientProfile returns the raw profile envelope', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"client":{"id":9},"stats":{"total_contracts":3}}'),
+    );
+
+    final data = await provider.fetchClientProfile(9);
+
+    expect(data['stats']['total_contracts'], 3);
+  });
+
+  test('updateClientLocation posts latitude/longitude/address', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.updateClientLocation(9, latitude: 24.7, longitude: 46.6, address: 'Riyadh');
+
+    expect(sentBody, {'latitude': 24.7, 'longitude': 46.6, 'address': 'Riyadh'});
   });
 
   test('deleteClient removes the client from the in-memory list', () async {

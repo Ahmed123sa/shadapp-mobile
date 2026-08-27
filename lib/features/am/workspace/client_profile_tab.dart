@@ -7,18 +7,27 @@ import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/contract_provider.dart';
 import 'location_picker_page.dart';
 
 class ClientProfileTab extends StatefulWidget {
   final int? workspaceId;
-  const ClientProfileTab({super.key, this.workspaceId});
+  // Optional so this screen can be pumped in a widget test with mocked
+  // providers instead of hitting the network.
+  final ClientProvider? clientProvider;
+  final ContractProvider? contractProvider;
+  final ApiClient? api;
+  const ClientProfileTab({super.key, this.workspaceId, this.clientProvider, this.contractProvider, this.api});
 
   @override
   State<ClientProfileTab> createState() => _ClientProfileTabState();
 }
 
 class _ClientProfileTabState extends State<ClientProfileTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   int? _clientId;
   Map<String, dynamic> _client = {};
   Map<String, dynamic> _stats = {};
@@ -37,7 +46,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
     if (wsId == null) return;
     setState(() => _loading = true);
     try {
-      final wsData = await _api.get('/workspaces/$wsId');
+      final wsData = await _contractProvider.fetchWorkspaceRaw(wsId);
       if (!mounted) return;
       final client = wsData['workspace']?['client'] as Map<String, dynamic>?;
       _clientId = client?['id'] as int?;
@@ -45,7 +54,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
         if (mounted) setState(() => _loading = false);
         return;
       }
-      final profileData = await _api.get('/clients/$_clientId/profile');
+      final profileData = await _clientProvider.fetchClientProfile(_clientId!);
       if (!mounted) return;
       setState(() {
         _client = profileData['client'] as Map<String, dynamic>? ?? {};
@@ -79,10 +88,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 20)),
       );
-      await _api.post('/clients/$_clientId/location', {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-      });
+      await _clientProvider.updateClientLocation(_clientId!, latitude: position.latitude, longitude: position.longitude);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.clientProfileCheckInSuccess)));
       await _load();
@@ -110,11 +116,12 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
     );
     if (result == null || _clientId == null) return;
     try {
-      await _api.post('/clients/$_clientId/location', {
-        'latitude': result.latitude,
-        'longitude': result.longitude,
-        if (result.address != null) 'address': result.address,
-      });
+      await _clientProvider.updateClientLocation(
+        _clientId!,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        address: result.address,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.clientProfileCheckInSuccess)));
       await _load();
