@@ -20,6 +20,11 @@ class PaymentRepository {
     return safeList(res['payments']);
   }
 
+  /// Raw `/workspaces/:id/payments` envelope — payments_page.dart also reads
+  /// the sibling `available_methods` and `tax_summary` fields from the same
+  /// response, which [fetchForWorkspace] discards.
+  Future<Map<String, dynamic>> fetchForWorkspaceEnvelope(int workspaceId) => _api.get('/workspaces/$workspaceId/payments');
+
   /// Cross-workspace pending-payments list (used to build an approvals
   /// queue), one page at a time — matches the pagination shape the callers
   /// already loop over manually.

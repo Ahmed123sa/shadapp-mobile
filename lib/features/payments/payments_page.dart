@@ -12,12 +12,14 @@ import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
+import '../../providers/contract_provider.dart';
 import '../../providers/payment_provider.dart';
 
 class PaymentsPage extends StatefulWidget {
   final ApiClient? api;
   final PaymentProvider? paymentProvider;
-  const PaymentsPage({super.key, this.api, this.paymentProvider});
+  final ContractProvider? contractProvider;
+  const PaymentsPage({super.key, this.api, this.paymentProvider, this.contractProvider});
 
   @override
   State<PaymentsPage> createState() => _PaymentsPageState();
@@ -26,6 +28,7 @@ class PaymentsPage extends StatefulWidget {
 class _PaymentsPageState extends State<PaymentsPage> {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   List<dynamic> _payments = [];
   List<dynamic> _contracts = [];
   List<String> _availableMethods = [];
@@ -120,14 +123,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
     if (wsId == null) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final paymentsData = await _api.get('/workspaces/$wsId/payments');
+      final paymentsData = await _paymentProvider.fetchWorkspaceEnvelope(wsId);
       _payments = safeList(paymentsData['payments']);
       _availableMethods = (paymentsData['available_methods'] as List<dynamic>?)?.cast<String>() ?? [];
       _taxSummary = paymentsData['tax_summary'] as Map<String, dynamic>?;
       try {
-        final contractsData = await _api.get('/workspaces/$wsId/contracts');
-        final rawContracts = contractsData['contracts'];
-        _contracts = rawContracts is List ? rawContracts : (rawContracts is Map ? (rawContracts['data'] ?? []) as List : []);
+        _contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
       } catch (_) {
         _contracts = [];
       }

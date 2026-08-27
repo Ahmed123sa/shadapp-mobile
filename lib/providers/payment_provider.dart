@@ -21,6 +21,11 @@ class PaymentProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Raw envelope — see [PaymentRepository.fetchForWorkspaceEnvelope].
+  /// payments_page.dart owns its own loading/error state for this combined
+  /// load, so this pass-through doesn't touch [_payments]/[_isLoading].
+  Future<Map<String, dynamic>> fetchWorkspaceEnvelope(int workspaceId) => _repo.fetchForWorkspaceEnvelope(workspaceId);
+
   Future<void> fetchForWorkspace(int workspaceId) async {
     _isLoading = true;
     _error = null;

@@ -82,4 +82,16 @@ void main() {
     verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments/9'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  test('fetchWorkspaceEnvelope returns the raw envelope including available_methods and tax_summary', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"payments":[{"id":1}],"available_methods":["swift"],"tax_summary":{"tax_percentage":15}}'),
+    );
+
+    final data = await provider.fetchWorkspaceEnvelope(5);
+
+    expect(data['available_methods'], ['swift']);
+    expect(data['tax_summary']['tax_percentage'], 15);
+    expect(provider.payments, isEmpty); // pass-through must not touch provider-managed state
+  });
 }

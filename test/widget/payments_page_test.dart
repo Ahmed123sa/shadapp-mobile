@@ -11,6 +11,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/payment_repository.dart';
 import 'package:shadapp_client/features/payments/payments_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:shadapp_client/providers/contract_provider.dart';
 import 'package:shadapp_client/providers/payment_provider.dart';
 import '../helpers/mock_http_client.dart';
 
@@ -23,10 +24,14 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      // paymentProvider must be wired to the same mocked `api`, otherwise it
-      // falls back to a real PaymentProvider() backed by the real ApiClient()
-      // singleton and the request-payment tests hang on a real network call.
-      home: PaymentsPage(api: api, paymentProvider: PaymentProvider(repository: PaymentRepository(api: api))),
+      // paymentProvider/contractProvider must be wired to the same mocked
+      // `api`, otherwise they fall back to real providers backed by the real
+      // ApiClient() singleton and the test hangs on a real network call.
+      home: PaymentsPage(
+        api: api,
+        paymentProvider: PaymentProvider(repository: PaymentRepository(api: api)),
+        contractProvider: ContractProvider(api: api),
+      ),
     ));
     await tester.pumpAndSettle();
   }

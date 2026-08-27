@@ -79,6 +79,19 @@ void main() {
     expect(all, hasLength(2));
   });
 
+  test('fetchWorkspaceContractsRaw hits the workspace-scoped endpoint without touching provider state', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"contracts":[{"id":1},{"id":2}]}'),
+    );
+
+    final contracts = await provider.fetchWorkspaceContractsRaw(5);
+
+    expect(contracts, hasLength(2));
+    expect(provider.contracts, isEmpty);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('records the error on failure without throwing', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"message":"nope"}', 500),

@@ -42,6 +42,14 @@ class ContractProvider extends ChangeNotifier {
   Future<List<dynamic>> fetchWorkspaceContractsPaginatedRaw(int workspaceId) =>
       _repo.fetchForWorkspacePaginatedRaw(workspaceId);
 
+  /// Single-page raw contract list for a workspace — see
+  /// [ContractRepository.fetchForWorkspace]. Unlike [fetchContracts], this
+  /// doesn't touch [_contracts]/[_isLoading]/[_error]: payments_page.dart
+  /// uses it as one leg of a combined load where it owns its own state and
+  /// silently treats a contracts-fetch failure as "no contracts" rather than
+  /// a fatal error.
+  Future<List<dynamic>> fetchWorkspaceContractsRaw(int workspaceId) => _repo.fetchForWorkspace(workspaceId);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;
