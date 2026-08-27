@@ -25,6 +25,25 @@ class PaymentRepository {
   /// already loop over manually.
   Future<Map<String, dynamic>> fetchPending({int page = 1}) => _api.get('/payments/pending?page=$page');
 
+  /// Loops through every page of [fetchPending], combining results into one
+  /// flat raw list — used by sa_approvals_page.dart while building its
+  /// cross-workspace approvals queue. Matches the original inline pagination
+  /// loop exactly.
+  Future<List<dynamic>> fetchAllPendingRaw() async {
+    final all = <dynamic>[];
+    var page = 1;
+    while (true) {
+      final res = await fetchPending(page: page);
+      final batch = safeList(res['payments']);
+      if (batch.isEmpty) break;
+      all.addAll(batch);
+      final lastPage = (res['payments'] is Map ? res['payments']['last_page'] : null) ?? 1;
+      if (page >= lastPage) break;
+      page++;
+    }
+    return all;
+  }
+
   /// Creates a payment request with optional proof files, matching
   /// payments_page.dart's `_submitPayment`: native `File`s take priority
   /// over in-memory bytes, and a plain JSON POST is used when there are no

@@ -66,6 +66,19 @@ void main() {
         headers: any(named: 'headers'))).called(1);
   });
 
+  test('fetchWorkspaceContractsPaginatedRaw combines every page', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      if (call == 1) return jsonResponse('{"contracts":{"data":[{"id":1}],"last_page":2}}');
+      return jsonResponse('{"contracts":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await provider.fetchWorkspaceContractsPaginatedRaw(5);
+
+    expect(all, hasLength(2));
+  });
+
   test('records the error on failure without throwing', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"message":"nope"}', 500),

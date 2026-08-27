@@ -53,6 +53,26 @@ void main() {
     expect(contracts, hasLength(1));
   });
 
+  test('fetchForWorkspacePaginatedRaw loops through every page and combines results', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      final uri = inv.positionalArguments[0] as Uri;
+      expect(uri.query, 'page=$call');
+      if (call == 1) {
+        return jsonResponse('{"contracts":{"data":[{"id":1}],"last_page":2}}');
+      }
+      return jsonResponse('{"contracts":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await repo.fetchForWorkspacePaginatedRaw(5);
+
+    expect(all, hasLength(2));
+    expect(call, 2);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
+        headers: any(named: 'headers'))).called(2);
+  });
+
   test('fetchWorkspace hits /workspaces/:id', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"workspace":{"id":5}}'),

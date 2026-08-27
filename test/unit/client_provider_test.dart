@@ -65,6 +65,19 @@ void main() {
     expect(raw['client']['workspace']['status'], 'active');
   });
 
+  test('fetchAllClientsPaginatedRaw combines every page', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      if (call == 1) return jsonResponse('{"clients":{"data":[{"id":1}],"last_page":2}}');
+      return jsonResponse('{"clients":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await provider.fetchAllClientsPaginatedRaw();
+
+    expect(all, hasLength(2));
+  });
+
   test('updateClient puts the body and returns the parsed client', () async {
     when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
       (_) async => jsonResponse('{"client":{"id":5,"company_name":"Renamed"}}'),

@@ -58,6 +58,24 @@ void main() {
         headers: any(named: 'headers'))).called(1);
   });
 
+  test('fetchAllPendingRaw loops through every page and combines results', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      if (call == 1) {
+        return jsonResponse('{"payments":{"data":[{"id":1}],"last_page":2}}');
+      }
+      return jsonResponse('{"payments":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await repo.fetchAllPendingRaw();
+
+    expect(all, hasLength(2));
+    expect(call, 2);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/pending'))),
+        headers: any(named: 'headers'))).called(2);
+  });
+
   test('create posts plain JSON when there are no proof files', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {

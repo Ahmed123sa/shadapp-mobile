@@ -39,4 +39,17 @@ void main() {
 
     expect(provider.error, isNotNull);
   });
+
+  test('fetchAllPendingRaw combines every page', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      if (call == 1) return jsonResponse('{"payments":{"data":[{"id":1}],"last_page":2}}');
+      return jsonResponse('{"payments":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await provider.fetchAllPendingRaw();
+
+    expect(all, hasLength(2));
+  });
 }

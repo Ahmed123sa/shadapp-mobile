@@ -37,6 +37,11 @@ class ContractProvider extends ChangeNotifier {
   /// wraps this exact endpoint for contracts_page.dart/contracts_tab.dart.
   Future<Map<String, dynamic>> fetchWorkspaceRaw(int workspaceId) => _repo.fetchWorkspace(workspaceId);
 
+  /// Every contract in a single workspace across every page — see
+  /// [ContractRepository.fetchForWorkspacePaginatedRaw].
+  Future<List<dynamic>> fetchWorkspaceContractsPaginatedRaw(int workspaceId) =>
+      _repo.fetchForWorkspacePaginatedRaw(workspaceId);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;

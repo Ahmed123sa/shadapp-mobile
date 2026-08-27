@@ -27,6 +27,25 @@ class ContractRepository {
     return safeList(res['contracts']);
   }
 
+  /// Loops through every page of a single workspace's contracts, combining
+  /// results into one flat raw list — used by sa_approvals_page.dart while
+  /// building its cross-workspace approvals queue. Matches the original
+  /// inline pagination loop exactly.
+  Future<List<dynamic>> fetchForWorkspacePaginatedRaw(int workspaceId) async {
+    final all = <dynamic>[];
+    var page = 1;
+    while (true) {
+      final res = await _api.get('/workspaces/$workspaceId/contracts?page=$page');
+      final batch = safeList(res['contracts']);
+      if (batch.isEmpty) break;
+      all.addAll(batch);
+      final lastPage = (res['contracts'] is Map ? res['contracts']['last_page'] : null) ?? 1;
+      if (page >= lastPage) break;
+      page++;
+    }
+    return all;
+  }
+
   /// Raw `/workspaces/:id` envelope — contracts_page.dart and
   /// am/workspace/contracts_tab.dart both load this alongside the contract
   /// list (e.g. to read the client's `client_type` for VAT display).

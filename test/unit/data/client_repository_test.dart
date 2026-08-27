@@ -24,6 +24,35 @@ void main() {
     repo = ClientRepository(api: buildTestApiClient(client: httpClient));
   });
 
+  test('fetchAllPaginatedRaw loops through every page and combines results', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      final uri = inv.positionalArguments[0] as Uri;
+      expect(uri.query, 'page=$call');
+      if (call == 1) {
+        return jsonResponse('{"clients":{"data":[{"id":1}],"last_page":2}}');
+      }
+      return jsonResponse('{"clients":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await repo.fetchAllPaginatedRaw();
+
+    expect(all, hasLength(2));
+    expect(call, 2);
+  });
+
+  test('fetchAllPaginatedRaw stops on the first empty page', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"clients":[]}'),
+    );
+
+    final all = await repo.fetchAllPaginatedRaw();
+
+    expect(all, isEmpty);
+    verify(() => httpClient.get(any(), headers: any(named: 'headers'))).called(1);
+  });
+
   test('fetchAll parses the client list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),

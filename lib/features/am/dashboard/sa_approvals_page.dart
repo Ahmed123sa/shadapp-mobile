@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/payment_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaApprovalsPage extends StatefulWidget {
-  const SaApprovalsPage({super.key});
+  // Optional so this screen can be pumped in a widget test with mocked
+  // providers instead of hitting the network.
+  final ClientProvider? clientProvider;
+  final ContractProvider? contractProvider;
+  final PaymentProvider? paymentProvider;
+  const SaApprovalsPage({super.key, this.clientProvider, this.contractProvider, this.paymentProvider});
 
   @override
   State<SaApprovalsPage> createState() => _SaApprovalsPageState();
 }
 
 class _SaApprovalsPageState extends State<SaApprovalsPage> {
-  final _api = ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
+  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
   List<Map<String, dynamic>> _contracts = [];
   List<Map<String, dynamic>> _payments = [];
   bool _loading = true;
@@ -31,17 +40,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
     try {
       _contracts = await _fetchContracts(['sent', 'client_approved']);
       try {
-        List<dynamic> allPayments = [];
-        int pPage = 1;
-        while (true) {
-          final pd = await _api.get('/payments/pending?page=$pPage');
-          final batch = safeList(pd['payments']);
-          if (batch.isEmpty) break;
-          allPayments.addAll(batch);
-          final lastPage = (pd['payments'] is Map ? pd['payments']['last_page'] : null) ?? 1;
-          if (pPage >= lastPage) break;
-          pPage++;
-        }
+        final allPayments = await _paymentProvider.fetchAllPendingRaw();
         _payments = allPayments.cast<Map<String, dynamic>>().map((p) => {
           ...p,
           'type': 'payment',
@@ -60,32 +59,12 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   Future<List<Map<String, dynamic>>> _fetchContracts(List<String> statuses) async {
     final results = <Map<String, dynamic>>[];
     try {
-      List<dynamic> allClients = [];
-      int page = 1;
-      while (true) {
-        final data = await _api.get('/clients?page=$page');
-        final batch = safeList(data['clients']);
-        if (batch.isEmpty) break;
-        allClients.addAll(batch);
-        final lastPage = (data['clients'] is Map ? data['clients']['last_page'] : null) ?? 1;
-        if (page >= lastPage) break;
-        page++;
-      }
+      final allClients = await _clientProvider.fetchAllClientsPaginatedRaw();
       for (final client in allClients) {
         final ws = client['workspace'] as Map<String, dynamic>?;
         if (ws == null) continue;
         try {
-          List<dynamic> allContracts = [];
-          int cPage = 1;
-          while (true) {
-            final cd = await _api.get('/workspaces/${ws['id']}/contracts?page=$cPage');
-            final batch = safeList(cd['contracts']);
-            if (batch.isEmpty) break;
-            allContracts.addAll(batch);
-            final lastPage = (cd['contracts'] is Map ? cd['contracts']['last_page'] : null) ?? 1;
-            if (cPage >= lastPage) break;
-            cPage++;
-          }
+          final allContracts = await _contractProvider.fetchWorkspaceContractsPaginatedRaw(ws['id'] as int);
           for (final c in allContracts) {
             if (statuses.contains(c['status'])) {
               results.add({

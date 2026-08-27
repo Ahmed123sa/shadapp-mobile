@@ -48,6 +48,10 @@ class ClientProvider extends ChangeNotifier {
   /// [ClientRepository.fetchAllRaw].
   Future<List<dynamic>> fetchClientsRaw({int? managerId}) => _repo.fetchAllRaw(managerId: managerId);
 
+  /// Every client across every page, unfiltered — see
+  /// [ClientRepository.fetchAllPaginatedRaw].
+  Future<List<dynamic>> fetchAllClientsPaginatedRaw() => _repo.fetchAllPaginatedRaw();
+
   Future<void> deleteClient(int id) async {
     await _repo.delete(id);
     _clients = _clients.where((c) => c.id != id).toList();
