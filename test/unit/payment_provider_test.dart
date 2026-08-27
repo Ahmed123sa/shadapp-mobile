@@ -148,4 +148,30 @@ void main() {
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/payments/9/schedule'))),
         headers: any(named: 'headers'))).called(1);
   });
+
+  test('requestPayment posts amount/currency (and notes when provided) to /workspaces/:id/payments/request', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.requestPayment(5, 250.0, 'SAR');
+
+    expect(sentBody, {'amount': 250.0, 'currency': 'SAR'});
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/payments/request'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('requestPayment includes notes only when non-empty', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.requestPayment(5, 250.0, 'SAR', notes: 'urgent');
+
+    expect(sentBody, {'amount': 250.0, 'currency': 'SAR', 'notes': 'urgent'});
+  });
 }

@@ -34,6 +34,11 @@ class PaymentProvider extends ChangeNotifier {
   /// See [PaymentRepository.deleteSchedule].
   Future<void> deletePaymentSchedule(int paymentId) => _repo.deleteSchedule(paymentId);
 
+  /// Sends a payment request to the client — see
+  /// [PaymentRepository.requestPayment].
+  Future<void> requestPayment(int workspaceId, double amount, String currency, {String? notes}) =>
+      _repo.requestPayment(workspaceId, amount, currency, notes: notes);
+
   /// Raw envelope — see [PaymentRepository.fetchForWorkspaceEnvelope].
   /// payments_page.dart owns its own loading/error state for this combined
   /// load, so this pass-through doesn't touch [_payments]/[_isLoading].

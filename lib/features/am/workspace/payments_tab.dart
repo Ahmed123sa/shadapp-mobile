@@ -723,12 +723,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      final body = <String, dynamic>{
-        'amount': amount,
-        'currency': currency,
-      };
-      if (notes.isNotEmpty) body['notes'] = notes;
-      await _api.post('/workspaces/$wsId/payments/request', body);
+      await _paymentProvider.requestPayment(wsId, amount, currency, notes: notes.isNotEmpty ? notes : null);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsRequestSent)])));
         _load();
