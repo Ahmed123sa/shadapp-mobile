@@ -5,16 +5,22 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/theme.dart';
+import '../../providers/auth_provider.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // AuthProvider instead of hitting the network.
+  final AuthProvider? authProvider;
+  final ApiClient? api;
+  const ProfilePage({super.key, this.authProvider, this.api});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final AuthProvider _authProvider = widget.authProvider ?? AuthProvider();
   final _nameController = TextEditingController();
   bool _loading = true;
   bool _saving = false;
@@ -34,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _load() async {
     try {
-      final data = await _api.get('/auth/me');
+      final data = await _authProvider.fetchCurrentUser();
       final user = data['user'] as Map<String, dynamic>? ?? {};
       _nameController.text = (user['name'] as String? ?? '');
       _avatarUrl = user['avatar_url'] as String?;
@@ -49,7 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (result == null || result.files.single.path == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/auth/me', {}, file: file, fileField: 'avatar');
+      await _authProvider.uploadAvatar(file);
       _load();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_imageChanged)])));
     } catch (_) {
@@ -60,7 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _api.put('/auth/me', {'name': _nameController.text.trim()});
+      await _authProvider.updateProfile(name: _nameController.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_saved)])));
         Navigator.pop(context, true);

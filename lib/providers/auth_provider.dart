@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/app_log.dart';
@@ -135,6 +136,15 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Raw `/auth/me` envelope — backs profile_page.dart's initial load.
+  Future<Map<String, dynamic>> fetchCurrentUser() => _api.get('/auth/me');
+
+  /// Uploads a new avatar image, matching profile_page.dart's `_pickAvatar`.
+  Future<Map<String, dynamic>> uploadAvatar(File file) =>
+      _api.multipartPost('/auth/me', {}, file: file, fileField: 'avatar');
+
+  Future<Map<String, dynamic>> updateProfile({required String name}) => _api.put('/auth/me', {'name': name});
 
   Future<void> logout() async {
     try {

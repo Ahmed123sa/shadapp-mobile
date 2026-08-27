@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shadapp_client/core/api_client.dart';
 import 'package:shadapp_client/providers/auth_provider.dart';
 import '../helpers/mock_http_client.dart';
+
+class _FakeMultipartRequest extends Fake implements http.BaseRequest {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +19,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(Uri.parse('http://localhost'));
+    registerFallbackValue(_FakeMultipartRequest());
   });
 
   setUp(() {
@@ -162,6 +168,55 @@ void main() {
 
       expect(provider.isLoggedIn, isFalse);
       expect(provider.error, isNotNull);
+    });
+  });
+
+  group('fetchCurrentUser', () {
+    test('hits /auth/me and returns the raw envelope', () async {
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"user":{"id":1,"name":"Ahmed"}}'),
+      );
+
+      final data = await provider.fetchCurrentUser();
+
+      expect(data['user']['name'], 'Ahmed');
+      verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/auth/me'))),
+          headers: any(named: 'headers'))).called(1);
+    });
+  });
+
+  group('uploadAvatar', () {
+    test('sends a multipart request to /auth/me', () async {
+      final tmp = await File('${Directory.systemTemp.path}/avatar_test.png').create();
+      await tmp.writeAsBytes([0, 1, 2]);
+      addTearDown(() => tmp.delete());
+
+      when(() => httpClient.send(any())).thenAnswer((inv) async {
+        final req = inv.positionalArguments[0] as http.MultipartRequest;
+        expect(req.url.path, endsWith('/auth/me'));
+        expect(req.files.single.field, 'avatar');
+        return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
+      });
+
+      await provider.uploadAvatar(tmp);
+
+      verify(() => httpClient.send(any())).called(1);
+    });
+  });
+
+  group('updateProfile', () {
+    test('puts the new name to /auth/me', () async {
+      Map<String, dynamic>? sentBody;
+      when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+        sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+        return jsonResponse('{}');
+      });
+
+      await provider.updateProfile(name: 'Ahmed Ali');
+
+      expect(sentBody, {'name': 'Ahmed Ali'});
+      verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/auth/me'))),
+          headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
     });
   });
 
