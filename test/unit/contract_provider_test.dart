@@ -54,6 +54,18 @@ void main() {
     expect(provider.contracts, hasLength(1));
   });
 
+  test('fetchWorkspaceRaw hits /workspaces/:id', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"workspace":{"id":5,"status":"active"}}'),
+    );
+
+    final data = await provider.fetchWorkspaceRaw(5);
+
+    expect(data['workspace']['status'], 'active');
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('records the error on failure without throwing', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"message":"nope"}', 500),

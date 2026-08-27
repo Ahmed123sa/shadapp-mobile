@@ -31,6 +31,12 @@ class ContractProvider extends ChangeNotifier {
     }
   }
 
+  /// Raw `/workspaces/:id` envelope — am_workspace_page.dart's header reads
+  /// the client's name/avatar/status/type from it. Lives here rather than a
+  /// dedicated one-method repository since [ContractRepository] already
+  /// wraps this exact endpoint for contracts_page.dart/contracts_tab.dart.
+  Future<Map<String, dynamic>> fetchWorkspaceRaw(int workspaceId) => _repo.fetchWorkspace(workspaceId);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;
