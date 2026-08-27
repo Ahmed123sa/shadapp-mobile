@@ -9,20 +9,27 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../models/approval.dart';
+import '../../../providers/approval_provider.dart';
 
 class ApprovalsTab extends StatefulWidget {
   final int? workspaceId;
-  const ApprovalsTab({super.key, this.workspaceId});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ApprovalProvider instead of hitting the network.
+  final ApprovalProvider? approvalProvider;
+  final ApiClient? api;
+  const ApprovalsTab({super.key, this.workspaceId, this.approvalProvider, this.api});
 
   @override
   State<ApprovalsTab> createState() => _ApprovalsTabState();
 }
 
 class _ApprovalsTabState extends State<ApprovalsTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ApprovalProvider _approvalProvider = widget.approvalProvider ?? ApprovalProvider();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
-  List<dynamic> _approvals = [];
+  List<Approval> _approvals = [];
   bool _loading = true;
   bool _sending = false;
   String? _error;
@@ -39,11 +46,10 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     setState(() { _loading = true; _error = null; });
-    try {
-      final data = await _api.get('/workspaces/$wsId/approvals');
-      _approvals = safeList(data['approvals']);
-    } catch (_) {
-      if (mounted) _error = AppLocalizations.of(context)?.approvalLoadFailed;
+    await _approvalProvider.fetchApprovals(wsId);
+    _approvals = _approvalProvider.approvals;
+    if (_approvalProvider.error != null && mounted) {
+      _error = AppLocalizations.of(context)?.approvalLoadFailed;
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -67,11 +73,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
         'title': title,
         'description': _descController.text.trim(),
       };
-      if (_selectedFiles.isNotEmpty) {
-        await _api.multipartPostMultiple('/workspaces/${widget.workspaceId}/approvals', fields, files: _selectedFiles, fileField: 'files[]');
-      } else {
-        await _api.post('/workspaces/${widget.workspaceId}/approvals', fields);
-      }
+      await _approvalProvider.create(widget.workspaceId!, fields, files: _selectedFiles.isNotEmpty ? _selectedFiles : null);
       if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.approvalRequestSent)])));
         _titleController.clear();
@@ -87,10 +89,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
 
   Future<void> _respond(int id, String action, String? reason) async {
     try {
-      await _api.post('/approvals/$id/respond', {
-        'action': action,
-        if (reason != null) 'reason': reason,
-      });
+      await _approvalProvider.respond(id, action: action, reason: reason);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -206,12 +205,12 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
             EmptyState(icon: Icons.check_circle_outlined, title: l10n.approvalEmpty)
           else
             ..._approvals.map((a) {
-              final hasCertificate = a['certificate'] != null && a['certificate']['pdf_url'] != null;
-              final status = a['status'] ?? 'pending';
+              final hasCertificate = a.hasCertificate;
+              final status = a.status;
               final accentColor = status == 'approved' ? ShadColors.success :
                   status == 'rejected' || status == 'edit_requested' ? ShadColors.error : ShadColors.gold;
-              final createdAt = a['created_at'] as String?;
-              final requestedBy = a['requested_by_name'] as String? ?? '';
+              final createdAt = a.createdAt;
+              final requestedByName = a.requestedByName ?? '';
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
@@ -236,19 +235,19 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(
-                            a['title'] ?? '',
+                            a.title,
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
                           ),
-                          if (a['description'] != null && (a['description'] as String).isNotEmpty) ...[
+                          if (a.description != null && a.description!.isNotEmpty) ...[
                             const SizedBox(height: 6),
-                            Text(a['description'], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(a.description!, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
                           ],
                           const SizedBox(height: 8),
                           Row(children: [
-                            if (requestedBy.isNotEmpty) ...[
+                            if (requestedByName.isNotEmpty) ...[
                               Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
                               const SizedBox(width: 4),
-                              Text(requestedBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
+                              Text(requestedByName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
                               const SizedBox(width: 12),
                             ],
                             if (createdAt != null) ...[
@@ -257,7 +256,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                               Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
                             ],
                           ]),
-                          if (a['reference_no'] != null) ...[
+                          if (a.referenceNo != null) ...[
                             const SizedBox(height: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -265,7 +264,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                                 color: ShadColors.gold.withAlpha(20),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('${l10n.approvalReference}: ${a['reference_no']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
+                              child: Text('${l10n.approvalReference}: ${a.referenceNo}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
                             ),
                           ],
                         ])),
@@ -277,7 +276,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           padding: const EdgeInsets.only(top: 12),
                           child: InkWell(
                             onTap: () async {
-                              final url = _api.resolveFileUrl(a['certificate']['pdf_url'] as String);
+                              final url = _api.resolveFileUrl(a.certificatePdfUrl!);
                               final uri = Uri.tryParse(url);
                               if (uri != null && await canLaunchUrl(uri)) {
                                 await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -301,31 +300,31 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             ),
                           ),
                         ),
-                      if (a['action_taken'] == true) ...[
+                      if (a.actionTaken) ...[
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: a['action_result'] == 'approved' ? ShadColors.successLight : ShadColors.errorLight,
+                            color: a.actionResult == 'approved' ? ShadColors.successLight : ShadColors.errorLight,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: a['action_result'] == 'approved' ? ShadColors.success.withAlpha(40) : ShadColors.error.withAlpha(40),
+                              color: a.actionResult == 'approved' ? ShadColors.success.withAlpha(40) : ShadColors.error.withAlpha(40),
                             ),
                           ),
                           child: Row(children: [
                             Icon(
-                              a['action_result'] == 'approved' ? Icons.check_circle : Icons.cancel,
-                              size: 18, color: a['action_result'] == 'approved' ? ShadColors.success : ShadColors.error,
+                              a.actionResult == 'approved' ? Icons.check_circle : Icons.cancel,
+                              size: 18, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error,
                             ),
                             const SizedBox(width: 8),
                             Expanded(child: Text(
-                              a['action_result'] == 'approved' ? l10n.approvalApproved : l10n.approvalEditRequested,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a['action_result'] == 'approved' ? ShadColors.success : ShadColors.error),
+                              a.actionResult == 'approved' ? l10n.approvalApproved : l10n.approvalEditRequested,
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error),
                             )),
                           ]),
                         ),
                       ],
-                      if (status == 'edit_requested' && a['reason'] != null && (a['reason'] as String).isNotEmpty) ...[
+                      if (status == 'edit_requested' && a.reason != null && a.reason!.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Container(
                           width: double.infinity,
@@ -338,17 +337,17 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(l10n.approvalEditReasonLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
                             const SizedBox(height: 4),
-                            Text(a['reason'] as String, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
+                            Text(a.reason!, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
                           ]),
                         ),
                       ],
-                      if (status == 'pending' && !isSA && a['requested_by'] != _api.userId)
+                      if (status == 'pending' && !isSA && a.requestedBy != _api.userId)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Row(children: [
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () => _respond(a['id'], 'approved', null),
+                                onPressed: () => _respond(a.id, 'approved', null),
                                 icon: const Icon(Icons.check, size: 15),
                                 label: Text(l10n.approve, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 style: ElevatedButton.styleFrom(
@@ -362,7 +361,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: () => _showEditRequestDialog(a['id']),
+                                onPressed: () => _showEditRequestDialog(a.id),
                                 icon: const Icon(Icons.edit, size: 15),
                                 label: Text(l10n.approvalRequestEdit, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 style: OutlinedButton.styleFrom(

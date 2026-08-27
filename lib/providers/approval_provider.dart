@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../data/approval_repository.dart';
 import '../models/approval.dart';
@@ -30,4 +31,10 @@ class ApprovalProvider extends ChangeNotifier {
 
   Future<void> respond(int id, {required String action, String? reason}) =>
       _repo.respond(id, action: action, reason: reason);
+
+  /// See [ApprovalRepository.create]. Deliberately does not refetch
+  /// [approvals] itself — the caller (approvals_tab.dart) already calls
+  /// [fetchApprovals] again after a successful create, same as before.
+  Future<Map<String, dynamic>> create(int workspaceId, Map<String, dynamic> fields, {List<File>? files}) =>
+      _repo.create(workspaceId, fields, files: files);
 }

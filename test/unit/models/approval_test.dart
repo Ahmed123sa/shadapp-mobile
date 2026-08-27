@@ -44,5 +44,15 @@ void main() {
       final a = Approval.fromJson({'id': 1, 'certificate': {}});
       expect(a.hasCertificate, isFalse);
     });
+
+    test('parses requested_by as the raw requester id', () {
+      final a = Approval.fromJson({'id': 1, 'requested_by': 9});
+      expect(a.requestedBy, 9);
+    });
+
+    test('requestedBy is null when absent', () {
+      final a = Approval.fromJson({'id': 1});
+      expect(a.requestedBy, isNull);
+    });
   });
 }

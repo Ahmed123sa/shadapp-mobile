@@ -39,4 +39,15 @@ void main() {
 
     expect(provider.error, isNotNull);
   });
+
+  test('create posts the payload to /workspaces/:id/approvals', () async {
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{}'),
+    );
+
+    await provider.create(5, {'title': 'Q1 report'});
+
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/approvals'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
 }

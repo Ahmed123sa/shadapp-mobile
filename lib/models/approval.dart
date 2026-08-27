@@ -14,6 +14,10 @@ class Approval {
   final String? actionResult;
   final String? reason;
   final String? certificatePdfUrl;
+  /// Raw requester user id (distinct from [requestedByName]) — used by
+  /// am/workspace/approvals_tab.dart to hide the approve/reject buttons on a
+  /// request the current user made themselves.
+  final int? requestedBy;
 
   const Approval({
     required this.id,
@@ -27,6 +31,7 @@ class Approval {
     this.actionResult,
     this.reason,
     this.certificatePdfUrl,
+    this.requestedBy,
   });
 
   bool get isCompleted => status == 'approved' || status == 'completed' || status == 'edit_requested';
@@ -52,6 +57,7 @@ class Approval {
       actionResult: _str(json['action_result']),
       reason: _str(json['reason']),
       certificatePdfUrl: certificate != null ? _str(certificate['pdf_url']) : null,
+      requestedBy: _int(json['requested_by']),
     );
   }
 }
