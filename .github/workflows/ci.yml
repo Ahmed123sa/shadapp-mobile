@@ -13,6 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -33,3 +39,10 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+      # `flutter analyze` and `flutter test` never invoke Gradle, so a broken
+      # Android build (a bad plugin version, a missing google-services.json)
+      # passes both of them and only fails when someone tries to ship. This
+      # step is the one that actually compiles the Android side.
+      - name: Build Android APK
+        run: flutter build apk --debug
