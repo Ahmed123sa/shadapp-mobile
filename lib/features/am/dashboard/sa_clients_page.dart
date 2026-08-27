@@ -5,20 +5,30 @@ import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import '../../../models/manager.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaClientsPage extends StatefulWidget {
-  const SaClientsPage({super.key});
+  // Optional so this screen can be pumped in a widget test with mocked
+  // providers instead of hitting the network.
+  final ClientProvider? clientProvider;
+  final ManagerProvider? managerProvider;
+  final ApiClient? api;
+  const SaClientsPage({super.key, this.clientProvider, this.managerProvider, this.api});
 
   @override
   State<SaClientsPage> createState() => _SaClientsPageState();
 }
 
 class _SaClientsPageState extends State<SaClientsPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
+  late final ManagerProvider _managerProvider = widget.managerProvider ?? ManagerProvider();
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _allClients = [];
-  List<Map<String, dynamic>> _managers = [];
+  List<Manager> _managers = [];
   bool _loading = true;
   int _filterIndex = 0;
   String _searchQuery = '';
@@ -42,11 +52,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final params = <String, String>{};
-      if (_selectedManagerId != null) params['manager_id'] = _selectedManagerId.toString();
-      final query = params.isNotEmpty ? '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}' : '';
-      final data = await _api.get('/clients$query');
-      final clients = safeList(data['clients']);
+      final clients = await _clientProvider.fetchClientsRaw(managerId: _selectedManagerId);
       if (mounted) setState(() { _allClients = clients.cast<Map<String, dynamic>>(); });
     } catch (e, s) {
       AppLog.error('sa_clients_page._load', e, s);
@@ -56,9 +62,8 @@ class _SaClientsPageState extends State<SaClientsPage> {
 
   Future<void> _loadManagers() async {
     try {
-      final data = await _api.get('/account-managers');
-      final list = data['managers'] as List<dynamic>? ?? [];
-      _managers = list.cast<Map<String, dynamic>>();
+      await _managerProvider.fetchManagers();
+      _managers = _managerProvider.managers;
       if (mounted) setState(() {});
     } catch (e, s) {
       AppLog.error('sa_clients_page._loadManagers', e, s);
@@ -184,10 +189,10 @@ class _SaClientsPageState extends State<SaClientsPage> {
                 onTap: () { setState(() => _selectedManagerId = null); Navigator.pop(ctx); _load(); },
               ),
               ..._managers.map((m) => ListTile(
-                title: Text(m['name'] ?? '', style: const TextStyle(fontFamily: 'Archivo')),
-                subtitle: Text(m['email'] ?? '', style: const TextStyle(fontSize: 11, fontFamily: 'Archivo')),
-                trailing: _selectedManagerId == m['id'] ? const Icon(Icons.check, color: ShadColors.gold) : null,
-                onTap: () { setState(() => _selectedManagerId = m['id']); Navigator.pop(ctx); _load(); },
+                title: Text(m.name, style: const TextStyle(fontFamily: 'Archivo')),
+                subtitle: Text(m.email ?? '', style: const TextStyle(fontSize: 11, fontFamily: 'Archivo')),
+                trailing: _selectedManagerId == m.id ? const Icon(Icons.check, color: ShadColors.gold) : null,
+                onTap: () { setState(() => _selectedManagerId = m.id); Navigator.pop(ctx); _load(); },
               )),
             ]),
           ),
@@ -206,7 +211,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
           Expanded(
             child: Text(
               _selectedManagerId != null
-                  ? (_managers.firstWhere((m) => m['id'] == _selectedManagerId, orElse: () => {})['name'] ?? l10n.saClientsManagerLabel)
+                  ? _selectedManagerName(l10n)
                   : l10n.saClientsAllManagers,
               style: TextStyle(fontSize: 11, color: _selectedManagerId != null ? ShadColors.gold : ShadColors.textSecondary, fontFamily: 'Archivo'),
             ),
@@ -215,6 +220,13 @@ class _SaClientsPageState extends State<SaClientsPage> {
         ]),
       ),
     );
+  }
+
+  String _selectedManagerName(AppLocalizations l10n) {
+    for (final m in _managers) {
+      if (m.id == _selectedManagerId) return m.name;
+    }
+    return l10n.saClientsManagerLabel;
   }
 
   Widget _buildPillsFilter() {
@@ -376,7 +388,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
     );
     if (confirm != true) return;
     try {
-      await _api.delete('/clients/$id');
+      await _clientProvider.deleteClient(id);
       _load();
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saClientsDeleteFailed)));

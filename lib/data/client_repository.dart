@@ -17,6 +17,16 @@ class ClientRepository {
     return safeList(res['clients']).map((j) => Client.fromJson(j as Map<String, dynamic>)).toList();
   }
 
+  /// Raw client list (not typed [Client]s), optionally filtered by
+  /// `manager_id` — used by sa_clients_page.dart, which needs fields like
+  /// `signed_at` and the nested `workspace` object that aren't part of the
+  /// [Client] model (same reasoning as [fetchOneRaw]).
+  Future<List<dynamic>> fetchAllRaw({int? managerId}) async {
+    final query = managerId != null ? '?manager_id=$managerId' : '';
+    final res = await _api.get('/clients$query');
+    return safeList(res['clients']);
+  }
+
   Future<Client> fetchOne(int id) async {
     final res = await _api.get('/clients/$id');
     final data = res['client'] as Map<String, dynamic>? ?? res;
