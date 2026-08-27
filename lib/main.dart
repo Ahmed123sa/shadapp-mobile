@@ -13,6 +13,7 @@ import 'core/api_client.dart';
 import 'core/router.dart';
 import 'core/locale_provider.dart';
 import 'core/notification_service.dart';
+import 'providers/audit_log_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/contract_provider.dart';
 import 'providers/approval_provider.dart';
@@ -117,6 +118,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuditLogProvider()),
         ChangeNotifierProvider(create: (_) => ContractProvider()),
         ChangeNotifierProvider(create: (_) => ClientProvider()),
         ChangeNotifierProvider(create: (_) => ManagerProvider()),

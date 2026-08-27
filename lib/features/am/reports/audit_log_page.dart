@@ -5,16 +5,20 @@ import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../providers/audit_log_provider.dart';
 
 class AuditLogPage extends StatefulWidget {
-  const AuditLogPage({super.key});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // AuditLogProvider instead of hitting the network.
+  final AuditLogProvider? auditLogProvider;
+  const AuditLogPage({super.key, this.auditLogProvider});
 
   @override
   State<AuditLogPage> createState() => _AuditLogPageState();
 }
 
 class _AuditLogPageState extends State<AuditLogPage> {
-  final _api = ApiClient();
+  late final AuditLogProvider _auditLogProvider = widget.auditLogProvider ?? AuditLogProvider();
   List<dynamic> _logs = [];
   bool _loading = true;
   String? _error;
@@ -36,15 +40,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
   Future<void> _load() async {
     setState(() { if (_logs.isEmpty) _loading = true; _error = null; });
     try {
-      final params = <String, String>{};
-      if (_searchQuery.isNotEmpty) params['search'] = _searchQuery;
-      if (_actionFilter.isNotEmpty) params['action'] = _actionFilter;
-      if (_dateFrom != null) params['date_from'] = _dateFrom!.toIso8601String().substring(0, 10);
-      if (_dateTo != null) params['date_to'] = _dateTo!.toIso8601String().substring(0, 10);
-      params['page'] = _page.toString();
-
-      final qs = params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-      final data = await _api.get('/audit-logs?$qs');
+      final data = await _auditLogProvider.fetch(
+        search: _searchQuery,
+        action: _actionFilter,
+        dateFrom: _dateFrom?.toIso8601String().substring(0, 10),
+        dateTo: _dateTo?.toIso8601String().substring(0, 10),
+        page: _page,
+      );
       final paginated = data['logs'] as Map<String, dynamic>?;
       _logs = (paginated?['data'] as List<dynamic>?) ?? (data['logs'] as List<dynamic>?) ?? [];
       _totalPages = paginated?['last_page'] as int? ?? 1;
