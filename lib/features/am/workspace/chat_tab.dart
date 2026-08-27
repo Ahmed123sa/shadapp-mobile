@@ -8,6 +8,7 @@ import '../../../core/reverb_service.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/helpers/meeting_helpers.dart';
+import '../../../core/helpers/realtime_poller.dart';
 import '../../../core/widgets/chat_contract_card.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/meeting_chip.dart';
@@ -29,7 +30,15 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
   bool _loading = true;
-  Timer? _pollTimer;
+  // Fallback refresh only — live updates arrive over the Reverb socket, so
+  // this stays quiet while that socket is healthy. See RealtimePoller.
+  late final RealtimePoller _poller = RealtimePoller(onRefresh: () {
+    _load();
+    _pollTick++;
+    // The workspace header (next meeting / next payment) changes far less
+    // often than the messages do, so it rides along every fourth refresh.
+    if (_pollTick % 4 == 0) _loadWorkspace();
+  });
   int _pollTick = 0;
   Map<String, dynamic>? _workspaceData;
   Map<String, dynamic>? _nextMeeting;
@@ -77,11 +86,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   }
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _load();
-      _pollTick++;
-      if (_pollTick % 4 == 0) _loadWorkspace();
-    });
+    _poller.start();
   }
 
   Future<void> _loadWorkspace() async {
@@ -608,7 +613,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _pollTimer?.cancel();
+      _poller.stop();
     } else if (state == AppLifecycleState.resumed) {
       _startPolling();
       _load();
@@ -619,7 +624,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pollTimer?.cancel();
+    _poller.stop();
     _controller.dispose();
     _scrollController.dispose();
     final uid = _api.userId;

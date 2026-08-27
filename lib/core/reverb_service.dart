@@ -24,6 +24,16 @@ class ReverbService {
   /// Exposed so ApiClient can attach X-Socket-Id to outgoing requests — see
   /// the header wiring in api_client.dart's _headers() for why.
   String? get socketId => _socketId;
+
+  /// Whether the socket is open *and* the handshake finished.
+  ///
+  /// Both halves matter: `_channel` is non-null from the moment we start
+  /// connecting, but no events arrive until Reverb sends
+  /// `pusher:connection_established` and we record a socket id. Screens use
+  /// this to decide whether they still need to poll the REST API as a
+  /// fallback (see RealtimePoller), so reporting "connected" too early would
+  /// let them stop polling while events are still going nowhere.
+  bool get isConnected => _channel != null && _socketId != null;
   DateTime _lastNotifTime = DateTime.now().subtract(const Duration(seconds: 1));
   void Function(Map<String, dynamic>)? onMessageReceived;
   void Function(Map<String, dynamic>)? onMessageUpdated;

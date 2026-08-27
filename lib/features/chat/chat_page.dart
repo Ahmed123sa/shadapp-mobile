@@ -12,6 +12,7 @@ import '../../core/widgets/payment_banner.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/helpers/meeting_helpers.dart';
+import '../../core/helpers/realtime_poller.dart';
 
 class ChatPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
@@ -29,7 +30,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   List<dynamic> _messages = [];
   bool _loading = true;
   bool _workspaceActive = true;
-  Timer? _pollTimer;
+  // Fallback refresh only — live updates arrive over the Reverb socket, so
+  // this stays quiet while that socket is healthy. See RealtimePoller.
+  late final RealtimePoller _poller = RealtimePoller(onRefresh: () {
+    _load();
+    _checkWorkspace();
+  });
   Map<String, dynamic>? _replyTo;
   Map<String, dynamic>? _editingMessage;
   Map<String, dynamic>? _workspaceData;
@@ -69,16 +75,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _load();
-      _checkWorkspace();
-    });
+    _poller.start();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _pollTimer?.cancel();
+      _poller.stop();
     } else if (state == AppLifecycleState.resumed) {
       _startPolling();
       _load();
@@ -88,7 +91,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pollTimer?.cancel();
+    _poller.stop();
     _scrollController.removeListener(_onScroll);
     _controller.dispose();
     _scrollController.dispose();
