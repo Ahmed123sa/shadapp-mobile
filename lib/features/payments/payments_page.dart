@@ -826,10 +826,6 @@ class _PaymentsPageState extends State<PaymentsPage> {
     uploadingNotifier.value = true;
     setSheetState(() {});
     try {
-      final fields = <String, dynamic>{
-        'method_type': methodType,
-      };
-
       final nativeFiles = proofFiles.where((pf) => pf['file'] != null).map((pf) => pf['file'] as File).toList();
       final bytesFiles = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['bytes'] as Uint8List).toList();
       final bytesNames = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['name'] as String? ?? 'file.jpg').toList();

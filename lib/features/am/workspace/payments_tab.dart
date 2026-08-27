@@ -10,14 +10,15 @@ import '../../../core/widgets/error_state.dart';
 class PaymentsTab extends StatefulWidget {
   final int? workspaceId;
   final VoidCallback? onWorkspaceUpdate;
-  const PaymentsTab({super.key, this.workspaceId, this.onWorkspaceUpdate});
+  final ApiClient? api;
+  const PaymentsTab({super.key, this.workspaceId, this.onWorkspaceUpdate, this.api});
 
   @override
   State<PaymentsTab> createState() => _PaymentsTabState();
 }
 
 class _PaymentsTabState extends State<PaymentsTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   List<dynamic> _payments = [];
   List<dynamic> _contracts = [];
   Map<String, dynamic>? _taxSummary;
