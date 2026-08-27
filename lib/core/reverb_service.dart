@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'api_client.dart';
@@ -8,7 +9,18 @@ import 'app_log.dart';
 class ReverbService {
   static final ReverbService _instance = ReverbService._();
   factory ReverbService() => _instance;
-  ReverbService._();
+  ReverbService._() : _silent = false;
+
+  /// Test-only constructor. Produces an independent, non-singleton instance
+  /// (mirrors [ApiClient.forTesting]) whose connect*() methods are no-ops —
+  /// no WebSocket is ever opened, no dotenv/network access happens. Screens
+  /// that accept an optional `ReverbService?` and wire this through can be
+  /// pumped in plain `flutter test` without a real socket connection hanging
+  /// `pumpAndSettle`.
+  @visibleForTesting
+  ReverbService.forTesting() : _silent = true;
+
+  final bool _silent;
 
   String host = 'localhost';
   String port = '8080';
@@ -61,6 +73,7 @@ class ReverbService {
   }
 
   Future<void> connect(int workspaceId) async {
+    if (_silent) return;
     _currentWorkspaceId = workspaceId;
     _currentUserId = null;
     _isClientChannel = false;
@@ -68,6 +81,7 @@ class ReverbService {
   }
 
   Future<void> connectForUser(int userId) async {
+    if (_silent) return;
     _currentUserId = userId;
     _isClientChannel = false;
     _currentWorkspaceId = null;
@@ -76,6 +90,7 @@ class ReverbService {
   }
 
   Future<void> connectForClient(int clientId) async {
+    if (_silent) return;
     _currentUserId = clientId;
     _isClientChannel = true;
     _currentWorkspaceId = null;
