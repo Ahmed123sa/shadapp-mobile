@@ -14,14 +14,15 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 
 class PaymentsPage extends StatefulWidget {
-  const PaymentsPage({super.key});
+  final ApiClient? api;
+  const PaymentsPage({super.key, this.api});
 
   @override
   State<PaymentsPage> createState() => _PaymentsPageState();
 }
 
 class _PaymentsPageState extends State<PaymentsPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   List<dynamic> _payments = [];
   List<dynamic> _contracts = [];
   List<String> _availableMethods = [];
