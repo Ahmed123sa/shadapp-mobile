@@ -38,6 +38,10 @@ class ClientProvider extends ChangeNotifier {
 
   Future<void> uploadAvatar(int clientId, File file) => _repo.uploadAvatar(clientId, file);
 
+  /// Raw `/clients/:id` envelope (including the nested `workspace` object) —
+  /// see [ClientRepository.fetchOneRaw].
+  Future<Map<String, dynamic>> fetchClientRaw(int id) => _repo.fetchOneRaw(id);
+
   Future<void> deleteClient(int id) async {
     await _repo.delete(id);
     _clients = _clients.where((c) => c.id != id).toList();

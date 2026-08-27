@@ -55,6 +55,16 @@ void main() {
     verifyNever(() => httpClient.get(any(), headers: any(named: 'headers')));
   });
 
+  test('fetchClientRaw returns the raw envelope with nested workspace', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"client":{"id":5,"workspace":{"id":12,"status":"active"}}}'),
+    );
+
+    final raw = await provider.fetchClientRaw(5);
+
+    expect(raw['client']['workspace']['status'], 'active');
+  });
+
   test('deleteClient removes the client from the in-memory list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),

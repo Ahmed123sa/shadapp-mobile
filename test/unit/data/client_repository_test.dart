@@ -56,6 +56,17 @@ void main() {
     expect(client.status, 'active');
   });
 
+  test('fetchOneRaw returns the raw envelope, including nested workspace', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"client":{"id":5,"workspace":{"id":12,"status":"active"}}}'),
+    );
+
+    final raw = await repo.fetchOneRaw(5);
+
+    expect(raw['client']['workspace']['id'], 12);
+    expect(raw['client']['workspace']['status'], 'active');
+  });
+
   test('create posts the body and returns the raw response (credentials included)', () async {
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
       (_) async => jsonResponse('{"client":{"id":9,"company_name":"New Co"},"credentials":{"email":"e@x.com","password":"pw"}}'),

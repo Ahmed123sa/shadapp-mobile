@@ -23,6 +23,14 @@ class ClientRepository {
     return Client.fromJson(data);
   }
 
+  /// Returns the raw `/clients/:id` envelope instead of a typed [Client].
+  /// Needed by dashboard_page.dart / client_dashboard_screen.dart, which read
+  /// the nested `workspace` object (id, status) that isn't part of the
+  /// [Client] model — modeling Workspace is out of scope here since those
+  /// screens aren't being migrated this slice (see
+  /// docs/state-layer-migration-plan.md, Dashboard slice notes).
+  Future<Map<String, dynamic>> fetchOneRaw(int id) => _api.get('/clients/$id');
+
   /// Returns the raw response, not just a [Client] — callers (like
   /// create_client_page) also need the one-time-only generated
   /// `credentials.email`/`credentials.password` that the backend returns

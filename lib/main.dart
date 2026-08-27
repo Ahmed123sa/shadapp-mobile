@@ -17,6 +17,7 @@ import 'providers/auth_provider.dart';
 import 'providers/contract_provider.dart';
 import 'providers/approval_provider.dart';
 import 'providers/client_provider.dart';
+import 'providers/dashboard_provider.dart';
 import 'providers/manager_provider.dart';
 import 'providers/meeting_provider.dart';
 import 'providers/notification_provider.dart';
@@ -121,6 +122,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider.value(value: localeProvider),
       ],
       child: ShadApp(router: router, localeProvider: localeProvider),
