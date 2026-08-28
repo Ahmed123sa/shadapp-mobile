@@ -221,7 +221,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     try {
-      await _api.put('/chat/${_editingMessage!['id']}', {'message': text});
+      await _chatProvider.editMessage(_editingMessage!['id'] as int, text);
       setState(() {
         _editingMessage = null;
         _controller.clear();
