@@ -110,11 +110,11 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 ### P2 — تنضيف
 
-**٦. `clearToken` بينسى `avatar_url`** — `core/api_client.dart:100-106`
-بيمسح `role`/`user_id`/`sub_user_id`/`workspace_id`/`user_name` من الـ prefs ومابيمسحش `avatar_url` (مع إنه بيصفّرها في الذاكرة). فأفاتار المستخدم السابق بيفضل مخزّن ويظهر لحظيًا لأول مستخدم بعده. سطر واحد.
+**٦. [تم] `clearToken` بينسى `avatar_url`** — `core/api_client.dart:100-106`
+اتضاف `await prefs.remove('avatar_url');` مع باقي المسحات. اتحقّق: مفيش تست بيتأكد من قائمة المفاتيح اللي بتتمسح تحديدًا.
 
-**٧. Controllers جوّه الـ dialogs مش بيتعملها `dispose`**
-`admin_settings_page.dart:118-120` · `client_onboarding_screen.dart` (`amountCtrl` + تلات `ValueNotifier`). الـ controllers على مستوى الـ State متعمّلها dispose صح — المشكلة في اللي جوّه الـ dialogs/sheets بس.
+**٧. [اتلغى] Controllers جوّه الـ dialogs مش بيتعملها `dispose`**
+اتجرّب فيكس (dispose بعد ما `showDialog`/`showModalBottomSheet` يرجعوا، في `admin_settings_page.dart` وفي `client_onboarding_screen.dart` عبر `.whenComplete()`) — لكن التست كسر ٤ تستات (`A TextEditingController was used after being disposed` + أعطال cascading في framework assertions زي `_dependents.isEmpty`). السبب: الـ Future بتاع `showDialog`/`showModalBottomSheet` بيرجع قبل ما شجرة الـ widgets تخلص تتفكك فعليًا — لسه فيه frame أو أكتر بيعيدوا بناء الـ `TextField` وهو بيستخدم الـ controller اللي اتعمله dispose بالفعل. الفيكس اتعمله revert بالكامل، ورجعنا للسلوك الأصلي (تسريب بسيط ومحدود، مش خطر). لو حبينا نرجع للموضوع ده تاني، الطريقة الصح هي نلف الـ controllers جوّه `StatefulWidget` خاص بيه `dispose()` بتاعه، مش نرفعهم لمستوى الدالة اللي بتفتح الـ dialog.
 
 **٨. ٨ ملفات فوق ٨٠٠ سطر**
 `chat_tab` ١٢٦٥ · `chat_page` ١٢٥٥ · `am_dashboard_page` ١١٦١ · `client_onboarding_screen` ١٠٥٩ · `admin_settings_page` ٩٩١ · `reports_tab` ٩٣٤ · `payments_page` ٩٠٣ · `contracts_page` ٨٧٥.
