@@ -15,7 +15,9 @@ import '../../data/approval_repository.dart';
 import '../../data/chat_repository.dart';
 import '../../data/client_repository.dart';
 import '../../data/file_repository.dart';
+import '../../data/dashboard_repository.dart';
 import '../../data/meeting_repository.dart';
+import '../../data/notification_repository.dart';
 import '../../data/payment_repository.dart';
 import '../../data/signature_repository.dart';
 import '../../data/sub_user_repository.dart';
@@ -23,8 +25,10 @@ import '../../providers/approval_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/client_provider.dart';
 import '../../providers/contract_provider.dart';
+import '../../providers/dashboard_provider.dart';
 import '../../providers/file_provider.dart';
 import '../../providers/meeting_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/signature_provider.dart';
 import '../../providers/sub_user_provider.dart';
@@ -63,7 +67,13 @@ class ClientDashboardScreen extends StatefulWidget {
   // exactly what chat_page_test.dart avoids with this same flag. Defaults to
   // true — zero behavior change for every existing call site.
   final bool enablePolling;
-  const ClientDashboardScreen({super.key, this.initialTab = 2, this.reverb, this.api, this.enableFcm = true, this.enablePolling = true});
+  // Optional so widget tests can inject mocked providers for this screen's
+  // own notifications-badge domain instead of hitting the network. Default
+  // to null, which falls back to real providers built from `api` — zero
+  // behavior change for every existing call site.
+  final NotificationProvider? notificationProvider;
+  final DashboardProvider? dashboardProvider;
+  const ClientDashboardScreen({super.key, this.initialTab = 2, this.reverb, this.api, this.enableFcm = true, this.enablePolling = true, this.notificationProvider, this.dashboardProvider});
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -88,6 +98,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   late final MeetingProvider _childMeetingProvider = MeetingProvider(repository: MeetingRepository(api: _api));
   late final SignatureProvider _childSignatureProvider = SignatureProvider(repository: SignatureRepository(api: _api));
   late final SubUserProvider _childSubUserProvider = SubUserProvider(repository: SubUserRepository(api: _api));
+  late final NotificationProvider _notificationProvider =
+      widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
+  late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
   int _unreadNotifs = 0;
   int _unreadChat = 0;
   int _badgeContracts = 0;
@@ -259,20 +272,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
 
   Future<void> _loadNotifs() async {
     try {
-      final data = await _api.get('/notifications');
+      final data = await _notificationProvider.fetchRaw();
       _unreadNotifs = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
     } catch (e, s) {
       AppLog.error('client_dashboard._loadNotifs(unread)', e, s);
     }
     try {
-      final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/chat');
-      final messages = safeList(data['messages']);
+      final messages = await _childChatProvider.fetchMessages(_api.workspaceIdSafe);
       _unreadChat = messages.where((m) => m['sender_type'] != 'App\\Models\\Client' && m['read_at'] == null).length;
     } catch (e, s) {
       AppLog.error('client_dashboard._loadNotifs(chat)', e, s);
     }
     try {
-      final data = await _api.get('/badge-counts');
+      final data = await _dashboardProvider.fetchBadgeCounts();
       _badgeContracts = int.tryParse(data['contracts']?.toString() ?? '') ?? 0;
       _badgePayments = int.tryParse(data['payments']?.toString() ?? '') ?? 0;
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
@@ -285,7 +297,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
 
   Future<void> _loadSubUserPermissions() async {
     try {
-      final data = await _api.get('/sub-users/${_api.subUserId}');
+      final data = await _childSubUserProvider.fetchOneRaw(_api.subUserId!);
       final su = data['sub_user'] as Map<String, dynamic>?;
       if (su != null) {
         _subUserPermissions = Map<String, dynamic>.from(su['permissions'] as Map? ?? {});
