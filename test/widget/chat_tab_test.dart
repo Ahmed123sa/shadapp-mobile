@@ -21,6 +21,7 @@ import 'package:shadapp_client/data/chat_repository.dart';
 import 'package:shadapp_client/features/am/workspace/chat_tab.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'package:shadapp_client/providers/chat_provider.dart';
+import 'package:shadapp_client/providers/contract_provider.dart';
 import '../helpers/mock_http_client.dart';
 
 void main() {
@@ -89,6 +90,7 @@ void main() {
           // to a real ChatProvider() backed by the real ApiClient() singleton
           // and the test hangs on a real network call.
           chatProvider: ChatProvider(repository: ChatRepository(api: api)),
+          contractProvider: ContractProvider(api: api),
           reverb: ReverbService.forTesting(),
           enablePolling: false,
         ),

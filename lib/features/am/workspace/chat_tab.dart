@@ -17,6 +17,7 @@ import '../../../core/widgets/payment_banner.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/contract_provider.dart';
+import '../../../providers/meeting_provider.dart';
 
 class ChatTab extends StatefulWidget {
   final int? workspaceId;
@@ -39,6 +40,7 @@ class ChatTab extends StatefulWidget {
   // any earlier would leave an unused field and fail `flutter analyze`.
   final ApiClient? api;
   final ChatProvider? chatProvider;
+  final ContractProvider? contractProvider;
   const ChatTab({
     super.key,
     this.workspaceId,
@@ -47,6 +49,7 @@ class ChatTab extends StatefulWidget {
     this.reverb,
     this.api,
     this.chatProvider,
+    this.contractProvider,
   });
 
   @override
@@ -56,6 +59,7 @@ class ChatTab extends StatefulWidget {
 class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -308,9 +312,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId/contracts');
+      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
       if (!mounted) return;
-      final contracts = safeList(data['contracts']);
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
