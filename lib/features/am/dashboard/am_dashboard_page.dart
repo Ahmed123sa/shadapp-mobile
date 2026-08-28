@@ -276,7 +276,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => _CreateMeetingSheet(clients: clients, onCreated: () {
+      builder: (ctx) => _CreateMeetingSheet(clients: clients, meetingProvider: _meetingProvider, onCreated: () {
         Navigator.pop(ctx);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
       }),
@@ -1019,14 +1019,20 @@ class _AllMeetingsSheet extends StatelessWidget {
 class _CreateMeetingSheet extends StatefulWidget {
   final List<dynamic> clients;
   final VoidCallback onCreated;
-  const _CreateMeetingSheet({required this.clients, required this.onCreated});
+  // Optional so this sheet can be pumped in a widget test with a mocked
+  // MeetingProvider instead of hitting the network. Defaults to a fresh
+  // MeetingProvider() (same as every other unseamed default in this file) —
+  // zero behavior change for the real call site, which now passes the
+  // parent's already-seamed _meetingProvider.
+  final MeetingProvider? meetingProvider;
+  const _CreateMeetingSheet({required this.clients, required this.onCreated, this.meetingProvider});
 
   @override
   State<_CreateMeetingSheet> createState() => _CreateMeetingSheetState();
 }
 
 class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
-  final _api = ApiClient();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
@@ -1056,7 +1062,7 @@ class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
     final tzMinutes = (tzOffset.inMinutes.abs() % 60).toString().padLeft(2, '0');
     final scheduledAtIso = '${dt.toIso8601String()}$tzSign$tzHours:$tzMinutes';
     try {
-      await _api.post('/workspaces/${ws['id']}/meetings', {
+      await _meetingProvider.createMeeting(ws['id'] as int, {
         'title': _titleController.text.trim(),
         'scheduled_at': scheduledAtIso,
         'duration_minutes': _duration ?? 30,
