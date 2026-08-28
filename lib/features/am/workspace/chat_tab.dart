@@ -295,7 +295,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     if (result == null || result.files.isEmpty || _wsId == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/workspaces/$_wsId/chat', {}, file: file, fileField: 'file');
+      await _chatProvider.uploadFile(_wsId!, file);
       _load();
     } catch (e) {
       debugPrint('[chat_tab] _sendWithAttachment error: $e');
