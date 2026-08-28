@@ -17,12 +17,14 @@ import '../settings/admin_settings_page.dart';
 import '../../../data/client_repository.dart';
 import '../../../data/dashboard_repository.dart';
 import '../../../data/manager_repository.dart';
+import '../../../data/meeting_repository.dart';
 import '../../../data/notification_repository.dart';
 import '../../../data/payment_repository.dart';
 import '../../../providers/client_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../providers/manager_provider.dart';
+import '../../../providers/meeting_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../providers/payment_provider.dart';
 
@@ -45,7 +47,8 @@ class AmDashboardPage extends StatefulWidget {
   final ApiClient? api;
   final NotificationProvider? notificationProvider;
   final DashboardProvider? dashboardProvider;
-  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api, this.notificationProvider, this.dashboardProvider});
+  final MeetingProvider? meetingProvider;
+  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api, this.notificationProvider, this.dashboardProvider, this.meetingProvider});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
@@ -72,6 +75,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   late final NotificationProvider _notificationProvider =
       widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
   late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider(repository: MeetingRepository(api: _api));
   List<dynamic> _allClients = [];
   List<dynamic> _allManagers = [];
   List<dynamic> _pendingPayments = [];
@@ -624,8 +628,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
 
   Future<void> _showAllMeetings() async {
     try {
-      final data = await _api.get('/all-meetings');
-      final meetings = safeList(data['meetings']);
+      final meetings = await _meetingProvider.fetchAllWorkspacesRaw();
       if (!mounted) return;
       showModalBottomSheet(
         context: context,
