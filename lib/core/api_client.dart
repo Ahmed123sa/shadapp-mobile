@@ -102,6 +102,7 @@ class ApiClient {
     await prefs.remove('sub_user_id');
     await prefs.remove('workspace_id');
     await prefs.remove('user_name');
+    await prefs.remove('avatar_url');
   }
 
   Future<void> setRole(String value) async {
