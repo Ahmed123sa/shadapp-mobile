@@ -62,8 +62,8 @@ class _ContractsPageState extends State<ContractsPage> {
       // Two requests dispatched together (not sequentially) — matches the
       // original Future.wait's concurrency. Awaited separately rather than
       // via Future.wait itself because the provider methods now return
-      // differently-typed futures (List vs Map), unlike the raw
-      // _api.get(...) calls, which both returned the same envelope shape.
+      // differently-typed futures (List vs Map), unlike the raw HTTP calls
+      // this replaced, which both returned the same envelope shape.
       final contractsFuture = _contractProvider.fetchWorkspaceContractsRaw(wsId);
       final workspaceFuture = _contractProvider.fetchWorkspaceRaw(wsId).catchError((_) => <String, dynamic>{});
       _contracts = await contractsFuture;
