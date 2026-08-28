@@ -15,6 +15,7 @@ import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/meeting_chip.dart';
 import '../../../core/widgets/payment_banner.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
+import '../../../providers/chat_provider.dart';
 
 class ChatTab extends StatefulWidget {
   final int? workspaceId;
@@ -36,6 +37,7 @@ class ChatTab extends StatefulWidget {
   // same commit as the domain that starts actually using them — adding them
   // any earlier would leave an unused field and fail `flutter analyze`.
   final ApiClient? api;
+  final ChatProvider? chatProvider;
   const ChatTab({
     super.key,
     this.workspaceId,
@@ -43,6 +45,7 @@ class ChatTab extends StatefulWidget {
     this.enablePolling = true,
     this.reverb,
     this.api,
+    this.chatProvider,
   });
 
   @override
@@ -51,6 +54,7 @@ class ChatTab extends StatefulWidget {
 
 class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -120,7 +124,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId');
+      final data = await _chatProvider.fetchWorkspace(wsId);
       final nm = data['nextMeeting'] as Map<String, dynamic>?;
       final np = data['nextPayment'] as Map<String, dynamic>?;
       if (mounted) {
@@ -139,8 +143,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId/chat');
-      _messages = data['messages'] as List<dynamic>? ?? [];
+      _messages = await _chatProvider.fetchMessages(wsId);
     } catch (e) {
       debugPrint('[chat_tab] _load error: $e');
     }
@@ -154,7 +157,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      await _api.post('/workspaces/$wsId/chat/mark-read', {});
+      await _chatProvider.markRead(wsId);
     } catch (e, s) {
       // Cosmetic only — the unread badge stays until the next successful
       // mark-read. Not worth interrupting the user for.
@@ -187,10 +190,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final replyId = _replyTo?['id'];
     setState(() => _replyTo = null);
     try {
-      final body = <String, dynamic>{'message': text};
-      if (needsApproval) body['requires_action'] = true;
-      if (replyId != null) body['reply_to_id'] = replyId;
-      await _api.post('/workspaces/$_wsId/chat', body);
+      await _chatProvider.sendMessage(_wsId!, text, requiresAction: needsApproval, replyToId: replyId as int?);
       _load();
       _markRead();
     } catch (e) {
