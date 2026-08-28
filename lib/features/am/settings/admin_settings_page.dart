@@ -8,14 +8,20 @@ import '../../../core/theme.dart';
 import '../../signature/render_signature.dart';
 
 class AdminSettingsPage extends StatefulWidget {
-  const AdminSettingsPage({super.key});
+  // Optional so this screen can be pumped in a widget test (e.g. embedded
+  // inside am_dashboard_page.dart/client_dashboard_screen.dart's
+  // IndexedStack, which mounts every tab eagerly) with a mocked ApiClient
+  // instead of hitting the network. Defaults to the real singleton — zero
+  // behavior change for every existing call site.
+  final ApiClient? api;
+  const AdminSettingsPage({super.key, this.api});
 
   @override
   State<AdminSettingsPage> createState() => _AdminSettingsPageState();
 }
 
 class _AdminSettingsPageState extends State<AdminSettingsPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _sigTextController = TextEditingController();

@@ -14,6 +14,13 @@ import 'sa_approvals_page.dart';
 import 'sa_clients_page.dart';
 import 'sa_team_page.dart';
 import '../settings/admin_settings_page.dart';
+import '../../../data/client_repository.dart';
+import '../../../data/manager_repository.dart';
+import '../../../data/payment_repository.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/manager_provider.dart';
+import '../../../providers/payment_provider.dart';
 
 class AmDashboardPage extends StatefulWidget {
   // Step 0 of the state-layer migration plan: lets widget tests suppress the
@@ -27,16 +34,35 @@ class AmDashboardPage extends StatefulWidget {
   // which falls back to the real singleton — zero behavior change for every
   // existing call site.
   final ReverbService? reverb;
-  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb});
+  // Testability seam (state-layer migration plan) — optional so every
+  // existing call site keeps compiling unchanged. Defaults fall back to the
+  // real ApiClient instance, same singleton `ApiClient()` always resolved to
+  // before this param existed — zero behavior change in production.
+  final ApiClient? api;
+  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
 }
 
 class _AmDashboardPageState extends State<AmDashboardPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   final _searchController = TextEditingController();
-  final _isSA = ApiClient().role == 'super_admin';
+  // Was `ApiClient().role` (the real singleton) before this seam — reading
+  // `_api.role` instead is identical in production (widget.api defaults to
+  // that same singleton) but makes this field controllable from a test via
+  // widget.api, rather than requiring the test to mutate the real singleton.
+  late final _isSA = _api.role == 'super_admin';
+  // Derived from `_api` purely to break the singleton fallback in the four
+  // tab screens embedded below via IndexedStack (which mounts every tab
+  // eagerly, not just the selected one) — each already accepts these same
+  // provider params for its own testability. In production `_api` is always
+  // the real singleton, so these behave identically to each screen's own
+  // `?? XProvider()` default — zero behavior change.
+  late final ClientProvider _childClientProvider = ClientProvider(repository: ClientRepository(api: _api));
+  late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
+  late final ContractProvider _childContractProvider = ContractProvider(api: _api);
+  late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
   List<dynamic> _allClients = [];
   List<dynamic> _allManagers = [];
   List<dynamic> _pendingPayments = [];
@@ -316,16 +342,16 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
               children: _isSA
                 ? [
                     _buildHomeTab(),
-                    const SaApprovalsPage(),
-                    const SaClientsPage(),
-                    const SaTeamPage(),
-                    const AdminSettingsPage(),
+                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
+                    SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
+                    SaTeamPage(managerProvider: _childManagerProvider, api: _api),
+                    AdminSettingsPage(api: _api),
                   ]
                 : [
                     _buildAmHomeTab(),
-                    const SaApprovalsPage(),
+                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
                     _buildAmClientsTab(),
-                    const AdminSettingsPage(),
+                    AdminSettingsPage(api: _api),
                   ],
             ),
       ),
@@ -451,7 +477,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   Widget _buildAmClientsTab() {
     return Stack(
       children: [
-        const SaClientsPage(),
+        SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
         Positioned(
           bottom: 16,
           left: 16,
