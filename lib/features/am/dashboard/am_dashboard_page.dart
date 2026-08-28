@@ -143,8 +143,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
           _pendingPayments = [];
         }
       } else {
-        final data = await _api.get('/clients');
-        _allClients = safeList(data['clients']);
+        _allClients = await _childClientProvider.fetchClientsRaw();
         _filter();
         _pendingContracts = await _fetchAllContracts(['sent', 'client_approved']);
         try {
