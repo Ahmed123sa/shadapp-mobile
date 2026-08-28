@@ -62,6 +62,23 @@ class ContractProvider extends ChangeNotifier {
   /// pass-through doesn't touch [_contracts]/[_isLoading].
   Future<List<dynamic>> fetchAllContractsAcrossCompanyRaw() => _repo.fetchAllAcrossCompany();
 
+  /// AM-side generic action (archive/complete/send/etc.) — see
+  /// [ContractRepository.performAction]. am/workspace/contracts_tab.dart.
+  Future<void> performAction(int id, String action) => _repo.performAction(id, action);
+
+  /// See [ContractRepository.delete]. Named `deleteContract` here (not
+  /// `delete`) since a bare `delete` reads ambiguously on a provider that
+  /// also exposes list-mutating methods.
+  Future<void> deleteContract(int id) => _repo.delete(id);
+
+  /// `/auth/me` — am/workspace/contracts_tab.dart reads the signed-in
+  /// account manager's saved signature off this before falling back to a
+  /// manual signature pad. See [ContractRepository.fetchCurrentUser].
+  Future<Map<String, dynamic>> fetchCurrentUser() => _repo.fetchCurrentUser();
+
+  /// See [ContractRepository.companyApprove].
+  Future<void> companyApprove(int id, {String? signature}) => _repo.companyApprove(id, signature: signature);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;

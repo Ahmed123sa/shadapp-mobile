@@ -8,6 +8,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../../providers/contract_provider.dart';
 import '../widgets/contract_builder.dart';
 
 class ContractsTab extends StatefulWidget {
@@ -16,9 +17,10 @@ class ContractsTab extends StatefulWidget {
   // inside am_workspace_page.dart's IndexedStack, which mounts every tab
   // eagerly) with a mocked ApiClient instead of hitting the network. Defaults
   // to the real singleton — zero behavior change for every existing call
-  // site. This screen's own domain migration remains deferred (Path B).
+  // site.
   final ApiClient? api;
-  const ContractsTab({super.key, this.workspaceId, this.api});
+  final ContractProvider? contractProvider;
+  const ContractsTab({super.key, this.workspaceId, this.api, this.contractProvider});
 
   @override
   State<ContractsTab> createState() => _ContractsTabState();
@@ -26,6 +28,7 @@ class ContractsTab extends StatefulWidget {
 
 class _ContractsTabState extends State<ContractsTab> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
   List<dynamic> _contracts = [];
   bool _loading = true;
   String? _error;
@@ -43,12 +46,13 @@ class _ContractsTabState extends State<ContractsTab> {
     if (wsId == null) return;
     setState(() { if (_contracts.isEmpty) _loading = true; _error = null; });
     try {
-      final results = await Future.wait<Map<String, dynamic>>([
-        _api.get('/workspaces/$wsId/contracts'),
-        _api.get('/workspaces/$wsId'),
-      ]);
-      _contracts = safeList(results[0]['contracts']);
-      final ws = results[1]['workspace'] as Map<String, dynamic>?;
+      // Dispatched together, then awaited separately — see the matching
+      // comment in contracts_page.dart's _load(), which hit the same
+      // List-vs-Map typing constraint when moving off Future.wait.
+      final contractsFuture = _contractProvider.fetchWorkspaceContractsRaw(wsId);
+      final workspaceFuture = _contractProvider.fetchWorkspaceRaw(wsId);
+      _contracts = await contractsFuture;
+      final ws = (await workspaceFuture)['workspace'] as Map<String, dynamic>?;
       final client = ws?['client'] as Map<String, dynamic>?;
       _clientType = client?['client_type'] as String?;
       _wsStatus = ws?['status'] as String?;
@@ -77,7 +81,7 @@ class _ContractsTabState extends State<ContractsTab> {
       if (confirm != true) return;
     }
     try {
-      await _api.post('/contracts/$id/$action');
+      await _contractProvider.performAction(id, action);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractUpdated)));
         await _load();
@@ -226,7 +230,7 @@ class _ContractsTabState extends State<ContractsTab> {
     );
     if (confirm != true) return;
     try {
-      await _api.delete('/contracts/$id');
+      await _contractProvider.deleteContract(id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleted)));
         _load();
@@ -241,7 +245,7 @@ class _ContractsTabState extends State<ContractsTab> {
     String? savedSignature;
 
     try {
-      final me = await _api.get('/auth/me');
+      final me = await _contractProvider.fetchCurrentUser();
       final user = me['user'] as Map<String, dynamic>?;
       if (user != null) {
         savedSignature = user['signature_data'] as String?;
@@ -283,7 +287,7 @@ class _ContractsTabState extends State<ContractsTab> {
       );
       if (useSaved != true) return;
       try {
-        await _api.post('/contracts/${contract['id']}/company-approve', {});
+        await _contractProvider.companyApprove(contract['id'] as int);
         if (mounted) {
           messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractUpdated)));
           _load();
@@ -337,7 +341,7 @@ class _ContractsTabState extends State<ContractsTab> {
     );
     if (result == null) return;
     try {
-      await _api.post('/contracts/${contract['id']}/company-approve', {'signature': result});
+      await _contractProvider.companyApprove(contract['id'] as int, signature: result);
       if (mounted) {
         messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractUpdated)));
         _load();

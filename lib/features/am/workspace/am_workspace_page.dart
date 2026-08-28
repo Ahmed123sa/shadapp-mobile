@@ -206,7 +206,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
                 meetingProvider: _childMeetingProvider,
               ),
               FilesTab(workspaceId: widget.workspaceId, fileProvider: _childFileProvider, api: _api),
-              ContractsTab(workspaceId: widget.workspaceId, api: _api),
+              ContractsTab(workspaceId: widget.workspaceId, api: _api, contractProvider: _childContractProvider),
               PaymentsTab(
                 onWorkspaceUpdate: _fetchWorkspace,
                 workspaceId: widget.workspaceId,
