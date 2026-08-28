@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
+import '../../../providers/contract_provider.dart';
 
 class ContractBuilder extends StatefulWidget {
   final VoidCallback? onCreated;
   final bool isAdditional;
   final int? contractId;
   final Map<String, dynamic>? contractData;
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ApiClient instead of hitting the network. Defaults to the real
+  // singleton — zero behavior change for every existing call site.
+  final ApiClient? api;
+  final ContractProvider? contractProvider;
 
-  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData});
+  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData, this.api, this.contractProvider});
 
   @override
   State<ContractBuilder> createState() => _ContractBuilderState();
 
-  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData}) {
+  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData, ApiClient? api, ContractProvider? contractProvider}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -24,14 +30,15 @@ class ContractBuilder extends StatefulWidget {
         maxChildSize: 0.9,
         minChildSize: 0.4,
         expand: false,
-        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData),
+        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData, api: api, contractProvider: contractProvider),
       ),
     );
   }
 }
 
 class _ContractBuilderState extends State<ContractBuilder> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
   final _titleController = TextEditingController();
   final _valueController = TextEditingController();
   final _customClauseController = TextEditingController();
@@ -98,7 +105,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
 
   Future<void> _loadTemplates() async {
     try {
-      final data = await _api.get('/contract-clause-templates');
+      final data = await _contractProvider.fetchClauseTemplates();
       final templates = data['templates'] as List<dynamic>? ?? [];
 
       if (_isEditing) {
@@ -183,17 +190,17 @@ class _ContractBuilderState extends State<ContractBuilder> {
         if (widget.isAdditional) 'contract_type': 'additional',
       };
       if (_isEditing) {
-        await _api.put('/contracts/${widget.contractId}', payload);
+        await _contractProvider.update(widget.contractId!, payload);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderUpdated)));
         Navigator.pop(context);
         widget.onCreated?.call();
       } else {
-        final data = await _api.post('/workspaces/${_api.workspaceId}/contracts', payload);
+        final data = await _contractProvider.create(_api.workspaceId!, payload);
         if (!mounted) return;
         final contractId = data['contract']['id'] as int;
         try {
-          await _api.post('/contracts/$contractId/send');
+          await _contractProvider.send(contractId);
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.contractBuilderCreatedAndSent)])));
         } catch (_) {

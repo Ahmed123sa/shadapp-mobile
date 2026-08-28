@@ -92,7 +92,7 @@ class _ContractsTabState extends State<ContractsTab> {
   }
 
   Future<void> _editContract(Map<String, dynamic> c) async {
-            await ContractBuilder.show(context, contractId: c['id'], contractData: c, isAdditional: c['contract_type'] == 'additional', onCreated: _load);
+            await ContractBuilder.show(context, contractId: c['id'], contractData: c, isAdditional: c['contract_type'] == 'additional', onCreated: _load, api: _api, contractProvider: _contractProvider);
   }
 
   void _showContractDetail(Map<String, dynamic> c) {
@@ -518,7 +518,7 @@ class _ContractsTabState extends State<ContractsTab> {
           child: GestureDetector(
             onTap: () {
               final isActive = _wsStatus == 'active';
-              ContractBuilder.show(context, isAdditional: isActive, onCreated: _load);
+              ContractBuilder.show(context, isAdditional: isActive, onCreated: _load, api: _api, contractProvider: _contractProvider);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12),

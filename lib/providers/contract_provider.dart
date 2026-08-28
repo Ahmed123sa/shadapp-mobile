@@ -79,6 +79,22 @@ class ContractProvider extends ChangeNotifier {
   /// See [ContractRepository.companyApprove].
   Future<void> companyApprove(int id, {String? signature}) => _repo.companyApprove(id, signature: signature);
 
+  /// See [ContractRepository.fetchClauseTemplates]. Used by
+  /// am/widgets/contract_builder.dart to prefill fixed/optional clauses.
+  Future<Map<String, dynamic>> fetchClauseTemplates() => _repo.fetchClauseTemplates();
+
+  /// Creates a new contract on a workspace — see [ContractRepository.create].
+  /// Returns the raw response; the caller reads back the new contract's id.
+  Future<Map<String, dynamic>> create(int workspaceId, Map<String, dynamic> payload) =>
+      _repo.create(workspaceId, payload);
+
+  /// Updates an existing (draft/edit_requested) contract — see
+  /// [ContractRepository.update].
+  Future<void> update(int id, Map<String, dynamic> payload) => _repo.update(id, payload);
+
+  /// Sends a draft contract to the client — see [ContractRepository.send].
+  Future<void> send(int id) => _repo.send(id);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;
