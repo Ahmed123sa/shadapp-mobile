@@ -15,11 +15,15 @@ import 'sa_clients_page.dart';
 import 'sa_team_page.dart';
 import '../settings/admin_settings_page.dart';
 import '../../../data/client_repository.dart';
+import '../../../data/dashboard_repository.dart';
 import '../../../data/manager_repository.dart';
+import '../../../data/notification_repository.dart';
 import '../../../data/payment_repository.dart';
 import '../../../providers/client_provider.dart';
 import '../../../providers/contract_provider.dart';
+import '../../../providers/dashboard_provider.dart';
 import '../../../providers/manager_provider.dart';
+import '../../../providers/notification_provider.dart';
 import '../../../providers/payment_provider.dart';
 
 class AmDashboardPage extends StatefulWidget {
@@ -39,7 +43,9 @@ class AmDashboardPage extends StatefulWidget {
   // real ApiClient instance, same singleton `ApiClient()` always resolved to
   // before this param existed — zero behavior change in production.
   final ApiClient? api;
-  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api});
+  final NotificationProvider? notificationProvider;
+  final DashboardProvider? dashboardProvider;
+  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api, this.notificationProvider, this.dashboardProvider});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
@@ -63,6 +69,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
   late final ContractProvider _childContractProvider = ContractProvider(api: _api);
   late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
+  late final NotificationProvider _notificationProvider =
+      widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
+  late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
   List<dynamic> _allClients = [];
   List<dynamic> _allManagers = [];
   List<dynamic> _pendingPayments = [];
@@ -169,13 +178,13 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
 
   Future<void> _loadNotifs() async {
     try {
-      final data = await _api.get('/notifications');
+      final data = await _notificationProvider.fetchRaw();
       _unreadNotifs = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
     } catch (e, s) {
       AppLog.error('am_dashboard._loadNotifs(unread)', e, s);
     }
     try {
-      final data = await _api.get('/badge-counts');
+      final data = await _dashboardProvider.fetchBadgeCounts();
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
       _badgeChat = int.tryParse(data['chat']?.toString() ?? '') ?? 0;
     } catch (e, s) {
