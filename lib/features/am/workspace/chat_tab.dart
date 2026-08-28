@@ -12,12 +12,12 @@ import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/helpers/realtime_poller.dart';
 import '../../../core/widgets/chat_contract_card.dart';
 import '../../../core/widgets/client_type_badge.dart';
-import '../../../core/widgets/meeting_chip.dart';
 import '../../../core/widgets/payment_banner.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/meeting_provider.dart';
+import '../../chat/chat_shared.dart';
 
 class ChatTab extends StatefulWidget {
   final int? workspaceId;
@@ -467,7 +467,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_formatTime(m['created_at'] as String?),
+                    Text(chatFormatTime(m['created_at'] as String?),
                       style: const TextStyle(fontSize: 9, color: ShadColors.textMuted)),
                     if (m['edited_at'] != null) ...[
                       const SizedBox(width: 3),
@@ -484,7 +484,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             if (isClient && m['created_at'] != null)
               Padding(
                 padding: const EdgeInsets.only(top: 3),
-                child: Text(_formatTime(m['created_at'] as String?),
+                child: Text(chatFormatTime(m['created_at'] as String?),
                   style: const TextStyle(fontSize: 9, color: ShadColors.textMuted)),
               ),
             if (isPending)
@@ -625,27 +625,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     );
   }
 
-  String _formatTime(String? iso) {
-    if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      final hour = dt.hour.toString().padLeft(2, '0');
-      final minute = dt.minute.toString().padLeft(2, '0');
-      return '$hour:$minute';
-    } catch (_) { return ''; }
-  }
-
-  bool _isOnline(Map<String, dynamic>? user) {
-    if (user == null) return false;
-    final lastSeen = user['last_seen_at'] as String?;
-    if (lastSeen == null) return false;
-    try {
-      final dt = DateTime.parse(lastSeen).toLocal();
-      return DateTime.now().difference(dt).inMinutes < 5;
-    } catch (_) {
-      return false;
-    }
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -679,7 +658,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final isSA = _api.role == 'super_admin';
     final clientName = _workspaceData?['client']?['contact_person'] as String? ?? l10n.chatClient;
     final clientAvatarUrl = _workspaceData?['client']?['avatar_url'] as String?;
-    final clientOnline = _isOnline(_workspaceData?['client']);
+    final clientOnline = chatIsOnline(_workspaceData?['client']);
     final wsActive = widget.wsStatus == 'active';
 
     if (!wsActive) {
@@ -716,7 +695,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 radius: 18,
                 backgroundColor: ShadColors.goldSoft,
                 backgroundImage: clientAvatarUrl != null ? NetworkImage(_api.resolveFileUrl(clientAvatarUrl)) : null,
-                child: clientAvatarUrl == null ? Text(_initials(clientName),
+                child: clientAvatarUrl == null ? Text(chatInitials(clientName),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)) : null,
               ),
               Positioned(
@@ -743,9 +722,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             Text(clientOnline ? l10n.chatOnline : l10n.chatOffline,
               style: TextStyle(fontSize: 10, color: clientOnline ? ShadColors.online : ShadColors.textDisabled)),
           ])),
-          _headerIconBtn(Icons.copy_outlined, _openContracts),
+          chatHeaderIconBtn(Icons.copy_outlined, _openContracts),
           const SizedBox(width: 6),
-          _headerIconBtn(Icons.videocam_outlined, _openLatestZoomLink),
+          chatHeaderIconBtn(Icons.videocam_outlined, _openLatestZoomLink),
         ]),
       ),
       // Upcoming Meeting Banner
@@ -935,21 +914,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     ]);
   }
 
-  Widget _headerIconBtn(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28, height: 28,
-        decoration: BoxDecoration(
-          color: ShadColors.overlayFaint,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ShadColors.cardBorder, width: 0.5),
-        ),
-        child: Icon(icon, size: 14, color: ShadColors.textSecondary),
-      ),
-    );
-  }
-
   Widget _buildUpcomingMeetingBanner() {
     final l10n = AppLocalizations.of(context)!;
     final m = _nextMeeting!;
@@ -1012,15 +976,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     );
   }
 
-  String _initials(String? name) {
-    if (name == null || name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name[0].toUpperCase();
-  }
-
   List<Widget> _buildMessageList() {
     final l10n = AppLocalizations.of(context)!;
     final widgets = <Widget>[];
@@ -1030,7 +985,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     for (int i = 0; i < _messages.length; i++) {
       final m = _messages[i];
       final createdAt = m['created_at'] as String?;
-      final dateKey = _dateKey(createdAt);
+      final dateKey = chatDateKey(createdAt);
 
       if (dateKey != null && dateKey != lastDate) {
         widgets.add(_dateSeparator(dateKey, createdAt, l10n));
@@ -1051,7 +1006,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
 
       Widget bubble;
       if (type == 'meeting' && metadata != null) {
-        bubble = _buildMeetingBubble(metadata, m);
+        bubble = chatMeetingBubble(metadata, m);
       } else if (hasContract) {
         bubble = _contractBubble(m, contract, isClient);
       } else {
@@ -1069,7 +1024,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             children: [
               if (!isClient) ...[
                 if (!isConsecutive)
-                  _buildSenderAvatar(m)
+                  chatSenderAvatar(_api, m)
                 else
                   SizedBox(width: 28),
                 const SizedBox(width: 6),
@@ -1082,7 +1037,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               ),
               if (isClient && !isConsecutive) ...[
                 const SizedBox(width: 6),
-                _buildSenderAvatar(m),
+                chatSenderAvatar(_api, m),
               ],
               if (isClient && isConsecutive) const SizedBox(width: 28),
             ],
@@ -1093,50 +1048,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     return widgets;
   }
 
-  Widget _buildSenderAvatar(Map<String, dynamic> m) {
-    final sender = m['sender'] as Map<String, dynamic>?;
-    final name = sender?['name'] as String? ?? '?';
-    final avatarUrl = sender?['avatar_url'] as String?;
-    final senderType = m['sender_type'] as String?;
-    final isSubUser = senderType == 'App\\Models\\SubUser';
-    final isClient = senderType == 'App\\Models\\Client';
-    final bgColor = isSubUser ? ShadColors.subUserBubble : isClient ? ShadColors.primary : ShadColors.managerBubble;
-    final textColor = isSubUser ? ShadColors.subUserNameColor : isClient ? ShadColors.gold : ShadColors.managerNameColor;
-
-    return CircleAvatar(
-      radius: 14,
-      backgroundColor: bgColor,
-      backgroundImage: avatarUrl != null ? NetworkImage(_api.resolveFileUrl(avatarUrl)) : null,
-      child: avatarUrl == null
-          ? Text(_initials(name), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: textColor))
-          : null,
-    );
-  }
-
-  Widget _buildMeetingBubble(Map<String, dynamic> metadata, Map<String, dynamic> m) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        MeetingChip(metadata: metadata),
-        if (m['created_at'] != null)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(top: 3, start: 2),
-            child: Text(_formatTime(m['created_at'] as String?),
-              style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
-          ),
-      ],
-    );
-  }
-
-  String? _dateKey(String? iso) {
-    if (iso == null) return null;
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      return '${dt.year}-${dt.month}-${dt.day}';
-    } catch (_) {
-      return null;
-    }
-  }
 
   Widget _dateSeparator(String dateKey, String? iso, AppLocalizations l10n) {
     String label;
