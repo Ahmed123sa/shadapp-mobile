@@ -129,8 +129,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         _allManagers = await _childManagerProvider.fetchAllManagersRaw();
         _pendingContracts = await _fetchAllContracts(['sent', 'client_approved']);
         try {
-          final allContractsData = await _api.get('/all-contracts');
-          _allContracts = safeList(allContractsData['contracts']);
+          _allContracts = await _childContractProvider.fetchAllContractsAcrossCompanyRaw();
         } catch (e, s) {
           AppLog.error('am_dashboard._load(allContracts)', e, s);
           _allContracts = [];
@@ -154,8 +153,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
           _pendingPayments = [];
         }
         try {
-          final allContractsData = await _api.get('/all-contracts');
-          _allContracts = safeList(allContractsData['contracts']);
+          _allContracts = await _childContractProvider.fetchAllContractsAcrossCompanyRaw();
         } catch (e, s) {
           AppLog.error('am_dashboard._load(allContracts)', e, s);
           _allContracts = [];
