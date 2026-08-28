@@ -41,6 +41,7 @@ class ChatTab extends StatefulWidget {
   final ApiClient? api;
   final ChatProvider? chatProvider;
   final ContractProvider? contractProvider;
+  final MeetingProvider? meetingProvider;
   const ChatTab({
     super.key,
     this.workspaceId,
@@ -50,6 +51,7 @@ class ChatTab extends StatefulWidget {
     this.api,
     this.chatProvider,
     this.contractProvider,
+    this.meetingProvider,
   });
 
   @override
@@ -60,6 +62,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -329,9 +332,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId/meetings');
+      final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
       if (!mounted) return;
-      final meetings = safeList(data['meetings']);
       String? zoomLink;
       String? scheduledAt;
       for (final m in meetings.reversed) {
