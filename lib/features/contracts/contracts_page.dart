@@ -10,6 +10,9 @@ import '../../core/theme.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../data/file_repository.dart';
+import '../../providers/contract_provider.dart';
+import '../../providers/file_provider.dart';
 
 class ContractsPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
@@ -18,9 +21,13 @@ class ContractsPage extends StatefulWidget {
   // inside client_dashboard_screen.dart's IndexedStack, which mounts every
   // tab eagerly) with a mocked ApiClient instead of hitting the network.
   // Defaults to the real singleton — zero behavior change for every existing
-  // call site. This screen's own domain migration remains deferred (Path B).
+  // call site.
   final ApiClient? api;
-  const ContractsPage({super.key, this.onGoToPayments, this.refreshNotifier, this.api});
+  final ContractProvider? contractProvider;
+  // Threaded through to the embedded _ContractDetailModal, which has its own
+  // file-upload domain.
+  final FileProvider? fileProvider;
+  const ContractsPage({super.key, this.onGoToPayments, this.refreshNotifier, this.api, this.contractProvider, this.fileProvider});
 
 
   @override
@@ -29,6 +36,8 @@ class ContractsPage extends StatefulWidget {
 
 class _ContractsPageState extends State<ContractsPage> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider(repository: FileRepository(api: _api));
   List<dynamic> _contracts = [];
   String? _clientType;
   bool _loading = true;
@@ -50,12 +59,15 @@ class _ContractsPageState extends State<ContractsPage> {
     if (wsId == null) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final results = await Future.wait<Map<String, dynamic>>([
-        _api.get('/workspaces/$wsId/contracts'),
-        _api.get('/workspaces/$wsId').catchError((_) => <String, dynamic>{}),
-      ]);
-      _contracts = safeList(results[0]['contracts']);
-      _clientType = results[1]['client']?['client_type'] as String?;
+      // Two requests dispatched together (not sequentially) — matches the
+      // original Future.wait's concurrency. Awaited separately rather than
+      // via Future.wait itself because the provider methods now return
+      // differently-typed futures (List vs Map), unlike the raw
+      // _api.get(...) calls, which both returned the same envelope shape.
+      final contractsFuture = _contractProvider.fetchWorkspaceContractsRaw(wsId);
+      final workspaceFuture = _contractProvider.fetchWorkspaceRaw(wsId).catchError((_) => <String, dynamic>{});
+      _contracts = await contractsFuture;
+      _clientType = (await workspaceFuture)['client']?['client_type'] as String?;
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -99,10 +111,7 @@ class _ContractsPageState extends State<ContractsPage> {
     }
 
     try {
-      await _api.post('/contracts/$contractId/client-action', {
-        'action': action,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      });
+      await _contractProvider.clientAction(contractId, action, reason: reason);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.contractActionDone(action))])));
         _load();
@@ -317,7 +326,7 @@ class _ContractsPageState extends State<ContractsPage> {
     );
   }
 
-  void _showDetailModal(dynamic c) { showModalBottomSheet(context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (_) => _ContractDetailModal(contract: c, clientType: _clientType, onAction: _clientAction, onRefresh: _load, onGoToPayments: widget.onGoToPayments)); }
+  void _showDetailModal(dynamic c) { showModalBottomSheet(context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (_) => _ContractDetailModal(contract: c, clientType: _clientType, onAction: _clientAction, onRefresh: _load, onGoToPayments: widget.onGoToPayments, api: _api, fileProvider: _fileProvider)); }
 }
 
 class _ContractDetailModal extends StatefulWidget {
@@ -325,12 +334,16 @@ class _ContractDetailModal extends StatefulWidget {
   final String? clientType;
   final Future<void> Function(int, String) onAction;
   final VoidCallback onRefresh;   final VoidCallback? onGoToPayments;
+  final ApiClient? api;
+  final FileProvider? fileProvider;
 
   const _ContractDetailModal({
     required this.contract,
     this.clientType,
     required this.onAction,
     required this.onRefresh,     required this.onGoToPayments,
+    this.api,
+    this.fileProvider,
   });
 
   @override
@@ -338,7 +351,8 @@ class _ContractDetailModal extends StatefulWidget {
 }
 
 class _ContractDetailModalState extends State<_ContractDetailModal> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider(repository: FileRepository(api: _api));
   bool _uploading = false;
   List<dynamic> _uploadedFiles = [];
   bool _loadingFiles = false;
@@ -354,7 +368,7 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
     if (wsId == null) return;
     setState(() => _loadingFiles = true);
     try {
-      final data = await _api.get('/workspaces/$wsId/files');
+      final data = await _fileProvider.fetchWorkspaceFiles(wsId);
       final allFiles = safeList(data['files']);
       final contractId = widget.contract['id'];
       _uploadedFiles = allFiles.where((f) => f['contract_id'] == contractId).toList();
@@ -380,9 +394,9 @@ class _ContractDetailModalState extends State<_ContractDetailModal> {
       final fields = <String, dynamic>{'contract_id': contractId};
       if (definitionId != null) fields['contract_required_document_id'] = definitionId;
       if (kIsWeb) {
-        await _api.multipartPost('/workspaces/$wsId/files', fields, bytes: pf.bytes, filename: pf.name);
+        await _fileProvider.uploadFile(wsId, fields, bytes: pf.bytes, filename: pf.name);
       } else {
-        await _api.multipartPost('/workspaces/$wsId/files', fields, file: File(pf.path!));
+        await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
