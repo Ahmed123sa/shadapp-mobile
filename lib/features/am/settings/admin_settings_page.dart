@@ -5,6 +5,12 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
+import '../../../data/signature_repository.dart';
+import '../../../data/system_settings_repository.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/signature_provider.dart';
+import '../../../providers/system_settings_provider.dart';
 import '../../signature/render_signature.dart';
 
 class AdminSettingsPage extends StatefulWidget {
@@ -14,7 +20,11 @@ class AdminSettingsPage extends StatefulWidget {
   // instead of hitting the network. Defaults to the real singleton — zero
   // behavior change for every existing call site.
   final ApiClient? api;
-  const AdminSettingsPage({super.key, this.api});
+  final AuthProvider? authProvider;
+  final ContractProvider? contractProvider;
+  final SignatureProvider? signatureProvider;
+  final SystemSettingsProvider? systemSettingsProvider;
+  const AdminSettingsPage({super.key, this.api, this.authProvider, this.contractProvider, this.signatureProvider, this.systemSettingsProvider});
 
   @override
   State<AdminSettingsPage> createState() => _AdminSettingsPageState();
@@ -22,6 +32,10 @@ class AdminSettingsPage extends StatefulWidget {
 
 class _AdminSettingsPageState extends State<AdminSettingsPage> {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final AuthProvider _authProvider = widget.authProvider ?? AuthProvider(api: _api);
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  late final SignatureProvider _signatureProvider = widget.signatureProvider ?? SignatureProvider(repository: SignatureRepository(api: _api));
+  late final SystemSettingsProvider _systemSettingsProvider = widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _sigTextController = TextEditingController();
@@ -57,7 +71,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
   Future<void> _load() async {
     try {
-      final data = await _api.get('/auth/me');
+      final data = await _authProvider.fetchCurrentUser();
       final user = data['user'] as Map<String, dynamic>? ?? {};
       _emailController.text = (user['official_email'] as String? ?? '');
       _nameController.text = (user['name'] as String? ?? '');
@@ -76,7 +90,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     }
     if (_api.role == 'super_admin') {
       try {
-        final settingsData = await _api.get('/settings');
+        final settingsData = await _systemSettingsProvider.fetchSettings();
         final settings = settingsData['settings'] as Map<String, dynamic>? ?? {};
         _taxController.text = (settings['corporate_tax_percentage']?['value'] ?? '15').toString();
       } catch (e, s) {
@@ -90,7 +104,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   Future<void> _loadClauses() async {
     if (mounted) setState(() => _clausesLoading = true);
     try {
-      final data = await _api.get('/contract-clause-templates?all=1');
+      final data = await _contractProvider.fetchAllClauseTemplates();
       final list = (data['templates'] as List<dynamic>? ?? []);
       if (mounted) setState(() => _clauses = list.whereType<Map<String, dynamic>>().toList());
     } catch (_) {
@@ -198,10 +212,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     setState(() => _clauseSaving = true);
     try {
       if (existing == null) {
-        await _api.post('/contract-clause-templates', body);
+        await _contractProvider.createClauseTemplate(body);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseAdded)));
       } else {
-        await _api.put('/contract-clause-templates/${existing['id']}', body);
+        await _contractProvider.updateClauseTemplate(existing['id'] as int, body);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseUpdated)));
       }
       await _loadClauses();
@@ -231,7 +245,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     );
     if (ok != true) return;
     try {
-      await _api.delete('/contract-clause-templates/${clause['id']}');
+      await _contractProvider.deleteClauseTemplate(clause['id'] as int);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseDeleted)));
       await _loadClauses();
     } catch (e) {
@@ -241,7 +255,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
   Future<void> _toggleClause(Map<String, dynamic> clause) async {
     try {
-      await _api.put('/contract-clause-templates/${clause['id']}', {
+      await _contractProvider.updateClauseTemplate(clause['id'] as int, {
         'is_active': !((clause['is_active'] as bool?) ?? true),
       });
       await _loadClauses();
@@ -263,7 +277,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     final l10n = AppLocalizations.of(context)!;
     try {
       final ids = _clauses.map((c) => c['id']).toList();
-      await _api.post('/contract-clause-templates/reorder', {'ids': ids});
+      await _contractProvider.reorderClauseTemplates(ids);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseOrderSaved)));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
@@ -293,7 +307,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final isAM = _api.role == 'account_manager';
       final body = <String, dynamic>{'name': _nameController.text.trim()};
       if (!isAM) body['official_email'] = _emailController.text.trim();
-      await _api.put('/auth/me', body);
+      await _authProvider.updateProfileRaw(body);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsSaved)])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')));
@@ -309,7 +323,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     }
     setState(() => _taxSaving = true);
     try {
-      await _api.put('/settings', {'key': 'corporate_tax_percentage', 'value': value});
+      await _systemSettingsProvider.updateSetting('corporate_tax_percentage', value);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsTaxSaved)])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsTaxSaveFailed}: $e')));
@@ -322,7 +336,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     if (result == null || result.files.single.bytes == null) return;
     try {
       final f = result.files.single;
-      final response = await _api.multipartPost('/auth/me', {}, bytes: f.bytes, filename: f.name, fileField: 'avatar');
+      final response = await _authProvider.uploadAvatarBytes(bytes: f.bytes, filename: f.name);
       final user = response['user'] as Map<String, dynamic>?;
       if (user != null) _avatarUrl = user['avatar_url'] as String?;
       if (mounted) setState(() {});
@@ -346,11 +360,11 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         final dir = Directory.systemTemp;
         final file = File('${dir.path}/sig_${DateTime.now().millisecondsSinceEpoch}.png');
         await file.writeAsBytes(pngBytes);
-        await _api.multipartPost('/auth/sign', {}, file: file, fileField: 'signature_image');
+        await _signatureProvider.uploadSelfSignatureImage(file);
       } else if (_sigMode == 'text') {
         final text = _sigTextController.text.trim();
         if (text.isEmpty) return;
-        await _api.post('/auth/sign', {'signature': text});
+        await _signatureProvider.saveSelfSignatureText(text);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
@@ -366,7 +380,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
   Future<void> _deleteSignature() async {
     try {
-      await _api.delete('/auth/sign');
+      await _signatureProvider.deleteSelfSignature();
       await _load();
       if (mounted)       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureDeleted)])));
     } catch (e) {
@@ -379,7 +393,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     if (result == null || result.files.single.path == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/auth/sign', {}, file: file, fileField: 'signature_image');
+      await _signatureProvider.uploadSelfSignatureImage(file);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
         _load();

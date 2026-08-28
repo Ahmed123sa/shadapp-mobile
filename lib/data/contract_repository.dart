@@ -94,6 +94,21 @@ class ContractRepository {
 
   Future<Map<String, dynamic>> fetchClauseTemplates() => _api.get('/contract-clause-templates');
 
+  /// `?all=1` includes inactive templates too — used by
+  /// am/settings/admin_settings_page.dart's management UI, as opposed to
+  /// [fetchClauseTemplates] (active-only, used when building a contract).
+  Future<Map<String, dynamic>> fetchAllClauseTemplates() => _api.get('/contract-clause-templates?all=1');
+
+  Future<void> createClauseTemplate(Map<String, dynamic> body) => _api.post('/contract-clause-templates', body);
+
+  Future<void> updateClauseTemplate(int id, Map<String, dynamic> body) =>
+      _api.put('/contract-clause-templates/$id', body);
+
+  Future<void> deleteClauseTemplate(int id) => _api.delete('/contract-clause-templates/$id');
+
+  Future<void> reorderClauseTemplates(List<dynamic> ids) =>
+      _api.post('/contract-clause-templates/reorder', {'ids': ids});
+
   /// Returns the raw response — the caller (contract_builder.dart) reads
   /// back `res['contract']['id']` to immediately send the newly created
   /// contract.

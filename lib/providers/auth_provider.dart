@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/app_log.dart';
@@ -145,6 +146,19 @@ class AuthProvider extends ChangeNotifier {
       _api.multipartPost('/auth/me', {}, file: file, fileField: 'avatar');
 
   Future<Map<String, dynamic>> updateProfile({required String name}) => _api.put('/auth/me', {'name': name});
+
+  /// Raw PUT /auth/me — used when the caller needs to send more than just
+  /// `name` (e.g. am/settings/admin_settings_page.dart also sends
+  /// `official_email` for non-account-manager roles). [updateProfile] above
+  /// is left untouched since profile_page.dart already relies on its
+  /// narrower signature.
+  Future<Map<String, dynamic>> updateProfileRaw(Map<String, dynamic> body) => _api.put('/auth/me', body);
+
+  /// Uploads a new avatar from in-memory bytes (e.g. web, or a FilePicker
+  /// result that only has `.bytes`) — see [uploadAvatar] for the File-based
+  /// variant profile_page.dart uses.
+  Future<Map<String, dynamic>> uploadAvatarBytes({Uint8List? bytes, String? filename}) =>
+      _api.multipartPost('/auth/me', {}, bytes: bytes, filename: filename, fileField: 'avatar');
 
   /// Staff-side password reset request — forgot_password_page.dart calls
   /// this and [requestClientPasswordReset] together, since it has no way to

@@ -83,6 +83,17 @@ class ContractProvider extends ChangeNotifier {
   /// am/widgets/contract_builder.dart to prefill fixed/optional clauses.
   Future<Map<String, dynamic>> fetchClauseTemplates() => _repo.fetchClauseTemplates();
 
+  /// See [ContractRepository.fetchAllClauseTemplates].
+  Future<Map<String, dynamic>> fetchAllClauseTemplates() => _repo.fetchAllClauseTemplates();
+
+  Future<void> createClauseTemplate(Map<String, dynamic> body) => _repo.createClauseTemplate(body);
+
+  Future<void> updateClauseTemplate(int id, Map<String, dynamic> body) => _repo.updateClauseTemplate(id, body);
+
+  Future<void> deleteClauseTemplate(int id) => _repo.deleteClauseTemplate(id);
+
+  Future<void> reorderClauseTemplates(List<dynamic> ids) => _repo.reorderClauseTemplates(ids);
+
   /// Creates a new contract on a workspace — see [ContractRepository.create].
   /// Returns the raw response; the caller reads back the new contract's id.
   Future<Map<String, dynamic>> create(int workspaceId, Map<String, dynamic> payload) =>

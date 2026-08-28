@@ -19,4 +19,15 @@ class SignatureRepository {
       _api.multipartPost('/clients/$clientId/sign', {}, file: file, fileField: 'signature_image');
 
   Future<void> saveText(int clientId, String text) => _api.post('/clients/$clientId/sign', {'signature': text});
+
+  /// Self-signature endpoints for the signed-in staff user (account manager
+  /// / super admin) — distinct from the client-signature endpoints above:
+  /// `/auth/sign` has no id in the path, scoped to whoever the auth token
+  /// belongs to. Used by am/settings/admin_settings_page.dart.
+  Future<void> deleteSelfSignature() => _api.delete('/auth/sign');
+
+  Future<void> uploadSelfSignatureImage(File file) =>
+      _api.multipartPost('/auth/sign', {}, file: file, fileField: 'signature_image');
+
+  Future<void> saveSelfSignatureText(String text) => _api.post('/auth/sign', {'signature': text});
 }
