@@ -212,7 +212,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     final ws = client['workspace'] as Map<String, dynamic>?;
     if (ws == null) {
       try {
-        final created = await _api.post('/workspaces', {'client_id': client['id']});
+        final created = await _childClientProvider.createWorkspaceForClient(client['id'] as int);
         final newWs = created['workspace'] as Map<String, dynamic>;
         await _api.setUserData(workspace: newWs['id']);
         if (!mounted) return;
