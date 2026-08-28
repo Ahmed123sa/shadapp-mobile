@@ -28,15 +28,21 @@ class ChatPage extends StatefulWidget {
   // which falls back to the real singleton — zero behavior change for every
   // existing call site.
   final ReverbService? reverb;
+  // Testability seam (state-layer migration plan) — optional so every
+  // existing call site keeps compiling unchanged. Defaults fall back to the
+  // real ApiClient instance. Provider params are added one at a time, in the
+  // same commit as the domain that starts actually using them — adding them
+  // any earlier would leave an unused field and fail `flutter analyze`.
+  final ApiClient? api;
 
-  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
