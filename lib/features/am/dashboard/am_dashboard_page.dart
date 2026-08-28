@@ -647,7 +647,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   void _showManagerClients(Map<String, dynamic> manager) async {
     final managerId = int.tryParse(manager['id']?.toString() ?? '') ?? 0;
     try {
-      final data = await _api.get('/account-managers/$managerId');
+      final data = await _childManagerProvider.fetchManagerRaw(managerId);
       final clients = data['clients'] as List<dynamic>? ?? [];
       if (!mounted) return;
       showModalBottomSheet(
