@@ -50,6 +50,13 @@ class ContractProvider extends ChangeNotifier {
   /// a fatal error.
   Future<List<dynamic>> fetchWorkspaceContractsRaw(int workspaceId) => _repo.fetchForWorkspace(workspaceId);
 
+  /// Client-side approve/reject/edit-request decision on a contract — see
+  /// [ContractRepository.clientAction]. chat_page.dart's inline "Approve"
+  /// button on a contract-card message uses this without touching
+  /// [_contracts]/[_isLoading].
+  Future<void> clientAction(int contractId, String action, {String? reason}) =>
+      _repo.clientAction(contractId, action, reason: reason);
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;

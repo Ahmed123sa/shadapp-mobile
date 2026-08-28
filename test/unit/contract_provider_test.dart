@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/providers/contract_provider.dart';
@@ -90,6 +92,32 @@ void main() {
     expect(provider.contracts, isEmpty);
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
         headers: any(named: 'headers'))).called(1);
+  });
+
+  test('clientAction posts the action to /contracts/:id/client-action', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.clientAction(9, 'approved');
+
+    expect(sentBody, {'action': 'approved'});
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/contracts/9/client-action'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  test('clientAction includes reason only when provided', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await provider.clientAction(9, 'edit_requested', reason: 'please fix the date');
+
+    expect(sentBody, {'action': 'edit_requested', 'reason': 'please fix the date'});
   });
 
   test('records the error on failure without throwing', () async {
