@@ -20,8 +20,10 @@ import 'package:shadapp_client/core/reverb_service.dart';
 import 'package:shadapp_client/data/chat_repository.dart';
 import 'package:shadapp_client/features/chat/chat_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:shadapp_client/data/meeting_repository.dart';
 import 'package:shadapp_client/providers/chat_provider.dart';
 import 'package:shadapp_client/providers/contract_provider.dart';
+import 'package:shadapp_client/providers/meeting_provider.dart';
 import '../helpers/mock_http_client.dart';
 
 void main() {
@@ -93,6 +95,7 @@ void main() {
           api: api,
           chatProvider: ChatProvider(repository: ChatRepository(api: api)),
           contractProvider: ContractProvider(api: api),
+          meetingProvider: MeetingProvider(repository: MeetingRepository(api: api)),
           reverb: ReverbService.forTesting(),
           enablePolling: false,
         ),

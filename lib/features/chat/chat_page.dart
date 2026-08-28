@@ -16,6 +16,7 @@ import '../../core/helpers/meeting_helpers.dart';
 import '../../core/helpers/realtime_poller.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/contract_provider.dart';
+import '../../providers/meeting_provider.dart';
 
 class ChatPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
@@ -38,8 +39,9 @@ class ChatPage extends StatefulWidget {
   final ApiClient? api;
   final ChatProvider? chatProvider;
   final ContractProvider? contractProvider;
+  final MeetingProvider? meetingProvider;
 
-  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider, this.contractProvider});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider, this.contractProvider, this.meetingProvider});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -49,6 +51,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -334,9 +337,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _openLatestZoomLink() async {
     try {
-      final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/meetings');
+      final meetings = await _meetingProvider.fetchForWorkspaceRaw(_api.workspaceIdSafe);
       if (!mounted) return;
-      final meetings = safeList(data['meetings']);
       String? zoomLink;
       String? scheduledAt;
       for (final m in meetings.reversed) {
