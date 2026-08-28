@@ -14,6 +14,7 @@ import '../../core/widgets/payment_detail_sheet.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/helpers/meeting_helpers.dart';
 import '../../core/helpers/realtime_poller.dart';
+import '../../providers/chat_provider.dart';
 
 class ChatPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
@@ -34,8 +35,9 @@ class ChatPage extends StatefulWidget {
   // same commit as the domain that starts actually using them — adding them
   // any earlier would leave an unused field and fail `flutter analyze`.
   final ApiClient? api;
+  final ChatProvider? chatProvider;
 
-  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -43,6 +45,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
+  late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -147,7 +150,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _checkWorkspace() async {
     try {
-      final data = await _api.get('/workspaces/${_api.workspaceIdSafe}');
+      final data = await _chatProvider.fetchWorkspace(_api.workspaceIdSafe);
       final ws = data['workspace'] as Map<String, dynamic>?;
       final nm = data['nextMeeting'] as Map<String, dynamic>?;
       final np = data['nextPayment'] as Map<String, dynamic>?;
@@ -166,8 +169,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _load() async {
     try {
-      final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/chat');
-      _messages = safeList(data['messages']);
+      _messages = await _chatProvider.fetchMessages(_api.workspaceIdSafe);
     } catch (e) {
       debugPrint('[chat_page] _load error: $e');
     }
@@ -179,7 +181,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _markRead() async {
     try {
-      await _api.post('/workspaces/${_api.workspaceIdSafe}/chat/mark-read', {});
+      await _chatProvider.markRead(_api.workspaceIdSafe);
     } catch (e, s) {
       // Cosmetic only — the unread badge stays until the next successful
       // mark-read. Not worth interrupting the user for.

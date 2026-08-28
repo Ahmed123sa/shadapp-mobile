@@ -17,8 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/core/reverb_service.dart';
+import 'package:shadapp_client/data/chat_repository.dart';
 import 'package:shadapp_client/features/chat/chat_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:shadapp_client/providers/chat_provider.dart';
 import '../helpers/mock_http_client.dart';
 
 void main() {
@@ -88,6 +90,7 @@ void main() {
       home: Scaffold(
         body: ChatPage(
           api: api,
+          chatProvider: ChatProvider(repository: ChatRepository(api: api)),
           reverb: ReverbService.forTesting(),
           enablePolling: false,
         ),
