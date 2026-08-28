@@ -62,6 +62,12 @@ class PaymentProvider extends ChangeNotifier {
   /// [PaymentRepository.fetchAllPendingRaw].
   Future<List<dynamic>> fetchAllPendingRaw() => _repo.fetchAllPendingRaw();
 
+  /// Single page of the cross-workspace pending-payments queue — see
+  /// [PaymentRepository.fetchPending]. am_dashboard_page.dart only ever reads
+  /// page 1 (unlike [fetchAllPendingRaw], which loops every page), so this is
+  /// a distinct, narrower pass-through that matches its original inline call.
+  Future<Map<String, dynamic>> fetchPendingRaw({int page = 1}) => _repo.fetchPending(page: page);
+
   /// Creates a new payment request — see [PaymentRepository.create].
   /// payments_page.dart owns its own sheet/loading state, so this
   /// pass-through doesn't touch [_payments].

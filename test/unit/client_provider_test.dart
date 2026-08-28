@@ -113,6 +113,21 @@ void main() {
     expect(sentBody, {'latitude': 24.7, 'longitude': 46.6, 'address': 'Riyadh'});
   });
 
+  test('createWorkspaceForClient posts client_id to /workspaces', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{"workspace":{"id":77}}');
+    });
+
+    final res = await provider.createWorkspaceForClient(9);
+
+    expect(sentBody, {'client_id': 9});
+    expect(res['workspace']['id'], 77);
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
   test('deleteClient removes the client from the in-memory list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),

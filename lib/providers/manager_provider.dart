@@ -30,6 +30,10 @@ class ManagerProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>> createManager(Map<String, dynamic> body) => _repo.create(body);
 
+  /// Raw manager list — see [ManagerRepository.fetchAllRaw]. Doesn't touch
+  /// [_managers]; am_dashboard_page.dart owns its own loading/error state.
+  Future<List<dynamic>> fetchAllManagersRaw() => _repo.fetchAllRaw();
+
   /// Raw envelope (including sibling `clients` list) — see
   /// [ManagerRepository.fetchOneRaw].
   Future<Map<String, dynamic>> fetchManagerRaw(int id) => _repo.fetchOneRaw(id);

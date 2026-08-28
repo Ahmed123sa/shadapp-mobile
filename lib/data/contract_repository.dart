@@ -27,6 +27,13 @@ class ContractRepository {
     return safeList(res['contracts']);
   }
 
+  /// `/all-contracts` — a distinct, company-wide endpoint used only by
+  /// am_dashboard_page.dart's stats (not the same as [fetchAll]'s `/contracts`).
+  Future<List<dynamic>> fetchAllAcrossCompany() async {
+    final res = await _api.get('/all-contracts');
+    return safeList(res['contracts']);
+  }
+
   /// Loops through every page of a single workspace's contracts, combining
   /// results into one flat raw list — used by sa_approvals_page.dart while
   /// building its cross-workspace approvals queue. Matches the original

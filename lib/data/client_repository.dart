@@ -90,4 +90,9 @@ class ClientRepository {
 
   Future<void> uploadAvatar(int clientId, File file) =>
       _api.multipartPost('/clients/$clientId/profile', {}, file: file, fileField: 'avatar');
+
+  /// Creates a workspace for a client that doesn't have one yet — matches
+  /// am_dashboard_page.dart's `_openClient`, which lazily provisions a
+  /// workspace the first time an AM/SA opens a client with none.
+  Future<Map<String, dynamic>> createWorkspace(int clientId) => _api.post('/workspaces', {'client_id': clientId});
 }

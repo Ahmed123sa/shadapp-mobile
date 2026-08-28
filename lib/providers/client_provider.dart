@@ -59,6 +59,11 @@ class ClientProvider extends ChangeNotifier {
   Future<void> updateClientLocation(int clientId, {required double latitude, required double longitude, String? address}) =>
       _repo.updateLocation(clientId, latitude: latitude, longitude: longitude, address: address);
 
+  /// Creates a workspace for a client that doesn't have one yet — see
+  /// [ClientRepository.createWorkspace]. Doesn't touch [_clients]; the
+  /// caller navigates straight to the new workspace.
+  Future<Map<String, dynamic>> createWorkspaceForClient(int clientId) => _repo.createWorkspace(clientId);
+
   Future<void> deleteClient(int id) async {
     await _repo.delete(id);
     _clients = _clients.where((c) => c.id != id).toList();

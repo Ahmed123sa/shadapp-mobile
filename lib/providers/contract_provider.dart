@@ -57,6 +57,11 @@ class ContractProvider extends ChangeNotifier {
   Future<void> clientAction(int contractId, String action, {String? reason}) =>
       _repo.clientAction(contractId, action, reason: reason);
 
+  /// `/all-contracts` — see [ContractRepository.fetchAllAcrossCompany].
+  /// am_dashboard_page.dart owns its own loading/error state, so this
+  /// pass-through doesn't touch [_contracts]/[_isLoading].
+  Future<List<dynamic>> fetchAllContractsAcrossCompanyRaw() => _repo.fetchAllAcrossCompany();
+
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;

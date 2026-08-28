@@ -55,6 +55,18 @@ void main() {
     expect(all, hasLength(2));
   });
 
+  test('fetchPendingRaw fetches a single page (page 1 by default), unlike fetchAllPendingRaw', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"payments":{"data":[{"id":1}],"last_page":2}}'),
+    );
+
+    final data = await provider.fetchPendingRaw();
+
+    expect(data['payments']['data'], hasLength(1));
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.contains('/payments/pending'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('createPayment posts a plain JSON body to /workspaces/:id/payments when there are no files', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {

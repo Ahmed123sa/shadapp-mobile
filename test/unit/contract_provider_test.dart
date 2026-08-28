@@ -120,6 +120,19 @@ void main() {
     expect(sentBody, {'action': 'edit_requested', 'reason': 'please fix the date'});
   });
 
+  test('fetchAllContractsAcrossCompanyRaw hits /all-contracts without touching provider state', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"contracts":[{"id":1},{"id":2}]}'),
+    );
+
+    final contracts = await provider.fetchAllContractsAcrossCompanyRaw();
+
+    expect(contracts, hasLength(2));
+    expect(provider.contracts, isEmpty);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/all-contracts'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('records the error on failure without throwing', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"message":"nope"}', 500),

@@ -11,6 +11,14 @@ class ManagerRepository {
     return safeList(res['managers']).map((j) => Manager.fromJson(j as Map<String, dynamic>)).toList();
   }
 
+  /// Raw manager list (not typed [Manager]s) — am_dashboard_page.dart's SA
+  /// branch reads fields like `managed_clients_count` directly off the
+  /// dynamic map, same reasoning as ClientRepository's `...Raw` methods.
+  Future<List<dynamic>> fetchAllRaw() async {
+    final res = await _api.get('/account-managers');
+    return safeList(res['managers']);
+  }
+
   Future<Manager> fetchOne(int id) async {
     final res = await _api.get('/account-managers/$id');
     final data = res['manager'] as Map<String, dynamic>? ?? res;

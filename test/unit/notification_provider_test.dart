@@ -54,6 +54,18 @@ void main() {
     expect(provider.unreadCount, 1); // untouched by the failed fetch
   });
 
+  test('fetchRaw returns the raw envelope without touching notifications/unreadCount', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"notifications":[{"id":1,"read_at":null}],"unread_count":"4"}'),
+    );
+
+    final data = await provider.fetchRaw();
+
+    expect(data['unread_count'], '4');
+    expect(provider.notifications, isEmpty);
+    expect(provider.unreadCount, 0);
+  });
+
   test('incrementUnread / resetUnread update the counter directly', () {
     provider.incrementUnread();
     provider.incrementUnread();

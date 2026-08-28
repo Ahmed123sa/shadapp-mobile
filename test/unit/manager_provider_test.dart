@@ -60,6 +60,18 @@ void main() {
     expect(stats['clients_count'], 2);
   });
 
+  test('fetchAllManagersRaw returns the raw manager list without touching managers', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"managers":[{"id":1,"managed_clients_count":3}]}'),
+    );
+
+    final raw = await provider.fetchAllManagersRaw();
+
+    expect(raw, hasLength(1));
+    expect(raw.first['managed_clients_count'], 3);
+    expect(provider.managers, isEmpty);
+  });
+
   test('deleteManager removes the manager from the in-memory list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"managers":[{"id":1,"name":"Ahmed"},{"id":2,"name":"Sara"}]}'),

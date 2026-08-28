@@ -51,6 +51,11 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Raw envelope — see [NotificationRepository.fetchRaw]. Doesn't touch
+  /// [_notifications]/[_unreadCount]; the dashboard screens only need the
+  /// top-level `unread_count` for their badge.
+  Future<Map<String, dynamic>> fetchRaw() => _repo.fetchRaw();
+
   // These three deliberately don't refetch internally — the original inline
   // code in notifications_page.dart always called its own _load() right
   // after each of these, so refreshing here too would double the GET call.

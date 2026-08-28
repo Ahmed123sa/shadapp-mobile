@@ -27,6 +27,11 @@ class NotificationRepository {
     return NotificationListResult(notifications, unreadCount);
   }
 
+  /// Raw `/notifications` envelope — the dashboard screens' badge only needs
+  /// the top-level `unread_count` field, not a fully parsed notification
+  /// list, so this skips [AppNotification.fromJson] entirely.
+  Future<Map<String, dynamic>> fetchRaw() => _api.get('/notifications');
+
   Future<void> markRead(String id) => _api.post('/notifications/$id/read');
 
   Future<void> markAllRead() => _api.post('/notifications/read-all');
