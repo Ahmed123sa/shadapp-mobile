@@ -1,6 +1,10 @@
 # خطة بناء طبقة الحالة (State Layer) — تطبيق الموبايل
 
-> **آخر تحديث:** أغسطس ٢٠٢٦ — **الخطة خلصت بالكامل.** كل المسارات (A · الخطوة صفر · B · C · D) وكل الشاشات المؤجّلة اتنقلت. `features/` دلوقتي صفر `_api.get|post|put|patch|delete|multipart*` (اتأكد بـ grep على الشجرة كلها). الجزء الأول من الملف ده كان بيوثّق **الوضع وقت آخر تحديث فعلي للأرقام** (أسفل، بالأرقام القديمة قبل الجزء التاني)، والجزء التاني بيوثّق **الخطة اللي اتنفّذت بالكامل دلوقتي**.
+> **آخر تحديث:** أغسطس ٢٠٢٦ — **النقل خلص بالكامل.**
+> كل المسارات (A · الخطوة صفر · B · C · D) وكل الشاشات المؤجّلة اتنقلت.
+> `features/` فيها **صفر** `_api.get|post|put|patch|delete|multipart*` (اتأكد بـ grep على الشجرة كلها).
+>
+> الملف ده دلوقتي بيوثّق تلات حاجات: **(١)** الوضع النهائي بعد النقل، **(٢)** الوصفات والقواعد اللي اتّبعناها ولازم تفضل متّبعة في أي شغل جاي، **(٣)** **خطة المرحلة التالية** — النتايج المستخرجة من مراجعة ما بعد النقل، وهي شغل حقيقي لسه مطلوب.
 
 ---
 
@@ -8,170 +12,138 @@
 
 > في أي لحظة، الكود القديم يفضل شغّال لحد ما البديل الجديد يثبت إنه شغّال. مانمسحش حاجة قبل ما نتأكد.
 
-**القاعدة النهائية**: `features/` مايبقاش فيها ولا `_api.get(...)`. لو موجود، يبقى النقل ما خلصش.
+**المعيار النهائي (اتحقق):** `features/` مايبقاش فيها ولا `_api.get(...)`.
 
-*استثناء واحد مقصود ومتّبع في كل الشاشات المنقولة*: القراءات غير المؤثّرة من `ApiClient` — `resolveFileUrl()`، `workspaceId`، `role`، `userId` — بتفضل استدعاء مباشر. دي مش استدعاءات شبكة، دي قراءة حالة جلسة محليّة، ونقلها لطبقة Repository هيبقى تعقيد بلا فايدة.
+*استثناء واحد مقصود ومتّبع في كل الشاشات*: القراءات غير المؤثّرة من `ApiClient` — `resolveFileUrl()`، `workspaceId`، `role`، `userId` — بتفضل استدعاء مباشر. دي مش استدعاءات شبكة، دي قراءة حالة جلسة محليّة، ونقلها لطبقة Repository هيبقى تعقيد بلا فايدة.
 
 ---
 
-## البنية المستهدفة (اتنفّذت)
+## البنية النهائية (اتنفّذت بالكامل)
 
 ```
 lib/
   models/            ← ٥ موديلات
     client.dart  manager.dart  app_notification.dart  meeting.dart  approval.dart
-  data/              ← ١٥ Repository — كل استدعاءات الـ API مجمّعة حسب المجال
+  data/              ← ١٦ Repository — كل استدعاءات الـ API مجمّعة حسب المجال
     client_  manager_  notification_  file_  approval_  meeting_  contract_
-    payment_  settings_  dashboard_  chat_  sub_user_  signature_
-    audit_log_  report_repository.dart
-  providers/         ← موصّلين فعليًا في main.dart ومستخدمين في الشاشات
-  features/          ← الواجهات: تقرا من Providers
+    payment_  settings_  system_settings_  dashboard_  chat_  sub_user_
+    signature_  audit_log_  report_repository.dart
+  providers/         ← ١٧ Provider
+  features/          ← الواجهات: صفر استدعاء API مباشر
   core/
     api_client.dart  ← زي ما هو، بس مايتنادىش من الواجهات
 ```
 
----
+## الأرقام النهائية
 
-## الوضع الحالي (أرقام محقّقة، مش تقديرية)
-
-| البند | عند بداية الخطة | دلوقتي |
-|---|---|---|
-| استدعاءات `_api.*` مباشرة في `features/` | ~١٨٠ | **٩٩** |
-| ملفات واجهة فيها استدعاء مباشر | ~٤٠ | **١٤** |
-| Repositories | ٠ | **١٥** |
-| Models | ٠ | **٥** |
-| ملفات اختبار widget | ٩ | **٣٦** |
-
-### اللي خلص
-
-كل الشرائح الرأسية الـ ١٢ (٠ Auth لحد ١١ Chat) خلّصت **طبقة البيانات** بتاعتها: Model + Repository + Provider + اختبارات وحدة. يعني أي شاشة متبقية دلوقتي **مش محتاجة سباكة جديدة** في الغالب — محتاجة نقل الشاشة نفسها بس.
-
-الشاشات المنقولة بالكامل (٢٦ شاشة)، آخر عشرة منهم:
-`profile_page` · `forgot_password_page` · `sa_team_page` · `sa_approvals_page` · `client_profile_tab` · `calendar_tab` · `approvals_tab` · `audit_log_page` · `reports_tab` · `meetings_tab`
-
----
-
-## ليه الخطة الباقية مختلفة عن الأولى
-
-الخطة الأصلية كانت مقسّمة **بالمجال** (شريحة Clients، شريحة Contracts…). ده اشتغل كويس لأن أغلب المجالات كان فيها شاشات صغيرة/متوسطة نبدأ بيها.
-
-اللي فضل دلوقتي **مش موزّع بالمجال** — كله شاشات كبيرة صفر تغطية. أصغر واحدة فيهم مربوطة بالـ realtime، وأكبر واحدة ١٢٣٣ سطر. فالتقسيم الجديد **بالعائق** مش بالمجال:
-
-| المسار | العائق | الحل |
-|---|---|---|
-| A — Payments | حجم + صفر تغطية | اختبار توصيفي ثم نقل. **الـ Repository جاهز ١٠٠٪** |
-| B — Contracts | حجم + صفر تغطية + تكرار بين ٤ ملفات | اختبار توصيفي ثم نقل. الـ Repository جاهز |
-| C — Settings/Onboarding | حجم + تعدد مجالات + FCM/lifecycle | اختبار توصيفي + سباكة ناقصة بسيطة |
-| D — Realtime | `ReverbService` متشابك مع `initState` | **refactor تمكيني قبل أي نقل** |
-
----
-
-## جرد ما تبقّى (١٤ ملف · ٩٩ استدعاء)
-
-### المسار A — Payments (١٥ استدعاء · الأرخص)
-
-| الملف | أسطر | استدعاءات | حالة السباكة |
+| البند | بداية الخطة | آخر تحديث وسط الطريق | **دلوقتي** |
 |---|---|---|---|
-| `payments/payments_page.dart` | ٩١٢ | ٨ | `PaymentRepository` مغطّي كل الـ endpoints |
-| `am/workspace/payments_tab.dart` | ٧٣٢ | ٧ | نفس الكلام |
+| استدعاءات `_api.*` مباشرة في `features/` | ~١٨٠ | ٩٩ | **٠** |
+| ملفات واجهة فيها استدعاء مباشر | ~٤٠ | ١٤ | **٠** |
+| Repositories | ٠ | ١٥ | **١٦** |
+| Providers | ٠ | — | **١٧** |
+| Models | ٠ | ٥ | **٥** |
+| ملفات اختبار | ٩ | ٣٦ | **٩٢** |
+| عدد الاختبارات | — | — | **٤٦١** |
+| `flutter analyze` | ٤٩ تحذير | ٠ | **٠** |
 
-الـ `PaymentRepository` اتوسّع في مهمة #139 خصّيصًا عشان الشاشتين دول: `create` · `uploadProof` · `review` · `schedule` · `updateSchedule` · `deleteSchedule` · `requestPayment` — كلهم متغطّيين باختبارات وحدة. **فاضل نقل الشاشتين بس.**
-
-### المسار B — Contracts (٢٢ استدعاء)
-
-| الملف | أسطر | استدعاءات |
-|---|---|---|
-| `contracts/contracts_page.dart` | ٨٥٥ | ٦ |
-| `contracts/contract_detail_modal.dart` | ٦٠١ | ٥ |
-| `am/workspace/contracts_tab.dart` | ٥٣٢ | ٧ |
-| `am/widgets/contract_builder.dart` | ٤١١ | ٤ |
-
-`ContractRepository` مغطّي: `clientAction` · `performAction` · `companyApprove` · `create` · `update` · `send` · `delete` · `fetchClauseTemplates` · `fetchWorkspace`. **الأربع ملفات فيهم تكرار منطق حقيقي** — النقل فرصة لتوحيده، بس **مش في نفس الكوميت**: ننقل الأول، نوحّد بعدين.
-
-### المسار C — Settings / Onboarding (٢١ استدعاء)
-
-| الملف | أسطر | استدعاءات | الخاص فيه |
-|---|---|---|---|
-| `am/settings/admin_settings_page.dart` | ٩٧١ | ١٥ | ٤ مجالات منفصلة في ملف واحد |
-| `onboarding/client_onboarding_screen.dart` | ١٠٤٠ | ٦ | `WidgetsBindingObserver` + اشتراك FCM + auto-advance |
-
-**تقسيم `admin_settings_page.dart` لمجاله الأربعة** (ده اللي بيخلّيها قابلة للتنفيذ):
-
-1. `/auth/me` (قراءة + تعديل + رفع أفاتار) → `AuthProvider` موجود
-2. `/settings` (قراءة + تعديل نسبة الضريبة) → `SettingsProvider` موجود
-3. `/contract-clause-templates` (CRUD + reorder) → **سباكة ناقصة** — محتاجة `ClauseTemplateRepository` جديد
-4. `/auth/sign` (توقيع الـ AM: رفع/نصّي/حذف) → **سباكة ناقصة** — `SignatureRepository` الحالي بيغطّي `/clients/:id/sign` مش `/auth/sign`
-
-### المسار D — Realtime (٤١ استدعاء · محجوب)
-
-| الملف | أسطر | استدعاءات | سبب الحجب |
-|---|---|---|---|
-| `am/workspace/chat_tab.dart` | ١٢٣٣ | ٩ | `ReverbService` في `initState` + polling |
-| `chat/chat_page.dart` | ١٢٣٢ | ١١ | نفس الكلام |
-| `am/dashboard/am_dashboard_page.dart` | ١١٠٨ | ١٤ | `ReverbService` |
-| `dashboard/client_dashboard_screen.dart` | ٥٠٤ | ٥ | `ReverbService` |
-| `am/workspace/am_workspace_page.dart` | ١٧٥ | ١ | **صغيرة**، بس بتضمّ `ChatTab` جوه `IndexedStack` |
-| `dashboard/dashboard_page.dart` | ١١٣ | ١ | **صغيرة**، بس بتضمّ شاشات realtime |
-
-آخر اتنين مهمين: حجمهم تافه واستدعاء واحد لكل واحد، ومع ذلك **مش قابلين للاختبار** لأن أي `pumpWidget` ليهم بيهيّئ `ReverbService` و`FirebaseMessaging` حقيقيين. دول بيتحلّوا مجانًا بمجرد ما الـ refactor التمكيني يخلص.
+كل المسارات الأربعة خلصت: **A** (payments ×٢) · **الخطوة صفر** (refactor الـ realtime: `ReverbService.forTesting` + `enablePolling` + `enableFcm`) · **B** (contracts ×٤) · **C** (`admin_settings_page` · `client_onboarding_screen`) · **D** (chat ×٢ + dashboards ×٤).
 
 ---
 
-## الخطوة صفر: الـ refactor التمكيني للـ realtime
+## المرحلة التالية — نتايج مراجعة ما بعد النقل
 
-**دي أهم خطوة في الخطة الباقية، ومفيش حاجة في المسار D تبدأ قبلها.**
+النقل نجح في هدفه، بس المراجعة اللي بعده كشفت حاجات **النقل نفسه مالوش ذنب فيها** (أغلبها موجود من قبله)، واتنين منهم مش تجميليين. مرتّبين بالأولوية:
 
-المشكلة بالظبط (`chat_tab.dart:52-87`):
+### P0 — لازم قبل أي إصدار
+
+**١. `workspaceIdSafe` بيرجّع workspace رقم ١ لما ميعرفش** — `core/api_client.dart:34`
 
 ```dart
-@override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addObserver(this);
-  _load().then((_) => _markRead());
-  _startPolling();                  // Timer.periodic حقيقي
-  final reverb = ReverbService();   // singleton — بيفتح WebSocket فعلي
-  reverb.onMessageReceived = ...;
-  reverb.connect(wsId);             // اتصال شبكة وقت الاختبار
-}
+int get workspaceIdSafe => workspaceId ?? 1;
 ```
 
-`ReverbService` معمول singleton بنفس نمط `ApiClient` بالظبط:
+مستخدم في **١١ مكان، منهم عمليات كتابة**: إرسال رسالة، رفع ملف، `markRead`
+(`chat_page.dart:190, 217, 250` · `client_dashboard_screen.dart:281` · `meetings_page.dart:43`).
+لو `workspaceId` كان null — تثبيت جديد قبل ما `/clients/:id` يرجع، أو بعد `clearToken`، أو عميل لسه مالوش workspace — التطبيق هيقرا **ويكتب** في مساحة عميل تاني.
 
-```dart
-static final ReverbService _instance = ReverbService._();
-factory ReverbService() => _instance;
-```
+*التخفيف الحالي*: middleware عزل الـ workspace في الباك اند المفروض يرفض بـ 403. بس ده اعتماد كامل على إن الحارس الخلفي صح ١٠٠٪، والافتراض نفسه غلط: "مفيش workspace" اتحوّل لـ "workspace حد تاني" بدل حالة فاضية واضحة، والمستخدم بيشوف خطأ مبهم بدل رسالة مفهومة.
 
-و`ApiClient` عنده بالفعل `ApiClient.forTesting(...)` — **فالحل موجود ومجرّب في نفس الكود بيز**، بس محتاج يتطبّق على `ReverbService`.
+**الحل**: يتشال `workspaceIdSafe` خالص، وكل call site ياخد guard صريح على `workspaceId == null` — نفس النمط الموجود بالظبط في `contract_builder.dart` (بيرجع بدري لو مفيش workspace).
 
-**الحل (٣ كوميتات، مايلمسش أي شاشة):**
+**٢. أربع نسخ من `safeList` بسلوك مختلف**
 
-1. `ReverbService.forTesting({...})` + واجهة تسمح بنسخة صامتة (no-op) — بنفس نمط `ApiClient.forTesting`، وباختبار وحدة يثبت إن النسخة الصامتة مابتفتحش سوكيت.
-2. `_startPolling()` يبقى قابل للتعطيل عبر بارامتر اختياري (`bool enablePolling = true`) — الـ `Timer.periodic` هو تاني أكبر سبب لتعليق `pumpAndSettle` في الاختبار.
-3. كل شاشة realtime تاخد بارامتر اختياري `ReverbService? reverb` — **نفس نمط الـ providers الاختيارية بالظبط**، يعني كل call site موجود بيفضل بيكمبايل من غير أي تعديل.
+| الملف | سلوكه مع `{data: [...]}` |
+|---|---|
+| `core/api_client.dart:361` (النسخة الصح) | بيفكّها ويرجّع الليست |
+| `features/onboarding/client_onboarding_screen.dart:1055` | `[]` |
+| `features/dashboard/client_dashboard_screen.dart:572` | `[]` |
+| `features/am/workspace/payments_tab.dart:741` | `[]` |
 
-بعد الخطوة دي الست شاشات بتاعة المسار D تبقى قابلة للاختبار، وبتتنقل بنفس وصفة أي شاشة تانية.
+التلات ملفات دول **بيعملوا import لـ `api_client.dart`** وبيعرّفوا دالة top-level بنفس الاسم في نفس الملف — ودارت بتختار المحلية من غير أي تحذير من `analyze`. فلو الباك اند عمل pagination لـ `workspace.contracts` أو `workspace.payments` في أي وقت، الشاشات دي هتعرض "مفيش عقود/دفعات" والـ Repositories هتشتغل صح — bug صامت مستني ظرفه.
+
+**الحل**: تتشال التلات نسخ المحلية ويتعمل import للنسخة الوحيدة في `api_client.dart`. لازم يتشغّل اختبار كل شاشة بعد الشيل — التلاتة متغطّيين باختبارات.
+
+### P1 — ديون معمارية
+
+**٣. الـ ١٧ provider في `main.dart` ميّتين** — `main.dart:121-135`
+
+مسجّلين في `MultiProvider` لكن **مفيش ولا `context.read<>`/`watch<>`/`Consumer<>` واحد ليهم** في التطبيق كله (`LocaleProvider` هو الوحيد اللي بيتقرا فعلًا، في ٤ أماكن). الشاشات بتبني نسخها بنفسها عبر `widget.xProvider ?? XProvider()`. النتيجة: نسختين من كل provider في الذاكرة، وحقن تبعية مزدوج ومربك.
+
+**قرار مطلوب** (مش واضح لوحده — يتقرر قبل التنفيذ): يا إما نشيل الـ `MultiProvider` ونعتبر النمط الحالي هو المقصود، يا إما نخلي الشاشات تقرا من الـ tree ونسيب الـ constructor param كـ override للاختبار بس. التاني أنضف بس أكبر.
+
+**٤. الـ Providers `ChangeNotifier` بس محدش بيسمع**
+
+`notifyListeners()` بتتنده، لكن الشاشات بتنسخ الحالة في متغيرات محلية وتعمل `setState`
+(`approvals_page.dart:51` · `sa_team_page.dart:54` · `reports_tab.dart:92` · `calendar_tab.dart:59`…).
+يعني الطبقة نُصّها متحققة: مكسب الاختبارية والتنظيم موجود، ومكسب الـ reactive state لأ. مش خطأ يكسر حاجة — بس `ChangeNotifier` هنا زينة، ولو مش هنستعملها يبقى الأصدق نشيلها.
+
+**مرتبطة بالبند ٣** — يتحلّوا مع بعض في قرار واحد.
+
+**٥. `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
+
+٢٨ من ٣٢ دالة بنفس الأسامي والمنطق (`_send` · `_saveEdit` · `_sendWithAttachment` · `_buildTextBubble` · `_buildFileAttachment` · `_dateSeparator` · `_onPaymentBannerTap` …). ده اللي الخطة الأصلية سمّته "مكسب التوحيد" وأجّلته عن قصد لبعد النقل.
+
+دلوقتي هو الوقت المناسب: **الاتنين متغطّيين باختبارات** (`chat_page_test.dart` · `chat_tab_test.dart`)، فالتوحيد بقى عملية آمنة وقابلة للتحقق — وده بالظبط اللي النقل كان بيمهّد له.
+
+### P2 — تنضيف
+
+**٦. `clearToken` بينسى `avatar_url`** — `core/api_client.dart:100-106`
+بيمسح `role`/`user_id`/`sub_user_id`/`workspace_id`/`user_name` من الـ prefs ومابيمسحش `avatar_url` (مع إنه بيصفّرها في الذاكرة). فأفاتار المستخدم السابق بيفضل مخزّن ويظهر لحظيًا لأول مستخدم بعده. سطر واحد.
+
+**٧. Controllers جوّه الـ dialogs مش بيتعملها `dispose`**
+`admin_settings_page.dart:118-120` · `client_onboarding_screen.dart` (`amountCtrl` + تلات `ValueNotifier`). الـ controllers على مستوى الـ State متعمّلها dispose صح — المشكلة في اللي جوّه الـ dialogs/sheets بس.
+
+**٨. ٨ ملفات فوق ٨٠٠ سطر**
+`chat_tab` ١٢٦٥ · `chat_page` ١٢٥٥ · `am_dashboard_page` ١١٦١ · `client_onboarding_screen` ١٠٥٩ · `admin_settings_page` ٩٩١ · `reports_tab` ٩٣٤ · `payments_page` ٩٠٣ · `contracts_page` ٨٧٥.
+البند ٥ لوحده بياكل أكبر اتنين.
+
+### الترتيب المقترح للمرحلة التالية
+
+| # | الشغل | ليه في المكان ده |
+|---|---|---|
+| ١ | البند ١ + ٢ (P0) | الاتنين معًا شغل قصير، والاتنين bugs حقيقية مش تحسينات |
+| ٢ | البند ٦ + ٧ (P2 الرخيص) | سطور معدودة، تتلمّ في نفس الجلسة |
+| ٣ | قرار البند ٣/٤ | محتاج قرار قبل كود — يتاخد مرة واحدة ويتطبّق على الكل |
+| ٤ | البند ٥ (توحيد الشات) | أكبر مكسب، وبقى آمن لأن الاتنين متغطّيين |
 
 ---
 
-## وصفة الشاشة الكبيرة صفر التغطية
+## الوصفات والقواعد (اتّبعناها في كل شاشة — تفضل سارية)
 
-الترتيب **معكوس** عن وصفة المرحلة الأولى: هناك كنا ننقل ونكتب اختبار بعدها؛ هنا الاختبار **قبل** أي تعديل، تنفيذًا للقاعدة رقم ٤ في قواعد السلامة.
+### وصفة الشاشة الكبيرة صفر التغطية
 
-**١. اختبار توصيفي — دورة كاملة لوحدها**
-يوثّق سلوك الشاشة **الحالي**: إيه الـ endpoints اللي بتتنادى وبأي بارامترات، إيه اللي بيتعرض، إيه اللي بيحصل عند الخطأ. مش بنصلّح ولا بنحسّن هنا — بنثبّت الوضع القايم عشان نعرف لو كسرناه. **كوميت مستقل.**
+**١. اختبار توصيفي قبل أي تعديل** — يوثّق السلوك **الحالي**: أي endpoints بتتنادى وبأي بارامترات، إيه اللي بيتعرض، إيه اللي بيحصل عند الخطأ. مش بنصلّح ولا بنحسّن هنا — بنثبّت الوضع القايم عشان نعرف لو كسرناه. **كوميت مستقل.**
 
-**٢. تقسيم لمجالات، ونقل مجال واحد في المرة**
-`admin_settings_page.dart` = ٤ دورات، مش دورة واحدة. الشاشة الواحدة = **٣–٥ كوميتات صغيرة**.
+**٢. تقسيم لمجالات، ونقل مجال واحد في المرة** — الشاشة الواحدة = ٣–٥ كوميتات صغيرة، مش كوميت واحد.
 
 **٣. لكل مجال، الدورة دي:**
-   - أضيف/أوسّع الـ Repository + الـ Provider **باختبارات وحدة الأول**
-   - أغيّر نقاط الاستدعاء بتاعة المجال ده **بس** في الشاشة
-   - أشغّل الاختبار التوصيفي — **لازم يعدّي زي ما هو بالظبط**
-   - `flutter analyze` + `flutter test` → كوميت
+- أضيف/أوسّع الـ Repository + الـ Provider باختبارات وحدة الأول
+- أغيّر نقاط الاستدعاء بتاعة المجال ده **بس** في الشاشة
+- أشغّل الاختبار التوصيفي — لازم يعدّي زي ما هو بالظبط
+- `flutter analyze` + `flutter test` → كوميت
 
-**٤. نمط قابلية الاختبار (متّبع في كل الـ ٢٦ شاشة المنقولة)**
+**٤. نمط قابلية الاختبار** (متّبع في كل الشاشات)
 ```dart
 class XScreen extends StatefulWidget {
   final XProvider? xProvider;   // اختياري
@@ -183,50 +155,31 @@ class _XScreenState extends State<XScreen> {
 ```
 كل `const XScreen()` موجود بيفضل بيكمبايل من غير تعديل. ده اللي بيحقّق مبدأ "القديم يفضل شغّال".
 
-**٥. تحقق الختام**
-`grep` على الملف يتأكد صفر `_api.get|post|put|patch|delete|multipart*`.
+**٥. تحقق الختام** — `grep` على الملف يتأكد صفر `_api.get|post|put|patch|delete|multipart*`.
 
----
+### مصايد اختبارات اتقابلنا معاها (موثّقة عشان متتكررش)
 
-## سياسة الـ bugs المكتشفة أثناء النقل
+- **`SharedPreferences.setMockInitialValues({})` في `setUp`** — أي شاشة بتنده `ApiClient.setUserData()` هتعلّق `pumpAndSettle` للأبد من غيرها.
+- **`ListView` عادي (مش `.builder`) مابيعملش inflate للعناصر البعيدة عن الشاشة** — الويدجت اللي تحت الـ 800×600 **مش موجودة في الشجرة أصلًا**، فـ `find` بيرجّع صفر مش فشل tap. الحل: helper `scrollTo` بيستعمل `scrollUntilVisible` قبل أي tap/assert. ولو الويدجت جوّه bottom sheet، الـ Scrollable بتاعه هو `find.byType(Scrollable).last` مش `.first`.
+- **`find.byType(TextField).at(n)` هشّة بعد ما يدخل scroll** — استعمل `find.descendant(of: find.byType(AlertDialog), …)` أو `find.byWidgetPredicate` على `hintText`.
+- **بيانات الاختبار ممكن تصطدم بنصوص الـ l10n** — عقد اسمه "Main Contract" اصطدم بـ `l10n.mainContract` وخلّى `findsOneWidget` يفشل. خلّي بيانات الاختبار مميزة.
+- **`enableFcm: false` + `enablePolling: false` + `ReverbService.forTesting()`** لازمين لأي شاشة realtime.
+- **`Uri.path` مابيشملش الـ query** — فـ branch واحد في الـ stub بيغطّي `/x` و`/x?all=1`.
 
-الاختبارات التوصيفية على الشاشات دي **هتكشف bugs قديمة** — ده حصل فعلًا: اختبار `reports_tab` كشف انهيار (`Bad state: No element`) لو `contracts_by_status` رجع فاضي، وهو bug موجود من قبل النقل ومالوش علاقة بيه.
+### مش مغطّى بالاختبارات (فجوات معروفة ومقصودة)
 
-**السياسة الافتراضية: يتسجّل كمهمة منفصلة ويكمل النقل.**
-السبب: خلط "نقل بلا تغيير سلوك" مع "تصليح سلوك" في نفس الكوميت بيضيّع أهم ضمانة عندنا — إن الاختبار التوصيفي لو فضل أخضر يبقى مافيش حاجة اتكسرت. لو الاختبار الأخضر ممكن يبقى أخضر لأن السلوك اتغيّر للأحسن، الضمانة دي بتروح.
+`FilePicker.platform` و`ImagePicker` — platform channels حقيقية مالهاش mock تحت `flutter test` عادي. فكل أزرار رفع الملفات/الصور (الأفاتار، صورة التوقيع، مرفقات إثبات الدفع) مش متغطّية. موثّقة في هيدر كل ملف اختبار بيتأثر.
 
-الاستثناء: bug بيمنع كتابة الاختبار التوصيفي نفسه — ساعتها يتصلّح في كوميت منفصل **قبل** النقل.
+### سياسة الـ bugs المكتشفة أثناء الشغل
 
----
+**الافتراضي: تتسجّل كمهمة منفصلة ويكمل النقل.** خلط "نقل بلا تغيير سلوك" مع "تصليح سلوك" في نفس الكوميت بيضيّع أهم ضمانة عندنا — إن الاختبار التوصيفي لو فضل أخضر يبقى مافيش حاجة اتكسرت.
+*الاستثناء*: bug بيمنع كتابة الاختبار التوصيفي نفسه — يتصلّح في كوميت منفصل **قبل** النقل.
 
-## الترتيب المقترح
-
-| # | الشغل | ليه في المكان ده |
-|---|---|---|
-| ١ | **المسار A** (payments ×٢) | أرخص شغل وأسرع نتيجة ملموسة — السباكة جاهزة ١٠٠٪ |
-| ٢ | **الخطوة صفر** (refactor الـ realtime) | مايعتمدش على حاجة، وبيفكّ ٦ شاشات (٤١ استدعاء) دفعة واحدة |
-| ٣ | **المسار D** — الصغيرين الأول (`dashboard_page` · `am_workspace_page`) | استدعاء واحد لكل واحد، بيثبتوا إن الـ refactor نجح على أرخص مثال |
-| ٤ | **المسار B** (contracts ×٤) | حجم متوسط، سباكة جاهزة، وفيه مكسب توحيد بعدين |
-| ٥ | **المسار C** (`admin_settings` · `onboarding`) | أعقد سباكة ناقصة |
-| ٦ | **المسار D** — الكبار (`chat_tab` · `chat_page` · `am_dashboard` · `client_dashboard`) | الأصعب، والشاتين فيهم توحيد ~٢٤٦٥ سطر مكرّرين |
-
----
-
-## قواعد السلامة
+### قواعد السلامة
 
 1. **برانش لكل مسار**، مش لكل المشروع.
-2. **ماتمسحش القديم قبل الجديد** — `ApiClient` يفضل زي ما هو طول الوقت.
+2. **ماتمسحش القديم قبل الجديد.**
 3. **مفيش مسارين مفتوحين في نفس الوقت.**
 4. **الشاشة اللي تغطيتها صفر ماتتلمسش قبل ما يتكتبلها اختبار توصيفي.**
 5. **الـ CI هو الحكم** — `analyze` + `test` لازم يبقوا خُضر قبل أي دمج.
-6. **`flutter test` وحده مش كفاية.** الـ CI بيفشل على أي `warning` من `analyze` — ومن دول `unused_import` في ملفات الاختبار، وده حصل مرتين فعلًا. أي import جديد في ملف اختبار لازم يتأكّد إنه مستخدم فعلًا مش بس مقبول منطقيًا.
-
----
-
-## توقّع واقعي
-
-المرحلة الأولى (١٨٠ → ٩٩ استدعاء، ٢٦ شاشة) اتعملت على مدى عدة جلسات بإيقاع "شاشة → تشغيل اختبارات → كوميت".
-
-الباقي **إيقاعه أبطأ لكل ملف** لأن كل شاشة محتاجة اختبار توصيفي قبلها وبتتقسّم لعدة كوميتات. لكن الشغل **أقل تعقيدًا معماريًا** من المرحلة الأولى، لأن كل الـ Repositories والـ Models اتبنوا بالفعل — الباقي أغلبه ميكانيكي متكرر.
-
-**ماينفعش يتعمل في جلسة واحدة.** الخطة متصممة إنها تتوقف عند أي كوميت والمشروع يفضل سليم وقابل للشحن.
+6. **`flutter test` وحده مش كفاية.** الـ CI بيفشل على أي `warning` من `analyze` — ومن دول `unused_import` في ملفات الاختبار و`unused_field` لو ضفت seam ولسه ماستعملتوش. حصل فعلًا أكتر من مرة.
