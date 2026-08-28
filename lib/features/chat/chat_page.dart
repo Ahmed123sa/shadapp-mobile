@@ -319,9 +319,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _openContracts() async {
     try {
-      final data = await _api.get('/workspaces/${_api.workspaceIdSafe}/contracts');
+      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(_api.workspaceIdSafe);
       if (!mounted) return;
-      final contracts = safeList(data['contracts']);
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
