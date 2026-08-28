@@ -221,7 +221,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     final cid = _api.userId;
     if (cid == null) return;
     try {
-      final data = await _api.get('/clients/$cid');
+      final data = await _childClientProvider.fetchClientRaw(cid);
       _client = data['client'] as Map<String, dynamic>?;
       _workspace = data['client']?['workspace'] as Map<String, dynamic>?;
       if (_workspace != null) {
