@@ -241,7 +241,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (result == null || result.files.isEmpty) return;
     final file = File(result.files.single.path!);
     try {
-      await _api.multipartPost('/workspaces/${_api.workspaceIdSafe}/chat', {}, file: file, fileField: 'file');
+      await _chatProvider.uploadFile(_api.workspaceIdSafe, file);
       _load();
     } catch (e) {
       debugPrint('[chat_page] _sendWithAttachment error: $e');
