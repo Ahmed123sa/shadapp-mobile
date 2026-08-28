@@ -30,14 +30,27 @@ class ChatTab extends StatefulWidget {
   // which falls back to the real singleton — zero behavior change for every
   // existing call site.
   final ReverbService? reverb;
-  const ChatTab({super.key, this.workspaceId, this.wsStatus, this.enablePolling = true, this.reverb});
+  // Testability seam (state-layer migration plan) — optional so every
+  // existing call site keeps compiling unchanged. Defaults fall back to the
+  // real ApiClient instance. Provider params are added one at a time, in the
+  // same commit as the domain that starts actually using them — adding them
+  // any earlier would leave an unused field and fail `flutter analyze`.
+  final ApiClient? api;
+  const ChatTab({
+    super.key,
+    this.workspaceId,
+    this.wsStatus,
+    this.enablePolling = true,
+    this.reverb,
+    this.api,
+  });
 
   @override
   State<ChatTab> createState() => _ChatTabState();
 }
 
 class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];

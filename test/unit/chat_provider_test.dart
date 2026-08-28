@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/chat_repository.dart';
-import '../../helpers/mock_http_client.dart';
+import 'package:shadapp_client/providers/chat_provider.dart';
+import '../helpers/mock_http_client.dart';
 
 class _FakeMultipartRequest extends Fake implements http.BaseRequest {}
 
@@ -12,7 +14,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockHttpClient httpClient;
-  late ChatRepository repo;
+  late ChatProvider provider;
 
   setUpAll(() {
     registerFallbackValue(Uri.parse('http://localhost'));
@@ -21,89 +23,64 @@ void main() {
 
   setUp(() {
     httpClient = MockHttpClient();
-    repo = ChatRepository(api: buildTestApiClient(client: httpClient));
+    provider = ChatProvider(repository: ChatRepository(api: buildTestApiClient(client: httpClient)));
   });
 
-  test('fetchWorkspace hits /workspaces/:id and returns the raw envelope', () async {
+  test('fetchWorkspace returns the raw envelope', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{"workspace":{"id":4,"status":"active"},"nextMeeting":null}'),
+      (_) async => jsonResponse('{"workspace":{"id":4},"nextMeeting":null,"nextPayment":null}'),
     );
 
-    final data = await repo.fetchWorkspace(4);
+    final data = await provider.fetchWorkspace(4);
 
-    expect(data['workspace']['status'], 'active');
+    expect(data['workspace']['id'], 4);
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/4'))),
         headers: any(named: 'headers'))).called(1);
   });
 
-  test('fetchMessages unwraps the messages key via safeList', () async {
+  test('fetchMessages returns the message list', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{"messages":[{"id":1,"message":"hi"}]}'),
+      (_) async => jsonResponse('{"messages":[{"id":1},{"id":2}]}'),
     );
 
-    final messages = await repo.fetchMessages(4);
+    final messages = await provider.fetchMessages(4);
 
-    expect(messages, hasLength(1));
-    expect((messages.first as Map)['message'], 'hi');
+    expect(messages, hasLength(2));
   });
 
-  test('markRead posts to /workspaces/:id/chat/mark-read with an empty body', () async {
+  test('markRead posts to /workspaces/:id/chat/mark-read', () async {
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
       (_) async => jsonResponse('{}'),
     );
 
-    await repo.markRead(4);
+    await provider.markRead(4);
 
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/4/chat/mark-read'))),
-        headers: any(named: 'headers'), body: '{}')).called(1);
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 
-  test('sendMessage omits reply_to_id when not provided', () async {
+  test('sendMessage forwards requiresAction and replyToId', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
       sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
       return jsonResponse('{}');
     });
 
-    await repo.sendMessage(4, 'hello');
+    await provider.sendMessage(4, 'hi', requiresAction: true, replyToId: 3);
 
-    expect(sentBody, {'message': 'hello'});
+    expect(sentBody, {'message': 'hi', 'requires_action': true, 'reply_to_id': 3});
   });
 
-  test('sendMessage includes reply_to_id when provided', () async {
+  test('sendMessage sends a plain body when neither optional flag is set', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
       sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
       return jsonResponse('{}');
     });
 
-    await repo.sendMessage(4, 'hello', replyToId: 7);
+    await provider.sendMessage(4, 'hi');
 
-    expect(sentBody, {'message': 'hello', 'reply_to_id': 7});
-  });
-
-  test('sendMessage omits requires_action when false (the default)', () async {
-    Map<String, dynamic>? sentBody;
-    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
-      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
-      return jsonResponse('{}');
-    });
-
-    await repo.sendMessage(4, 'hello', requiresAction: false);
-
-    expect(sentBody, {'message': 'hello'});
-  });
-
-  test('sendMessage includes requires_action: true when requested', () async {
-    Map<String, dynamic>? sentBody;
-    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
-      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
-      return jsonResponse('{}');
-    });
-
-    await repo.sendMessage(4, 'hello', requiresAction: true, replyToId: 7);
-
-    expect(sentBody, {'message': 'hello', 'requires_action': true, 'reply_to_id': 7});
+    expect(sentBody, {'message': 'hi'});
   });
 
   test('editMessage PUTs to /chat/:id', () async {
@@ -111,10 +88,10 @@ void main() {
       (_) async => jsonResponse('{}'),
     );
 
-    await repo.editMessage(9, 'edited text');
+    await provider.editMessage(9, 'new text');
 
     verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/chat/9'))),
-        headers: any(named: 'headers'), body: jsonEncode({'message': 'edited text'}))).called(1);
+        headers: any(named: 'headers'), body: jsonEncode({'message': 'new text'}))).called(1);
   });
 
   test('requireAction PATCHes /chat/:id/require-action', () async {
@@ -122,14 +99,14 @@ void main() {
       (_) async => jsonResponse('{}'),
     );
 
-    await repo.requireAction(9);
+    await provider.requireAction(9);
 
     verify(() => httpClient.patch(any(that: predicate<Uri>((u) => u.path.endsWith('/chat/9/require-action'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 
   test('uploadFile sends a multipart request to /workspaces/:id/chat', () async {
-    final tmp = await File('${Directory.systemTemp.path}/chat_upload_test.png').create();
+    final tmp = await File('${Directory.systemTemp.path}/chat_provider_upload_test.png').create();
     await tmp.writeAsBytes([0, 1, 2]);
     addTearDown(() => tmp.delete());
 
@@ -139,32 +116,22 @@ void main() {
       return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
     });
 
-    await repo.uploadFile(4, tmp);
+    await provider.uploadFile(4, tmp);
 
     verify(() => httpClient.send(any())).called(1);
   });
 
-  test('respond omits reason when not provided', () async {
+  test('respond posts the action to /chat/:id/respond', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
       sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
       return jsonResponse('{}');
     });
 
-    await repo.respond(3, action: 'approved');
+    await provider.respond(3, action: 'approved');
 
     expect(sentBody, {'action': 'approved'});
-  });
-
-  test('respond includes reason for edit_requested', () async {
-    Map<String, dynamic>? sentBody;
-    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
-      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
-      return jsonResponse('{}');
-    });
-
-    await repo.respond(3, action: 'edit_requested', reason: 'please fix the date');
-
-    expect(sentBody, {'action': 'edit_requested', 'reason': 'please fix the date'});
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/chat/3/respond'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 }

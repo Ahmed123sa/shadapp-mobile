@@ -29,10 +29,13 @@ class ChatRepository {
 
   Future<void> markRead(int workspaceId) => _api.post('/workspaces/$workspaceId/chat/mark-read', {});
 
-  /// [replyToId] is only included in the request body when non-null, matching
-  /// the original inline behavior in both screens.
-  Future<void> sendMessage(int workspaceId, String message, {int? replyToId}) {
+  /// [replyToId] is only included in the request body when non-null, and
+  /// `requires_action` is only included (as `true`) when [requiresAction] is
+  /// true — matching the original inline behavior in both screens (neither
+  /// ever sends `requires_action: false`).
+  Future<void> sendMessage(int workspaceId, String message, {int? replyToId, bool requiresAction = false}) {
     final body = <String, dynamic>{'message': message};
+    if (requiresAction) body['requires_action'] = true;
     if (replyToId != null) body['reply_to_id'] = replyToId;
     return _api.post('/workspaces/$workspaceId/chat', body);
   }
