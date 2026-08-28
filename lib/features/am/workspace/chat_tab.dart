@@ -203,7 +203,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     try {
-      await _api.put('/chat/${_editingMessage!['id']}', {'message': text});
+      await _chatProvider.editMessage(_editingMessage!['id'] as int, text);
       setState(() {
         _editingMessage = null;
         _controller.clear();
@@ -218,7 +218,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   Future<void> _requireAction(int msgId) async {
     if (_wsId == null) return;
     try {
-      await _api.patch('/chat/$msgId/require-action', {});
+      await _chatProvider.requireAction(msgId);
       _load();
     } catch (e) {
       debugPrint('[chat_tab] _requireAction error: $e');
