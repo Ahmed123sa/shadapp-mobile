@@ -7,6 +7,9 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/theme.dart';
+import '../../data/file_repository.dart';
+import '../../providers/contract_provider.dart';
+import '../../providers/file_provider.dart';
 
 class ContractDetailModal extends StatefulWidget {
   final dynamic contract;
@@ -15,6 +18,13 @@ class ContractDetailModal extends StatefulWidget {
   final VoidCallback? onGoToPayments;
   final String backLabel;
   final int? workspaceId;
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ApiClient instead of hitting the network. Defaults to the real
+  // singleton — zero behavior change for its one existing call site
+  // (onboarding/client_onboarding_screen.dart, itself still unseamed/deferred).
+  final ApiClient? api;
+  final ContractProvider? contractProvider;
+  final FileProvider? fileProvider;
 
   const ContractDetailModal({
     super.key,
@@ -24,6 +34,9 @@ class ContractDetailModal extends StatefulWidget {
     this.onGoToPayments,
     this.backLabel = '',
     this.workspaceId,
+    this.api,
+    this.contractProvider,
+    this.fileProvider,
   });
 
   @override
@@ -31,7 +44,9 @@ class ContractDetailModal extends StatefulWidget {
 }
 
 class _ContractDetailModalState extends State<ContractDetailModal> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider(repository: FileRepository(api: _api));
   bool _uploading = false;
   List<dynamic> _uploadedFiles = [];
   bool _loadingFiles = false;
@@ -52,8 +67,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId/contracts');
-      final list = safeList(data['contracts']);
+      final list = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
       final contractId = widget.contract['id'];
       for (final cc in list) {
         if (cc is Map && cc['id'] == contractId) {
@@ -72,7 +86,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     if (wsId == null) return;
     setState(() => _loadingFiles = true);
     try {
-      final data = await _api.get('/workspaces/$wsId/files');
+      final data = await _fileProvider.fetchWorkspaceFiles(wsId);
       final allFiles = safeList(data['files']);
       final contractId = widget.contract['id'];
       _uploadedFiles = allFiles.where((f) => f['contract_id'] == contractId).toList();
@@ -98,9 +112,9 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       final fields = <String, dynamic>{'contract_id': contractId};
       if (definitionId != null) fields['contract_required_document_id'] = definitionId;
       if (kIsWeb) {
-        await _api.multipartPost('/workspaces/$wsId/files', fields, bytes: pf.bytes, filename: pf.name);
+        await _fileProvider.uploadFile(wsId, fields, bytes: pf.bytes, filename: pf.name);
       } else {
-        await _api.multipartPost('/workspaces/$wsId/files', fields, file: File(pf.path!));
+        await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
@@ -590,7 +604,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     if (wsId == null) return;
 
     try {
-      await _api.delete('/workspaces/$wsId/files/${file['id']}');
+      await _fileProvider.deleteFile(wsId, file['id']);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileDeleted)));
       await _loadUploadedFiles();
       widget.onRefresh();
