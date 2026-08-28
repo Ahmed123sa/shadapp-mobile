@@ -15,17 +15,48 @@ import '../../core/theme.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/shad_logo.dart';
+import '../../data/client_repository.dart';
+import '../../data/payment_repository.dart';
+import '../../data/system_settings_repository.dart';
+import '../../providers/client_provider.dart';
+import '../../providers/contract_provider.dart';
+import '../../providers/payment_provider.dart';
+import '../../providers/system_settings_provider.dart';
 import '../contracts/contract_detail_modal.dart';
 
 class ClientOnboardingScreen extends StatefulWidget {
-  const ClientOnboardingScreen({super.key});
+  final ApiClient? api;
+  final ReverbService? reverb;
+  // Lets widget tests skip FirebaseMessaging.onMessage/.onMessageOpenedApp,
+  // same reasoning as client_dashboard_screen.dart's identical seam.
+  final bool enableFcm;
+  final ClientProvider? clientProvider;
+  final ContractProvider? contractProvider;
+  final PaymentProvider? paymentProvider;
+  final SystemSettingsProvider? systemSettingsProvider;
+
+  const ClientOnboardingScreen({
+    super.key,
+    this.api,
+    this.reverb,
+    this.enableFcm = true,
+    this.clientProvider,
+    this.contractProvider,
+    this.paymentProvider,
+    this.systemSettingsProvider,
+  });
 
   @override
   State<ClientOnboardingScreen> createState() => _ClientOnboardingScreenState();
 }
 
 class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with WidgetsBindingObserver {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider(repository: ClientRepository(api: _api));
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider(repository: PaymentRepository(api: _api));
+  late final SystemSettingsProvider _systemSettingsProvider = widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
 
   Map<String, dynamic>? _client;
   Map<String, dynamic>? _workspace;
@@ -67,9 +98,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   void _setupRealtimeNotifications() {
     final cid = _api.userId;
     if (cid == null) return;
-    final reverb = ReverbService();
-    reverb.connectForClient(cid);
-    reverb.onNotificationReceived = (payload) {
+    _reverb.connectForClient(cid);
+    _reverb.onNotificationReceived = (payload) {
       _loadClientData();
       _contractRefreshNotifier.value++;
       if (!mounted) return;
@@ -82,19 +112,21 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         duration: const Duration(seconds: 3),
       ));
     };
-    reverb.onContractStatusChanged = () {
+    _reverb.onContractStatusChanged = () {
       _loadClientData();
       _contractRefreshNotifier.value++;
     };
-    _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
-      final type = msg.data['type'] as String? ?? '';
-      if (type == 'contract.company_approved' || type == 'contract.completed' || type == 'payment.approved') {
+    if (widget.enableFcm) {
+      _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
+        final type = msg.data['type'] as String? ?? '';
+        if (type == 'contract.company_approved' || type == 'contract.completed' || type == 'payment.approved') {
+          _loadClientData();
+        }
+      });
+      FirebaseMessaging.onMessageOpenedApp.listen((msg) {
         _loadClientData();
-      }
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen((msg) {
-      _loadClientData();
-    });
+      });
+    }
   }
 
   @override
@@ -116,8 +148,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (cid == null) return;
     try {
       final results = await Future.wait<Map<String, dynamic>>([
-        _api.get('/clients/$cid'),
-        _api.get('/settings').catchError((_) => <String, dynamic>{}),
+        _clientProvider.fetchClientRaw(cid),
+        _systemSettingsProvider.fetchSettings().catchError((_) => <String, dynamic>{}),
       ]);
       final data = results[0];
       _client = data['client'] as Map<String, dynamic>?;
@@ -567,9 +599,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       if (reason == null) return;
     }
     try {
-      final body = <String, dynamic>{'action': action};
-      if (reason != null && reason.isNotEmpty) body['reason'] = reason;
-      await _api.post('/contracts/$contractId/client-action', body);
+      await _contractProvider.clientAction(contractId as int, action, reason: (reason != null && reason.isNotEmpty) ? reason : null);
       _loadClientData();
       _contractRefreshNotifier.value++;
       if (mounted) {
@@ -1000,24 +1030,13 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       final bytesFiles = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['bytes'] as Uint8List).toList();
       final bytesNames = proofFiles.where((pf) => pf['bytes'] != null).map((pf) => pf['name'] as String? ?? 'file.jpg').toList();
 
-      if (nativeFiles.isNotEmpty) {
-        await _api.multipartPost(
-          '/workspaces/$workspaceId/payments',
-          fields,
-          multipleFiles: nativeFiles,
-          multipleFileField: 'proof_files[]',
-        );
-      } else if (bytesFiles.isNotEmpty) {
-        await _api.multipartPost(
-          '/workspaces/$workspaceId/payments',
-          fields,
-          multipleBytes: bytesFiles,
-          multipleBytesNames: bytesNames,
-          multipleFileField: 'proof_files[]',
-        );
-      } else {
-        await _api.post('/workspaces/$workspaceId/payments', fields);
-      }
+      await _paymentProvider.createPayment(
+        workspaceId,
+        fields,
+        files: nativeFiles.isNotEmpty ? nativeFiles : null,
+        bytesFiles: bytesFiles.isNotEmpty ? bytesFiles : null,
+        bytesNames: bytesFiles.isNotEmpty ? bytesNames : null,
+      );
 
       if (ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.onboarding_paymentSent)])));
