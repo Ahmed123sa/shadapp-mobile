@@ -5,6 +5,19 @@ import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/reverb_service.dart';
+import '../../../data/approval_repository.dart';
+import '../../../data/chat_repository.dart';
+import '../../../data/client_repository.dart';
+import '../../../data/file_repository.dart';
+import '../../../data/meeting_repository.dart';
+import '../../../data/payment_repository.dart';
+import '../../../providers/approval_provider.dart';
+import '../../../providers/chat_provider.dart';
+import '../../../providers/client_provider.dart';
+import '../../../providers/contract_provider.dart';
+import '../../../providers/file_provider.dart';
+import '../../../providers/meeting_provider.dart';
+import '../../../providers/payment_provider.dart';
 import 'chat_tab.dart';
 import 'files_tab.dart';
 import 'calendar_tab.dart';
@@ -24,14 +37,32 @@ class AmWorkspacePage extends StatefulWidget {
   // null, which falls back to the real singleton — zero behavior change for
   // every existing call site.
   final ReverbService? reverb;
-  const AmWorkspacePage({super.key, this.workspaceId, this.initialTabIndex = 0, this.reverb});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ApiClient instead of hitting the network. Defaults to the real
+  // singleton — zero behavior change for every existing call site.
+  final ApiClient? api;
+  const AmWorkspacePage({super.key, this.workspaceId, this.initialTabIndex = 0, this.reverb, this.api});
 
   @override
   State<AmWorkspacePage> createState() => _AmWorkspacePageState();
 }
 
 class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProviderStateMixin {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  // Derived from `_api` purely to break the singleton fallback in the eight
+  // tabs embedded via IndexedStack below (which mounts every tab eagerly, so
+  // all of them need to be controllable from a test even though this screen's
+  // own single domain — _fetchWorkspace — is the only one migrated this
+  // slice). Each embedded tab still owns its own provider params for its own
+  // testability; in production `_api` is always the real singleton, so this
+  // changes nothing.
+  late final ChatProvider _childChatProvider = ChatProvider(repository: ChatRepository(api: _api));
+  late final ContractProvider _childContractProvider = ContractProvider(api: _api);
+  late final MeetingProvider _childMeetingProvider = MeetingProvider(repository: MeetingRepository(api: _api));
+  late final FileProvider _childFileProvider = FileProvider(repository: FileRepository(api: _api));
+  late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
+  late final ApprovalProvider _childApprovalProvider = ApprovalProvider(repository: ApprovalRepository(api: _api));
+  late final ClientProvider _childClientProvider = ClientProvider(repository: ClientRepository(api: _api));
   String? _wsStatus;
   String? _wsContactPerson;
   String? _wsName;
@@ -62,7 +93,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      final data = await _api.get('/workspaces/$wsId');
+      final data = await _childChatProvider.fetchWorkspace(wsId);
       if (!mounted) return;
       final ws = data['workspace'] as Map<String, dynamic>?;
       final client = ws?['client'] as Map<String, dynamic>?;
@@ -165,14 +196,35 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
           child: IndexedStack(
             index: _tabController.index,
             children: [
-              ChatTab(wsStatus: _wsStatus, workspaceId: widget.workspaceId, reverb: widget.reverb),
-              FilesTab(workspaceId: widget.workspaceId),
-              ContractsTab(workspaceId: widget.workspaceId),
-              PaymentsTab(onWorkspaceUpdate: _fetchWorkspace, workspaceId: widget.workspaceId),
-              ApprovalsTab(workspaceId: widget.workspaceId),
-              MeetingsTab(workspaceId: widget.workspaceId),
-              CalendarTab(workspaceId: widget.workspaceId),
-              ClientProfileTab(workspaceId: widget.workspaceId),
+              ChatTab(
+                wsStatus: _wsStatus,
+                workspaceId: widget.workspaceId,
+                reverb: widget.reverb,
+                api: _api,
+                chatProvider: _childChatProvider,
+                contractProvider: _childContractProvider,
+                meetingProvider: _childMeetingProvider,
+              ),
+              FilesTab(workspaceId: widget.workspaceId, fileProvider: _childFileProvider, api: _api),
+              ContractsTab(workspaceId: widget.workspaceId, api: _api),
+              PaymentsTab(
+                onWorkspaceUpdate: _fetchWorkspace,
+                workspaceId: widget.workspaceId,
+                paymentProvider: _childPaymentProvider,
+                contractProvider: _childContractProvider,
+                api: _api,
+              ),
+              ApprovalsTab(workspaceId: widget.workspaceId, approvalProvider: _childApprovalProvider, api: _api),
+              MeetingsTab(workspaceId: widget.workspaceId, meetingProvider: _childMeetingProvider, contractProvider: _childContractProvider),
+              CalendarTab(
+                workspaceId: widget.workspaceId,
+                meetingProvider: _childMeetingProvider,
+                contractProvider: _childContractProvider,
+                paymentProvider: _childPaymentProvider,
+                approvalProvider: _childApprovalProvider,
+                api: _api,
+              ),
+              ClientProfileTab(workspaceId: widget.workspaceId, clientProvider: _childClientProvider, contractProvider: _childContractProvider, api: _api),
             ],
           ),
         ),

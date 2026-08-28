@@ -12,14 +12,20 @@ import '../widgets/contract_builder.dart';
 
 class ContractsTab extends StatefulWidget {
   final int? workspaceId;
-  const ContractsTab({super.key, this.workspaceId});
+  // Optional so this screen can be pumped in a widget test (e.g. embedded
+  // inside am_workspace_page.dart's IndexedStack, which mounts every tab
+  // eagerly) with a mocked ApiClient instead of hitting the network. Defaults
+  // to the real singleton — zero behavior change for every existing call
+  // site. This screen's own domain migration remains deferred (Path B).
+  final ApiClient? api;
+  const ContractsTab({super.key, this.workspaceId, this.api});
 
   @override
   State<ContractsTab> createState() => _ContractsTabState();
 }
 
 class _ContractsTabState extends State<ContractsTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   List<dynamic> _contracts = [];
   bool _loading = true;
   String? _error;
