@@ -57,7 +57,9 @@ lib/
 
 ### P0 — لازم قبل أي إصدار
 
-**١. `workspaceIdSafe` بيرجّع workspace رقم ١ لما ميعرفش** — `core/api_client.dart:34`
+> **الاتنين دول اتصلّحوا وانتحقّوا.** `flutter analyze`: صفر مشاكل. `flutter test`: ٤٦٢/٤٦٢ ناجح (كان ٤٦١ — زادت واحدة توثّق سلوك P0-1 الجديد صراحةً في `meetings_page_test.dart`). مستني الكوميت بس.
+
+**١. [تم] `workspaceIdSafe` بيرجّع workspace رقم ١ لما ميعرفش** — `core/api_client.dart:34`
 
 ```dart
 int get workspaceIdSafe => workspaceId ?? 1;
@@ -69,9 +71,9 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 *التخفيف الحالي*: middleware عزل الـ workspace في الباك اند المفروض يرفض بـ 403. بس ده اعتماد كامل على إن الحارس الخلفي صح ١٠٠٪، والافتراض نفسه غلط: "مفيش workspace" اتحوّل لـ "workspace حد تاني" بدل حالة فاضية واضحة، والمستخدم بيشوف خطأ مبهم بدل رسالة مفهومة.
 
-**الحل**: يتشال `workspaceIdSafe` خالص، وكل call site ياخد guard صريح على `workspaceId == null` — نفس النمط الموجود بالظبط في `contract_builder.dart` (بيرجع بدري لو مفيش workspace).
+**الحل المطبّق**: اتشال `workspaceIdSafe` خالص من `api_client.dart`. الأربع ملفات المتأثرة (`chat_page.dart` × ٨ مواضع، `client_dashboard_screen.dart`، `meetings_page.dart`) كل واحد ياخد guard صريح على `workspaceId == null` — نفس النمط الموجود بالظبط في `am/workspace/chat_tab.dart`'s `_wsId` getter (اللي كان أصلًا بيعمل الصح ده، وده اللي أكّد إن النمط مجرّب ومضمون).
 
-**٢. أربع نسخ من `safeList` بسلوك مختلف**
+**٢. [تم] أربع نسخ من `safeList` بسلوك مختلف**
 
 | الملف | سلوكه مع `{data: [...]}` |
 |---|---|
@@ -82,7 +84,7 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 التلات ملفات دول **بيعملوا import لـ `api_client.dart`** وبيعرّفوا دالة top-level بنفس الاسم في نفس الملف — ودارت بتختار المحلية من غير أي تحذير من `analyze`. فلو الباك اند عمل pagination لـ `workspace.contracts` أو `workspace.payments` في أي وقت، الشاشات دي هتعرض "مفيش عقود/دفعات" والـ Repositories هتشتغل صح — bug صامت مستني ظرفه.
 
-**الحل**: تتشال التلات نسخ المحلية ويتعمل import للنسخة الوحيدة في `api_client.dart`. لازم يتشغّل اختبار كل شاشة بعد الشيل — التلاتة متغطّيين باختبارات.
+**الحل المطبّق**: اتشالت التلات نسخ المحلية (`api_client.dart` كان أصلًا متعمل له import في التلاتة، فمفيش import جديد لازم). فضلًا عن كده، `payments_tab.dart`'s نسخة كانت **كود ميت بالكامل** — متعرّفة ومحدش بينده عليها في الملف كله — فشيلها كان تنظيف بلا أي تغيير سلوك.
 
 ### P1 — ديون معمارية
 

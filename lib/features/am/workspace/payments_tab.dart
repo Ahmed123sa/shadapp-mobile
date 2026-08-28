@@ -737,8 +737,3 @@ class _PaymentsTabState extends State<PaymentsTab> {
     }
   }
 }
-
-List safeList(dynamic value) {
-  if (value is List) return value;
-  return [];
-}

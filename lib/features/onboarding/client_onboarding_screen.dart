@@ -1051,9 +1051,3 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
 }
-
-List safeList(dynamic value) {
-  if (value is List) return value;
-  if (value is String) return [];
-  return [];
-}

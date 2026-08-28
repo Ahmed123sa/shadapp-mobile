@@ -31,7 +31,6 @@ class ApiClient {
   int? userId;
   int? subUserId;
   int? workspaceId;
-  int get workspaceIdSafe => workspaceId ?? 1;
   String? role;
   String? userName;
   String? avatarUrl;

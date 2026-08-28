@@ -52,6 +52,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
+  // No cross-tenant fallback (see docs/state-layer-migration-plan.md, P0-1):
+  // a null workspaceId means "we don't know this client's workspace yet",
+  // not "assume workspace 1". Every call site below guards on this being
+  // null instead, same pattern as am/workspace/chat_tab.dart's _wsId.
+  int? get _wsId => _api.workspaceId;
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -78,28 +83,30 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _load().then((_) => _markRead());
     _startPolling();
     _scrollController.addListener(_onScroll);
-    final wsId = _api.workspaceIdSafe;
-    final reverb = _reverb;
-    reverb.onMessageReceived = (payload) {
-      final msg = payload['message'] as Map<String, dynamic>?;
-      if (msg != null && mounted) {
-        setState(() => _messages.add(msg));
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-      }
-    };
-    reverb.onMessageUpdated = (payload) {
-      final msg = payload['message'] as Map<String, dynamic>?;
-      if (msg != null && mounted) {
-        setState(() {
-          final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
-          if (idx >= 0) _messages[idx] = msg;
-        });
-      }
-    };
-    reverb.onPaymentScheduleChanged = (_) {
-      if (mounted) _checkWorkspace();
-    };
-    reverb.connect(wsId);
+    final wsId = _wsId;
+    if (wsId != null) {
+      final reverb = _reverb;
+      reverb.onMessageReceived = (payload) {
+        final msg = payload['message'] as Map<String, dynamic>?;
+        if (msg != null && mounted) {
+          setState(() => _messages.add(msg));
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+        }
+      };
+      reverb.onMessageUpdated = (payload) {
+        final msg = payload['message'] as Map<String, dynamic>?;
+        if (msg != null && mounted) {
+          setState(() {
+            final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
+            if (idx >= 0) _messages[idx] = msg;
+          });
+        }
+      };
+      reverb.onPaymentScheduleChanged = (_) {
+        if (mounted) _checkWorkspace();
+      };
+      reverb.connect(wsId);
+    }
   }
 
   void _startPolling() {
@@ -155,8 +162,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _checkWorkspace() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
     try {
-      final data = await _chatProvider.fetchWorkspace(_api.workspaceIdSafe);
+      final data = await _chatProvider.fetchWorkspace(wsId);
       final ws = data['workspace'] as Map<String, dynamic>?;
       final nm = data['nextMeeting'] as Map<String, dynamic>?;
       final np = data['nextPayment'] as Map<String, dynamic>?;
@@ -174,8 +183,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _load() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
     try {
-      _messages = await _chatProvider.fetchMessages(_api.workspaceIdSafe);
+      _messages = await _chatProvider.fetchMessages(wsId);
     } catch (e) {
       debugPrint('[chat_page] _load error: $e');
     }
@@ -186,8 +197,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _markRead() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
     try {
-      await _chatProvider.markRead(_api.workspaceIdSafe);
+      await _chatProvider.markRead(wsId);
     } catch (e, s) {
       // Cosmetic only — the unread badge stays until the next successful
       // mark-read. Not worth interrupting the user for.
@@ -209,12 +222,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _wsId == null) return;
     _controller.clear();
     final replyId = _replyTo?['id'];
     setState(() => _replyTo = null);
     try {
-      await _chatProvider.sendMessage(_api.workspaceIdSafe, text, replyToId: replyId as int?);
+      await _chatProvider.sendMessage(_wsId!, text, replyToId: replyId as int?);
       _load();
       _markRead();
     } catch (e) {
@@ -244,10 +257,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
     );
-    if (result == null || result.files.isEmpty) return;
+    if (result == null || result.files.isEmpty || _wsId == null) return;
     final file = File(result.files.single.path!);
     try {
-      await _chatProvider.uploadFile(_api.workspaceIdSafe, file);
+      await _chatProvider.uploadFile(_wsId!, file);
       _load();
     } catch (e) {
       debugPrint('[chat_page] _sendWithAttachment error: $e');
@@ -321,8 +334,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openContracts() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
     try {
-      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(_api.workspaceIdSafe);
+      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
       if (!mounted) return;
       showModalBottomSheet(
         context: context,
@@ -336,8 +351,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openLatestZoomLink() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
     try {
-      final meetings = await _meetingProvider.fetchForWorkspaceRaw(_api.workspaceIdSafe);
+      final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
       if (!mounted) return;
       String? zoomLink;
       String? scheduledAt;

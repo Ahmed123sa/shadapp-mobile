@@ -40,12 +40,18 @@ class _MeetingsPageState extends State<MeetingsPage> {
   }
 
   Future<void> _load() async {
-    final wsId = _api.workspaceIdSafe;
+    final wsId = _api.workspaceId;
     setState(() { _loading = true; _error = null; });
-    await _meetingProvider.fetchForWorkspace(wsId);
-    // Same as the original try/catch: a failed fetch just leaves the list
-    // empty rather than surfacing _error (see the field comment above).
-    _meetings = _meetingProvider.error == null ? _meetingProvider.meetings : [];
+    if (wsId != null) {
+      await _meetingProvider.fetchForWorkspace(wsId);
+      // Same as the original try/catch: a failed fetch just leaves the list
+      // empty rather than surfacing _error (see the field comment above).
+      _meetings = _meetingProvider.error == null ? _meetingProvider.meetings : [];
+    } else {
+      // No known workspace yet (see docs/state-layer-migration-plan.md,
+      // P0-1) — nothing to fetch, not "assume workspace 1".
+      _meetings = [];
+    }
     if (mounted) setState(() => _loading = false);
   }
 

@@ -12,11 +12,16 @@ void main() {
     registerFallbackValue(Uri.parse('http://localhost'));
   });
 
-  Future<void> pumpPage(WidgetTester tester, MeetingProvider provider) async {
+  // meetings_page.dart's _load() guards on _api.workspaceId being non-null
+  // (see docs/state-layer-migration-plan.md, P0-1 — no more silent
+  // workspace-1 fallback), so every pump needs both an injected api with
+  // workspaceId set AND that same api backing the MeetingProvider's
+  // repository, or the fetch is skipped and the screen always renders empty.
+  Future<void> pumpPage(WidgetTester tester, MeetingProvider provider, {required dynamic api}) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: MeetingsPage(meetingProvider: provider),
+      home: MeetingsPage(meetingProvider: provider, api: api),
     ));
     await tester.pumpAndSettle();
   }
@@ -26,9 +31,10 @@ void main() {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"meetings":[]}'),
     );
-    final provider = MeetingProvider(repository: MeetingRepository(api: buildTestApiClient(client: httpClient)));
+    final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+    final provider = MeetingProvider(repository: MeetingRepository(api: api));
 
-    await pumpPage(tester, provider);
+    await pumpPage(tester, provider, api: api);
 
     expect(find.text('No meetings'), findsOneWidget);
   });
@@ -43,9 +49,10 @@ void main() {
         '{"id":2,"title":"Past meeting","status":"completed","scheduled_at":"$past"}]}',
       ),
     );
-    final provider = MeetingProvider(repository: MeetingRepository(api: buildTestApiClient(client: httpClient)));
+    final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+    final provider = MeetingProvider(repository: MeetingRepository(api: api));
 
-    await pumpPage(tester, provider);
+    await pumpPage(tester, provider, api: api);
 
     expect(find.text('Upcoming'), findsOneWidget);
     expect(find.text('Future meeting'), findsOneWidget);
@@ -58,9 +65,10 @@ void main() {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"message":"Server error"}', 500),
     );
-    final provider = MeetingProvider(repository: MeetingRepository(api: buildTestApiClient(client: httpClient)));
+    final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+    final provider = MeetingProvider(repository: MeetingRepository(api: api));
 
-    await pumpPage(tester, provider);
+    await pumpPage(tester, provider, api: api);
 
     // Documents existing (if surprising) behavior: _error is declared but
     // never actually set anywhere in meetings_page.dart, so a failed fetch
@@ -76,10 +84,25 @@ void main() {
         '{"meetings":[{"id":1,"title":"Kickoff","status":"scheduled","scheduled_at":"$future","duration_minutes":45}]}',
       ),
     );
-    final provider = MeetingProvider(repository: MeetingRepository(api: buildTestApiClient(client: httpClient)));
+    final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+    final provider = MeetingProvider(repository: MeetingRepository(api: api));
 
-    await pumpPage(tester, provider);
+    await pumpPage(tester, provider, api: api);
 
     expect(find.text('45 min'), findsOneWidget);
+  });
+
+  testWidgets('a null workspaceId skips the fetch and shows the empty state', (tester) async {
+    final httpClient = MockHttpClient();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"meetings":[{"id":1,"title":"Should not appear","status":"scheduled"}]}'),
+    );
+    final api = buildTestApiClient(client: httpClient);
+    final provider = MeetingProvider(repository: MeetingRepository(api: api));
+
+    await pumpPage(tester, provider, api: api);
+
+    verifyNever(() => httpClient.get(any(), headers: any(named: 'headers')));
+    expect(find.text('No meetings'), findsOneWidget);
   });
 }

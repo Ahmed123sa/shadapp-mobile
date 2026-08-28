@@ -277,11 +277,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     } catch (e, s) {
       AppLog.error('client_dashboard._loadNotifs(unread)', e, s);
     }
-    try {
-      final messages = await _childChatProvider.fetchMessages(_api.workspaceIdSafe);
-      _unreadChat = messages.where((m) => m['sender_type'] != 'App\\Models\\Client' && m['read_at'] == null).length;
-    } catch (e, s) {
-      AppLog.error('client_dashboard._loadNotifs(chat)', e, s);
+    final wsId = _api.workspaceId;
+    if (wsId != null) {
+      try {
+        final messages = await _childChatProvider.fetchMessages(wsId);
+        _unreadChat = messages.where((m) => m['sender_type'] != 'App\\Models\\Client' && m['read_at'] == null).length;
+      } catch (e, s) {
+        AppLog.error('client_dashboard._loadNotifs(chat)', e, s);
+      }
     }
     try {
       final data = await _dashboardProvider.fetchBadgeCounts();
@@ -567,10 +570,4 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       ],
     );
   }
-}
-
-List safeList(dynamic value) {
-  if (value is List) return value;
-  if (value is String) return [];
-  return [];
 }
