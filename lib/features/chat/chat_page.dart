@@ -15,6 +15,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/helpers/meeting_helpers.dart';
 import '../../core/helpers/realtime_poller.dart';
 import '../../providers/chat_provider.dart';
+import '../../providers/contract_provider.dart';
 
 class ChatPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
@@ -36,8 +37,9 @@ class ChatPage extends StatefulWidget {
   // any earlier would leave an unused field and fail `flutter analyze`.
   final ApiClient? api;
   final ChatProvider? chatProvider;
+  final ContractProvider? contractProvider;
 
-  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider});
+  const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider, this.contractProvider});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -46,6 +48,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
+  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
@@ -251,7 +254,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> _approve(int contractId) async {
     try {
-      await _api.post('/contracts/$contractId/client-action', {'action': 'approved'});
+      await _contractProvider.clientAction(contractId, 'approved');
       _load();
     } catch (e) {
       debugPrint('[chat_page] _approve error: $e');
