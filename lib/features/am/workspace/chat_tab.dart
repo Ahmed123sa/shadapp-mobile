@@ -16,6 +16,7 @@ import '../../../core/widgets/meeting_chip.dart';
 import '../../../core/widgets/payment_banner.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
 import '../../../providers/chat_provider.dart';
+import '../../../providers/contract_provider.dart';
 
 class ChatTab extends StatefulWidget {
   final int? workspaceId;
