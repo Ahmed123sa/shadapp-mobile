@@ -19,6 +19,10 @@ class SubUserRepository {
   Future<Map<String, dynamic>> create(int clientId, Map<String, dynamic> body) =>
       _api.post('/clients/$clientId/sub-users', body);
 
+  /// GET /sub-users/:id — used by client_dashboard_screen.dart to load the
+  /// signed-in sub-user's own permissions map on startup.
+  Future<Map<String, dynamic>> fetchOne(int id) => _api.get('/sub-users/$id');
+
   Future<void> delete(int id) => _api.delete('/sub-users/$id');
 
   /// Returns the raw response — callers read back `res['sub_user']['permissions']`

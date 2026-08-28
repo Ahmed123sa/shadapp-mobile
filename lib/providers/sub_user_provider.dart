@@ -7,6 +7,9 @@ class SubUserProvider extends ChangeNotifier {
 
   Future<List<dynamic>> fetchForClient(int clientId) => _repo.fetchForClient(clientId);
 
+  /// Raw `/sub-users/:id` envelope — see [SubUserRepository.fetchOne].
+  Future<Map<String, dynamic>> fetchOneRaw(int id) => _repo.fetchOne(id);
+
   Future<Map<String, dynamic>> create(int clientId, Map<String, dynamic> body) => _repo.create(clientId, body);
 
   Future<void> delete(int id) => _repo.delete(id);

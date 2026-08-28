@@ -11,6 +11,23 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/shad_logo.dart';
+import '../../data/approval_repository.dart';
+import '../../data/chat_repository.dart';
+import '../../data/client_repository.dart';
+import '../../data/file_repository.dart';
+import '../../data/meeting_repository.dart';
+import '../../data/payment_repository.dart';
+import '../../data/signature_repository.dart';
+import '../../data/sub_user_repository.dart';
+import '../../providers/approval_provider.dart';
+import '../../providers/chat_provider.dart';
+import '../../providers/client_provider.dart';
+import '../../providers/contract_provider.dart';
+import '../../providers/file_provider.dart';
+import '../../providers/meeting_provider.dart';
+import '../../providers/payment_provider.dart';
+import '../../providers/signature_provider.dart';
+import '../../providers/sub_user_provider.dart';
 import '../contracts/contracts_page.dart';
 import '../payments/payments_page.dart';
 import '../chat/chat_page.dart';
@@ -28,7 +45,25 @@ class ClientDashboardScreen extends StatefulWidget {
   // WebSocket. Defaults to null, which falls back to the real singleton —
   // zero behavior change for every existing call site.
   final ReverbService? reverb;
-  const ClientDashboardScreen({super.key, this.initialTab = 2, this.reverb});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // ApiClient instead of hitting the network. Defaults to the real
+  // singleton — zero behavior change for every existing call site.
+  final ApiClient? api;
+  // Lets widget tests skip FirebaseMessaging.onMessage/.onMessageOpenedApp
+  // entirely (Step 0-style seam) — both require a real Firebase.initializeApp()
+  // call that plain `flutter test` never makes, so leaving this on would
+  // crash every test that pumps this screen regardless of ApiClient/reverb
+  // seaming. Defaults to true — zero behavior change for every existing call
+  // site.
+  final bool enableFcm;
+  // Threaded straight through to the embedded ChatPage tab. ChatPage's
+  // RealtimePoller checks the real ReverbService() singleton's isConnected
+  // (not the injected `reverb`) to decide whether to fire its 5s safety
+  // refresh, so under a mocked ApiClient it refreshes on every tick forever —
+  // exactly what chat_page_test.dart avoids with this same flag. Defaults to
+  // true — zero behavior change for every existing call site.
+  final bool enablePolling;
+  const ClientDashboardScreen({super.key, this.initialTab = 2, this.reverb, this.api, this.enableFcm = true, this.enablePolling = true});
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -36,7 +71,23 @@ class ClientDashboardScreen extends StatefulWidget {
 
 class _ClientDashboardScreenState extends State<ClientDashboardScreen> with WidgetsBindingObserver {
   int _selectedIndex = 0;
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
+  // Derived from `_api` purely to break the singleton fallback in the tabs
+  // embedded via IndexedStack below (which mounts every tab eagerly, so all
+  // of them need to be controllable from a test even though only this
+  // screen's own domains — client load, notifications badge, sub-user
+  // permissions — are migrated this slice). Each embedded screen still owns
+  // its own provider params for its own testability; in production `_api`
+  // is always the real singleton, so this changes nothing.
+  late final ClientProvider _childClientProvider = ClientProvider(repository: ClientRepository(api: _api));
+  late final ContractProvider _childContractProvider = ContractProvider(api: _api);
+  late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
+  late final ApprovalProvider _childApprovalProvider = ApprovalProvider(repository: ApprovalRepository(api: _api));
+  late final ChatProvider _childChatProvider = ChatProvider(repository: ChatRepository(api: _api));
+  late final FileProvider _childFileProvider = FileProvider(repository: FileRepository(api: _api));
+  late final MeetingProvider _childMeetingProvider = MeetingProvider(repository: MeetingRepository(api: _api));
+  late final SignatureProvider _childSignatureProvider = SignatureProvider(repository: SignatureRepository(api: _api));
+  late final SubUserProvider _childSubUserProvider = SubUserProvider(repository: SubUserRepository(api: _api));
   int _unreadNotifs = 0;
   int _unreadChat = 0;
   int _badgeContracts = 0;
@@ -138,15 +189,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       _loadClientData();
       _contractRefreshNotifier.value++;
     };
-    _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
-      final type = msg.data['type'] as String? ?? '';
-      if (type == 'contract.company_approved' || type == 'contract.completed' || type == 'payment.approved' || type == 'payment_scheduled' || type == 'payment_reminder' || type == 'payment_schedule_deleted' || type == 'payment_schedule_updated') {
+    if (widget.enableFcm) {
+      _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
+        final type = msg.data['type'] as String? ?? '';
+        if (type == 'contract.company_approved' || type == 'contract.completed' || type == 'payment.approved' || type == 'payment_scheduled' || type == 'payment_reminder' || type == 'payment_schedule_deleted' || type == 'payment_schedule_updated') {
+          _loadClientData();
+        }
+      });
+      FirebaseMessaging.onMessageOpenedApp.listen((_) {
         _loadClientData();
-      }
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen((_) {
-      _loadClientData();
-    });
+      });
+    }
   }
 
   @override
@@ -311,11 +364,11 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
 
   Widget _buildDashboard() {
     final pages = <Widget>[
-      ContractsPage(onGoToPayments: _goToPayments, refreshNotifier: _contractRefreshNotifier),
-      const PaymentsPage(),
-      ChatPage(onGoToPayments: _goToPayments, reverb: widget.reverb),
-      ApprovalsPage(workspaceId: _workspace?['id'] as int?),
-      const ClientFilesPage(),
+      ContractsPage(onGoToPayments: _goToPayments, refreshNotifier: _contractRefreshNotifier, api: _api),
+      PaymentsPage(paymentProvider: _childPaymentProvider, contractProvider: _childContractProvider, api: _api),
+      ChatPage(onGoToPayments: _goToPayments, reverb: widget.reverb, enablePolling: widget.enablePolling, chatProvider: _childChatProvider, contractProvider: _childContractProvider, meetingProvider: _childMeetingProvider, api: _api),
+      ApprovalsPage(workspaceId: _workspace?['id'] as int?, approvalProvider: _childApprovalProvider, api: _api),
+      ClientFilesPage(fileProvider: _childFileProvider, api: _api),
     ];
 
     const tabKeys = ['contracts', 'payments', 'chat', 'approvals', 'files'];
@@ -384,9 +437,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
             index: _selectedIndex >= 5 ? _selectedIndex : _selectedIndex,
             children: [
               ...pages,
-              const MeetingsPage(),
-              const SignatureTab(),
-              const SubUsersPage(),
+              MeetingsPage(meetingProvider: _childMeetingProvider, api: _api),
+              SignatureTab(clientProvider: _childClientProvider, signatureProvider: _childSignatureProvider, api: _api),
+              SubUsersPage(subUserProvider: _childSubUserProvider, api: _api),
             ],
           ),
         ],

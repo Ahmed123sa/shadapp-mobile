@@ -14,7 +14,13 @@ import '../../core/widgets/error_state.dart';
 class ContractsPage extends StatefulWidget {
   final VoidCallback? onGoToPayments;
   final ValueNotifier<int>? refreshNotifier;
-  const ContractsPage({super.key, this.onGoToPayments, this.refreshNotifier});
+  // Optional so this screen can be pumped in a widget test (e.g. embedded
+  // inside client_dashboard_screen.dart's IndexedStack, which mounts every
+  // tab eagerly) with a mocked ApiClient instead of hitting the network.
+  // Defaults to the real singleton — zero behavior change for every existing
+  // call site. This screen's own domain migration remains deferred (Path B).
+  final ApiClient? api;
+  const ContractsPage({super.key, this.onGoToPayments, this.refreshNotifier, this.api});
 
 
   @override
@@ -22,7 +28,7 @@ class ContractsPage extends StatefulWidget {
 }
 
 class _ContractsPageState extends State<ContractsPage> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   List<dynamic> _contracts = [];
   String? _clientType;
   bool _loading = true;
