@@ -232,14 +232,12 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   Future<List<Map<String, dynamic>>> _fetchAllContracts(List<String> statuses) async {
     final results = <Map<String, dynamic>>[];
     try {
-      final data = await _api.get('/clients');
-      final clients = safeList(data['clients']);
+      final clients = await _childClientProvider.fetchClientsRaw();
       for (final client in clients) {
         final ws = client['workspace'] as Map<String, dynamic>?;
         if (ws == null) continue;
         try {
-          final contractsData = await _api.get('/workspaces/${ws['id']}/contracts');
-          final contracts = safeList(contractsData['contracts']);
+          final contracts = await _childContractProvider.fetchWorkspaceContractsRaw(ws['id'] as int);
           for (final c in contracts) {
             if (statuses.contains(c['status'])) {
               results.add({
