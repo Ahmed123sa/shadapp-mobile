@@ -266,7 +266,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final reason = await _showEditRequestDialog();
       if (reason == null) return;
       try {
-        await _api.post('/chat/$msgId/respond', {'action': action, 'reason': reason});
+        await _chatProvider.respond(msgId, action: action, reason: reason);
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(l10n.editRequestedToast)])));
@@ -278,7 +278,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       }
     } else {
       try {
-        await _api.post('/chat/$msgId/respond', {'action': action});
+        await _chatProvider.respond(msgId, action: action);
         _load();
       } catch (e) {
         debugPrint('[chat_page] _respondToMessage error: $e');
