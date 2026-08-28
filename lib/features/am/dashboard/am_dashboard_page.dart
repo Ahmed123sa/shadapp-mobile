@@ -126,8 +126,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     setState(() => _loading = true);
     try {
       if (_isSA) {
-        final data = await _api.get('/account-managers');
-        _allManagers = data['managers'] as List<dynamic>? ?? [];
+        _allManagers = await _childManagerProvider.fetchAllManagersRaw();
         _pendingContracts = await _fetchAllContracts(['sent', 'client_approved']);
         try {
           final allContractsData = await _api.get('/all-contracts');
