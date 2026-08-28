@@ -208,9 +208,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final replyId = _replyTo?['id'];
     setState(() => _replyTo = null);
     try {
-      final body = <String, dynamic>{'message': text};
-      if (replyId != null) body['reply_to_id'] = replyId;
-      await _api.post('/workspaces/${_api.workspaceIdSafe}/chat', body);
+      await _chatProvider.sendMessage(_api.workspaceIdSafe, text, replyToId: replyId as int?);
       _load();
       _markRead();
     } catch (e) {
