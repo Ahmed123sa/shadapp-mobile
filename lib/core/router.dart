@@ -18,9 +18,29 @@ import '../features/am/reports/audit_log_page.dart';
 import '../features/profile/profile_page.dart';
 import '../features/settings/settings_page.dart';
 
+const _publicLocations = ['/login', '/forgot-password'];
+
 GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
   return GoRouter(
     initialLocation: initialLocation,
+    // Guards two cases the old cold-boot-only initialLocation check missed:
+    // a stale deep link opened after the token is gone (e.g. tapping an old
+    // notification, or api_client.dart's onSessionExpired sending the app to
+    // /login mid-session), and a logged-in user landing back on /login (e.g.
+    // the same stale-deep-link case, but before login). Runs on every
+    // navigation, not just at startup. See docs/mobile-review-2026-08.md, P0 #1.
+    redirect: (context, state) async {
+      final loggedIn = await api.getToken() != null;
+      final goingToPublic = _publicLocations.contains(state.matchedLocation);
+      if (!loggedIn) {
+        return goingToPublic ? null : '/login';
+      }
+      if (goingToPublic) {
+        final role = await api.getRole();
+        return (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
+      }
+      return null;
+    },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordPage()),

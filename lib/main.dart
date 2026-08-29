@@ -93,6 +93,11 @@ void main() async {
     initialLocation = (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
   }
   router = createRouter(api, initialLocation: initialLocation);
+  // Only fires on a server-forced 401 (see api_client.dart's onSessionExpired
+  // doc comment) — a manual logout already navigates itself and never hits
+  // this. Without it the app sat on the dead screen until force-closed; see
+  // docs/mobile-review-2026-08.md, P0 #1.
+  api.onSessionExpired = () => router!.go('/login');
 
   if (pendingNotifData != null) {
     await _navigateFromNotification(pendingNotifData!, router);
@@ -141,7 +146,7 @@ Future<void> _navigateFromNotification(Map<String, String> data, GoRouter router
   final type = data['type'];
   final role = await ApiClient().getRole();
 
-  if (role == 'client') {
+  if (role == 'client' || role == 'sub_user') {
     router.go('/dashboard?tab=${_fcmTabIndex(type, isClient: true)}');
     return;
   }

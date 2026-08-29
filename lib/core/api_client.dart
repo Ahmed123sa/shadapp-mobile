@@ -40,6 +40,14 @@ class ApiClient {
 
   AppLocalizations? l10n;
 
+  /// Fired the moment a 401 clears the token — i.e. only when the *server*
+  /// decided the session is gone, never on a manual logout (those call
+  /// clearToken() directly and already navigate themselves). Wired in
+  /// main.dart to push the app to /login instead of leaving whatever screen
+  /// was open sitting there with a dead token and no way back in short of
+  /// force-closing the app. See docs/mobile-review-2026-08.md, P0 #1.
+  void Function()? onSessionExpired;
+
   static final ApiClient _instance = ApiClient._();
   ApiClient._() : _httpClient = http.Client(), _secureStorage = const FlutterSecureStorage();
 
@@ -336,6 +344,7 @@ class ApiClient {
 
     if (response.statusCode == 401) {
       await clearToken();
+      onSessionExpired?.call();
       throw AuthException(data['message'] ?? l10n?.sessionExpired ?? 'Session Expired');
     }
     if (response.statusCode == 422) {
