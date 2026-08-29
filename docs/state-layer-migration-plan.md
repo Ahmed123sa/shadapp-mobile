@@ -132,9 +132,22 @@ int get workspaceIdSafe => workspaceId ?? 1;
 **٧. [اتلغى] Controllers جوّه الـ dialogs مش بيتعملها `dispose`**
 اتجرّب فيكس (dispose بعد ما `showDialog`/`showModalBottomSheet` يرجعوا، في `admin_settings_page.dart` وفي `client_onboarding_screen.dart` عبر `.whenComplete()`) — لكن التست كسر ٤ تستات (`A TextEditingController was used after being disposed` + أعطال cascading في framework assertions زي `_dependents.isEmpty`). السبب: الـ Future بتاع `showDialog`/`showModalBottomSheet` بيرجع قبل ما شجرة الـ widgets تخلص تتفكك فعليًا — لسه فيه frame أو أكتر بيعيدوا بناء الـ `TextField` وهو بيستخدم الـ controller اللي اتعمله dispose بالفعل. الفيكس اتعمله revert بالكامل، ورجعنا للسلوك الأصلي (تسريب بسيط ومحدود، مش خطر). لو حبينا نرجع للموضوع ده تاني، الطريقة الصح هي نلف الـ controllers جوّه `StatefulWidget` خاص بيه `dispose()` بتاعه، مش نرفعهم لمستوى الدالة اللي بتفتح الـ dialog.
 
-**٨. ٨ ملفات فوق ٨٠٠ سطر**
-`chat_tab` ١٢٦٥ · `chat_page` ١٢٥٥ · `am_dashboard_page` ١١٦١ · `client_onboarding_screen` ١٠٥٩ · `admin_settings_page` ٩٩١ · `reports_tab` ٩٣٤ · `payments_page` ٩٠٣ · `contracts_page` ٨٧٥.
-البند ٥ لوحده بياكل أكبر اتنين.
+**٨. [تم] ٨ ملفات فوق ٨٠٠ سطر**
+
+كل ملف اتقسّم لواحد أو اتنين ملفات مساعدة بنفس منهج "استخراج دومين معزول" اللي استخدمناه في البنود التانية: الشاشة الأصلية فضلت مالكة الحالة وكل الأفعال الجانبية (fetch/setState/side effects)، والملف الجديد بيتاخد بارامترات/callbacks بس ويبني UI. كل استخراج اتحقق بـ `flutter analyze` (صفر مشاكل) + `flutter test` (٤٦٣/٤٦٣) لوحده قبل الكوميت. الأرقام الفعلية وقت الفحص (بعضها كان مختلف عن التقدير الأول في الجدول القديم):
+
+| الملف | قبل | بعد | الملفات الجديدة |
+|---|---|---|---|
+| `contracts_page.dart` | ٨٧٥ | ٣٢٧ | `contract_detail_sheet.dart` (استخراج `ContractDetailSheet`) |
+| `payments_page.dart` | ٩٠٣ | ٤٨٢ | `payments_page_sheets.dart` (شيتَي طلب الدفعة والدفعة المجدولة) |
+| `reports_tab.dart` | ٩٣٤ | ٦٠٢ | `reports_tab_widgets.dart` (الرسوم البيانية + KPI cards + لوحة الفلاتر) |
+| `admin_settings_page.dart` | ٩٩١ | ٧٢٦ | `admin_settings_clauses.dart` (قسم بنود العقد بالكامل) |
+| `client_onboarding_screen.dart` | ١٠٥٩ | ٤٨٦ | `client_onboarding_payment_sheet.dart` + `client_onboarding_stages.dart` |
+| `am_dashboard_page.dart` | ١١٦١ | ٤٩٤ | `am_dashboard_home_tabs.dart` + `am_dashboard_sheets.dart` |
+| `chat_page.dart` | ١٠٧٦ | ٦٤٤ | `chat_page_widgets.dart` (قائمة الرسائل + شيتَي العقود/البنود) |
+| `chat_tab.dart` | ١٠٥٨ | ٦٧٤ | `chat_tab_widgets.dart` (نفس المنهج، **مش متّحد** مع `chat_page_widgets.dart` — نفس قرار البند ٥ إن الفروق الحقيقية بين الشاشتين تفضل منفصلة) |
+
+كل الـ ٨ ملفات بقت تحت حد الـ ٨٠٠ سطر.
 
 ### الترتيب المقترح للمرحلة التالية
 
