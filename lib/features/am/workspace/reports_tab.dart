@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -9,6 +8,7 @@ import '../../../providers/client_provider.dart';
 import '../../../providers/manager_provider.dart';
 import '../../../providers/report_provider.dart';
 import '../reports/audit_log_page.dart';
+import 'reports_tab_widgets.dart';
 
 class ReportsTab extends StatefulWidget {
   final ClientProvider? clientProvider;
@@ -275,176 +275,23 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
-  Widget _buildCustomFilterPanel() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
-      ),
-      child: Column(
-        children: [
-          Row(children: [
-            _buildDateChip(l10n.auditLogFrom, _dateFrom, (d) { setState(() => _dateFrom = d); _load(); }),
-            const SizedBox(width: 8),
-            _buildDateChip(l10n.auditLogTo, _dateTo, (d) { setState(() => _dateTo = d); _load(); }),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () { _load(); },
-              child: Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: ShadColors.crimsonSoft,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.crimsonBorder),
-                ),
-                child: const Icon(Icons.check, size: 14, color: ShadColors.crimson),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: _buildDropdown(
-              _selectedClientId, l10n.reportsClient, l10n.reportsAllClients,
-              _clients.map((c) => MapEntry<dynamic, String>(c.id, c.companyName)).toList(),
-              (v) { setState(() => _selectedClientId = v); _load(); },
-            )),
-            const SizedBox(width: 8),
-            Expanded(child: _buildDropdown(
-              _selectedManagerId, l10n.reportsManager, l10n.reportsAllManagers,
-              _managers.map((m) => MapEntry<dynamic, String>(m.id, m.name)).toList(),
-              (v) { setState(() => _selectedManagerId = v); _load(); },
-            )),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            _typeChip(l10n.all, null),
-            const SizedBox(width: 6),
-            _typeChip(l10n.clientTypeCompany, 'business'),
-            const SizedBox(width: 6),
-            _typeChip(l10n.clientTypeIndividual, 'individual'),
-            const Spacer(),
-            GestureDetector(
-              onTap: _clearFilters,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.borderLight),
-                ),
-                child: Text(l10n.reportsReset, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
-              ),
-            ),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateChip(String label, DateTime? value, Function(DateTime) onSelect) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: value ?? DateTime.now(),
-            firstDate: DateTime(2020),
-            lastDate: DateTime.now(),
-            builder: (ctx, child) => Theme(
-              data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: ShadColors.gold)),
-              child: child!,
-            ),
-          );
-          if (picked != null) onSelect(picked);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: ShadColors.surfaceDarker,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: ShadColors.borderLight),
-          ),
-          child: Row(children: [
-            const Icon(Icons.calendar_today, size: 12, color: ShadColors.textSecondary),
-            const SizedBox(width: 6),
-            Text(
-              value != null ? '${value.day}/${value.month}/${value.year}' : label,
-              style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdown(dynamic selected, String label, String hint, List<MapEntry<dynamic, String>> items, Function(dynamic) onSelect) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (ctx) => SafeArea(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-              ),
-              ListTile(
-                title: Text(hint, style: const TextStyle(fontSize: 12)),
-                trailing: selected == null ? const Icon(Icons.check, size: 16, color: ShadColors.gold) : null,
-                onTap: () { onSelect(null); Navigator.pop(ctx); },
-              ),
-              ...items.map((e) => ListTile(
-                title: Text(e.value, style: const TextStyle(fontSize: 12)),
-                trailing: selected == e.key ? const Icon(Icons.check, size: 16, color: ShadColors.gold) : null,
-                onTap: () { onSelect(e.key); Navigator.pop(ctx); },
-              )),
-            ]),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: ShadColors.surfaceDarker,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ShadColors.borderLight),
-        ),
-        child: Row(children: [
-          Icon(Icons.person, size: 12, color: ShadColors.textSecondary),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              selected != null
-                  ? items.firstWhere((e) => e.key == selected, orElse: () => MapEntry(null, selected.toString())).value
-                  : hint,
-              style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const Icon(Icons.arrow_drop_down, size: 16, color: ShadColors.textSecondary),
-        ]),
-      ),
-    );
-  }
-
-  Widget _typeChip(String label, String? value) {
-    final active = _clientType == value;
-    return GestureDetector(
-      onTap: () { setState(() => _clientType = value); _load(); },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: active ? ShadColors.goldSoft : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
-        ),
-        child: Text(label, style: TextStyle(
-          fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-          color: active ? ShadColors.gold : ShadColors.textSecondary,
-        )),
-      ),
-    );
-  }
+  Widget _buildCustomFilterPanel() => buildReportsCustomFilterPanel(
+    context: context,
+    dateFrom: _dateFrom,
+    dateTo: _dateTo,
+    selectedClientId: _selectedClientId,
+    selectedManagerId: _selectedManagerId,
+    clientType: _clientType,
+    clients: _clients,
+    managers: _managers,
+    onDateFromSelected: (d) { setState(() => _dateFrom = d); _load(); },
+    onDateToSelected: (d) { setState(() => _dateTo = d); _load(); },
+    onApply: () { _load(); },
+    onClientSelected: (v) { setState(() => _selectedClientId = v); _load(); },
+    onManagerSelected: (v) { setState(() => _selectedManagerId = v); _load(); },
+    onTypeSelected: (v) { setState(() => _clientType = v); _load(); },
+    onClearFilters: _clearFilters,
+  );
 
   Widget _buildKpiScroll() {
     final l10n = AppLocalizations.of(context)!;
@@ -470,7 +317,7 @@ class _ReportsTabState extends State<ReportsTab> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: kpis.map((k) => _kpiCard(k)).toList(),
+          children: kpis.map((k) => buildReportKpiCard(k)).toList(),
         ),
       ),
     );
@@ -478,49 +325,6 @@ class _ReportsTabState extends State<ReportsTab> {
 
   _kpiData(String kind, String label, String value, Color accent, String delta, bool isUp) {
     return (kind, label, value, accent, delta, isUp);
-  }
-
-  Widget _kpiCard((String, String, String, Color, String, bool) k) {
-    final (kind, label, value, accent, delta, isUp) = k;
-    return Container(
-      width: 110,
-      margin: const EdgeInsetsDirectional.only(end: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary)),
-              const SizedBox(height: 5),
-              Text(value, style: TextStyle(
-                fontFamily: 'Playfair Display',
-                fontSize: kind == 'revenue' ? 16 : 20,
-                fontWeight: FontWeight.w700,
-                color: kind == 'pending' ? ShadColors.error : ShadColors.textPrimary,
-              )),
-              const SizedBox(height: 4),
-              Text(delta, style: TextStyle(
-                fontSize: 9,
-                color: isUp ? ShadColors.success : ShadColors.error,
-              )),
-            ],
-          ),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(height: 2, decoration: BoxDecoration(
-              color: accent,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(2)),
-            )),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildRevenueChart() {
@@ -533,163 +337,31 @@ class _ReportsTabState extends State<ReportsTab> {
       child: SizedBox(
         height: 130,
         child: payments.isEmpty
-            ? _emptyChart()
-            : _revenueLineChart(payments),
+            ? reportsEmptyChart()
+            : buildRevenueLineChart(context, payments, _chartPeriod),
       ),
     );
-  }
-
-  Widget _revenueLineChart(Map<String, dynamic> data) {
-    final l10n = AppLocalizations.of(context)!;
-    final entries = data.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-    final total = entries.length;
-    final slice = _chartPeriod == '6m' ? total > 6 ? entries.sublist(total - 6) : entries : entries;
-    if (slice.isEmpty) return _emptyChart();
-    final flatSpots = slice.asMap().entries.map((e) => FlSpot(e.key.toDouble(), _toDouble(e.value.value))).toList();
-
-    return LineChart(LineChartData(
-      lineBarsData: [LineChartBarData(
-        spots: flatSpots, isCurved: true, color: ShadColors.crimson, barWidth: 2, curveSmoothness: 0.4,
-        belowBarData: BarAreaData(show: true, color: ShadColors.crimson.withAlpha(20)),
-        dotData: FlDotData(show: true, getDotPainter: (_, __, ___, ____) =>
-          FlDotCirclePainter(radius: 3, color: ShadColors.gold, strokeWidth: 0)),
-      )],
-      titlesData: FlTitlesData(
-        show: true,
-        bottomTitles: AxisTitles(sideTitles: SideTitles(
-          showTitles: true, reservedSize: 20, interval: 1,
-          getTitlesWidget: (v, _) {
-            final idx = v.toInt();
-            if (idx < 0 || idx >= slice.length) return const SizedBox();
-            final parts = slice[idx].key.split('-');
-            final monthNames = [l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril, l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust, l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember];
-            final m = int.tryParse(parts.length > 1 ? parts[1] : '1') ?? 1;
-            final name = monthNames[m - 1];
-            return Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(name.length <= 2 ? name : name.substring(0, 2), style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)),
-            );
-          },
-        )),
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32,
-          getTitlesWidget: (v, _) => Text('${v.toInt() ~/ 1000}k', style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)))),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: (flatSpots.map((s) => s.y).reduce((a, b) => a > b ? a : b) / 4).ceilToDouble()),
-    ));
   }
 
   Widget _buildContractsChart() {
     final l10n = AppLocalizations.of(context)!;
     final contracts = _safeMap(_stats?['contracts_by_status']);
-    final statusOrder = ['completed', 'sent', 'client_approved', 'company_approved', 'draft', 'archived', 'client_rejected', 'edit_requested'];
-    final entries = statusOrder.where((s) => contracts.containsKey(s) && _toDouble(contracts[s]) > 0).map((s) => MapEntry(s, _toDouble(contracts[s]))).toList();
-    final total = entries.fold<double>(0, (s, e) => s + e.value);
-
-    final contractColors = {
-      'completed': ShadColors.success,
-      'sent': ShadColors.blue,
-      'client_approved': ShadColors.gold,
-      'company_approved': ShadColors.purple,
-      'draft': ShadColors.textMuted,
-      'archived': ShadColors.orange,
-      'client_rejected': ShadColors.error,
-      'edit_requested': ShadColors.warning,
-    };
-
     return _chartSection(
       title: l10n.reportsContractsByStatus,
       subtitle: l10n.reportsCurrentDistribution,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 130,
-            child: entries.isEmpty
-                ? _emptyChart()
-                : PieChart(PieChartData(
-                    sectionsSpace: 0,
-                    centerSpaceRadius: 44,
-                    sections: entries.asMap().entries.map((e) => PieChartSectionData(
-                      value: e.value.value,
-                      color: contractColors[e.value.key] ?? ShadColors.textMuted,
-                      radius: 40,
-                      title: '${(e.value.value / total * 100).toInt()}%',
-                      titleStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    )).toList(),
-                  )),
-          ),
-          const SizedBox(height: 8),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 6,
-            mainAxisSpacing: 2,
-            crossAxisSpacing: 4,
-            children: entries.map((e) {
-              final labelMap = {
-                'completed': l10n.completed, 'sent': l10n.sent, 'client_approved': l10n.clientApproved,
-                'company_approved': l10n.companyApproved, 'draft': l10n.draft, 'archived': l10n.archived,
-                'client_rejected': l10n.rejected, 'edit_requested': l10n.editRequestedStatus,
-              };
-              return Row(children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(
-                  color: contractColors[e.key] ?? ShadColors.textMuted, shape: BoxShape.circle,
-                )),
-                const SizedBox(width: 5),
-                Text('${labelMap[e.key] ?? e.key} (${e.value.toInt()})', style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary)),
-              ]);
-            }).toList(),
-          ),
-        ],
-      ),
+      child: buildContractsChartBody(context, contracts),
     );
   }
 
   Widget _buildApprovalsChart() {
     final l10n = AppLocalizations.of(context)!;
     final approvalStats = _safeMap(_stats?['approval_stats']);
-    final labels = ['approved', 'rejected', 'pending'];
-    final displayLabels = [l10n.approved, l10n.rejected, l10n.pending];
-    final colors = [ShadColors.success, ShadColors.error, ShadColors.gold];
-    final data = labels.map((k) => _toDouble(approvalStats[k])).toList();
-    if (data.every((v) => v == 0)) return const SizedBox.shrink();
-
+    final body = buildApprovalsChartBody(context, approvalStats);
+    if (body == null) return const SizedBox.shrink();
     return _chartSection(
       title: l10n.approvals,
       subtitle: '${l10n.approved} / ${l10n.rejected} / ${l10n.pending}',
-      child: SizedBox(
-        height: 130,
-        child: BarChart(BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: data.reduce((a, b) => a > b ? a : b) * 1.3,
-          barTouchData: BarTouchData(enabled: true, touchTooltipData: BarTouchTooltipData(
-            getTooltipItem: (group, groupIndex, rod, rodIndex) =>
-              BarTooltipItem('${data[groupIndex].toInt()}', const TextStyle(color: Colors.white, fontSize: 11)),
-          )),
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(sideTitles: SideTitles(
-              showTitles: true, getTitlesWidget: (v, _) {
-                final idx = v.toInt();
-                if (idx < 0 || idx >= displayLabels.length) return const SizedBox();
-                return Padding(padding: const EdgeInsets.only(top: 4), child: Text(displayLabels[idx], style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)));
-              }, reservedSize: 24,
-            )),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 24,
-              getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)))),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(show: true, drawVerticalLine: false),
-          barGroups: data.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
-            BarChartRodData(toY: e.value, color: colors[e.key], width: 18, borderRadius: const BorderRadius.vertical(top: Radius.circular(5))),
-          ])).toList(),
-        )),
-      ),
+      child: body,
     );
   }
 
@@ -923,12 +595,6 @@ class _ReportsTabState extends State<ReportsTab> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _emptyChart() {
-    return const Center(
-      child: Icon(Icons.bar_chart, color: ShadColors.textDisabled, size: 36),
     );
   }
 }
