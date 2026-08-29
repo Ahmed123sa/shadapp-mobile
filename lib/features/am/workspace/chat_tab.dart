@@ -459,7 +459,13 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ]),
               ),
             if (m['type'] == 'file' && m['file_url'] != null)
-              _buildFileAttachment(m),
+              chatFileAttachment(
+                api: _api,
+                m: m,
+                fallbackFileName: AppLocalizations.of(context)!.attachment,
+                backgroundColor: ShadColors.card,
+                borderColor: ShadColors.cardBorder,
+              ),
             Text(m['message'] ?? '', style: ShadTypography.chatBubble.copyWith(color: ShadColors.textPrimary)),
             if (!isClient && m['created_at'] != null)
               Padding(
@@ -539,88 +545,15 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ]),
               ),
             if (m['approval']?['certificate']?['pdf_url'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final url = _api.resolveFileUrl(m['approval']['certificate']['pdf_url'] as String);
-                    final uri = Uri.tryParse(url);
-                    final canLaunch = uri != null && await canLaunchUrl(uri);
-                    if (canLaunch) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
-                      // This method takes no `context` parameter, so
-                      // `context` here resolves to the State's own
-                      // `context` getter — the analyzer wants the matching
-                      // State `mounted` getter as the guard, not
-                      // `context.mounted`, or it doesn't recognize the
-                      // guard as related to this use.
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatFileOpenFailed)));
-                    }
-                  },
-                  icon: const Icon(Icons.picture_as_pdf, size: 14),
-                  label: Text(AppLocalizations.of(context)!.chatDownloadCertificate),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ShadColors.crimson,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 0,
-                  ),
-                ),
+              chatCertificateDownloadButton(
+                state: this,
+                api: _api,
+                m: m,
+                label: AppLocalizations.of(context)!.chatDownloadCertificate,
+                fileOpenFailedMessage: AppLocalizations.of(context)!.chatFileOpenFailed,
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFileAttachment(Map<String, dynamic> m) {
-    final fileName = m['file_name'] as String? ?? AppLocalizations.of(context)!.attachment;
-    final fileSize = m['file_size'] as int?;
-    String sizeText = '';
-    if (fileSize != null) {
-      if (fileSize > 1024 * 1024) {
-        sizeText = '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
-      } else {
-        sizeText = '${(fileSize / 1024).toStringAsFixed(0)} KB';
-      }
-    }
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.insert_drive_file, size: 20, color: ShadColors.gold),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(fileName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 1),
-                if (sizeText.isNotEmpty)
-                  Text(sizeText, style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () async {
-              final url = _api.resolveFileUrl(m['file_url'] as String);
-              final uri = Uri.tryParse(url);
-              if (uri != null && await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-            child: const Icon(Icons.download, size: 16, color: ShadColors.gold),
-          ),
-        ],
       ),
     );
   }
@@ -728,7 +661,14 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         ]),
       ),
       // Upcoming Meeting Banner
-      if (_nextMeeting != null) _buildUpcomingMeetingBanner(),
+      if (_nextMeeting != null) chatUpcomingMeetingBanner(
+        meeting: _nextMeeting!,
+        fallbackTitle: l10n.chatUpcomingMeeting,
+        inMinutesLabel: l10n.chatInMinutes,
+        inHoursLabel: l10n.chatInHours,
+        inDaysLabel: l10n.chatInDays,
+        joinLabel: l10n.chatJoin,
+      ),
       // Upcoming Payment Banner
       if (_nextPayment != null)
         PaymentBanner(
@@ -912,57 +852,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           ]),
         ),
     ]);
-  }
-
-  Widget _buildUpcomingMeetingBanner() {
-    final l10n = AppLocalizations.of(context)!;
-    final m = _nextMeeting!;
-    final title = m['title'] as String? ?? l10n.chatUpcomingMeeting;
-    final link = m['link'] as String?;
-    String timeLabel = '';
-    try {
-      final scheduledAt = DateTime.parse(m['scheduled_at']).toLocal();
-      final diff = scheduledAt.difference(DateTime.now());
-      if (diff.inMinutes < 60) {
-        timeLabel = l10n.chatInMinutes(diff.inMinutes);
-      } else if (diff.inHours < 24) {
-        timeLabel = l10n.chatInHours(diff.inHours);
-      } else {
-        timeLabel = l10n.chatInDays(diff.inDays);
-      }
-    } catch (_) {
-      // An unparseable/missing date just leaves the relative label off.
-      // Runs inside build(), so reporting it would fire on every frame.
-    }
-    return GestureDetector(
-      onTap: link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: ShadColors.meetingBlueSoft,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
-        ),
-        child: Row(children: [
-          const Icon(Icons.videocam, size: 18, color: ShadColors.meetingBlue),
-          const SizedBox(width: 8),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
-            if (timeLabel.isNotEmpty) Text(timeLabel, style: TextStyle(fontSize: 10, color: ShadColors.meetingBlue.withAlpha(180))),
-          ])),
-          if (link != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: ShadColors.meetingBlue,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(l10n.chatJoin, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
-            ),
-        ]),
-      ),
-    );
   }
 
   void _onPaymentBannerTap(Map<String, dynamic> payment) {

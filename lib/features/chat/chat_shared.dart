@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/meeting_chip.dart';
@@ -102,6 +103,170 @@ Widget chatHeaderIconBtn(IconData icon, VoidCallback onTap) {
         border: Border.all(color: ShadColors.cardBorder, width: 0.5),
       ),
       child: Icon(icon, size: 14, color: ShadColors.textSecondary),
+    ),
+  );
+}
+
+// Identical logic in both screens (only the l10n key names differed —
+// same displayed text). Takes the owning State so it can read `mounted`
+// and `context` live at the moment the async gap resolves, rather than a
+// snapshot captured when the button was built — a stale-mounted check
+// here would be the same class of bug the state-layer migration plan's
+// P2-2 attempt ran into with disposed controllers.
+Widget chatCertificateDownloadButton({
+  required State state,
+  required ApiClient api,
+  required Map<String, dynamic> m,
+  required String label,
+  required String fileOpenFailedMessage,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 6),
+    child: ElevatedButton.icon(
+      onPressed: () async {
+        final url = api.resolveFileUrl(m['approval']['certificate']['pdf_url'] as String);
+        final uri = Uri.tryParse(url);
+        final canLaunch = uri != null && await canLaunchUrl(uri);
+        if (canLaunch) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (!state.mounted) return;
+          ScaffoldMessenger.of(state.context).showSnackBar(SnackBar(content: Text(fileOpenFailedMessage)));
+        }
+      },
+      icon: const Icon(Icons.picture_as_pdf, size: 14),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ShadColors.crimson,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 0,
+      ),
+    ),
+  );
+}
+
+// Identical in both screens except for the container's background/border
+// colors (chat_page used ShadColors.chatBg/chatBorder, chat_tab used
+// ShadColors.card/cardBorder — both pre-existing valid tokens, just a
+// different choice) and chat_page.dart carried an unused `isClient`
+// parameter that never affected the body. Callers pass their own colors
+// and the fallback file name string (both screens used the same l10n key
+// here, so no .arb changes were needed).
+Widget chatFileAttachment({
+  required ApiClient api,
+  required Map<String, dynamic> m,
+  required String fallbackFileName,
+  required Color backgroundColor,
+  required Color borderColor,
+}) {
+  final fileName = m['file_name'] as String? ?? fallbackFileName;
+  final fileSize = m['file_size'] as int?;
+  String sizeText = '';
+  if (fileSize != null) {
+    if (fileSize > 1024 * 1024) {
+      sizeText = '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else {
+      sizeText = '${(fileSize / 1024).toStringAsFixed(0)} KB';
+    }
+  }
+  return Container(
+    margin: const EdgeInsets.only(bottom: 4),
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: borderColor, width: 0.5),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.insert_drive_file, size: 20, color: ShadColors.gold),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(fileName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 1),
+              if (sizeText.isNotEmpty)
+                Text(sizeText, style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: () async {
+            final url = api.resolveFileUrl(m['file_url'] as String);
+            final uri = Uri.tryParse(url);
+            if (uri != null && await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+          child: const Icon(Icons.download, size: 16, color: ShadColors.gold),
+        ),
+      ],
+    ),
+  );
+}
+
+// chat_page.dart and chat_tab.dart both build this banner identically —
+// the only difference was which l10n keys they read (two separate but
+// textually-equivalent key sets). Rather than touching the .arb files to
+// unify the keys (a bigger, separate risk), each screen resolves its own
+// localized strings and passes them in here, so the displayed text is
+// byte-for-byte unchanged from before this extraction.
+Widget chatUpcomingMeetingBanner({
+  required Map<String, dynamic> meeting,
+  required String fallbackTitle,
+  required String Function(int) inMinutesLabel,
+  required String Function(int) inHoursLabel,
+  required String Function(int) inDaysLabel,
+  required String joinLabel,
+}) {
+  final title = meeting['title'] as String? ?? fallbackTitle;
+  final link = meeting['link'] as String?;
+  String timeLabel = '';
+  try {
+    final scheduledAt = DateTime.parse(meeting['scheduled_at']).toLocal();
+    final diff = scheduledAt.difference(DateTime.now());
+    if (diff.inMinutes < 60) {
+      timeLabel = inMinutesLabel(diff.inMinutes);
+    } else if (diff.inHours < 24) {
+      timeLabel = inHoursLabel(diff.inHours);
+    } else {
+      timeLabel = inDaysLabel(diff.inDays);
+    }
+  } catch (_) {
+    // An unparseable/missing date just leaves the relative label off.
+    // Runs inside build(), so reporting it would fire on every frame.
+  }
+  return GestureDetector(
+    onTap: link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null,
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: ShadColors.meetingBlueSoft,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
+      ),
+      child: Row(children: [
+        const Icon(Icons.videocam, size: 18, color: ShadColors.meetingBlue),
+        const SizedBox(width: 8),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
+          if (timeLabel.isNotEmpty) Text(timeLabel, style: TextStyle(fontSize: 10, color: ShadColors.meetingBlue.withAlpha(180))),
+        ])),
+        if (link != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: ShadColors.meetingBlue,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(joinLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
+          ),
+      ]),
     ),
   );
 }
