@@ -86,7 +86,8 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((_) async => jsonResponse('{}'));
   }
 
-  Future<void> pumpPage(WidgetTester tester, dynamic api) async {
+  Future<ReverbService> pumpPage(WidgetTester tester, dynamic api, {ReverbService? reverb}) async {
+    final reverbService = reverb ?? ReverbService.forTesting();
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -96,12 +97,13 @@ void main() {
           chatProvider: ChatProvider(repository: ChatRepository(api: api)),
           contractProvider: ContractProvider(api: api),
           meetingProvider: MeetingProvider(repository: MeetingRepository(api: api)),
-          reverb: ReverbService.forTesting(),
+          reverb: reverbService,
           enablePolling: false,
         ),
       ),
     ));
     await tester.pumpAndSettle();
+    return reverbService;
   }
 
   testWidgets('loads workspace + messages and marks the thread read on init', (tester) async {
@@ -121,6 +123,38 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).called(greaterThanOrEqualTo(1));
     expect(find.text('My own message'), findsOneWidget);
     expect(find.text('Hello from AM'), findsOneWidget);
+  });
+
+  testWidgets('a contract status change over reverb reloads the messages', (tester) async {
+    // Regression test for docs/state-layer-migration-plan.md, بند ٥'s
+    // "اكتشاف جانبي": chat_tab.dart (AM side) has always listened for this
+    // reverb event to refresh, but chat_page.dart (client side) didn't wire
+    // an equivalent handler until now — a contract update while the client
+    // had the chat open would go unreflected until the next fallback poll.
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.workspaceId = 5;
+    stubDefaultGets(httpClient);
+
+    final reverb = await pumpPage(tester, api);
+    // initState's own _load() already fetched /chat once.
+    verify(() => httpClient.get(
+      any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/chat'))),
+      headers: any(named: 'headers'),
+    )).called(1);
+
+    reverb.onContractStatusChanged?.call();
+    await tester.pumpAndSettle();
+
+    // Confirmed empirically: mocktail's verify() consumes the interactions
+    // it checks, so this second verify() only counts calls that happened
+    // AFTER the one above — called(1) here means exactly one more /chat
+    // fetch happened, i.e. the handler actually reloaded.
+    verify(() => httpClient.get(
+      any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/chat'))),
+      headers: any(named: 'headers'),
+    )).called(1);
   });
 
   testWidgets('shows the locked state when the workspace is not active', (tester) async {

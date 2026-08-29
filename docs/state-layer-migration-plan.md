@@ -118,7 +118,7 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 **الخلاصة:** ٧ قطع مشتركة اتنقلت لـ `chat_shared.dart` (كل واحدة اتحققت بـ analyze+test لوحدها وكوميت منفصل)، والباقي فُحص وثبت إنه فرق دور حقيقي مش تكرار — البند ده مقفول دلوقتي.
 
-*اكتشاف جانبي محتاج مهمة منفصلة (اتسجل، لسه ماتحلّش):* `chat_tab.dart` بيسمع `onContractStatusChanged` من الـ reverb، `chat_page.dart` لأ — يبان نقص حقيقي في شاشة العميل.
+*اكتشاف جانبي [تم إصلاحه]:* `chat_tab.dart` كان بيسمع `onContractStatusChanged` من الـ reverb، `chat_page.dart` لأ — نقص حقيقي كان معناه إن تغيّر حالة العقد وقت ما العميل فاتح الشات مايتحدّثش لايف. اتضاف نفس الـ handler (`if (mounted) _load();`) لـ `chat_page.dart`'s `initState`، مع تست جديد في `chat_page_test.dart` بيتأكد إن الحدث فعلًا بيعمل reload. `flutter test`: ٤٦٣/٤٦٣.
 
 ### P2 — تنضيف
 

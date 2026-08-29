@@ -103,6 +103,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       reverb.onPaymentScheduleChanged = (_) {
         if (mounted) _checkWorkspace();
       };
+      // Was missing here — chat_tab.dart (the AM-facing side of this same
+      // chat feature) has always listened for this, so a contract getting
+      // approved/rejected/etc. refreshes the AM's view live. The client's
+      // own chat view had no equivalent, so a contract status change while
+      // the client had this screen open would silently show stale bubble
+      // state until the next fallback poll. See
+      // docs/state-layer-migration-plan.md, بند ٥'s "اكتشاف جانبي".
+      reverb.onContractStatusChanged = () {
+        if (mounted) _load();
+      };
       reverb.connect(wsId);
     }
   }
