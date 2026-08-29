@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import '../data/settings_repository.dart';
 
 /// Thin pass-through over SettingsRepository — there's no shared list state
@@ -7,7 +6,9 @@ import '../data/settings_repository.dart';
 /// current user's own profile actions, so this mostly exists to keep
 /// settings_page.dart consistent with the rest of the app: screens read
 /// from a Provider, never call ApiClient/a Repository directly.
-class SettingsProvider extends ChangeNotifier {
+// See docs/state-layer-migration-plan.md, بند ٤: no notifyListeners() calls
+// here and nothing listens to this class reactively.
+class SettingsProvider {
   final SettingsRepository _repo;
   SettingsProvider({SettingsRepository? repository}) : _repo = repository ?? SettingsRepository();
 

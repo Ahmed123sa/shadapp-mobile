@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import '../data/file_repository.dart';
 
 /// Thin pass-through over FileRepository — mirrors SettingsProvider/
 /// DashboardProvider, no shared list state, just the four operations
 /// client_files_page.dart and am/workspace/files_tab.dart both need.
-class FileProvider extends ChangeNotifier {
+// See docs/state-layer-migration-plan.md, بند ٤: no notifyListeners() calls
+// here and nothing listens to this class reactively.
+class FileProvider {
   final FileRepository _repo;
   FileProvider({FileRepository? repository}) : _repo = repository ?? FileRepository();
 

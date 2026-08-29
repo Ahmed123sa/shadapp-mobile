@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
 import '../data/system_settings_repository.dart';
 
-class SystemSettingsProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: nothing ever calls notifyListeners() in this
+// file and no screen/test listens to an instance of this class — screens
+// copy its state into local vars and call setState() instead. See
+// docs/state-layer-migration-plan.md, بند ٤ for the decision record.
+class SystemSettingsProvider {
   final SystemSettingsRepository _repo;
   SystemSettingsProvider({SystemSettingsRepository? repository}) : _repo = repository ?? SystemSettingsRepository();
 

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import '../data/chat_repository.dart';
 
 /// Thin wrapper over [ChatRepository]. Pure pass-throughs — chat_tab.dart and
@@ -7,7 +6,9 @@ import '../data/chat_repository.dart';
 /// has its own realtime + polling wiring), so this provider doesn't hold any
 /// state of its own, matching the pattern already used for
 /// payments_page.dart/payments_tab.dart's PaymentProvider pass-throughs.
-class ChatProvider extends ChangeNotifier {
+// See docs/state-layer-migration-plan.md, بند ٤: no notifyListeners() calls
+// here and nothing listens to this class reactively.
+class ChatProvider {
   final ChatRepository _repo;
   ChatProvider({ChatRepository? repository}) : _repo = repository ?? ChatRepository();
 

@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import '../data/sub_user_repository.dart';
 
-class SubUserProvider extends ChangeNotifier {
+// See docs/state-layer-migration-plan.md, بند ٤: no notifyListeners() calls
+// here and nothing listens to this class reactively.
+class SubUserProvider {
   final SubUserRepository _repo;
   SubUserProvider({SubUserRepository? repository}) : _repo = repository ?? SubUserRepository();
 

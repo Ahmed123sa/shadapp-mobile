@@ -1,8 +1,9 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import '../data/signature_repository.dart';
 
-class SignatureProvider extends ChangeNotifier {
+// See docs/state-layer-migration-plan.md, بند ٤: no notifyListeners() calls
+// here and nothing listens to this class reactively.
+class SignatureProvider {
   final SignatureRepository _repo;
   SignatureProvider({SignatureRepository? repository}) : _repo = repository ?? SignatureRepository();
 
