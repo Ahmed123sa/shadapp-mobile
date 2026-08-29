@@ -51,11 +51,17 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
       GoRoute(path: '/signature', builder: (_, __) => const SignaturePage()),
       GoRoute(path: '/am/dashboard', builder: (_, __) => const AmDashboardPage()),
       GoRoute(path: '/am/clients/create', builder: (_, __) => const CreateClientPage()),
-      GoRoute(path: '/am/clients/:id', builder: (_, state) => ClientDetailPage(clientId: int.parse(state.pathParameters['id']!))),
+      // int.tryParse(...) ?? -1 rather than int.parse(...)! : a malformed id
+      // (stale/hand-edited deep link) now reaches the screen as an
+      // obviously-invalid id instead of throwing FormatException out of the
+      // builder (a crash screen). Each of these screens already has a tested
+      // "fetch failed" error state — -1 just routes into that existing path
+      // instead of a new one. See docs/mobile-review-2026-08.md, P1 #5.
+      GoRoute(path: '/am/clients/:id', builder: (_, state) => ClientDetailPage(clientId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1)),
       GoRoute(path: '/am/managers', builder: (_, __) => const AccountManagersPage()),
       GoRoute(path: '/am/managers/create', builder: (_, __) => const CreateManagerPage()),
-      GoRoute(path: '/am/managers/:id/edit', builder: (_, state) => CreateManagerPage(managerId: int.parse(state.pathParameters['id']!))),
-      GoRoute(path: '/am/managers/:id/detail', builder: (_, state) => ManagerDetailPage(managerId: int.parse(state.pathParameters['id']!))),
+      GoRoute(path: '/am/managers/:id/edit', builder: (_, state) => CreateManagerPage(managerId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1)),
+      GoRoute(path: '/am/managers/:id/detail', builder: (_, state) => ManagerDetailPage(managerId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1)),
       GoRoute(path: '/am/workspace/:id', builder: (_, state) {
         final wsId = int.tryParse(state.pathParameters['id'] ?? '');
         final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '');
