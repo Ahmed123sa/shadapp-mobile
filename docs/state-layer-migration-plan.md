@@ -102,7 +102,7 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 **مرتبطة بالبند ٣** — يتحلّوا مع بعض في قرار واحد.
 
-**٥. [شغال — Phase 1 و Phase 2 (جزئي) اتعملوا] `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
+**٥. [تم — بالحد الآمن] `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
 
 ٢٨ من ٣٢ دالة بنفس الأسامي والمنطق (`_send` · `_saveEdit` · `_sendWithAttachment` · `_buildTextBubble` · `_buildFileAttachment` · `_dateSeparator` · `_onPaymentBannerTap` …). ده اللي الخطة الأصلية سمّته "مكسب التوحيد" وأجّلته عن قصد لبعد النقل.
 
@@ -110,11 +110,13 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 *Phase 1 [تم] — الطبقة المتطابقة حرفيًا (دوال صرفة/widgets بلا l10n):* `chatInitials` · `chatIsOnline` · `chatFormatTime` · `chatDateKey` · `chatSenderAvatar` · `chatMeetingBubble` · `chatHeaderIconBtn`.
 
-*Phase 2 [شغال، مش كامل] — الطبقة شبه المتطابقة (نفس المنطق، فرق l10n/ألوان فقط — كل شاشة بتحل الـ l10n بتاعها وتبعته parameter عشان منلمسش ملفات .arb):* اتعمل `chatUpcomingMeetingBanner` · `chatFileAttachment` · `chatCertificateDownloadButton`.
+*Phase 2 [تم] — الطبقة شبه المتطابقة (نفس المنطق، فرق l10n/ألوان/دور بسيط فقط):* اتعمل `chatUpcomingMeetingBanner` · `chatFileAttachment` · `chatCertificateDownloadButton` · `chatSend`/`chatSaveEdit` (فرق `requiresAction` اتحول لـ callback كسول `consumeRequiresAction` عشان يتنفذ في نفس ترتيب الأصل بالظبط) · `chatOnMessageReceived`/`chatOnMessageUpdated` (بيقرو `state.mounted` حيّة، والـ callbacks بتاعة تعديل `_messages` بتفضل بتقفل على الحقل الحقيقي مش نسخة قديمة منه).
 
-*لسه باقي في Phase 2:* `_send`/`_saveEdit` (فرق: `requiresAction` flag بتاع chat_tab)، الـ reverb wiring في `initState` (`onMessageReceived`/`onMessageUpdated` متطابقين، لكن استخراجهم محتاج حذر عشان أي closure بيقفل على `_messages` لازم يفضل بيقرا القيمة الحيّة للحقل مش نسخة قديمة — نفس درس الـ P2-2)، و`_buildTextBubble`/`_textBubble` و`_buildContractBubble`/`_contractBubble` (فيهم نقطة حساسة: مين "أنا" في الـ read-receipt بيختلف حسب الدور، ولازم يتحول لباراميتر صريح مش يتفترض).
+*اتفحص واتقرر يفضل منفصل (مش تكاسل — فحص فعلي أثبت فرق سلوك حقيقي)*: `_buildTextBubble`/`_textBubble`. بعد قراءة الجسمين بالكامل تأكد إن فيهم أكتر من نقطة اختلاف حقيقية مش مجرد l10n: **(أ)** بلوك الـ reply preview — `chat_page` بيلوّن الخلفية والنص حسب `isClient` (أبيض/أسود حسب مين بعت)، `chat_tab` بيستخدم لون واحد ثابت مهما كان المرسل. **(ب)** بلوك الوقت/read-receipt — `chat_page` بيعرضه لأي مرسل مع علامة القراءة لو `isClient`، `chat_tab` بيقسمه لبلوكين مختلفين (`!isClient` يشوف علامة القراءة، `isClient` يشوف الوقت بس من غير علامة) لأن تعريف "أنا" بيتقلب بين الشاشتين. **(ج)** بلوك `isPending` — في `chat_page` فيه زرارين فعليين (Request Edit / Approve) بينداهم `_respondToMessage`، في `chat_tab` نفس البلوك مجرد label "في انتظار موافقة العميل" من غير أي زرار، لأن الاتجاه معكوس (العميل بيرد، المدير بس بيستنى). توحيد الدالة دي كانت هتحتاج عدد كبير من الباراميترز/الـ callbacks لدرجة إنها تبقى بنفس تعقيد الاحتفاظ بنسختين — والمخاطرة (خصوصًا نقطة "مين أنا" في القراءة) أعلى من الفايدة. اتسيبت زي ما هي، ونفس القرار لـ `_buildContractBubble`/`_contractBubble` (فرق حقيقي: `chat_page` بيمرر `onApprove`/`onGoToPayments` لـ `ChatContractCard`، `chat_tab` لأ).
 
 *مش هيتّحد أصلًا (فرق دور حقيقي، مش تكرار)*: منطق الموافقة بالكامل (`_approve`/`_respondToMessage`/`_showEditRequestDialog` في chat_page مقابل `_requireAction` في chat_tab)، الـ SA read-only gating، شكل الـ loading (spinner مقابل skeleton)، و`_workspaceActive` (مملوكة للشاشة في chat_page، مملوكة للأب في chat_tab).
+
+**الخلاصة:** ٧ قطع مشتركة اتنقلت لـ `chat_shared.dart` (كل واحدة اتحققت بـ analyze+test لوحدها وكوميت منفصل)، والباقي فُحص وثبت إنه فرق دور حقيقي مش تكرار — البند ده مقفول دلوقتي.
 
 *اكتشاف جانبي محتاج مهمة منفصلة (اتسجل، لسه ماتحلّش):* `chat_tab.dart` بيسمع `onContractStatusChanged` من الـ reverb، `chat_page.dart` لأ — يبان نقص حقيقي في شاشة العميل.
 
