@@ -12,6 +12,7 @@ import 'core/theme.dart';
 import 'core/api_client.dart';
 import 'core/router.dart';
 import 'core/locale_provider.dart';
+import 'core/notification_routing.dart';
 import 'core/notification_service.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
@@ -123,39 +124,12 @@ void main() async {
   );
 }
 
-int _fcmTabIndex(String? type, {bool isClient = false}) {
-  if (isClient) {
-    // Client tabs: 0=contracts, 1=payments, 2=chat, 3=approvals, 4=files
-    if (type == null || type == 'chat') return 2;
-    if (type.startsWith('contract')) return 0;
-    if (type.startsWith('payment')) return 1;
-    if (type.startsWith('approval')) return 3;
-    return 0;
-  }
-  // AM workspace tabs: 0=chat, 1=files, 2=contracts, 3=payments, 4=approvals, 5=meetings
-  if (type == null || type == 'chat') return 0;
-  if (type.startsWith('contract')) return 2;
-  if (type.startsWith('payment')) return 3;
-  if (type.startsWith('approval')) return 4;
-  if (type.startsWith('meeting')) return 5;
-  return 0;
-}
-
+// Logic moved to core/notification_routing.dart (fcmTabIndex,
+// notificationTarget) so it's unit-testable — this file itself has no
+// widget/integration test, which is exactly how P0 #2's missing sub_user
+// branch went unnoticed. See docs/mobile-review-2026-08.md, P0 #2.
 Future<void> _navigateFromNotification(Map<String, String> data, GoRouter router) async {
-  final workspaceId = data['workspace_id'];
-  final type = data['type'];
-  final role = await ApiClient().getRole();
-
-  if (role == 'client' || role == 'sub_user') {
-    router.go('/dashboard?tab=${_fcmTabIndex(type, isClient: true)}');
-    return;
-  }
-
-  if (workspaceId != null) {
-    router.go('/am/workspace/$workspaceId?tab=${_fcmTabIndex(type)}');
-  } else {
-    router.go('/am/dashboard');
-  }
+  router.go(await notificationTarget(data));
 }
 
 class ShadApp extends StatefulWidget {
