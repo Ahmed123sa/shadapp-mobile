@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -61,8 +62,8 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
         _stats = profileData['stats'] as Map<String, dynamic>? ?? {};
         _location = profileData['location'] as Map<String, dynamic>? ?? {};
       });
-    } catch (e) {
-      debugPrint('ClientProfile: failed to load: $e');
+    } catch (e, s) {
+      AppLog.error('client_profile_tab._load', e, s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientProfileLoadFailed)));
       }

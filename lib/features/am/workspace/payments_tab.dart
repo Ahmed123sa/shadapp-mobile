@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -538,8 +539,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsScheduledSuccess)])));
         _load();
       }
-    } catch (e) {
-      debugPrint('[payments_tab] _schedulePayments error: $e');
+    } catch (e, s) {
+      AppLog.error('payments_tab._schedulePayments', e, s);
       if (mounted) {
         final msg = e.toString().contains('ValidationException') ? '${AppLocalizations.of(context)!.paymentsInvalidData}: $e' : '${AppLocalizations.of(context)!.paymentsScheduleFailed}: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -554,8 +555,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentUpdated)])));
         _load();
       }
-    } catch (e) {
-      debugPrint('[payments_tab] _updateSchedule error: $e');
+    } catch (e, s) {
+      AppLog.error('payments_tab._updateSchedule', e, s);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.paymentsInstallmentUpdateFailed)));
     }
   }
@@ -580,8 +581,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentCleared)])));
         _load();
       }
-    } catch (e) {
-      debugPrint('[payments_tab] _deleteSchedule error: $e');
+    } catch (e, s) {
+      AppLog.error('payments_tab._deleteSchedule', e, s);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.paymentsInstallmentClearFailed)));
     }
   }
@@ -728,8 +729,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsRequestSent)])));
         _load();
       }
-    } catch (e) {
-      debugPrint('[payments_tab] _requestPayment error: $e');
+    } catch (e, s) {
+      AppLog.error('payments_tab._requestPayment', e, s);
       if (mounted) {
         final msg = e.toString().contains('ValidationException') ? '${AppLocalizations.of(context)!.paymentsInvalidData}: $e' : '${AppLocalizations.of(context)!.paymentsSendFailed}: $e';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

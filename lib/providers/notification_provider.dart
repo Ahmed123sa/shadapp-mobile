@@ -1,3 +1,4 @@
+import '../core/app_log.dart';
 import '../data/notification_repository.dart';
 import '../models/app_notification.dart';
 
@@ -27,7 +28,8 @@ class NotificationProvider {
       final result = await _repo.fetchAll();
       _notifications = result.notifications;
       _unreadCount = _notifications.where((n) => n.isUnread).length;
-    } catch (_) {
+    } catch (e, s) {
+      AppLog.error('NotificationProvider.fetchNotifications', e, s);
     } finally {
       _isLoading = false;
     }
@@ -43,7 +45,8 @@ class NotificationProvider {
       final result = await _repo.fetchAll();
       _notifications = result.notifications;
       _serverUnreadCount = result.serverUnreadCount ?? 0;
-    } catch (_) {
+    } catch (e, s) {
+      AppLog.error('NotificationProvider.fetchNotificationList', e, s);
     } finally {
       _isLoading = false;
     }

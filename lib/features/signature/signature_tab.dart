@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../providers/client_provider.dart';
 import '../../providers/signature_provider.dart';
 import 'render_signature.dart';
@@ -64,8 +65,8 @@ class _SignatureTabState extends State<SignatureTab> {
           setState(() => _existingSigText = sigData);
         }
       }
-    } catch (e) {
-      debugPrint('Failed to load existing signature: $e');
+    } catch (e, s) {
+      AppLog.error('signature_tab._loadExisting', e, s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

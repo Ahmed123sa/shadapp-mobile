@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -210,11 +211,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     } on ServerException {
       _error.value = l10n.serverErrorMessage;
       _shakeController.forward(from: 0);
-    } catch (e) {
+    } catch (e, s) {
       // Anything reaching here is unclassified, so don't guess at a cause the
       // way this used to by blaming the credentials. Surface the real error in
       // debug builds so it can actually be diagnosed.
-      debugPrint('Unhandled login error: $e');
+      AppLog.error('login_page._login', e, s);
       _error.value = kDebugMode ? '$e' : l10n.serverErrorMessage;
       _shakeController.forward(from: 0);
     } finally {

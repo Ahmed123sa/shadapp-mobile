@@ -140,8 +140,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           _nextPayment = np;
         });
       }
-    } catch (e) {
-      debugPrint('[chat_tab] _loadWorkspace error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._loadWorkspace', e, s);
     }
   }
 
@@ -150,8 +150,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     if (wsId == null) return;
     try {
       _messages = await _chatProvider.fetchMessages(wsId);
-    } catch (e) {
-      debugPrint('[chat_tab] _load error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._load', e, s);
     }
     if (mounted) {
       setState(() => _loading = false);
@@ -221,8 +221,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     try {
       await _chatProvider.requireAction(msgId);
       _load();
-    } catch (e) {
-      debugPrint('[chat_tab] _requireAction error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._requireAction', e, s);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatApprovalRequestFailed)));
     }
   }
@@ -298,8 +298,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     try {
       await _chatProvider.uploadFile(_wsId!, file);
       _load();
-    } catch (e) {
-      debugPrint('[chat_tab] _sendWithAttachment error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._sendWithAttachment', e, s);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatAttachFailed)));
     }
   }
@@ -316,8 +316,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => ContractsSheet(contracts: contracts),
       );
-    } catch (e) {
-      debugPrint('[chat_tab] _openContracts error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._openContracts', e, s);
     }
   }
 
@@ -353,8 +353,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       if (uri != null && await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } catch (e) {
-      debugPrint('[chat_tab] _openLatestZoomLink error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_tab._openLatestZoomLink', e, s);
     }
   }
 

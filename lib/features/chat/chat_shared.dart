@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/meeting_chip.dart';
 import '../../providers/chat_provider.dart';
@@ -181,8 +182,8 @@ Future<void> chatSend({
     await chatProvider.sendMessage(wsId, text, requiresAction: requiresAction, replyToId: replyId as int?);
     load();
     markRead();
-  } catch (e) {
-    debugPrint('[$logTag] _send error: $e');
+  } catch (e, s) {
+    AppLog.error('$logTag._send', e, s);
   }
 }
 
@@ -215,8 +216,8 @@ Future<void> chatSaveEdit({
       controller.clear();
     });
     load();
-  } catch (e) {
-    debugPrint('[$logTag] _saveEdit error: $e');
+  } catch (e, s) {
+    AppLog.error('$logTag._saveEdit', e, s);
     if (state.mounted) ScaffoldMessenger.of(state.context).showSnackBar(SnackBar(content: Text(editFailedMessage(e))));
   }
 }

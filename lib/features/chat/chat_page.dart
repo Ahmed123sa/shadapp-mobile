@@ -164,8 +164,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           _nextPayment = np;
         });
       }
-    } catch (e) {
-      debugPrint('[chat_page] _checkWorkspace error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._checkWorkspace', e, s);
     }
   }
 
@@ -174,8 +174,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (wsId == null) return;
     try {
       _messages = await _chatProvider.fetchMessages(wsId);
-    } catch (e) {
-      debugPrint('[chat_page] _load error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._load', e, s);
     }
     if (mounted) {
       setState(() => _loading = false);
@@ -242,8 +242,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     try {
       await _chatProvider.uploadFile(_wsId!, file);
       _load();
-    } catch (e) {
-      debugPrint('[chat_page] _sendWithAttachment error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._sendWithAttachment', e, s);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.attachmentSendFailed)));
     }
   }
@@ -252,8 +252,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     try {
       await _contractProvider.clientAction(contractId, 'approved');
       _load();
-    } catch (e) {
-      debugPrint('[chat_page] _approve error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._approve', e, s);
     }
   }
 
@@ -268,16 +268,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(l10n.editRequestedToast)])));
           _load();
         }
-      } catch (e) {
-        debugPrint('[chat_page] _respondToMessage error: $e');
+      } catch (e, s) {
+        AppLog.error('chat_page._respondToMessage(edit_requested)', e, s);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.actionFailed)));
       }
     } else {
       try {
         await _chatProvider.respond(msgId, action: action);
         _load();
-      } catch (e) {
-        debugPrint('[chat_page] _respondToMessage error: $e');
+      } catch (e, s) {
+        AppLog.error('chat_page._respondToMessage', e, s);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.actionFailed)));
       }
     }
@@ -325,8 +325,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => ContractsSheet(contracts: contracts),
       );
-    } catch (e) {
-      debugPrint('[chat_page] _openContracts error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._openContracts', e, s);
     }
   }
 
@@ -362,8 +362,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (uri != null && await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } catch (e) {
-      debugPrint('[chat_page] _openLatestZoomLink error: $e');
+    } catch (e, s) {
+      AppLog.error('chat_page._openLatestZoomLink', e, s);
     }
   }
 
