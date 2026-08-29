@@ -8,7 +8,6 @@ import '../../../core/theme.dart';
 import '../../../core/locale_provider.dart';
 import '../../../core/reverb_service.dart';
 import '../../../core/widgets/shad_logo.dart';
-import '../../../core/widgets/client_type_badge.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'sa_approvals_page.dart';
 import 'sa_clients_page.dart';
@@ -27,6 +26,8 @@ import '../../../providers/manager_provider.dart';
 import '../../../providers/meeting_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../providers/payment_provider.dart';
+import 'am_dashboard_home_tabs.dart';
+import 'am_dashboard_sheets.dart';
 
 class AmDashboardPage extends StatefulWidget {
   // Step 0 of the state-layer migration plan: lets widget tests suppress the
@@ -276,7 +277,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => _CreateMeetingSheet(clients: clients, meetingProvider: _meetingProvider, onCreated: () {
+      builder: (ctx) => CreateMeetingSheet(clients: clients, meetingProvider: _meetingProvider, onCreated: () {
         Navigator.pop(ctx);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
       }),
@@ -348,14 +349,37 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
               index: _selectedIndex,
               children: _isSA
                 ? [
-                    _buildHomeTab(),
+                    buildHomeTab(
+                      context: context,
+                      allManagers: _allManagers,
+                      allContracts: _allContracts,
+                      pendingContracts: _pendingContracts,
+                      pendingPayments: _pendingPayments,
+                      api: _api,
+                      onSelectTab: (i) => setState(() => _selectedIndex = i),
+                      onShowAllMeetings: _showAllMeetings,
+                      onManagerTap: _showManagerClients,
+                      load: _load,
+                    ),
                     SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
                     SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
                     SaTeamPage(managerProvider: _childManagerProvider, api: _api),
                     AdminSettingsPage(api: _api),
                   ]
                 : [
-                    _buildAmHomeTab(),
+                    buildAmHomeTab(
+                      context: context,
+                      allClients: _allClients,
+                      allContracts: _allContracts,
+                      pendingContracts: _pendingContracts,
+                      pendingPayments: _pendingPayments,
+                      isSA: _isSA,
+                      api: _api,
+                      onSelectTab: (i) => setState(() => _selectedIndex = i),
+                      onShowAllMeetings: _showAllMeetings,
+                      onOpenClient: _openClient,
+                      load: _load,
+                    ),
                     SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
                     _buildAmClientsTab(),
                     AdminSettingsPage(api: _api),
@@ -405,82 +429,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
 
 
 
-  Widget _buildAmHomeTab() {
-    final l10n = AppLocalizations.of(context)!;
-    final totalClients = _allClients.length;
-    final activeContracts = _allContracts.where((c) => c['status'] == 'company_approved' || c['status'] == 'completed').length;
-    final totalPending = _pendingContracts.length + _pendingPayments.length;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(children: [
-          Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$totalClients', Icons.people, ShadColors.sent)),
-          const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$activeContracts', Icons.description, ShadColors.gold)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
-          const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$totalPending', Icons.pending_actions, ShadColors.crimson)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          if (_isSA)
-            Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
-          if (_isSA) const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
-        ]),
-        const SizedBox(height: 20),
-        Row(children: [
-          Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => setState(() => _selectedIndex = 1),
-            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        if (_pendingContracts.isEmpty && _pendingPayments.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
-          )
-        else ...[
-          if (_pendingContracts.isNotEmpty)
-            ..._pendingContracts.take(2).map((c) => _approvalItem(
-              title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
-              subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
-              isContract: true,
-            )),
-          if (_pendingPayments.isNotEmpty)
-            ..._pendingPayments.take(2).map((p) {
-              final client = p['workspace']?['client'] as Map<String, dynamic>?;
-              return _approvalItem(
-                title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
-                subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
-                isContract: false,
-              );
-            }),
-        ],
-        const SizedBox(height: 20),
-        Row(children: [
-          Text(l10n.amClients, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => setState(() => _selectedIndex = 2),
-            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        if (_allClients.isNotEmpty)
-          ..._allClients.take(3).map((c) => _clientCard(c)),
-        if (_allClients.isEmpty)
-          _buildEmptyState(),
-      ],
-    );
-  }
-
   Widget _buildAmClientsTab() {
     return Stack(
       children: [
@@ -501,131 +449,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     );
   }
 
-  Widget _buildHomeTab() {
-    final l10n = AppLocalizations.of(context)!;
-    final totalClients = _allManagers.fold<int>(0, (sum, m) => sum + ((m['managed_clients_count'] as int? ?? 0)));
-    final activeContracts = _allContracts.where((c) => c['status'] == 'company_approved' || c['status'] == 'completed').length;
-    final totalPending = _pendingContracts.length + _pendingPayments.length;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Stats Grid 3x2
-        Row(children: [
-          Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$totalClients', Icons.people, ShadColors.sent)),
-          const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$activeContracts', Icons.description, ShadColors.gold)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '${_pendingPayments.length}', Icons.payments, ShadColors.warning)),
-          const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$totalPending', Icons.pending_actions, ShadColors.crimson)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
-          const SizedBox(width: 8),
-          Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: _showAllMeetings)),
-        ]),
-        const SizedBox(height: 20),
-        // Latest Pending Approvals
-        Row(children: [
-          Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => setState(() => _selectedIndex = 1),
-            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        if (_pendingContracts.isEmpty && _pendingPayments.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
-          )
-        else ...[
-          if (_pendingContracts.isNotEmpty)
-            ..._pendingContracts.take(2).map((c) => _approvalItem(
-              title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
-              subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
-              isContract: true,
-            )),
-          if (_pendingPayments.isNotEmpty)
-            ..._pendingPayments.take(2).map((p) {
-              final client = p['workspace']?['client'] as Map<String, dynamic>?;
-              return _approvalItem(
-                title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
-                subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
-                isContract: false,
-              );
-            }),
-        ],
-        const SizedBox(height: 20),
-        // Team Section
-        Row(children: [
-          Text(l10n.amNavTeam, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => setState(() => _selectedIndex = 3),
-            child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        if (_allManagers.isNotEmpty)
-          ..._allManagers.take(3).map((m) => _managerCard(m)),
-        if (_allManagers.isEmpty)
-          _buildEmptyState(),
-      ],
-    );
-  }
-
-  Widget _homeStatCard(String label, String value, IconData icon, Color color, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(icon, size: 16, color: color),
-          const Spacer(),
-          if (value.isNotEmpty) Text(value, style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600, color: color, fontFamily: 'PlayfairDisplay')),
-        ]),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-      ]),
-    ),
-    );
-  }
-
-  Widget _approvalItem({required String title, required String subtitle, required bool isContract}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Row(children: [
-        Container(width: 3, height: 48, decoration: BoxDecoration(color: isContract ? ShadColors.gold : ShadColors.sent, borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)))),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-              const SizedBox(height: 2),
-              Text(subtitle, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-            ]),
-          ),
-        ),
-      ]),
-    );
-  }
-
   Future<void> _showAllMeetings() async {
     try {
       final meetings = await _meetingProvider.fetchAllWorkspacesRaw();
@@ -634,7 +457,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         context: context,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (_) => _AllMeetingsSheet(
+        builder: (_) => AllMeetingsSheet(
           meetings: meetings,
           onCreate: !_isSA ? _createMeeting : null,
         ),
@@ -654,7 +477,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         context: context,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (ctx) => _ManagerClientsSheet(
+        builder: (ctx) => ManagerClientsSheet(
           managerName: manager['name'] as String? ?? '',
           clients: clients,
           onClientTap: (client) {
@@ -668,494 +491,5 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     }
   }
 
-  Widget _managerCard(Map<String, dynamic> manager) {
-    final name = manager['name'] as String? ?? '';
-    final email = manager['email'] as String? ?? '';
-    final clientCount = int.tryParse(manager['managed_clients_count']?.toString() ?? '') ?? 0;
-    final avatarUrl = manager['avatar_url'] as String?;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => _showManagerClients(manager),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: ShadColors.cardBorder,
-              backgroundImage: avatarUrl != null ? NetworkImage(_api.resolveFileUrl(avatarUrl)) : null,
-              child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 18, color: ShadColors.textSecondary)) : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-                const SizedBox(height: 2),
-                Text(email, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-              ]),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: ShadColors.sent.withAlpha(25),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text('$clientCount', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.sent, fontFamily: 'PlayfairDisplay')),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget _clientCard(Map<String, dynamic> client) {
-    final l10n = AppLocalizations.of(context)!;
-    final ws = client['workspace'] as Map<String, dynamic>?;
-    final wsStatus = ws?['status'] as String? ?? 'inactive';
-    final wsActive = wsStatus == 'active';
-    final name = client['company_name'] as String? ?? '';
-    final person = client['contact_person'] as String? ?? '';
-    final paymentStatus = client['payment_status'] as String?;
-    final signedAt = client['signed_at'] as String?;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => _openClient(client),
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
-          child: Column(children: [
-            Row(children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: ShadColors.crimson,
-                backgroundImage: (client['avatar_url'] as String?)?.isNotEmpty == true
-                    ? NetworkImage(_api.resolveFileUrl(client['avatar_url']))
-                    : null,
-                child: (client['avatar_url'] as String?)?.isNotEmpty != true
-                    ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(color: ShadColors.gold, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Archivo'))
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
-                    const SizedBox(width: 6),
-                    ClientTypeBadge(clientType: client['client_type'] as String?, compact: true),
-                  ]),
-                  const SizedBox(height: 2),
-                  Text(person, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                ]),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (wsActive ? ShadColors.success : ShadColors.textDisabled).withAlpha(25),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  wsActive ? l10n.amStatusActive : l10n.amStatusInactive,
-                  style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3,
-                    color: wsActive ? ShadColors.success : ShadColors.textDisabled,
-                    fontFamily: 'Archivo',
-                  ),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: [
-                _statusChip(Icons.description_outlined, signedAt != null ? l10n.amStatusContracted : l10n.amStatusNotContracted, signedAt != null ? ShadColors.success : ShadColors.textDisabled),
-                _statusChip(Icons.payment, paymentStatus == 'approved' ? l10n.amStatusPaid : paymentStatus == 'pending' ? l10n.amStatusPending : '—',
-                  paymentStatus == 'approved' ? ShadColors.success : paymentStatus == 'pending' ? ShadColors.warning : ShadColors.textDisabled),
-                _statusChip(wsActive ? Icons.check_circle : Icons.schedule, wsActive ? l10n.amStatusActive : l10n.amStatusPending,
-                  wsActive ? ShadColors.success : ShadColors.textDisabled),
-              ],
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget _statusChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withAlpha(60)),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 11, color: color),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500, fontFamily: 'Archivo')),
-      ]),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    final loc2 = AppLocalizations.of(context)!;
-    final isSA = _api.role == 'super_admin';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(children: [
-        const Icon(Icons.people_outline, size: 56, color: ShadColors.textDisabled),
-        const SizedBox(height: 16),
-        Text(loc2.noClients, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-        const SizedBox(height: 8),
-        Text(loc2.noClientsSubtitle, style: TextStyle(fontSize: 14, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const SizedBox(height: 24),
-        if (!isSA)
-          ElevatedButton.icon(
-            onPressed: () async { final created = await context.push<bool>('/am/clients/create'); if (created == true) _load(); },
-            icon: const Icon(Icons.person_add, size: 18),
-            label: Text(loc2.createClient),
-          ),
-      ]),
-    );
-  }
-
-}
-
-class _ManagerClientsSheet extends StatelessWidget {
-  final String managerName;
-  final List<dynamic> clients;
-  final void Function(Map<String, dynamic> client) onClientTap;
-  const _ManagerClientsSheet({required this.managerName, required this.clients, required this.onClientTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text('${l10n.amClients} $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
-        if (clients.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text(l10n.amNoClientsAvailable, style: const TextStyle(color: ShadColors.textSecondary))),
-          )
-        else
-          Container(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: clients.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final c = clients[i];
-                final ws = c['workspace'] as Map<String, dynamic>?;
-                return ListTile(
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: ShadColors.cardBorder,
-                    child: Text((c['company_name'] as String? ?? '')[0].toUpperCase(), style: const TextStyle(color: ShadColors.textSecondary)),
-                  ),
-                  title: Row(children: [
-                    Flexible(child: Text(c['company_name'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-                    const SizedBox(width: 6),
-                    ClientTypeBadge(clientType: c['client_type'] as String?, compact: true),
-                  ]),
-                  subtitle: Text(c['contact_person'] ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: ws?['status'] == 'active' ? ShadColors.success.withAlpha(25) : ShadColors.cardBorder,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(ws?['status'] == 'active' ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, color: ws?['status'] == 'active' ? ShadColors.success : ShadColors.textSecondary)),
-                  ),
-                  onTap: () => onClientTap(c),
-                );
-              },
-            ),
-          ),
-      ]),
-    );
-  }
-}
-
-class _AllMeetingsSheet extends StatelessWidget {
-  final List<dynamic> meetings;
-  final VoidCallback? onCreate;
-  const _AllMeetingsSheet({required this.meetings, this.onCreate});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      maxChildSize: 0.85,
-      minChildSize: 0.3,
-      expand: false,
-      builder: (_, scrollController) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: ShadColors.cardBorder, borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(children: [
-            Text(l10n.amStatMeetings, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: ShadColors.crimson.withAlpha(30), borderRadius: BorderRadius.circular(10)),
-              child: Text('${meetings.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
-            ),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close, size: 20, color: ShadColors.textSecondary), onPressed: () => Navigator.pop(context)),
-          ]),
-          const SizedBox(height: 8),
-          Expanded(
-            child: meetings.isEmpty
-                ? Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text(l10n.amNoMeetings, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
-                      if (onCreate != null) ...[
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () { Navigator.pop(context); onCreate?.call(); },
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(l10n.createMeeting),
-                        ),
-                      ],
-                    ]),
-                  )
-                : ListView.separated(
-                    controller: scrollController,
-                    itemCount: meetings.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final m = meetings[i];
-                      final client = m['workspace']?['client'] as Map<String, dynamic>?;
-                      final status = m['status'] as String? ?? '';
-                      final statusColor = status == 'completed' ? ShadColors.success : status == 'scheduled' ? ShadColors.sent : ShadColors.textSecondary;
-                      final statusLabel = status == 'scheduled' ? l10n.scheduled : status == 'completed' ? l10n.completed : status == 'cancelled' ? l10n.cancelled : status;
-                      String? dateStr;
-                      try {
-                        final dt = DateTime.parse(m['scheduled_at'] ?? '');
-                        dateStr = '${dt.year}/${dt.month}/${dt.day}';
-                      } catch (_) {
-                        // A meeting with no/invalid date just renders without
-                        // one. Not reported: this is normal for drafts, and
-                        // it runs inside a list builder, so a bad record
-                        // would report on every rebuild.
-                      }
-                      final wsId = m['workspace_id'] ?? m['workspace']?['id'];
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          Navigator.pop(context);
-                          if (wsId != null) context.push('/am/workspace/$wsId?tab=5');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: ShadColors.card,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: ShadColors.cardBorder),
-                          ),
-                          child: Row(children: [
-                            Container(
-                              width: 36, height: 36,
-                              decoration: BoxDecoration(color: ShadColors.gold.withAlpha(20), borderRadius: BorderRadius.circular(8)),
-                              child: const Icon(Icons.videocam, size: 18, color: ShadColors.gold),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(m['title'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-                                const SizedBox(height: 2),
-                                Text('${client?['company_name'] ?? ''} • ${dateStr ?? ''}', style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                              ]),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: statusColor.withAlpha(20),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(statusLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Archivo')),
-                            ),
-                          ]),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-class _CreateMeetingSheet extends StatefulWidget {
-  final List<dynamic> clients;
-  final VoidCallback onCreated;
-  // Optional so this sheet can be pumped in a widget test with a mocked
-  // MeetingProvider instead of hitting the network. Defaults to a fresh
-  // MeetingProvider() (same as every other unseamed default in this file) —
-  // zero behavior change for the real call site, which now passes the
-  // parent's already-seamed _meetingProvider.
-  final MeetingProvider? meetingProvider;
-  const _CreateMeetingSheet({required this.clients, required this.onCreated, this.meetingProvider});
-
-  @override
-  State<_CreateMeetingSheet> createState() => _CreateMeetingSheetState();
-}
-
-class _CreateMeetingSheetState extends State<_CreateMeetingSheet> {
-  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
-  final _titleController = TextEditingController();
-  final _notesController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  int? _duration;
-  dynamic _selectedClient;
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final ws = _selectedClient?['workspace'] as Map<String, dynamic>?;
-    if (_titleController.text.trim().isEmpty || ws == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingValidation)));
-      return;
-    }
-    setState(() => _saving = true);
-    final dt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
-    final tzOffset = dt.timeZoneOffset;
-    final tzSign = tzOffset.isNegative ? '-' : '+';
-    final tzHours = tzOffset.inHours.abs().toString().padLeft(2, '0');
-    final tzMinutes = (tzOffset.inMinutes.abs() % 60).toString().padLeft(2, '0');
-    final scheduledAtIso = '${dt.toIso8601String()}$tzSign$tzHours:$tzMinutes';
-    try {
-      await _meetingProvider.createMeeting(ws['id'] as int, {
-        'title': _titleController.text.trim(),
-        'scheduled_at': scheduledAtIso,
-        'duration_minutes': _duration ?? 30,
-        'notes': _notesController.text.trim(),
-      });
-      widget.onCreated();
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingCreateFailed)));
-    }
-    if (mounted) setState(() => _saving = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-      child: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(l10n.createMeeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
-        DropdownButtonFormField(
-          decoration: InputDecoration(labelText: l10n.amClientRequired),
-          items: widget.clients.map((c) => DropdownMenuItem(
-            value: c,
-            child: Text(c['company_name'] ?? ''),
-          )).toList(),
-          onChanged: (v) => setState(() => _selectedClient = v),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _titleController,
-          decoration: InputDecoration(labelText: l10n.amMeetingTitle, hintText: l10n.amMeetingTitleHint),
-        ),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: InkWell(
-              onTap: () async {
-                final d = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
-                if (d != null) setState(() => _selectedDate = d);
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: l10n.amDate),
-                child: Text('${_selectedDate.year}/${_selectedDate.month}/${_selectedDate.day}'),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: InkWell(
-              onTap: () async {
-                final t = await showTimePicker(context: context, initialTime: _selectedTime);
-                if (t != null) setState(() => _selectedTime = t);
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: l10n.amTime),
-                child: Text('${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
-              ),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<int>(
-          decoration: InputDecoration(labelText: l10n.amDurationMinutes),
-          initialValue: _duration,
-          items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d ${l10n.amMinutes}'))).toList(),
-          onChanged: (v) => setState(() => _duration = v),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _notesController,
-          decoration: InputDecoration(labelText: l10n.amNotes),
-          maxLines: 2,
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-              : Text(l10n.createMeeting),
-          ),
-        ),
-        ],
-      ),
-      ),
-    );
-  }
 }
 
