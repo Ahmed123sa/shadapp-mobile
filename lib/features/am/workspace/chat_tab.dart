@@ -189,39 +189,34 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     if (atBottom) _markRead();
   }
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _wsId == null) return;
-    _controller.clear();
-    final needsApproval = _requestApproval;
-    if (_requestApproval) setState(() => _requestApproval = false);
-    final replyId = _replyTo?['id'];
-    setState(() => _replyTo = null);
-    try {
-      await _chatProvider.sendMessage(_wsId!, text, requiresAction: needsApproval, replyToId: replyId as int?);
-      _load();
-      _markRead();
-    } catch (e) {
-      debugPrint('[chat_tab] _send error: $e');
-    }
-  }
+  Future<void> _send() => chatSend(
+    controller: _controller,
+    wsId: _wsId,
+    replyTo: _replyTo,
+    chatProvider: _chatProvider,
+    setState: setState,
+    clearReplyTo: () => _replyTo = null,
+    load: _load,
+    markRead: _markRead,
+    consumeRequiresAction: () {
+      final needsApproval = _requestApproval;
+      if (_requestApproval) setState(() => _requestApproval = false);
+      return needsApproval;
+    },
+    logTag: 'chat_tab',
+  );
 
-  Future<void> _saveEdit() async {
-    if (_editingMessage == null) return;
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    try {
-      await _chatProvider.editMessage(_editingMessage!['id'] as int, text);
-      setState(() {
-        _editingMessage = null;
-        _controller.clear();
-      });
-      _load();
-    } catch (e) {
-      debugPrint('[chat_tab] _saveEdit error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.chatEditFailed}: $e')));
-    }
-  }
+  Future<void> _saveEdit() => chatSaveEdit(
+    controller: _controller,
+    editingMessage: _editingMessage,
+    chatProvider: _chatProvider,
+    state: this,
+    setState: setState,
+    clearEditingMessage: () => _editingMessage = null,
+    load: _load,
+    editFailedMessage: (e) => '${AppLocalizations.of(context)!.chatEditFailed}: $e',
+    logTag: 'chat_tab',
+  );
 
   Future<void> _requireAction(int msgId) async {
     if (_wsId == null) return;

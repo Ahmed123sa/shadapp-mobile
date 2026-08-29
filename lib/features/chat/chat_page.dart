@@ -199,37 +199,30 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (atBottom) _markRead();
   }
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _wsId == null) return;
-    _controller.clear();
-    final replyId = _replyTo?['id'];
-    setState(() => _replyTo = null);
-    try {
-      await _chatProvider.sendMessage(_wsId!, text, replyToId: replyId as int?);
-      _load();
-      _markRead();
-    } catch (e) {
-      debugPrint('[chat_page] _send error: $e');
-    }
-  }
+  Future<void> _send() => chatSend(
+    controller: _controller,
+    wsId: _wsId,
+    replyTo: _replyTo,
+    chatProvider: _chatProvider,
+    setState: setState,
+    clearReplyTo: () => _replyTo = null,
+    load: _load,
+    markRead: _markRead,
+    consumeRequiresAction: () => false,
+    logTag: 'chat_page',
+  );
 
-  Future<void> _saveEdit() async {
-    if (_editingMessage == null) return;
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    try {
-      await _chatProvider.editMessage(_editingMessage!['id'] as int, text);
-      setState(() {
-        _editingMessage = null;
-        _controller.clear();
-      });
-      _load();
-    } catch (e) {
-      debugPrint('[chat_page] _saveEdit error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.editFailed(e.toString()))));
-    }
-  }
+  Future<void> _saveEdit() => chatSaveEdit(
+    controller: _controller,
+    editingMessage: _editingMessage,
+    chatProvider: _chatProvider,
+    state: this,
+    setState: setState,
+    clearEditingMessage: () => _editingMessage = null,
+    load: _load,
+    editFailedMessage: (e) => AppLocalizations.of(context)!.editFailed(e.toString()),
+    logTag: 'chat_page',
+  );
 
   Future<void> _sendWithAttachment() async {
     final result = await FilePicker.platform.pickFiles(

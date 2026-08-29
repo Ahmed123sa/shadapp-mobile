@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/meeting_chip.dart';
+import '../../providers/chat_provider.dart';
 
 // Shared, byte-identical helpers used by both chat_page.dart (client-facing
 // chat) and am/workspace/chat_tab.dart (account-manager-facing chat).
@@ -105,6 +106,82 @@ Widget chatHeaderIconBtn(IconData icon, VoidCallback onTap) {
       child: Icon(icon, size: 14, color: ShadColors.textSecondary),
     ),
   );
+}
+
+// _send in both screens has the exact same control-flow shape; the one
+// real role difference is that chat_tab.dart can flag a message as
+// `requiresAction` via its AM-only "request client approval" toggle,
+// chat_page.dart never does. `consumeRequiresAction` is a lazily-invoked
+// callback (not a plain bool) specifically so it fires at the same point
+// in the sequence as the original code — AFTER the early-return on an
+// empty message — otherwise chat_tab's approval toggle would get silently
+// reset even when nothing was sent. `wsId`/`replyTo` are read fresh by
+// each screen's thin wrapper right before calling in, so passing them as
+// plain arguments here is safe — unlike a long-lived reverb closure
+// stored in initState, this call happens synchronously each time the user
+// taps send, not once and reused later. `load`/`markRead` intentionally
+// are NOT awaited, matching the original fire-and-forget behavior in both
+// screens.
+Future<void> chatSend({
+  required TextEditingController controller,
+  required int? wsId,
+  required Map<String, dynamic>? replyTo,
+  required ChatProvider chatProvider,
+  required void Function(VoidCallback fn) setState,
+  required VoidCallback clearReplyTo,
+  required VoidCallback load,
+  required VoidCallback markRead,
+  required bool Function() consumeRequiresAction,
+  required String logTag,
+}) async {
+  final text = controller.text.trim();
+  if (text.isEmpty || wsId == null) return;
+  controller.clear();
+  final requiresAction = consumeRequiresAction();
+  final replyId = replyTo?['id'];
+  setState(clearReplyTo);
+  try {
+    await chatProvider.sendMessage(wsId, text, requiresAction: requiresAction, replyToId: replyId as int?);
+    load();
+    markRead();
+  } catch (e) {
+    debugPrint('[$logTag] _send error: $e');
+  }
+}
+
+// Same control-flow shape in both screens; only the error snackbar's
+// message composition differs (a localized template call vs a
+// string-concatenated fallback), and both are resolved by the caller —
+// same "caller resolves its own l10n" pattern used elsewhere in this
+// file, so no .arb changes were needed. Takes the owning State for the
+// same live-mounted-check reason as chatCertificateDownloadButton above.
+// `load` intentionally is NOT awaited, matching the original
+// fire-and-forget behavior.
+Future<void> chatSaveEdit({
+  required TextEditingController controller,
+  required Map<String, dynamic>? editingMessage,
+  required ChatProvider chatProvider,
+  required State state,
+  required void Function(VoidCallback fn) setState,
+  required VoidCallback clearEditingMessage,
+  required VoidCallback load,
+  required String Function(Object error) editFailedMessage,
+  required String logTag,
+}) async {
+  if (editingMessage == null) return;
+  final text = controller.text.trim();
+  if (text.isEmpty) return;
+  try {
+    await chatProvider.editMessage(editingMessage['id'] as int, text);
+    setState(() {
+      clearEditingMessage();
+      controller.clear();
+    });
+    load();
+  } catch (e) {
+    debugPrint('[$logTag] _saveEdit error: $e');
+    if (state.mounted) ScaffoldMessenger.of(state.context).showSnackBar(SnackBar(content: Text(editFailedMessage(e))));
+  }
 }
 
 // Identical logic in both screens (only the l10n key names differed —

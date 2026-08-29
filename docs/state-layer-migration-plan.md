@@ -102,11 +102,21 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 **مرتبطة بالبند ٣** — يتحلّوا مع بعض في قرار واحد.
 
-**٥. `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
+**٥. [شغال — Phase 1 و Phase 2 (جزئي) اتعملوا] `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
 
 ٢٨ من ٣٢ دالة بنفس الأسامي والمنطق (`_send` · `_saveEdit` · `_sendWithAttachment` · `_buildTextBubble` · `_buildFileAttachment` · `_dateSeparator` · `_onPaymentBannerTap` …). ده اللي الخطة الأصلية سمّته "مكسب التوحيد" وأجّلته عن قصد لبعد النقل.
 
-دلوقتي هو الوقت المناسب: **الاتنين متغطّيين باختبارات** (`chat_page_test.dart` · `chat_tab_test.dart`)، فالتوحيد بقى عملية آمنة وقابلة للتحقق — وده بالظبط اللي النقل كان بيمهّد له.
+الاتنين متغطّيين باختبارات (`chat_page_test.dart` · `chat_tab_test.dart`)، فالتوحيد عملية آمنة وقابلة للتحقق. اتعمل ملف مشترك جديد `lib/features/chat/chat_shared.dart`، وكل استخراج بيتحقق بـ `flutter analyze` + `flutter test` (462/462) لوحده قبل الكوميت.
+
+*Phase 1 [تم] — الطبقة المتطابقة حرفيًا (دوال صرفة/widgets بلا l10n):* `chatInitials` · `chatIsOnline` · `chatFormatTime` · `chatDateKey` · `chatSenderAvatar` · `chatMeetingBubble` · `chatHeaderIconBtn`.
+
+*Phase 2 [شغال، مش كامل] — الطبقة شبه المتطابقة (نفس المنطق، فرق l10n/ألوان فقط — كل شاشة بتحل الـ l10n بتاعها وتبعته parameter عشان منلمسش ملفات .arb):* اتعمل `chatUpcomingMeetingBanner` · `chatFileAttachment` · `chatCertificateDownloadButton`.
+
+*لسه باقي في Phase 2:* `_send`/`_saveEdit` (فرق: `requiresAction` flag بتاع chat_tab)، الـ reverb wiring في `initState` (`onMessageReceived`/`onMessageUpdated` متطابقين، لكن استخراجهم محتاج حذر عشان أي closure بيقفل على `_messages` لازم يفضل بيقرا القيمة الحيّة للحقل مش نسخة قديمة — نفس درس الـ P2-2)، و`_buildTextBubble`/`_textBubble` و`_buildContractBubble`/`_contractBubble` (فيهم نقطة حساسة: مين "أنا" في الـ read-receipt بيختلف حسب الدور، ولازم يتحول لباراميتر صريح مش يتفترض).
+
+*مش هيتّحد أصلًا (فرق دور حقيقي، مش تكرار)*: منطق الموافقة بالكامل (`_approve`/`_respondToMessage`/`_showEditRequestDialog` في chat_page مقابل `_requireAction` في chat_tab)، الـ SA read-only gating، شكل الـ loading (spinner مقابل skeleton)، و`_workspaceActive` (مملوكة للشاشة في chat_page، مملوكة للأب في chat_tab).
+
+*اكتشاف جانبي محتاج مهمة منفصلة (اتسجل، لسه ماتحلّش):* `chat_tab.dart` بيسمع `onContractStatusChanged` من الـ reverb، `chat_page.dart` لأ — يبان نقص حقيقي في شاشة العميل.
 
 ### P2 — تنضيف
 
