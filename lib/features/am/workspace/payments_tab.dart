@@ -79,9 +79,22 @@ class _PaymentsTabState extends State<PaymentsTab> {
         .fold<double>(0, (sum, p) => sum + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
 
+  // num.tryParse(v?.toString() ?? '') rather than `v as num?` or `(v ?? 0)`:
+  // both of those assume the server already sent a num, which
+  // payments_page.dart's equivalent field-read never assumed (it already
+  // used num.tryParse). If tax_summary's fields ever come back as a String
+  // (a Laravel decimal cast, an API Resource change, pagination — anything
+  // touching serialization), `as num?` throws a TypeError and `(v ?? 0)`
+  // throws a NoSuchMethodError the moment .toDouble()/.toStringAsFixed()/`>`
+  // is called on a String, taking the whole build() down. Not currently
+  // triggered (the backend returns numeric today), but this is a getter
+  // called from build(), so when it does trigger it's a crash, not a bad
+  // value. See docs/mobile-review-2026-08.md, P1 #4.
+  double _taxNum(dynamic v) => num.tryParse(v?.toString() ?? '')?.toDouble() ?? 0;
+
   double get _grandTotal {
     if (_taxSummary != null) {
-      return (_taxSummary!['grand_total'] as num?)?.toDouble() ?? 0;
+      return _taxNum(_taxSummary!['grand_total']);
     }
     final contracts = _payableContracts;
     if (contracts.isNotEmpty) {
@@ -220,7 +233,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     valueColor: AlwaysStoppedAnimation(isFullyPaid ? ShadColors.success : ShadColors.gold),
                   ),
                 ),
-                if (_taxSummary != null && (_taxSummary!['tax_percentage'] ?? 0) > 0) ...[
+                if (_taxSummary != null && _taxNum(_taxSummary!['tax_percentage']) > 0) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -230,17 +243,17 @@ class _PaymentsTabState extends State<PaymentsTab> {
                       const SizedBox(height: 6),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Text(l10n.paymentsContractsValue, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                        Text('${(_taxSummary!['contracts_total'] ?? 0).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                        Text('${_taxNum(_taxSummary!['contracts_total']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 2),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(l10n.paymentsTaxRow((_taxSummary!['tax_percentage'] ?? 0).toDouble()), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                        Text('${(_taxSummary!['tax_amount'] ?? 0).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                        Text(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                        Text('${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
                       ]),
                       const Divider(height: 10, color: ShadColors.cardBorder),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Text(l10n.paymentsTotalRow, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        Text('${(_taxSummary!['grand_total'] ?? 0).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                        Text('${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)),
                       ]),
                     ]),
                   ),

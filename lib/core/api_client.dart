@@ -224,6 +224,26 @@ class ApiClient {
     return _handle(response);
   }
 
+  /// Same "never got a response" -> [ConnectionException] translation as
+  /// [_send], but for the multipart trio below. Those build an
+  /// [http.MultipartRequest] and call `_httpClient.send(...)` directly
+  /// instead of the plain-verb pattern `_send()` wraps, so without this they
+  /// bypassed the translation entirely: a dropped connection or timeout
+  /// mid-upload surfaced as a raw SocketException/TimeoutException instead
+  /// of the ConnectionException callers actually catch. See
+  /// docs/mobile-review-2026-08.md, P1 #3.
+  Future<http.StreamedResponse> _sendMultipart(http.MultipartRequest request) async {
+    try {
+      return await _httpClient.send(request).timeout(_timeout);
+    } on SocketException catch (e) {
+      throw ConnectionException(e.message.isNotEmpty ? e.message : 'Network unreachable');
+    } on http.ClientException catch (e) {
+      throw ConnectionException(e.message);
+    } on TimeoutException {
+      throw ConnectionException('Request timed out after ${_timeout.inSeconds}s');
+    }
+  }
+
   Future<Map<String, dynamic>> get(String path) async {
     final headers = await _headers();
     return _send(() => _httpClient.get(Uri.parse('$baseUrl$path'), headers: headers));
@@ -277,7 +297,7 @@ class ApiClient {
         request.files.add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
       }
     }
-    final streamed = await _httpClient.send(request).timeout(_timeout);
+    final streamed = await _sendMultipart(request);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }
@@ -309,7 +329,7 @@ class ApiClient {
       }
       request.files.add(await http.MultipartFile.fromPath(fileField, file.path));
     }
-    final streamed = await _httpClient.send(request).timeout(_timeout);
+    final streamed = await _sendMultipart(request);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }
@@ -324,7 +344,7 @@ class ApiClient {
       }
       request.files.add(await http.MultipartFile.fromPath(fileField, file.path));
     }
-    final streamed = await _httpClient.send(request).timeout(_timeout);
+    final streamed = await _sendMultipart(request);
     final response = await http.Response.fromStream(streamed);
     return _handle(response);
   }
