@@ -86,22 +86,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId != null) {
       final reverb = _reverb;
-      reverb.onMessageReceived = (payload) {
-        final msg = payload['message'] as Map<String, dynamic>?;
-        if (msg != null && mounted) {
-          setState(() => _messages.add(msg));
-          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-        }
-      };
-      reverb.onMessageUpdated = (payload) {
-        final msg = payload['message'] as Map<String, dynamic>?;
-        if (msg != null && mounted) {
-          setState(() {
-            final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
-            if (idx >= 0) _messages[idx] = msg;
-          });
-        }
-      };
+      reverb.onMessageReceived = chatOnMessageReceived(
+        state: this,
+        setState: setState,
+        addMessage: (msg) => _messages.add(msg),
+        scrollToBottom: _scrollToBottom,
+      );
+      reverb.onMessageUpdated = chatOnMessageUpdated(
+        state: this,
+        setState: setState,
+        updateMessage: (msg) {
+          final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
+          if (idx >= 0) _messages[idx] = msg;
+        },
+      );
       reverb.onPaymentScheduleChanged = (_) {
         if (mounted) _checkWorkspace();
       };

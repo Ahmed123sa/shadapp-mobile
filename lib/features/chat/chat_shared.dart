@@ -108,6 +108,43 @@ Widget chatHeaderIconBtn(IconData icon, VoidCallback onTap) {
   );
 }
 
+// Builds the `reverb.onMessageReceived` / `.onMessageUpdated` handlers —
+// identical shape in both screens. These closures get stored once in
+// `initState` and invoked later, whenever a socket event arrives, so
+// `state.mounted` is read live inside the returned closure rather than
+// captured up front. `addMessage`/`updateMessage` are themselves plain
+// closures the caller defines against its own `_messages` field — since
+// they close over `this` (not a copied List value), they always mutate
+// the CURRENT `_messages`, even if the field gets reassigned by `_load()`
+// between when this handler was built and when it fires.
+void Function(Map<String, dynamic> payload) chatOnMessageReceived({
+  required State state,
+  required void Function(void Function() fn) setState,
+  required void Function(Map<String, dynamic> msg) addMessage,
+  required VoidCallback scrollToBottom,
+}) {
+  return (payload) {
+    final msg = payload['message'] as Map<String, dynamic>?;
+    if (msg != null && state.mounted) {
+      setState(() => addMessage(msg));
+      WidgetsBinding.instance.addPostFrameCallback((_) => scrollToBottom());
+    }
+  };
+}
+
+void Function(Map<String, dynamic> payload) chatOnMessageUpdated({
+  required State state,
+  required void Function(void Function() fn) setState,
+  required void Function(Map<String, dynamic> msg) updateMessage,
+}) {
+  return (payload) {
+    final msg = payload['message'] as Map<String, dynamic>?;
+    if (msg != null && state.mounted) {
+      setState(() => updateMessage(msg));
+    }
+  };
+}
+
 // _send in both screens has the exact same control-flow shape; the one
 // real role difference is that chat_tab.dart can flag a message as
 // `requiresAction` via its AM-only "request client approval" toggle,
