@@ -28,7 +28,10 @@ class ReverbService {
   String scheme = 'ws';
 
   WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _streamSubscription;
   Timer? _pingTimer;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
   int? _currentWorkspaceId;
   int? _currentUserId;
   bool _isClientChannel = false;
@@ -112,12 +115,15 @@ class ReverbService {
         _send({'event': 'pusher:ping', 'data': {}});
       });
 
-      _channel!.stream.listen(
+      _streamSubscription = _channel!.stream.listen(
         (data) {
           final msg = jsonDecode(data as String) as Map<String, dynamic>;
           final event = msg['event'] as String?;
           if (event == 'pusher:connection_established') {
             _socketId = _extractSocketId(msg['data']);
+            // A real connection is up — the next drop should retry quickly
+            // again, not carry over a long backoff from a previous outage.
+            _reconnectAttempts = 0;
             if (_currentUserId != null) {
               final channel = _isClientChannel
                   ? 'App.Models.Client.$_currentUserId'
@@ -223,23 +229,47 @@ class ReverbService {
     }
   }
 
-  Future<void> _reconnect() async {
-    await Future.delayed(const Duration(seconds: 10));
-    if (_currentWorkspaceId != null) {
-      connect(_currentWorkspaceId!);
-    } else if (_currentUserId != null) {
-      if (_isClientChannel) {
-        connectForClient(_currentUserId!);
-      } else {
-        connectForUser(_currentUserId!);
+  /// The WebSocket's `onError` and `onDone` handlers in [_connectAndListen]
+  /// both call this — a real socket drop typically fires both, not just one.
+  /// Without the cancel-and-replace below, that used to schedule two
+  /// independent 10-second timers; both would eventually fire and each would
+  /// open its own connection, since [_connectAndListen] reassigning
+  /// `_channel` does not by itself stop the *previous* connection's stream
+  /// subscription from still delivering events. Two live connections meant
+  /// every server broadcast arrived twice — this is what caused chat
+  /// messages to appear duplicated (see docs/mobile-review-2026-08-round2.md,
+  /// #2 and #3). Cancelling any pending timer here means only the most
+  /// recent onError/onDone call ends up scheduling the reconnect.
+  ///
+  /// Backoff (10s, 20s, 40s, capped at 60s) exists so a genuinely-down
+  /// server doesn't get hit every 10 seconds forever; it resets to 10s the
+  /// moment a connection actually succeeds (see `_reconnectAttempts = 0`
+  /// above), so a single blip doesn't leave the app slow to recover later.
+  void _reconnect() {
+    _reconnectTimer?.cancel();
+    final delaySeconds = (10 * (1 << _reconnectAttempts)).clamp(10, 60);
+    _reconnectAttempts++;
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+      if (_currentWorkspaceId != null) {
+        connect(_currentWorkspaceId!);
+      } else if (_currentUserId != null) {
+        if (_isClientChannel) {
+          connectForClient(_currentUserId!);
+        } else {
+          connectForUser(_currentUserId!);
+        }
       }
-    }
+    });
   }
 
   Future<void> _disconnect() async {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _pingTimer?.cancel();
     _pingTimer = null;
     _socketId = null;
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
     await _channel?.sink.close();
     _channel = null;
   }
@@ -247,6 +277,7 @@ class ReverbService {
   void disconnect() {
     _currentWorkspaceId = null;
     _currentUserId = null;
+    _reconnectAttempts = 0;
     _disconnect();
   }
 }

@@ -207,6 +207,11 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       ),
     );
     if (confirm == true) {
+      // See client_dashboard_screen.dart's _logout for why this has to run
+      // before clearToken() — an open socket left under the cleared identity
+      // eventually 401s on reconnect and bounces the user back to /login a
+      // second time. See docs/mobile-review-2026-08-round2.md, #1.
+      _reverb.disconnect();
       await _api.clearToken();
       if (!mounted) return;
       context.go('/login');

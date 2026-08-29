@@ -89,7 +89,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       reverb.onMessageReceived = chatOnMessageReceived(
         state: this,
         setState: setState,
-        addMessage: (msg) => _messages.add(msg),
+        // Guards against the same message arriving twice — a real
+        // possibility since onError/onDone can both fire _reconnect() and
+        // leave two live socket listeners for a moment (see
+        // docs/mobile-review-2026-08-round2.md, #2 and #3). updateMessage
+        // right below already keys off `id`; this didn't.
+        addMessage: (msg) {
+          if (_messages.any((m) => m['id'] == msg['id'])) return;
+          _messages.add(msg);
+        },
         scrollToBottom: _scrollToBottom,
       );
       reverb.onMessageUpdated = chatOnMessageUpdated(

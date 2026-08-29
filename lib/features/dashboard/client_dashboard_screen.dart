@@ -344,6 +344,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       ),
     );
     if (confirm == true) {
+      // Without this the socket stays open under the just-cleared identity:
+      // it eventually drops, _reconnect() retries, the private-channel auth
+      // call now gets a 401 with no token, and api_client.dart's
+      // onSessionExpired fires router.go('/login') while the user is
+      // already sitting on /login — rebuilding the screen and wiping
+      // whatever they'd started typing. See
+      // docs/mobile-review-2026-08-round2.md, #1.
+      _reverb.disconnect();
       await _api.clearToken();
       if (!mounted) return;
       context.go('/login');

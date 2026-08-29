@@ -20,27 +20,53 @@ import '../features/settings/settings_page.dart';
 
 const _publicLocations = ['/login', '/forgot-password'];
 
+/// Every `/am/*` route is staff-only (AM/SA screens) — see the routes list
+/// below. Anything not under `/am/` (`/dashboard`, `/profile`, `/settings`,
+/// `/notifications`, `/signature`, plus the public routes above) is shared
+/// between client/sub_user and staff, so it's deliberately not gated here.
+bool _isStaffOnly(String location) => location.startsWith('/am/');
+
+/// Resolves where a navigation to [location] should actually land, or
+/// `null` to let it proceed. Pulled out of `createRouter`'s `redirect:`
+/// callback as a plain function of (api, location) — no [BuildContext] or
+/// [GoRouterState] involved — specifically so it can be unit tested without
+/// constructing either. See docs/mobile-review-2026-08-round2.md, #4/#5.
+///
+/// Three things it guards, none of which the old cold-boot-only
+/// `initialLocation` check in main.dart covered:
+/// 1. A stale deep link opened after the token is gone (an old
+///    notification, or api_client.dart's onSessionExpired sending the app
+///    to /login mid-session) redirects to /login instead of crashing or
+///    showing a screen with no data.
+/// 2. A logged-in user landing on /login or /forgot-password (same
+///    stale-link case, but while still authenticated) redirects to their
+///    role's dashboard instead of showing the login form again.
+/// 3. A client/sub_user opening an `/am/*` deep link — the backend already
+///    rejects these with 403, so this was never a data leak, just a broken
+///    screen instead of a redirect. See docs/mobile-review-2026-08.md, P0 #1
+///    (part 2, not fixed in that pass — see round2.md, #4).
+Future<String?> resolveAuthRedirect(ApiClient api, String location) async {
+  final loggedIn = await api.getToken() != null;
+  final goingToPublic = _publicLocations.contains(location);
+
+  if (!loggedIn) {
+    return goingToPublic ? null : '/login';
+  }
+
+  final role = await api.getRole();
+  if (goingToPublic) {
+    return (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
+  }
+  if (_isStaffOnly(location) && (role == 'client' || role == 'sub_user')) {
+    return '/dashboard';
+  }
+  return null;
+}
+
 GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
   return GoRouter(
     initialLocation: initialLocation,
-    // Guards two cases the old cold-boot-only initialLocation check missed:
-    // a stale deep link opened after the token is gone (e.g. tapping an old
-    // notification, or api_client.dart's onSessionExpired sending the app to
-    // /login mid-session), and a logged-in user landing back on /login (e.g.
-    // the same stale-deep-link case, but before login). Runs on every
-    // navigation, not just at startup. See docs/mobile-review-2026-08.md, P0 #1.
-    redirect: (context, state) async {
-      final loggedIn = await api.getToken() != null;
-      final goingToPublic = _publicLocations.contains(state.matchedLocation);
-      if (!loggedIn) {
-        return goingToPublic ? null : '/login';
-      }
-      if (goingToPublic) {
-        final role = await api.getRole();
-        return (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
-      }
-      return null;
-    },
+    redirect: (context, state) => resolveAuthRedirect(api, state.matchedLocation),
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordPage()),
