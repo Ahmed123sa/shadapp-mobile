@@ -13,21 +13,6 @@ import 'core/api_client.dart';
 import 'core/router.dart';
 import 'core/locale_provider.dart';
 import 'core/notification_service.dart';
-import 'providers/audit_log_provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/contract_provider.dart';
-import 'providers/approval_provider.dart';
-import 'providers/client_provider.dart';
-import 'providers/dashboard_provider.dart';
-import 'providers/manager_provider.dart';
-import 'providers/meeting_provider.dart';
-import 'providers/notification_provider.dart';
-import 'providers/payment_provider.dart';
-import 'providers/report_provider.dart';
-import 'providers/file_provider.dart';
-import 'providers/settings_provider.dart';
-import 'providers/signature_provider.dart';
-import 'providers/sub_user_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 void main() async {
@@ -116,25 +101,18 @@ void main() async {
   final localeProvider = LocaleProvider();
   await localeProvider.init();
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => AuditLogProvider()),
-        ChangeNotifierProvider(create: (_) => ContractProvider()),
-        ChangeNotifierProvider(create: (_) => ClientProvider()),
-        ChangeNotifierProvider(create: (_) => ManagerProvider()),
-        ChangeNotifierProvider(create: (_) => ApprovalProvider()),
-        ChangeNotifierProvider(create: (_) => MeetingProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
-        ChangeNotifierProvider(create: (_) => PaymentProvider()),
-        ChangeNotifierProvider(create: (_) => ReportProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => SubUserProvider()),
-        ChangeNotifierProvider(create: (_) => SignatureProvider()),
-        ChangeNotifierProvider(create: (_) => FileProvider()),
-        ChangeNotifierProvider.value(value: localeProvider),
-      ],
+    // Only LocaleProvider is actually read via the provider tree
+    // (context.read<LocaleProvider>() in login_page.dart,
+    // client_onboarding_screen.dart, client_dashboard_screen.dart, and
+    // am_dashboard_page.dart, to toggle the app language). Every other
+    // provider used to be registered here too via a MultiProvider, but no
+    // screen ever read them from the tree — each screen builds its own
+    // instance instead (see the `XProvider? xProvider` testability-seam
+    // pattern used throughout `features/`). That MultiProvider was dead
+    // weight: 17 duplicate provider instances in memory for nothing. See
+    // docs/state-layer-migration-plan.md, بند ٣ for the decision record.
+    ChangeNotifierProvider.value(
+      value: localeProvider,
       child: ShadApp(router: router, localeProvider: localeProvider),
     ),
   );

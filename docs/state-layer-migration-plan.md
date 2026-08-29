@@ -88,19 +88,19 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 ### P1 — ديون معمارية
 
-**٣. الـ ١٧ provider في `main.dart` ميّتين** — `main.dart:121-135`
+**٣. [تم] الـ ١٧ provider في `main.dart` كانوا ميّتين** — كان `main.dart:121-135`
 
-مسجّلين في `MultiProvider` لكن **مفيش ولا `context.read<>`/`watch<>`/`Consumer<>` واحد ليهم** في التطبيق كله (`LocaleProvider` هو الوحيد اللي بيتقرا فعلًا، في ٤ أماكن). الشاشات بتبني نسخها بنفسها عبر `widget.xProvider ?? XProvider()`. النتيجة: نسختين من كل provider في الذاكرة، وحقن تبعية مزدوج ومربك.
+كانوا مسجّلين في `MultiProvider` لكن **مفيش ولا `context.read<>`/`watch<>`/`Consumer<>` واحد ليهم** في التطبيق كله (`LocaleProvider` هو الوحيد اللي كان بيتقرا فعلًا، في ٤ أماكن: `login_page.dart` · `client_onboarding_screen.dart` · `client_dashboard_screen.dart` · `am_dashboard_page.dart`، كلهم `context.read<LocaleProvider>().toggle()`). الشاشات بتبني نسخها بنفسها عبر `widget.xProvider ?? XProvider()`.
 
-**قرار مطلوب** (مش واضح لوحده — يتقرر قبل التنفيذ): يا إما نشيل الـ `MultiProvider` ونعتبر النمط الحالي هو المقصود، يا إما نخلي الشاشات تقرا من الـ tree ونسيب الـ constructor param كـ override للاختبار بس. التاني أنضف بس أكبر.
+**القرار المتخّذ**: نشيل الـ `MultiProvider` ونعتبر نمط "كل شاشة بتعمل نسخة بنفسها + باراميتر اختياري للاختبار" هو النمط المعتمد رسميًا — ده أصلًا كان القرار المتعمّد وراء "الخطوة صفر" في الهجرة، ومش هينفع نرجع فيه من غير ما نلمس كل شاشة وتست اتبنى عليه. الـ `MultiProvider` اتستبدل بـ `ChangeNotifierProvider.value(value: localeProvider, child: ShadApp(...))` بس — أقل تركيب يحافظ بالظبط على الاستخدام الحقيقي الوحيد. الـ ١٥ import للـ providers التانية اتشالت من `main.dart` لأنها بقت مش مستخدمة فيه.
 
-**٤. الـ Providers `ChangeNotifier` بس محدش بيسمع**
+**٤. [لسه قايم — قرار منفصل، مش عاجل] الـ Providers `ChangeNotifier` بس محدش بيسمع**
 
 `notifyListeners()` بتتنده، لكن الشاشات بتنسخ الحالة في متغيرات محلية وتعمل `setState`
 (`approvals_page.dart:51` · `sa_team_page.dart:54` · `reports_tab.dart:92` · `calendar_tab.dart:59`…).
 يعني الطبقة نُصّها متحققة: مكسب الاختبارية والتنظيم موجود، ومكسب الـ reactive state لأ. مش خطأ يكسر حاجة — بس `ChangeNotifier` هنا زينة، ولو مش هنستعملها يبقى الأصدق نشيلها.
 
-**مرتبطة بالبند ٣** — يتحلّوا مع بعض في قرار واحد.
+بعد قرار البند ٣ (نشيل الـ MultiProvider ونثبّت نمط "كل شاشة بتعمل نسخة بنفسها")، البند ده بقى تنظيف منفصل تمامًا — يشيل `extends ChangeNotifier`/`notifyListeners()` من الـ ١٧ provider. شغل أكبر من اللي يبان (بيلمس كل provider + أي تست بيتأكد من سلوك الإشعار)، ومفيش ضرر من تأجيله. قرار منفصل لو حبينا نرجعله.
 
 **٥. [تم — بالحد الآمن] `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
 
