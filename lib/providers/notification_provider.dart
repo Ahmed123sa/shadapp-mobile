@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
 import '../data/notification_repository.dart';
 import '../models/app_notification.dart';
 
-class NotificationProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: no screen/test listens to this class
+// reactively — callers copy its fields into local state via setState().
+// See docs/state-layer-migration-plan.md, بند ٤.
+class NotificationProvider {
   final NotificationRepository _repo;
   NotificationProvider({NotificationRepository? repository}) : _repo = repository ?? NotificationRepository();
 
@@ -21,7 +23,6 @@ class NotificationProvider extends ChangeNotifier {
   /// itself (read_at == null) — unchanged from before this migration.
   Future<void> fetchNotifications() async {
     _isLoading = true;
-    notifyListeners();
     try {
       final result = await _repo.fetchAll();
       _notifications = result.notifications;
@@ -29,7 +30,6 @@ class NotificationProvider extends ChangeNotifier {
     } catch (_) {
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -39,7 +39,6 @@ class NotificationProvider extends ChangeNotifier {
   /// batch-count [fetchNotifications] above uses for the badge.
   Future<void> fetchNotificationList() async {
     _isLoading = true;
-    notifyListeners();
     try {
       final result = await _repo.fetchAll();
       _notifications = result.notifications;
@@ -47,7 +46,6 @@ class NotificationProvider extends ChangeNotifier {
     } catch (_) {
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -68,11 +66,9 @@ class NotificationProvider extends ChangeNotifier {
 
   void incrementUnread() {
     _unreadCount++;
-    notifyListeners();
   }
 
   void resetUnread() {
     _unreadCount = 0;
-    notifyListeners();
   }
 }

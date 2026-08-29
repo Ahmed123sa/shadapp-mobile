@@ -94,13 +94,17 @@ int get workspaceIdSafe => workspaceId ?? 1;
 
 **القرار المتخّذ**: نشيل الـ `MultiProvider` ونعتبر نمط "كل شاشة بتعمل نسخة بنفسها + باراميتر اختياري للاختبار" هو النمط المعتمد رسميًا — ده أصلًا كان القرار المتعمّد وراء "الخطوة صفر" في الهجرة، ومش هينفع نرجع فيه من غير ما نلمس كل شاشة وتست اتبنى عليه. الـ `MultiProvider` اتستبدل بـ `ChangeNotifierProvider.value(value: localeProvider, child: ShadApp(...))` بس — أقل تركيب يحافظ بالظبط على الاستخدام الحقيقي الوحيد. الـ ١٥ import للـ providers التانية اتشالت من `main.dart` لأنها بقت مش مستخدمة فيه.
 
-**٤. [لسه قايم — قرار منفصل، مش عاجل] الـ Providers `ChangeNotifier` بس محدش بيسمع**
+**٤. [تم] الـ Providers `ChangeNotifier` بس محدش بيسمع**
 
-`notifyListeners()` بتتنده، لكن الشاشات بتنسخ الحالة في متغيرات محلية وتعمل `setState`
-(`approvals_page.dart:51` · `sa_team_page.dart:54` · `reports_tab.dart:92` · `calendar_tab.dart:59`…).
-يعني الطبقة نُصّها متحققة: مكسب الاختبارية والتنظيم موجود، ومكسب الـ reactive state لأ. مش خطأ يكسر حاجة — بس `ChangeNotifier` هنا زينة، ولو مش هنستعملها يبقى الأصدق نشيلها.
+`notifyListeners()` كانت بتتنده، لكن الشاشات بتنسخ الحالة في متغيرات محلية وتعمل `setState`. يعني الطبقة كانت نُصّها متحققة: مكسب الاختبارية والتنظيم موجود، ومكسب الـ reactive state لأ.
 
-بعد قرار البند ٣ (نشيل الـ MultiProvider ونثبّت نمط "كل شاشة بتعمل نسخة بنفسها")، البند ده بقى تنظيف منفصل تمامًا — يشيل `extends ChangeNotifier`/`notifyListeners()` من الـ ١٧ provider. شغل أكبر من اللي يبان (بيلمس كل provider + أي تست بيتأكد من سلوك الإشعار)، ومفيش ضرر من تأجيله. قرار منفصل لو حبينا نرجعله.
+**الفحص قبل الحذف**: اتفحصت كل الـ ٤٢ استخدام لـ `.addListener(`/`notifyListeners()` في `lib/` (مش بس جوّه `providers/`). النتيجة: الاستخدامات في ٦ ملفات شاشات (`client_dashboard_screen.dart` · `contracts_page.dart` · `chat_page.dart` · `chat_tab.dart` · `am_workspace_page.dart` · `am_dashboard_page.dart`) كلها `.addListener` على حاجات تانية خالص (`ScrollController` · `TabController` · `ValueNotifier<int>` محلي زي `_contractRefreshNotifier`) — صفر علاقة بالـ ١٧ provider. كل الـ `AnimatedBuilder` في `main.dart`/`login_page.dart` برضه بعيدة (تحريك بصري، مش provider). التست الوحيد اللي بيراقب `notifyListeners()` فعليًا هو `test/unit/auth_provider_test.dart:65-70` (بيتأكد إن `AuthProvider.login` بينده الإشعار مرتين — مرة لما `isLoading` يبقى `true` ومرة لما يرجع `false`).
+
+**القرار**: `AuthProvider` اتسابت زي ما هي (فيها التست الوحيد اللي فعليًا بيراقب السلوك ده)، والباقي (١٦ provider) اتشال منهم `extends ChangeNotifier` وكل نداءات `notifyListeners()`:
+- **دفعة ١ (صفر مخاطرة — مفيهاش أي نداء notifyListeners أصلًا)**: `system_settings` · `report` · `file` · `dashboard` · `sub_user` · `audit_log` · `signature` · `chat` · `settings`.
+- **دفعة ٢ (فيها notifyListeners فعلي، بس مفيش تست بيراقبها)**: `contract` · `notification` · `payment` · `manager` · `client` · `meeting` · `approval`.
+
+اتحقّق قبل الحذف إن مفيش أي من الـ ١٧ provider ليه `dispose()` override بينده `super.dispose()` (كانت هتتكسر لو الأب اتشال)، ومفيش `ChangeNotifierProvider<X>` لأي واحد فيهم غير `LocaleProvider`. `flutter analyze`: صفر. `flutter test`: ٤٦٣/٤٦٣ في الدفعتين.
 
 **٥. [تم — بالحد الآمن] `chat_page.dart` و `chat_tab.dart` ~٢٥٠٠ سطر شبه متطابقين**
 
@@ -138,8 +142,8 @@ int get workspaceIdSafe => workspaceId ?? 1;
 |---|---|---|
 | ١ | البند ١ + ٢ (P0) | الاتنين معًا شغل قصير، والاتنين bugs حقيقية مش تحسينات |
 | ٢ | البند ٦ + ٧ (P2 الرخيص) | سطور معدودة، تتلمّ في نفس الجلسة |
-| ٣ | قرار البند ٣/٤ | محتاج قرار قبل كود — يتاخد مرة واحدة ويتطبّق على الكل |
-| ٤ | البند ٥ (توحيد الشات) | أكبر مكسب، وبقى آمن لأن الاتنين متغطّيين |
+| ٣ | ~~قرار البند ٣/٤~~ [تم] | محتاج قرار قبل كود — يتاخد مرة واحدة ويتطبّق على الكل |
+| ٤ | ~~البند ٥ (توحيد الشات)~~ [تم] | أكبر مكسب، وبقى آمن لأن الاتنين متغطّيين |
 
 ---
 

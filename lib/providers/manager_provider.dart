@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import '../data/manager_repository.dart';
 import '../models/manager.dart';
 
-class ManagerProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: no screen/test listens to this class
+// reactively. See docs/state-layer-migration-plan.md, بند ٤.
+class ManagerProvider {
   final ManagerRepository _repo;
   ManagerProvider({ManagerRepository? repository}) : _repo = repository ?? ManagerRepository();
 
@@ -17,14 +18,12 @@ class ManagerProvider extends ChangeNotifier {
   Future<void> fetchManagers() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _managers = await _repo.fetchAll();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -45,6 +44,5 @@ class ManagerProvider extends ChangeNotifier {
   Future<void> deleteManager(int id) async {
     await _repo.delete(id);
     _managers = _managers.where((m) => m.id != id).toList();
-    notifyListeners();
   }
 }

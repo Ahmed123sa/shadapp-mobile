@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import '../data/payment_repository.dart';
 
 /// Thin wrapper over [PaymentRepository]. payments_page.dart and
@@ -9,7 +8,10 @@ import '../data/payment_repository.dart';
 /// docs/state-layer-migration-plan.md) — this provider backs simpler
 /// screens that only need to read a workspace's payment list (or, via
 /// [fetchAllPendingRaw], sa_approvals_page.dart's cross-workspace queue).
-class PaymentProvider extends ChangeNotifier {
+///
+/// Was `extends ChangeNotifier`: no screen/test listens to this class
+/// reactively. See docs/state-layer-migration-plan.md, بند ٤.
+class PaymentProvider {
   final PaymentRepository _repo;
   PaymentProvider({PaymentRepository? repository}) : _repo = repository ?? PaymentRepository();
 
@@ -47,14 +49,12 @@ class PaymentProvider extends ChangeNotifier {
   Future<void> fetchForWorkspace(int workspaceId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _payments = await _repo.fetchForWorkspace(workspaceId);
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 

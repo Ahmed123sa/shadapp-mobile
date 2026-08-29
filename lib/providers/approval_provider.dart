@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import '../data/approval_repository.dart';
 import '../models/approval.dart';
 
-class ApprovalProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: no screen/test listens to this class
+// reactively. See docs/state-layer-migration-plan.md, بند ٤.
+class ApprovalProvider {
   final ApprovalRepository _repo;
   ApprovalProvider({ApprovalRepository? repository}) : _repo = repository ?? ApprovalRepository();
 
@@ -18,14 +19,12 @@ class ApprovalProvider extends ChangeNotifier {
   Future<void> fetchApprovals(int workspaceId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _approvals = await _repo.fetchAll(workspaceId);
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 

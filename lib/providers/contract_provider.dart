@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../data/contract_repository.dart';
 
-class ContractProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: fetchContracts()/fetchAllContracts() used to
+// call notifyListeners(), but no screen/test listens to this class
+// reactively — callers copy .contracts/.isLoading/.error into local state
+// via setState() instead. See docs/state-layer-migration-plan.md, بند ٤.
+class ContractProvider {
   final ContractRepository _repo;
   // Constructor signature deliberately unchanged (still takes ApiClient?,
   // not ContractRepository?) — this provider is already wired into
@@ -20,14 +23,12 @@ class ContractProvider extends ChangeNotifier {
   Future<void> fetchContracts(int workspaceId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _contracts = await _repo.fetchForWorkspace(workspaceId);
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -109,14 +110,12 @@ class ContractProvider extends ChangeNotifier {
   Future<void> fetchAllContracts() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _contracts = await _repo.fetchAll();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 }

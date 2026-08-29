@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import '../data/client_repository.dart';
 import '../models/client.dart';
 
-class ClientProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: no screen/test listens to this class
+// reactively. See docs/state-layer-migration-plan.md, بند ٤.
+class ClientProvider {
   final ClientRepository _repo;
   ClientProvider({ClientRepository? repository}) : _repo = repository ?? ClientRepository();
 
@@ -18,14 +19,12 @@ class ClientProvider extends ChangeNotifier {
   Future<void> fetchClients() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _clients = await _repo.fetchAll();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -67,6 +66,5 @@ class ClientProvider extends ChangeNotifier {
   Future<void> deleteClient(int id) async {
     await _repo.delete(id);
     _clients = _clients.where((c) => c.id != id).toList();
-    notifyListeners();
   }
 }

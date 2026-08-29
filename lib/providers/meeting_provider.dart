@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import '../data/meeting_repository.dart';
 import '../models/meeting.dart';
 
-class MeetingProvider extends ChangeNotifier {
+// Was `extends ChangeNotifier`: no screen/test listens to this class
+// reactively. See docs/state-layer-migration-plan.md, بند ٤.
+class MeetingProvider {
   final MeetingRepository _repo;
   MeetingProvider({MeetingRepository? repository}) : _repo = repository ?? MeetingRepository();
 
@@ -17,28 +18,24 @@ class MeetingProvider extends ChangeNotifier {
   Future<void> fetchForWorkspace(int workspaceId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _meetings = await _repo.fetchForWorkspace(workspaceId);
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
   Future<void> fetchAllWorkspaces() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
     try {
       _meetings = await _repo.fetchAllWorkspaces();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
     }
   }
 
