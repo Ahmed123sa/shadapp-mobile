@@ -275,6 +275,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
     getAvailableMethods: () => _availableMethods,
     getGrandTotal: () => _grandTotal,
     getPayments: () => _payments,
+    getPayableContracts: () => _payableContracts,
+    getContractCurrency: () => _contractCurrency,
     paymentProvider: _paymentProvider,
     api: _api,
     load: _load,

@@ -192,4 +192,76 @@ void main() {
     expect(find.text('Payment proof is required'), findsOneWidget);
     verifyNever(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body')));
   });
+
+  testWidgets('requesting a payment with multiple payable contracts shows the contract dropdown and posts the selected contract_id', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) {
+        return jsonResponse(
+          '{"contracts":[{"id":1,"title":"MSA","status":"company_approved","value":5000,"currency":"SAR"},'
+          '{"id":2,"title":"MSA II","status":"company_approved","value":9000,"currency":"SAR"}]}',
+        );
+      }
+      return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+    });
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select the contract you\'re paying for'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '250');
+    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MSA (5000 SAR)').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!['contract_id'], 1);
+    expect(sentBody!['amount'], 250.0);
+    expect(find.text('Payment request sent'), findsOneWidget);
+  });
+
+  testWidgets('with a single payable contract the sheet posts no contract_id (backed by the latest-contract fallback)', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) {
+        return jsonResponse(
+          '{"contracts":[{"id":1,"title":"MSA","status":"company_approved","value":5000,"currency":"SAR"}]}',
+        );
+      }
+      return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+    });
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select the contract you\'re paying for'), findsNothing);
+
+    await tester.enterText(find.byType(TextField).first, '250');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!.containsKey('contract_id'), isFalse);
+    expect(find.text('Payment request sent'), findsOneWidget);
+  });
 }

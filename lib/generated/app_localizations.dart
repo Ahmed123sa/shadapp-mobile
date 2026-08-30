@@ -2828,6 +2828,12 @@ abstract class AppLocalizations {
   /// **'Request Payment'**
   String get payments_requestPayment;
 
+  /// No description provided for @payments_selectContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the contract you\'re paying for'**
+  String get payments_selectContract;
+
   /// No description provided for @payments_amount.
   ///
   /// In en, this message translates to:

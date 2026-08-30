@@ -472,6 +472,7 @@
   "payments_upcomingPayments": "المدفوعات القادمة",
   "payments_empty": "لا توجد مدفوعات",
   "payments_requestPayment": "طلب دفع",
+  "payments_selectContract": "اختر العقد الذي تدفع عنه",
   "payments_amount": "المبلغ",
   "payments_currency": "العملة",
   "payments_paymentMethod": "طريقة الدفع",

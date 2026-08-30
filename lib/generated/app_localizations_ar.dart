@@ -1411,6 +1411,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get payments_requestPayment => 'طلب دفع';
 
   @override
+  String get payments_selectContract => 'اختر العقد الذي تدفع عنه';
+
+  @override
   String get payments_amount => 'المبلغ';
 
   @override

@@ -34,6 +34,8 @@ void showRequestPaymentSheet({
   required List<String> Function() getAvailableMethods,
   required double Function() getGrandTotal,
   required List<dynamic> Function() getPayments,
+  required List<Map<String, dynamic>> Function() getPayableContracts,
+  String Function()? getContractCurrency,
   required PaymentProvider paymentProvider,
   required ApiClient api,
   required Future<void> Function() load,
@@ -48,7 +50,8 @@ void showRequestPaymentSheet({
     'mobile_wallet': l10n.payments_methodMobileWallet,
   };
 
-  const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
+  final contractCur = getContractCurrency?.call() ?? 'SAR';
+  final currencies = [contractCur];
   final currencyLabels = <String, String>{
     'SAR': l10n.currency_sar, 'USD': l10n.currency_usd, 'EUR': l10n.currency_eur,
     'AED': l10n.currency_aed, 'EGP': l10n.currency_egp, 'KWD': l10n.currency_kwd,
@@ -58,7 +61,13 @@ void showRequestPaymentSheet({
   final available = getAvailableMethods().isNotEmpty ? getAvailableMethods() : methodLabels.keys.toList();
   final amountCtrl = TextEditingController();
   final selectedMethod = ValueNotifier<String>(available.first);
-  final selectedCurrency = ValueNotifier<String>('SAR');
+  final selectedCurrency = ValueNotifier<String>(contractCur);
+  // Only let the user pick a contract when there is more than one payable
+  // contract; 0/1 keeps the legacy auto-link behaviour byte-identical and the
+  // payload stays contract_id-free so the backend falls back to the latest
+  // contract. The id is only read off this notifier after an explicit pick.
+  final payableContracts = getPayableContracts();
+  final selectedContract = ValueNotifier<int?>(null);
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
 
@@ -106,6 +115,30 @@ void showRequestPaymentSheet({
             ),
           ),
           const SizedBox(height: 12),
+          if (payableContracts.length > 1) ...[
+            ValueListenableBuilder<int?>(
+              valueListenable: selectedContract,
+              builder: (_, val, __) => DropdownButtonFormField<int>(
+                initialValue: val,
+                decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_selectContract),
+                items: payableContracts.map((c) => DropdownMenuItem(
+                  value: c['id'] as int?,
+                  child: Text('${c['title']} (${c['value']} ${c['currency']})', overflow: TextOverflow.ellipsis),
+                )).toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+                  selectedContract.value = v;
+                  final selected = payableContracts.firstWhere((c) => c['id'] == v, orElse: () => <String, dynamic>{});
+                  final suggested = selected['value']?.toString();
+                  if (suggested != null && amountCtrl.text.trim().isEmpty) {
+                    amountCtrl.text = suggested;
+                    setSheetState(() {});
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           ValueListenableBuilder<String>(
             valueListenable: selectedMethod,
             builder: (_, val, __) => DropdownButtonFormField<String>(
@@ -216,7 +249,7 @@ void showRequestPaymentSheet({
               child: ElevatedButton(
                 onPressed: uploading ? null : () => _submitPaymentDashboard(
                   ctx, setSheetState, uploadingNotifier,
-                  amountCtrl, selectedCurrency.value, selectedMethod.value, proofFiles,
+                  amountCtrl, selectedCurrency.value, selectedMethod.value, selectedContract.value, proofFiles,
                   paymentProvider, api, load,
                 ),
                 child: uploading
@@ -238,6 +271,7 @@ Future<void> _submitPaymentDashboard(
   TextEditingController amountCtrl,
   String currency,
   String methodType,
+  int? contractId,
   List<Map<String, dynamic>> proofFiles,
   PaymentProvider paymentProvider,
   ApiClient api,
@@ -260,6 +294,7 @@ Future<void> _submitPaymentDashboard(
       'amount': amount,
       'currency': currency,
       'method_type': methodType,
+      if (contractId != null) 'contract_id': contractId,
     };
 
     final nativeFiles = proofFiles.where((pf) => pf['file'] != null).map((pf) => pf['file'] as File).toList();

@@ -1414,6 +1414,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payments_requestPayment => 'Request Payment';
 
   @override
+  String get payments_selectContract =>
+      'Select the contract you\'re paying for';
+
+  @override
   String get payments_amount => 'Amount';
 
   @override

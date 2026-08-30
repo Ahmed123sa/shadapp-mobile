@@ -471,6 +471,7 @@
   "payments_upcomingPayments": "Upcoming Payments",
   "payments_empty": "No payments",
   "payments_requestPayment": "Request Payment",
+  "payments_selectContract": "Select the contract you're paying for",
   "payments_amount": "Amount",
   "payments_currency": "Currency",
   "payments_paymentMethod": "Payment Method",
