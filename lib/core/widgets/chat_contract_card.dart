@@ -74,7 +74,7 @@ class _ChatContractCardState extends State<ChatContractCard> {
                   children: [
                     Text(c['title'] ?? '', style: ShadTypography.cardTitle),
                     const SizedBox(height: 2),
-                    Text(l10n.sarClauses('${c['value'] ?? 0}', '${clauses.length}'),
+                    Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'} • ${clauses.length} ${l10n.contractClausesLabel}',
                       style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
                     if (widget.clientType == 'business')
                       Text(l10n.contractValueExcludesVat, style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),

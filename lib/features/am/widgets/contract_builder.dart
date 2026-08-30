@@ -52,6 +52,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
 
   List<Map<String, dynamic>> _fixedClauses = [];
   List<Map<String, dynamic>> _optionalClauses = [];
+  bool _showContractDates = true;
 
   bool get _isEditing => widget.contractId != null;
 
@@ -105,6 +106,21 @@ class _ContractBuilderState extends State<ContractBuilder> {
 
   Future<void> _loadTemplates() async {
     try {
+      try {
+        final settingsRes = await _api.get('/settings');
+        final settings = settingsRes['settings'];
+        if (settings is Map && settings['show_contract_dates'] != null) {
+          final val = settings['show_contract_dates']['value'];
+          if (val != null) {
+            if (mounted) {
+              setState(() {
+                _showContractDates = val.toString() == '1' || val.toString().toLowerCase() == 'true';
+              });
+            }
+          }
+        }
+      } catch (_) {}
+
       final data = await _contractProvider.fetchClauseTemplates();
       final templates = data['templates'] as List<dynamic>? ?? [];
 
@@ -269,36 +285,37 @@ class _ContractBuilderState extends State<ContractBuilder> {
                   )).toList(),
                   onChanged: (v) { if (v != null) setState(() => _selectedCurrency = v); },
                 ),
-                const SizedBox(height: 12),
-
-                // Dates
-                Row(children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
-                        if (d != null) setState(() => _startDate = d);
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(labelText: l10n.contractStartDateLabel),
-                        child: Text(_startDate != null ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}' : l10n.contractBuilderSelectDate),
+                if (_showContractDates) ...[
+                  const SizedBox(height: 12),
+                  // Dates
+                  Row(children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
+                          if (d != null) setState(() => _startDate = d);
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(labelText: l10n.contractStartDateLabel),
+                          child: Text(_startDate != null ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}' : l10n.contractBuilderSelectDate),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final d = await showDatePicker(context: context, initialDate: (_startDate ?? DateTime.now()).add(const Duration(days: 30)), firstDate: _startDate ?? DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
-                        if (d != null) setState(() => _endDate = d);
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(labelText: l10n.contractEndDateLabel),
-                        child: Text(_endDate != null ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}' : l10n.contractBuilderSelectDate),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final d = await showDatePicker(context: context, initialDate: (_startDate ?? DateTime.now()).add(const Duration(days: 30)), firstDate: _startDate ?? DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
+                          if (d != null) setState(() => _endDate = d);
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(labelText: l10n.contractEndDateLabel),
+                          child: Text(_endDate != null ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}' : l10n.contractBuilderSelectDate),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ]),
+                ],
                 const SizedBox(height: 24),
 
                 // Fixed Clauses
