@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/notification_routing.dart';
 import '../../core/theme.dart';
 import '../../models/app_notification.dart';
 import '../../providers/notification_provider.dart';
@@ -75,11 +76,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (isAdmin && workspaceId != null && workspaceId.isNotEmpty) {
       return '/am/workspace/$workspaceId?tab=${_tabIndexForType(type)}';
     }
-    if (clientId != null && clientId.isNotEmpty) {
-      if (isAdmin) return '/am/clients/$clientId';
-      return '/dashboard';
+    if (isAdmin && clientId != null && clientId.isNotEmpty) {
+      return '/am/clients/$clientId';
     }
-    return isAdmin ? '/am/dashboard' : '/dashboard';
+    if (isAdmin) return '/am/dashboard';
+    return '/dashboard?tab=${fcmTabIndex(type, isClient: true)}';
   }
 
   Future<void> _delete(String id) async {

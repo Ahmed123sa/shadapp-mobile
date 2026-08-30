@@ -24,7 +24,7 @@ void main() {
         GoRoute(path: '/am/workspace/:id', builder: (_, __) => const Scaffold(body: Text('WORKSPACE_PAGE'))),
         GoRoute(path: '/am/clients/:id', builder: (_, __) => const Scaffold(body: Text('CLIENT_PAGE'))),
         GoRoute(path: '/am/dashboard', builder: (_, __) => const Scaffold(body: Text('AM_DASHBOARD'))),
-        GoRoute(path: '/dashboard', builder: (_, __) => const Scaffold(body: Text('CLIENT_DASHBOARD'))),
+        GoRoute(path: '/dashboard', builder: (context, state) => Scaffold(body: Text(state.uri.toString()))),
       ],
     );
     await tester.pumpWidget(MaterialApp.router(
@@ -98,6 +98,26 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
     expect(getCalls, 2); // initial load + reload after markRead
     expect(find.text('WORKSPACE_PAGE'), findsOneWidget);
+  });
+
+  testWidgets('tapping a payment notification as a client opens the payments tab', (tester) async {
+    final httpClient = MockHttpClient();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"notifications":[{"id":"n2","read_at":null,"created_at":"2026-01-01T00:00:00Z",'
+        '"data":{"type":"payment_created","title":"New payment","message":"hi"}}],"unread_count":1}',
+      ),
+    );
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{}'),
+    );
+    final provider = NotificationProvider(repository: NotificationRepository(api: buildTestApiClient(client: httpClient)));
+
+    await pumpPage(tester, provider, role: 'client');
+    await tester.tap(find.text('New payment'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('/dashboard?tab=1'), findsOneWidget);
   });
 
   testWidgets('swiping a notification away deletes it', (tester) async {
