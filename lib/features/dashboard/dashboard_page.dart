@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/theme.dart';
 import '../../core/reverb_service.dart';
 import '../../data/client_repository.dart';
@@ -96,8 +97,15 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
           await _api.setUserData(workspace: wsId);
         }
       }
-    } catch (e) {
-      if (mounted) _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
+    } catch (e, s) {
+      AppLog.error('dashboard_page._loadClientData', e, s);
+      // Only fail the whole screen when we have nothing to show yet. If we
+      // already hold valid workspace data (e.g. returning from an external
+      // app that briefly dropped the network), keep the working UI instead
+      // of trapping the user behind a full-screen error.
+      if (mounted && _workspace == null) {
+        _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
+      }
     }
     if (mounted) setState(() => _loading = false);
   }

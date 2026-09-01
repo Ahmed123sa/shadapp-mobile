@@ -218,8 +218,20 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _loadClientData();
+      _reloadOnResume();
     }
+  }
+
+  /// Reloads when the app returns to the foreground, with a short delayed
+  /// retry. Coming back from an external app (e.g. the browser used to open a
+  /// Zoom join link) the device often hasn't restored the network/session yet,
+  /// so a single immediate attempt can fail even though the request is fine.
+  /// The one-shot retry (bounded, won't loop) covers that timing gap cleanly.
+  Future<void> _reloadOnResume() async {
+    if (await _loadClientData()) return;
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
+    await _loadClientData();
   }
 
   @override
@@ -230,24 +242,36 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     super.dispose();
   }
 
-  Future<void> _loadClientData() async {
+  Future<bool> _loadClientData() async {
     final cid = _api.userId;
-    if (cid == null) return;
+    if (cid == null) return false;
     try {
       final data = await _childClientProvider.fetchClientRaw(cid);
-      _client = data['client'] as Map<String, dynamic>?;
-      _workspace = data['client']?['workspace'] as Map<String, dynamic>?;
-      if (_workspace != null) {
-        final wsId = _workspace!['id'] as int?;
-        if (wsId != null && wsId != _api.workspaceId) {
-          await _api.setUserData(workspace: wsId);
+      if (mounted) {
+        _client = data['client'] as Map<String, dynamic>?;
+        _workspace = data['client']?['workspace'] as Map<String, dynamic>?;
+        if (_workspace != null) {
+          final wsId = _workspace!['id'] as int?;
+          if (wsId != null && wsId != _api.workspaceId) {
+            await _api.setUserData(workspace: wsId);
+          }
         }
+        _checkAutoAdvance();
       }
-      _checkAutoAdvance();
-    } catch (e) {
-      if (mounted) _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
+      return true;
+    } catch (e, s) {
+      AppLog.error('client_dashboard._loadClientData', e, s);
+      // Only fail the whole screen when we have nothing to show yet. If we
+      // already hold valid client/workspace data (e.g. returning from an
+      // external app that dropped the network briefly), keep the working UI
+      // instead of trapping the user behind a full-screen error.
+      if (mounted && _client == null) {
+        _error = AppLocalizations.of(context)!.dashboard_failedToLoad;
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    if (mounted) setState(() => _loading = false);
   }
 
   void _checkAutoAdvance() {
