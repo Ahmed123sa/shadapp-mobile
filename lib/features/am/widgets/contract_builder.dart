@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
+import '../../../data/system_settings_repository.dart';
 import '../../../providers/contract_provider.dart';
+import '../../../providers/system_settings_provider.dart';
+
+/// Reads a system-setting flag that the backend stores as a string ('1'/'0').
+///
+/// Tolerant on purpose: the same value is read by the dashboard too, and a
+/// Laravel cast or API Resource change could start sending a real bool or int
+/// instead of the string. Returns false for null/unparseable rather than
+/// throwing, since a missing setting should fall back to the caller's default.
+bool asSettingFlag(dynamic value) {
+  if (value == null) return false;
+  if (value is bool) return value;
+  final s = value.toString().trim().toLowerCase();
+  return s == '1' || s == 'true';
+}
 
 class ContractBuilder extends StatefulWidget {
   final VoidCallback? onCreated;
@@ -14,13 +30,14 @@ class ContractBuilder extends StatefulWidget {
   // singleton — zero behavior change for every existing call site.
   final ApiClient? api;
   final ContractProvider? contractProvider;
+  final SystemSettingsProvider? systemSettingsProvider;
 
-  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData, this.api, this.contractProvider});
+  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData, this.api, this.contractProvider, this.systemSettingsProvider});
 
   @override
   State<ContractBuilder> createState() => _ContractBuilderState();
 
-  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData, ApiClient? api, ContractProvider? contractProvider}) {
+  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData, ApiClient? api, ContractProvider? contractProvider, SystemSettingsProvider? systemSettingsProvider}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -30,7 +47,7 @@ class ContractBuilder extends StatefulWidget {
         maxChildSize: 0.9,
         minChildSize: 0.4,
         expand: false,
-        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData, api: api, contractProvider: contractProvider),
+        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData, api: api, contractProvider: contractProvider, systemSettingsProvider: systemSettingsProvider),
       ),
     );
   }
@@ -39,6 +56,11 @@ class ContractBuilder extends StatefulWidget {
 class _ContractBuilderState extends State<ContractBuilder> {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  // Same wiring as admin_settings_page.dart — the repository takes the
+  // injected ApiClient so widget tests exercise this through their mocked
+  // http client instead of the real singleton.
+  late final SystemSettingsProvider _systemSettingsProvider =
+      widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
   final _titleController = TextEditingController();
   final _valueController = TextEditingController();
   final _customClauseController = TextEditingController();
@@ -106,20 +128,22 @@ class _ContractBuilderState extends State<ContractBuilder> {
 
   Future<void> _loadTemplates() async {
     try {
+      // Deliberately non-blocking and non-fatal: if the setting can't be read
+      // the builder still opens, just with the default (dates shown). Logged
+      // rather than swallowed so a persistently failing /settings is
+      // diagnosable instead of silently changing what the form shows.
       try {
-        final settingsRes = await _api.get('/settings');
+        final settingsRes = await _systemSettingsProvider.fetchSettings();
         final settings = settingsRes['settings'];
         if (settings is Map && settings['show_contract_dates'] != null) {
           final val = settings['show_contract_dates']['value'];
-          if (val != null) {
-            if (mounted) {
-              setState(() {
-                _showContractDates = val.toString() == '1' || val.toString().toLowerCase() == 'true';
-              });
-            }
+          if (val != null && mounted) {
+            setState(() => _showContractDates = asSettingFlag(val));
           }
         }
-      } catch (_) {}
+      } catch (e, s) {
+        AppLog.error('contract_builder._loadTemplates(settings)', e, s);
+      }
 
       final data = await _contractProvider.fetchClauseTemplates();
       final templates = data['templates'] as List<dynamic>? ?? [];

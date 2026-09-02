@@ -49,6 +49,63 @@ void main() {
     expect(find.text('Fixed Clause One'), findsOneWidget);
   });
 
+  // Stubs both endpoints the builder loads on open: the clause templates and
+  // the system settings that drive `show_contract_dates`.
+  void stubTemplatesAndSettings(MockHttpClient httpClient, {required String showDatesValue}) {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path == '/contract-clause-templates') {
+        return jsonResponse('{"templates":[{"content":"Fixed Clause One","type":"fixed"}]}');
+      }
+      if (path == '/settings') {
+        return jsonResponse('{"settings":{"show_contract_dates":{"value":"$showDatesValue"}}}');
+      }
+      return jsonResponse('{}');
+    });
+  }
+
+  testWidgets('shows the contract date fields when show_contract_dates is on', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    stubTemplatesAndSettings(httpClient, showDatesValue: '1');
+
+    await pumpBuilder(tester, api);
+
+    expect(find.text('Select Date'), findsWidgets);
+  });
+
+  testWidgets('hides the contract date fields when show_contract_dates is off', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    stubTemplatesAndSettings(httpClient, showDatesValue: '0');
+
+    await pumpBuilder(tester, api);
+
+    // The rest of the form still renders — only the date row is gone.
+    expect(find.text('Fixed Clause One'), findsOneWidget);
+    expect(find.text('Select Date'), findsNothing);
+  });
+
+  testWidgets('a failing /settings leaves the form usable with dates shown', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path == '/contract-clause-templates') {
+        return jsonResponse('{"templates":[{"content":"Fixed Clause One","type":"fixed"}]}');
+      }
+      if (path == '/settings') return jsonResponse('{"message":"boom"}', 500);
+      return jsonResponse('{}');
+    });
+
+    await pumpBuilder(tester, api);
+
+    // Non-fatal by design: the settings read is wrapped so the builder still
+    // opens on the default rather than failing to load at all.
+    expect(find.text('Fixed Clause One'), findsOneWidget);
+    expect(find.text('Select Date'), findsWidgets);
+  });
+
   testWidgets('creating a new contract posts create then send', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
