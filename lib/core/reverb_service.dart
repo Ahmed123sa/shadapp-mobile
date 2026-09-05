@@ -56,6 +56,15 @@ class ReverbService {
   void Function()? onContractStatusChanged;
   void Function(Map<String, dynamic>)? onPaymentScheduleChanged;
   void Function(Map<String, dynamic>)? onNotificationReceived;
+  // REALTIME_PLAN.md Stage 5 — mirrors the dashboard's onWorkspaceStatusChanged
+  // / onPaymentStatusChanged (see src/lib/echo.ts's subscribeToWorkspace).
+  // Payload shapes match the backend events' broadcastWith():
+  // WorkspaceStatusChanged -> {workspace_id, status, activated_at};
+  // PaymentStatusChanged -> {payment_id, status, amount, currency}.
+  // Not wired into any screen yet — same "capability first, consumers later"
+  // split the dashboard went through across its own Stage 2/Stage 3.
+  void Function(Map<String, dynamic>)? onWorkspaceStatusChanged;
+  void Function(Map<String, dynamic>)? onPaymentStatusChanged;
 
   void configure({String? host, String? port, String? key}) {
     if (host != null) this.host = host;
@@ -151,6 +160,12 @@ class ReverbService {
           } else if (event == 'payment.schedule.changed') {
             final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
             onPaymentScheduleChanged?.call(payload);
+          } else if (event == 'workspace.status_changed') {
+            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
+            onWorkspaceStatusChanged?.call(payload);
+          } else if (event == 'payment.status_changed') {
+            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
+            onPaymentStatusChanged?.call(payload);
           } else if (event == 'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated') {
             final now = DateTime.now();
             if (now.difference(_lastNotifTime) < const Duration(seconds: 1)) return;

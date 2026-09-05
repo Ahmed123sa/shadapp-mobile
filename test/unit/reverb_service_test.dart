@@ -50,4 +50,23 @@ void main() {
 
     expect(() => reverb.disconnect(), returnsNormally);
   });
+
+  // REALTIME_PLAN.md Stage 5 — onWorkspaceStatusChanged/onPaymentStatusChanged
+  // are new optional callback fields (mirrors onPaymentScheduleChanged),
+  // wired up the same way callers already wire the existing ones. There's no
+  // way to drive a fake socket message through forTesting() (its connect*()
+  // methods are no-ops by design, see the class doc comment), so this only
+  // pins down that the fields exist and are assignable — same shallow level
+  // the rest of this file tests at.
+  test('onWorkspaceStatusChanged callback field can be assigned', () {
+    final reverb = ReverbService.forTesting();
+
+    expect(() => reverb.onWorkspaceStatusChanged = (payload) {}, returnsNormally);
+  });
+
+  test('onPaymentStatusChanged callback field can be assigned', () {
+    final reverb = ReverbService.forTesting();
+
+    expect(() => reverb.onPaymentStatusChanged = (payload) {}, returnsNormally);
+  });
 }

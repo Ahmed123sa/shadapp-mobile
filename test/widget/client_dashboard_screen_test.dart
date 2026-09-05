@@ -96,11 +96,17 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   }
 
-  Future<void> pumpPage(WidgetTester tester, dynamic api, {int initialTab = 2}) async {
+  // Returns the ReverbService.forTesting() instance the screen was built
+  // with, so a test can fire a fake realtime event on it afterward — same
+  // approach chat_page_test.dart uses for its own "reverb event reloads
+  // data" regression test. Existing call sites that don't need this just
+  // discard the return value, so nothing else here changes behavior.
+  Future<ReverbService> pumpPage(WidgetTester tester, dynamic api, {int initialTab = 2, ReverbService? reverb}) async {
+    final reverbInstance = reverb ?? ReverbService.forTesting();
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => ClientDashboardScreen(api: api, initialTab: initialTab, reverb: ReverbService.forTesting(), enableFcm: false, enablePolling: false)),
+        GoRoute(path: '/', builder: (_, __) => ClientDashboardScreen(api: api, initialTab: initialTab, reverb: reverbInstance, enableFcm: false, enablePolling: false)),
         GoRoute(path: '/notifications', builder: (_, __) => const Scaffold(body: Text('NOTIFS_PAGE'))),
         GoRoute(path: '/settings', builder: (_, __) => const Scaffold(body: Text('SETTINGS_PAGE'))),
         GoRoute(path: '/login', builder: (_, __) => const Scaffold(body: Text('LOGIN_PAGE'))),
@@ -112,6 +118,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
     ));
     await pumpBriefly(tester);
+    return reverbInstance;
   }
 
   testWidgets('loads client + workspace data and renders the dashboard for an active workspace', (tester) async {
@@ -172,5 +179,46 @@ void main() {
     await pumpBriefly(tester);
 
     expect(find.text('LOGIN_PAGE'), findsOneWidget);
+  });
+
+  testWidgets('a workspace status change over reverb reloads the client data', (tester) async {
+    // REALTIME_PLAN.md Stage 5 — mirrors chat_page_test.dart's own
+    // "a contract status change over reverb reloads the messages" regression
+    // test. onWorkspaceStatusChanged/onPaymentStatusChanged are wired to the
+    // same _loadClientData() reload as the existing onContractStatusChanged.
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient);
+
+    final reverb = await pumpPage(tester, api);
+    // Called twice already (this screen's own load + the embedded
+    // SignatureTab's), same as the first test in this file.
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(2);
+
+    reverb.onWorkspaceStatusChanged?.call({'status': 'active'});
+    await pumpBriefly(tester);
+
+    // Confirmed empirically in chat_page_test.dart: mocktail's verify()
+    // consumes the interactions it checks, so this only counts calls that
+    // happened after the one above.
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(1);
+  });
+
+  testWidgets('a payment status change over reverb reloads the client data', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient);
+
+    final reverb = await pumpPage(tester, api);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(2);
+
+    reverb.onPaymentStatusChanged?.call({'status': 'approved'});
+    await pumpBriefly(tester);
+
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(1);
   });
 }

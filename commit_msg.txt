@@ -1,0 +1,21 @@
+REALTIME_PLAN.md Stage 5: WorkspaceStatusChanged/PaymentStatusChanged in ReverbService
+
+- reverb_service.dart: add onWorkspaceStatusChanged/onPaymentStatusChanged
+  optional callback fields (mirrors the existing onPaymentScheduleChanged),
+  and two new event branches (workspace.status_changed, payment.status_changed)
+  in the socket message switch. Both events already broadcast on the
+  workspace.{id} private channel this service was already subscribing to
+  (see Stage 1's backend events), so no channel-subscription change was
+  needed — purely additive, no existing branch/field touched.
+
+- client_dashboard_screen.dart: wire both new callbacks to the same
+  _loadClientData() reload the existing onContractStatusChanged already
+  uses. Covers the client-side "waiting for workspace activation" screen
+  (REALTIME_PLAN.md section 2's مسار أ) with a faster realtime update
+  alongside its existing fallback mechanisms — nothing removed.
+
+Tests: reverb_service_test.dart gets two new field-assignment tests;
+client_dashboard_screen_test.dart's pumpPage() now optionally returns its
+ReverbService.forTesting() instance (existing call sites unaffected) plus
+two new regression tests mirroring chat_page_test.dart's own "reverb event
+reloads data" pattern. flutter analyze + flutter test full suite green.

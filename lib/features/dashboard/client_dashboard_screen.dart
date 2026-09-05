@@ -202,6 +202,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       _loadClientData();
       _contractRefreshNotifier.value++;
     };
+    // REALTIME_PLAN.md Stage 5 — mirrors onContractStatusChanged above.
+    // These two cover the first-contract "waiting for activation" screen
+    // (PaymentStatusChanged/WorkspaceStatusChanged are what actually change
+    // during that wait, per REALTIME_PLAN.md section 2's مسار أ), so a plain
+    // reload of the client (which nests the workspace) is enough — no new
+    // state beyond what _loadClientData() already fetches.
+    reverb.onWorkspaceStatusChanged = (_) => _loadClientData();
+    reverb.onPaymentStatusChanged = (_) => _loadClientData();
     if (widget.enableFcm) {
       _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
