@@ -53,13 +53,22 @@ class ClientCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (workspaceStatus != null) ...[
+              // Two badges plus the chevron are fixed-width next to a flexible
+              // column; wrapping them lets a wide pair stack instead of pushing
+              // past the card edge.
+              if (workspaceStatus != null || contractStatus != null) ...[
                 const SizedBox(width: 8),
-                StatusBadge(status: workspaceStatus!, fontSize: 10),
-              ],
-              if (contractStatus != null) ...[
-                const SizedBox(width: 4),
-                StatusBadge(status: contractStatus!, fontSize: 10),
+                Flexible(
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      if (workspaceStatus != null) StatusBadge(status: workspaceStatus!, fontSize: 10),
+                      if (contractStatus != null) StatusBadge(status: contractStatus!, fontSize: 10),
+                    ],
+                  ),
+                ),
               ],
               const SizedBox(width: 4),
               const Icon(Icons.chevron_left, color: ShadColors.textDisabled),

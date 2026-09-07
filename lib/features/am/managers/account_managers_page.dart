@@ -76,7 +76,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
           children: [
             const ShadLogo(size: 24, showText: false),
             const SizedBox(width: 8),
-            Text(l10n.amManageManagers, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay')),
+            Flexible(child: Text(l10n.amManageManagers, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay'), maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
@@ -149,7 +149,7 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                           if (phone != null && phone.isNotEmpty)
                             Text(phone, style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
                           Row(children: [
-                            Text(l10n.accountManagersClientCount(clientCount), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                            Flexible(child: Text(l10n.accountManagersClientCount(clientCount), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
                             if (m.dateOfBirth != null && m.dateOfBirth!.isNotEmpty) ...[
                               Text(' · ', style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
                               Text(m.dateOfBirth!.substring(0, 10), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),

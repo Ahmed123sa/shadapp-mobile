@@ -187,14 +187,19 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
           children: [
             const ShadLogo(size: 20, showText: false),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_isEdit ? l10n.createManagerEditTitle : l10n.createManagerCreateTitle,
-                    style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700)),
-                Text(_isEdit ? 'Edit Manager' : 'New Manager',
-                    style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
-              ],
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_isEdit ? l10n.createManagerEditTitle : l10n.createManagerCreateTitle,
+                      style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(_isEdit ? 'Edit Manager' : 'New Manager',
+                      style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ],
         ),

@@ -77,13 +77,19 @@ Future<void> showSaveClauseDialog({
                   ),
                 ),
                 const SizedBox(height: 14),
-                Row(children: [
-                  Text(localL10n.adminSettings_clauseType, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                  const SizedBox(width: 12),
-                  _typeChip('fixed', localL10n.adminSettings_clauseFixed, type, (v) => setDialogState(() => type = v)),
-                  const SizedBox(width: 8),
-                  _typeChip('optional', localL10n.adminSettings_clauseOptional, type, (v) => setDialogState(() => type = v)),
-                ]),
+                // A dialog is narrower than the screen (~230dp on a phone), so
+                // the label plus both chips only fit on one line sometimes.
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(localL10n.adminSettings_clauseType, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                    const SizedBox(width: 4),
+                    _typeChip('fixed', localL10n.adminSettings_clauseFixed, type, (v) => setDialogState(() => type = v)),
+                    _typeChip('optional', localL10n.adminSettings_clauseOptional, type, (v) => setDialogState(() => type = v)),
+                  ],
+                ),
               ]),
             ),
             actions: [
@@ -338,11 +344,9 @@ Widget _clauseTile(
           Row(children: [
             Icon(Icons.circle, size: 8, color: isActive ? ShadColors.success : ShadColors.textDisabled),
             const SizedBox(width: 4),
-            Text(
+            Expanded(child: Text(
               isActive ? l10n.adminSettings_clauseActive : l10n.adminSettings_clauseInactive,
-              style: TextStyle(fontSize: 10, color: isActive ? ShadColors.success : ShadColors.textDisabled, fontFamily: 'Archivo'),
-            ),
-            const Spacer(),
+              style: TextStyle(fontSize: 10, color: isActive ? ShadColors.success : ShadColors.textDisabled, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
             GestureDetector(
               onTap: () => onToggle(clause),
               child: Icon(Icons.visibility_outlined, size: 16, color: isActive ? ShadColors.gold : ShadColors.textDisabled),

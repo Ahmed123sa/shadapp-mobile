@@ -1,18 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
+
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
 import '../../../core/locale_provider.dart';
 import '../../../core/reverb_service.dart';
+import '../../../core/theme.dart';
 import '../../../core/widgets/shad_logo.dart';
-import 'package:shadapp_client/generated/app_localizations.dart';
-import 'sa_approvals_page.dart';
-import 'sa_clients_page.dart';
-import 'sa_team_page.dart';
-import '../settings/admin_settings_page.dart';
 import '../../../data/client_repository.dart';
 import '../../../data/dashboard_repository.dart';
 import '../../../data/manager_repository.dart';
@@ -26,8 +24,12 @@ import '../../../providers/manager_provider.dart';
 import '../../../providers/meeting_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../providers/payment_provider.dart';
+import '../settings/admin_settings_page.dart';
 import 'am_dashboard_home_tabs.dart';
 import 'am_dashboard_sheets.dart';
+import 'sa_approvals_page.dart';
+import 'sa_clients_page.dart';
+import 'sa_team_page.dart';
 
 class AmDashboardPage extends StatefulWidget {
   // Step 0 of the state-layer migration plan: lets widget tests suppress the
@@ -49,7 +51,14 @@ class AmDashboardPage extends StatefulWidget {
   final NotificationProvider? notificationProvider;
   final DashboardProvider? dashboardProvider;
   final MeetingProvider? meetingProvider;
-  const AmDashboardPage({super.key, this.enablePolling = true, this.reverb, this.api, this.notificationProvider, this.dashboardProvider, this.meetingProvider});
+  const AmDashboardPage(
+      {super.key,
+      this.enablePolling = true,
+      this.reverb,
+      this.api,
+      this.notificationProvider,
+      this.dashboardProvider,
+      this.meetingProvider});
 
   @override
   State<AmDashboardPage> createState() => _AmDashboardPageState();
@@ -69,14 +78,19 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   // provider params for its own testability. In production `_api` is always
   // the real singleton, so these behave identically to each screen's own
   // `?? XProvider()` default — zero behavior change.
-  late final ClientProvider _childClientProvider = ClientProvider(repository: ClientRepository(api: _api));
-  late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
+  late final ClientProvider _childClientProvider =
+      ClientProvider(repository: ClientRepository(api: _api));
+  late final ManagerProvider _childManagerProvider =
+      ManagerProvider(repository: ManagerRepository(api: _api));
   late final ContractProvider _childContractProvider = ContractProvider(api: _api);
-  late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
-  late final NotificationProvider _notificationProvider =
-      widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
-  late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
-  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider(repository: MeetingRepository(api: _api));
+  late final PaymentProvider _childPaymentProvider =
+      PaymentProvider(repository: PaymentRepository(api: _api));
+  late final NotificationProvider _notificationProvider = widget.notificationProvider ??
+      NotificationProvider(repository: NotificationRepository(api: _api));
+  late final DashboardProvider _dashboardProvider =
+      widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
+  late final MeetingProvider _meetingProvider =
+      widget.meetingProvider ?? MeetingProvider(repository: MeetingRepository(api: _api));
   List<dynamic> _allClients = [];
   List<dynamic> _allManagers = [];
   List<dynamic> _pendingPayments = [];
@@ -116,7 +130,8 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     reverb.onNotificationReceived = (payload) {
       _loadNotifs();
       if (!mounted) return;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? AppLocalizations.of(context)!.amNewNotification;
+      final msg = (payload['data'] as Map?)?['message'] as String? ??
+          AppLocalizations.of(context)!.amNewNotification;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         behavior: SnackBarBehavior.floating,
@@ -201,8 +216,12 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         title: Text(AppLocalizations.of(ctx)!.logout),
         content: Text(AppLocalizations.of(ctx)!.logoutConfirmation),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx)!.logout)),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(AppLocalizations.of(ctx)!.cancel)),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(AppLocalizations.of(ctx)!.logout)),
         ],
       ),
     );
@@ -228,7 +247,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         if (!mounted) return;
         context.push('/am/workspace/${newWs['id']}');
       } catch (_) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amWorkspaceCreateFailed)));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.amWorkspaceCreateFailed)));
       }
       return;
     }
@@ -245,7 +266,8 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         final ws = client['workspace'] as Map<String, dynamic>?;
         if (ws == null) continue;
         try {
-          final contracts = await _childContractProvider.fetchWorkspaceContractsRaw(ws['id'] as int);
+          final contracts =
+              await _childContractProvider.fetchWorkspaceContractsRaw(ws['id'] as int);
           for (final c in contracts) {
             if (statuses.contains(c['status'])) {
               results.add({
@@ -276,16 +298,26 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       return ws != null;
     }).toList();
     if (clients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amNoClientsAvailable)));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.amNoClientsAvailable)));
       return;
     }
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => CreateMeetingSheet(clients: clients, meetingProvider: _meetingProvider, onCreated: () {
-        Navigator.pop(ctx);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
-      }),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => CreateMeetingSheet(
+          clients: clients,
+          meetingProvider: _meetingProvider,
+          onCreated: () {
+            Navigator.pop(ctx);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Row(children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 18),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context)!.amMeetingCreated)
+            ])));
+          }),
     );
   }
 
@@ -313,16 +345,29 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                   backgroundImage: NetworkImage(_api.resolveFileUrl(_api.avatarUrl!)),
                 ),
               ),
-            Text.rich(TextSpan(children: [
+            // The user's name is arbitrary length and the AppBar already
+            // carries a logo plus three actions — let the greeting ellipsize
+            // rather than push them off the bar.
+            Flexible(
+              child: Text.rich(maxLines: 1, overflow: TextOverflow.ellipsis, TextSpan(children: [
               TextSpan(
                 text: _isSA ? '' : 'Welcome, ',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400, fontFamily: 'Tajawal', color: Colors.white70),
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Tajawal',
+                    color: Colors.white70),
               ),
               TextSpan(
                 text: _isSA ? 'Admin' : _api.userName ?? '',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Tajawal', color: ShadColors.gold),
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Tajawal',
+                    color: ShadColors.gold),
               ),
             ])),
+            ),
           ],
         ),
         leading: const Padding(
@@ -331,113 +376,204 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
         actions: [
           Stack(children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => context.push('/notifications')),
+            IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () => context.push('/notifications')),
             if (_unreadNotifs > 0)
               Positioned(
-                right: 6, top: 6,
+                right: 6,
+                top: 6,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
-                  child: Text('$_unreadNotifs', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                  decoration:
+                      const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
+                  child: Text('$_unreadNotifs',
+                      style: const TextStyle(
+                          fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
           ]),
-          IconButton(icon: const Icon(Icons.language, size: 20), onPressed: () => context.read<LocaleProvider>().toggle(), tooltip: loc.amChangeLanguage),
-          IconButton(icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: loc.logout),
+          IconButton(
+              icon: const Icon(Icons.language, size: 20),
+              onPressed: () => context.read<LocaleProvider>().toggle(),
+              tooltip: loc.amChangeLanguage),
+          IconButton(
+              icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: loc.logout),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : IndexedStack(
-              index: _selectedIndex,
-              children: _isSA
-                ? [
-                    buildHomeTab(
-                      context: context,
-                      allManagers: _allManagers,
-                      allContracts: _allContracts,
-                      pendingContracts: _pendingContracts,
-                      pendingPayments: _pendingPayments,
-                      api: _api,
-                      onSelectTab: (i) => setState(() => _selectedIndex = i),
-                      onShowAllMeetings: _showAllMeetings,
-                      onManagerTap: _showManagerClients,
-                      load: _load,
-                    ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
-                    SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
-                    SaTeamPage(managerProvider: _childManagerProvider, api: _api),
-                    AdminSettingsPage(api: _api),
-                  ]
-                : [
-                    buildAmHomeTab(
-                      context: context,
-                      allClients: _allClients,
-                      allContracts: _allContracts,
-                      pendingContracts: _pendingContracts,
-                      pendingPayments: _pendingPayments,
-                      isSA: _isSA,
-                      api: _api,
-                      onSelectTab: (i) => setState(() => _selectedIndex = i),
-                      onShowAllMeetings: _showAllMeetings,
-                      onOpenClient: _openClient,
-                      load: _load,
-                    ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
-                    _buildAmClientsTab(),
-                    AdminSettingsPage(api: _api),
-                  ],
-            ),
+            ? const Center(child: CircularProgressIndicator())
+            : IndexedStack(
+                index: _selectedIndex,
+                children: _isSA
+                    ? [
+                        buildHomeTab(
+                          context: context,
+                          allManagers: _allManagers,
+                          allContracts: _allContracts,
+                          pendingContracts: _pendingContracts,
+                          pendingPayments: _pendingPayments,
+                          api: _api,
+                          onSelectTab: (i) => setState(() => _selectedIndex = i),
+                          onShowAllMeetings: _showAllMeetings,
+                          onManagerTap: _showManagerClients,
+                          load: _load,
+                        ),
+                        SaApprovalsPage(
+                            clientProvider: _childClientProvider,
+                            contractProvider: _childContractProvider,
+                            paymentProvider: _childPaymentProvider),
+                        SaClientsPage(
+                            clientProvider: _childClientProvider,
+                            managerProvider: _childManagerProvider,
+                            api: _api),
+                        SaTeamPage(managerProvider: _childManagerProvider, api: _api),
+                        AdminSettingsPage(api: _api),
+                      ]
+                    : [
+                        buildAmHomeTab(
+                          context: context,
+                          allClients: _allClients,
+                          allContracts: _allContracts,
+                          pendingContracts: _pendingContracts,
+                          pendingPayments: _pendingPayments,
+                          isSA: _isSA,
+                          api: _api,
+                          onSelectTab: (i) => setState(() => _selectedIndex = i),
+                          onShowAllMeetings: _showAllMeetings,
+                          onOpenClient: _openClient,
+                          load: _load,
+                        ),
+                        SaApprovalsPage(
+                            clientProvider: _childClientProvider,
+                            contractProvider: _childContractProvider,
+                            paymentProvider: _childPaymentProvider),
+                        _buildAmClientsTab(),
+                        AdminSettingsPage(api: _api),
+                      ],
+              ),
       ),
       bottomNavigationBar: NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-              backgroundColor: ShadColors.surfaceDarker,
-              indicatorColor: ShadColors.crimson.withAlpha(40),
-              height: 65,
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: _isSA
-                  ? [
-                      NavigationDestination(
-                        icon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home_outlined)) : const Icon(Icons.home_outlined),
-                        selectedIcon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home, color: ShadColors.gold)) : const Icon(Icons.home, color: ShadColors.gold),
-                        label: loc.amNavHome,
-                      ),
-                      NavigationDestination(
-                        icon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle_outline)) : const Icon(Icons.check_circle_outline),
-                        selectedIcon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle, color: ShadColors.gold)) : const Icon(Icons.check_circle, color: ShadColors.gold),
-                        label: loc.amNavApprovals,
-                      ),
-                      NavigationDestination(icon: const Icon(Icons.people_outline), selectedIcon: const Icon(Icons.people, color: ShadColors.gold), label: loc.amNavClients),
-                      NavigationDestination(icon: const Icon(Icons.supervisor_account_outlined), selectedIcon: const Icon(Icons.supervisor_account, color: ShadColors.gold), label: loc.amNavTeam),
-                      NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings, color: ShadColors.gold), label: loc.amNavSettings),
-                    ]
-                  : [
-                      NavigationDestination(
-                        icon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home_outlined)) : const Icon(Icons.home_outlined),
-                        selectedIcon: _badgeChat > 0 ? Badge.count(count: _badgeChat, backgroundColor: ShadColors.crimson, textColor: Colors.white, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.home, color: ShadColors.gold)) : const Icon(Icons.home, color: ShadColors.gold),
-                        label: loc.amNavHome,
-                      ),
-                      NavigationDestination(
-                        icon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle_outline)) : const Icon(Icons.check_circle_outline),
-                        selectedIcon: _badgeApprovals > 0 ? Badge.count(count: _badgeApprovals, backgroundColor: ShadColors.gold, textColor: Colors.black, textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), child: const Icon(Icons.check_circle, color: ShadColors.gold)) : const Icon(Icons.check_circle, color: ShadColors.gold),
-                        label: loc.amNavApprovals,
-                      ),
-                      NavigationDestination(icon: const Icon(Icons.people_outline), selectedIcon: const Icon(Icons.people, color: ShadColors.gold), label: loc.amNavClients),
-                      NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings, color: ShadColors.gold), label: loc.amNavSettings),
-                    ],
-            ),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        backgroundColor: ShadColors.surfaceDarker,
+        indicatorColor: ShadColors.crimson.withAlpha(40),
+        height: 65,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: _isSA
+            ? [
+                NavigationDestination(
+                  icon: _badgeChat > 0
+                      ? Badge.count(
+                          count: _badgeChat,
+                          backgroundColor: ShadColors.crimson,
+                          textColor: Colors.white,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.home_outlined))
+                      : const Icon(Icons.home_outlined),
+                  selectedIcon: _badgeChat > 0
+                      ? Badge.count(
+                          count: _badgeChat,
+                          backgroundColor: ShadColors.crimson,
+                          textColor: Colors.white,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.home, color: ShadColors.gold))
+                      : const Icon(Icons.home, color: ShadColors.gold),
+                  label: loc.amNavHome,
+                ),
+                NavigationDestination(
+                  icon: _badgeApprovals > 0
+                      ? Badge.count(
+                          count: _badgeApprovals,
+                          backgroundColor: ShadColors.gold,
+                          textColor: Colors.black,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.check_circle_outline))
+                      : const Icon(Icons.check_circle_outline),
+                  selectedIcon: _badgeApprovals > 0
+                      ? Badge.count(
+                          count: _badgeApprovals,
+                          backgroundColor: ShadColors.gold,
+                          textColor: Colors.black,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.check_circle, color: ShadColors.gold))
+                      : const Icon(Icons.check_circle, color: ShadColors.gold),
+                  label: loc.amNavApprovals,
+                ),
+                NavigationDestination(
+                    icon: const Icon(Icons.people_outline),
+                    selectedIcon: const Icon(Icons.people, color: ShadColors.gold),
+                    label: loc.amNavClients),
+                NavigationDestination(
+                    icon: const Icon(Icons.supervisor_account_outlined),
+                    selectedIcon: const Icon(Icons.supervisor_account, color: ShadColors.gold),
+                    label: loc.amNavTeam),
+                NavigationDestination(
+                    icon: const Icon(Icons.settings_outlined),
+                    selectedIcon: const Icon(Icons.settings, color: ShadColors.gold),
+                    label: loc.amNavSettings),
+              ]
+            : [
+                NavigationDestination(
+                  icon: _badgeChat > 0
+                      ? Badge.count(
+                          count: _badgeChat,
+                          backgroundColor: ShadColors.crimson,
+                          textColor: Colors.white,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.home_outlined))
+                      : const Icon(Icons.home_outlined),
+                  selectedIcon: _badgeChat > 0
+                      ? Badge.count(
+                          count: _badgeChat,
+                          backgroundColor: ShadColors.crimson,
+                          textColor: Colors.white,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.home, color: ShadColors.gold))
+                      : const Icon(Icons.home, color: ShadColors.gold),
+                  label: loc.amNavHome,
+                ),
+                NavigationDestination(
+                  icon: _badgeApprovals > 0
+                      ? Badge.count(
+                          count: _badgeApprovals,
+                          backgroundColor: ShadColors.gold,
+                          textColor: Colors.black,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.check_circle_outline))
+                      : const Icon(Icons.check_circle_outline),
+                  selectedIcon: _badgeApprovals > 0
+                      ? Badge.count(
+                          count: _badgeApprovals,
+                          backgroundColor: ShadColors.gold,
+                          textColor: Colors.black,
+                          textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                          child: const Icon(Icons.check_circle, color: ShadColors.gold))
+                      : const Icon(Icons.check_circle, color: ShadColors.gold),
+                  label: loc.amNavApprovals,
+                ),
+                NavigationDestination(
+                    icon: const Icon(Icons.people_outline),
+                    selectedIcon: const Icon(Icons.people, color: ShadColors.gold),
+                    label: loc.amNavClients),
+                NavigationDestination(
+                    icon: const Icon(Icons.settings_outlined),
+                    selectedIcon: const Icon(Icons.settings, color: ShadColors.gold),
+                    label: loc.amNavSettings),
+              ],
+      ),
     );
   }
-
-
 
   Widget _buildAmClientsTab() {
     return Stack(
       children: [
-        SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
+        SaClientsPage(
+            clientProvider: _childClientProvider,
+            managerProvider: _childManagerProvider,
+            api: _api),
         Positioned(
           bottom: 16,
           left: 16,
@@ -461,14 +597,17 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => AllMeetingsSheet(
           meetings: meetings,
           onCreate: !_isSA ? _createMeeting : null,
         ),
       );
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingsLoadFailed)));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingsLoadFailed)));
     }
   }
 
@@ -481,7 +620,8 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (ctx) => ManagerClientsSheet(
           managerName: manager['name'] as String? ?? '',
           clients: clients,
@@ -492,9 +632,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       );
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.amClientsLoadFailed)));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.amClientsLoadFailed)));
     }
   }
-
 }
-

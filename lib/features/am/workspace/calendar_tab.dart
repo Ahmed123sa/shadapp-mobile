@@ -198,17 +198,20 @@ class _CalendarTabState extends State<CalendarTab> {
       // Legend
       Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-        child: Row(children: [
-          _legendDot(ShadColors.primary, l10n.calendarMeeting),
-          const SizedBox(width: 12),
-          _legendDot(ShadColors.success, l10n.calendarContractStartLegend),
-          const SizedBox(width: 12),
-          _legendDot(ShadColors.error, l10n.calendarContractEndLegend),
-          const SizedBox(width: 12),
-          _legendDot(ShadColors.gold, l10n.calendarPayment),
-          const SizedBox(width: 12),
-          _legendDot(ShadColors.calendarMeeting, l10n.calendarApproval),
-        ]),
+        // Five legend entries are wider than a phone; wrapping keeps every
+        // one of them visible without a scroll gesture nobody would discover
+        // on a static legend.
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            _legendDot(ShadColors.primary, l10n.calendarMeeting),
+            _legendDot(ShadColors.success, l10n.calendarContractStartLegend),
+            _legendDot(ShadColors.error, l10n.calendarContractEndLegend),
+            _legendDot(ShadColors.gold, l10n.calendarPayment),
+            _legendDot(ShadColors.calendarMeeting, l10n.calendarApproval),
+          ],
+        ),
       ),
       Expanded(
         child: _events.isEmpty

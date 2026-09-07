@@ -4,17 +4,18 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show FlutterError, kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'core/theme.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
+
 import 'core/api_client.dart';
-import 'core/router.dart';
 import 'core/locale_provider.dart';
 import 'core/notification_routing.dart';
 import 'core/notification_service.dart';
-import 'package:shadapp_client/generated/app_localizations.dart';
+import 'core/router.dart';
+import 'core/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,8 +60,7 @@ void main() async {
     };
     // Debug runs would otherwise fill the dashboard with crashes from code
     // that is actively being edited.
-    await FirebaseCrashlytics.instance
-        .setCrashlyticsCollectionEnabled(kReleaseMode);
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(kReleaseMode);
 
     final notificationService = NotificationService();
 
@@ -148,7 +148,7 @@ class _ShadAppState extends State<ShadApp> {
     return AnimatedBuilder(
       animation: widget.localeProvider,
       builder: (context, _) => MaterialApp.router(
-        title: 'ShadApp',
+        title: 'Shad',
         debugShowCheckedModeBanner: false,
         theme: shadTheme(),
         locale: widget.localeProvider.locale,

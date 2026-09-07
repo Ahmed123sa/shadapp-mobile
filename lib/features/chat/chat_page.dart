@@ -273,7 +273,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         await _chatProvider.respond(msgId, action: action, reason: reason);
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(l10n.editRequestedToast)])));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.editRequestedToast))])));
           _load();
         }
       } catch (e, s) {
@@ -511,8 +511,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               child: Row(children: [
                 const Icon(Icons.edit, size: 14, color: ShadColors.gold),
                 const SizedBox(width: 6),
-                Text(AppLocalizations.of(context)!.editMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
-                const Spacer(),
+                Expanded(child: Text(AppLocalizations.of(context)!.editMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold), maxLines: 1, overflow: TextOverflow.ellipsis)),
                 GestureDetector(
                   onTap: () => setState(() { _editingMessage = null; _controller.clear(); }),
                   child: const Icon(Icons.close, size: 16, color: ShadColors.textSecondary),

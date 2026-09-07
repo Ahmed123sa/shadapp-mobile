@@ -147,17 +147,24 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 StatusBadge(status: m.status),
               ]),
               const SizedBox(height: 8),
-              Row(children: [
-                Icon(Icons.schedule, size: 12, color: ShadColors.textSecondary),
-                const SizedBox(width: 4),
-                Text(_time(m.scheduledAt), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                if (m.durationMinutes != null) ...[
-                  const SizedBox(width: 12),
-                  Icon(Icons.timer, size: 12, color: ShadColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('${m.durationMinutes} min', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.schedule, size: 12, color: ShadColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(_time(m.scheduledAt), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                  ]),
+                  if (m.durationMinutes != null)
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.timer, size: 12, color: ShadColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text('${m.durationMinutes} min', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                    ]),
                 ],
-              ]),
+              ),
               if (m.status == 'scheduled' && m.link != null) ...[
                 const SizedBox(height: 10),
                 Builder(

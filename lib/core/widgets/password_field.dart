@@ -149,7 +149,7 @@ class _RequirementItem extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(met ? Icons.check_circle : Icons.cancel, size: 14, color: met ? ShadColors.success : ShadColors.error),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 11, color: met ? ShadColors.success : ShadColors.error)),
+        Flexible(child: Text(label, style: TextStyle(fontSize: 11, color: met ? ShadColors.success : ShadColors.error))),
       ]),
     );
   }

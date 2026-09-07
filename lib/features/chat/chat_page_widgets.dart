@@ -416,8 +416,7 @@ class ContractsSheet extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Text(AppLocalizations.of(context)!.contracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-            const Spacer(),
+            Expanded(child: Text(AppLocalizations.of(context)!.contracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
           const Divider(),
@@ -464,8 +463,7 @@ class ClausesSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Text(AppLocalizations.of(context)!.contractClauses, style: ShadTypography.cardTitle),
-            const Spacer(),
+            Expanded(child: Text(AppLocalizations.of(context)!.contractClauses, style: ShadTypography.cardTitle, maxLines: 1, overflow: TextOverflow.ellipsis)),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 12),

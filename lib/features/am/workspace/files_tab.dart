@@ -65,7 +65,7 @@ class _FilesTabState extends State<FilesTab> {
     final file = File(result.files.single.path!);
     try {
       await _fileProvider.uploadFile(widget.workspaceId!, {}, file: file);
-      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesUploadSuccess)])));
+      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.filesUploadSuccess))])));
       _load();
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesUploadFailed)));
@@ -108,7 +108,7 @@ class _FilesTabState extends State<FilesTab> {
         'description': descCtrl.text.trim(),
         'is_required': isRequired.value,
       });
-      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesDefinitionAdded)])));
+      if (mounted)           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.filesDefinitionAdded))])));
       _load();
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesDefinitionAddFailed)));
@@ -134,7 +134,7 @@ class _FilesTabState extends State<FilesTab> {
     try {
       await _fileProvider.deleteDefinition(widget.workspaceId!, defId);
       if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.filesDefinitionDeleted)])));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.filesDefinitionDeleted))])));
         _load();
       }
     } catch (_) {
@@ -234,15 +234,18 @@ class _FilesTabState extends State<FilesTab> {
               const SizedBox(height: 16),
             ],
             // Filter chips
-            Row(children: [
-              _filterChip(l10n.all, 'all'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.pending, 'pending'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.approved, 'approved'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.rejected, 'rejected'),
-            ]),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                _filterChip(l10n.all, 'all'),
+                const SizedBox(width: 6),
+                _filterChip(l10n.pending, 'pending'),
+                const SizedBox(width: 6),
+                _filterChip(l10n.approved, 'approved'),
+                const SizedBox(width: 6),
+                _filterChip(l10n.rejected, 'rejected'),
+              ]),
+            ),
             const SizedBox(height: 12),
             Text(l10n.filesUploaded, style: ShadTypography.sectionHeader),
             const SizedBox(height: 8),
@@ -269,16 +272,16 @@ class _FilesTabState extends State<FilesTab> {
                     } : null,
                     leading: const Icon(Icons.attach_file, color: ShadColors.primary),
                     title: Text(f['name'] ?? '', style: ShadTypography.cardTitle, overflow: TextOverflow.ellipsis),
-                    subtitle: Row(children: [
+                    subtitle: Wrap(
+                      spacing: 8,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
                       if (fileType.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 8),
-                          child: Text(fileType, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
-                        ),
+                        Text(fileType, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
                       if (fileSize.isNotEmpty)
                         Text(fileSize, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
                       if (f['status'] != null) ...[
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(color: sc.withAlpha(25), borderRadius: BorderRadius.circular(8)),
@@ -288,7 +291,8 @@ class _FilesTabState extends State<FilesTab> {
                           ),
                         ),
                       ],
-                    ]),
+                    ],
+                    ),
                     trailing: f['status'] == 'pending' && isSA
                       ? Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(

@@ -98,7 +98,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
     try {
       await _meetingProvider.cancelMeeting(m['id'] as int);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingCancelSuccess)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.meetingCancelSuccess))])));
         _load();
       }
     } catch (_) {
@@ -127,7 +127,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
     try {
       await _meetingProvider.completeMeeting(m['id'] as int);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingCompleteSuccess)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.meetingCompleteSuccess))])));
         _load();
       }
     } catch (_) {
@@ -213,17 +213,26 @@ class _MeetingsTabState extends State<MeetingsTab> {
             if (m['status'] != null) StatusBadge(status: m['status']),
           ]),
           const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.schedule, size: 14, color: ShadColors.textSecondary),
-            const SizedBox(width: 4),
-            Text(_formatDate(m['scheduled_at']), style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
-            if (m['duration_minutes'] != null) ...[
-              const SizedBox(width: 12),
-              const Icon(Icons.timer, size: 14, color: ShadColors.textSecondary),
-              const SizedBox(width: 4),
-              Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+          // Date and duration are a metadata pair, not a layout — at a larger
+          // text scale they wrap onto a second line instead of overflowing.
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.schedule, size: 14, color: ShadColors.textSecondary),
+                const SizedBox(width: 4),
+                Flexible(child: Text(_formatDate(m['scheduled_at']), style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              ]),
+              if (m['duration_minutes'] != null)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.timer, size: 14, color: ShadColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ]),
             ],
-          ]),
+          ),
           if (m['notes'] != null) ...[
             const SizedBox(height: 6),
             Text(m['notes'], style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
@@ -246,7 +255,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
               InkWell(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: m['passcode']));
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingPasscodeCopied)])));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.meetingPasscodeCopied))])));
                 },
                 child: const Icon(Icons.copy, size: 14, color: ShadColors.primary),
               ),
@@ -287,7 +296,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
                     icon: const Icon(Icons.copy, size: 18),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: m['link']));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingLinkCopied)])));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.meetingLinkCopied))])));
                     },
                     tooltip: l10n.copyLink,
                   ),
@@ -393,7 +402,7 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
         if (_selectedContractId != null) 'contract_id': _selectedContractId,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.amMeetingCreated))])));
         Navigator.pop(context);
         widget.onCreated();
       }
@@ -421,9 +430,8 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(l10n.amMeetingCreateTitle, style: ShadTypography.cardTitle),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              Expanded(child: Text(l10n.amMeetingCreateTitle, style: ShadTypography.cardTitle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 16),
           TextField(
@@ -460,6 +468,7 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
           ]),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
+            isExpanded: true,
             initialValue: _duration,
             decoration: InputDecoration(labelText: '${l10n.amMeetingDuration} (${l10n.amMeetingMinutes})'),
             items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d ${l10n.amMeetingMinutes}'))).toList(),
@@ -468,6 +477,7 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
           const SizedBox(height: 12),
           if (!_loadingContracts && _contracts.isNotEmpty)
             DropdownButtonFormField<int>(
+              isExpanded: true,
               initialValue: _selectedContractId,
               decoration: InputDecoration(labelText: l10n.meetingRelatedContract),
               items: _contracts.map((c) => DropdownMenuItem(value: c['id'] as int?, child: Text(c['title'] ?? '#${c['id']}'))).toList(),
@@ -553,7 +563,7 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
         'notes': _notesController.text.trim(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingUpdateSuccess)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.meetingUpdateSuccess))])));
         Navigator.pop(context);
         widget.onUpdated();
       }
@@ -581,9 +591,8 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(l10n.meetingEditTitle, style: ShadTypography.cardTitle),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              Expanded(child: Text(l10n.meetingEditTitle, style: ShadTypography.cardTitle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 16),
           TextField(
@@ -620,6 +629,7 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
           ]),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
+            isExpanded: true,
             initialValue: _duration,
             decoration: InputDecoration(labelText: '${l10n.amMeetingDuration} (${l10n.amMeetingMinutes})'),
             items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d ${l10n.amMeetingMinutes}'))).toList(),

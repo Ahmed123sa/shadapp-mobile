@@ -68,8 +68,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(l10n.files_chooseDocType, style: ShadTypography.cardTitle),
-                const Spacer(),
+                Expanded(child: Text(l10n.files_chooseDocType, style: ShadTypography.cardTitle, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
               const SizedBox(height: 12),
@@ -178,7 +177,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           const SizedBox(height: 16),
         ],
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(l10n.files_uploadedFiles, style: ShadTypography.sectionHeader),
+          Expanded(child: Text(l10n.files_uploadedFiles, style: ShadTypography.sectionHeader, maxLines: 1, overflow: TextOverflow.ellipsis)),
           TextButton.icon(
             onPressed: _uploading ? null : _upload,
             icon: _uploading

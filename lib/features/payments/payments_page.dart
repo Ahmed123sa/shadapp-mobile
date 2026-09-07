@@ -211,17 +211,22 @@ class _PaymentsPageState extends State<PaymentsPage> {
             ),
             const SizedBox(height: 16),
 
-            Row(children: [
-              _filterChip(AppLocalizations.of(context)!.payments_filterAll, 'all'),
-              const SizedBox(width: 8),
-              _filterChip(AppLocalizations.of(context)!.payments_filterAccepted, 'approved'),
-              const SizedBox(width: 8),
-              _filterChip(AppLocalizations.of(context)!.payments_filterPending, 'pending'),
-              const SizedBox(width: 8),
-              _filterChip(AppLocalizations.of(context)!.payments_filterRejected, 'rejected'),
-              const SizedBox(width: 8),
-              _filterChip(AppLocalizations.of(context)!.payments_filterScheduled, 'scheduled'),
-            ]),
+            // Five chips never fit a phone's width — especially in Arabic —
+            // so the strip scrolls instead of overflowing.
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                _filterChip(AppLocalizations.of(context)!.payments_filterAll, 'all'),
+                const SizedBox(width: 8),
+                _filterChip(AppLocalizations.of(context)!.payments_filterAccepted, 'approved'),
+                const SizedBox(width: 8),
+                _filterChip(AppLocalizations.of(context)!.payments_filterPending, 'pending'),
+                const SizedBox(width: 8),
+                _filterChip(AppLocalizations.of(context)!.payments_filterRejected, 'rejected'),
+                const SizedBox(width: 8),
+                _filterChip(AppLocalizations.of(context)!.payments_filterScheduled, 'scheduled'),
+              ]),
+            ),
             const SizedBox(height: 12),
 
             if (_scheduledPayments.isNotEmpty) ...[
@@ -230,7 +235,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 child: Row(children: [
                   Icon(Icons.calendar_today, size: 14, color: ShadColors.gold),
                   const SizedBox(width: 6),
-                  Text(AppLocalizations.of(context)!.payments_upcomingPayments, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
+                  Flexible(child: Text(AppLocalizations.of(context)!.payments_upcomingPayments, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'NotoSansArabic'), maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ]),
               ),
               ..._scheduledPayments.map((p) => _scheduledPaymentCard(p)),

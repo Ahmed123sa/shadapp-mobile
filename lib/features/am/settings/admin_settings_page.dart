@@ -159,7 +159,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final body = <String, dynamic>{'name': _nameController.text.trim()};
       if (!isAM) body['official_email'] = _emailController.text.trim();
       await _authProvider.updateProfileRaw(body);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsSaved)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.settingsSaved))])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')));
     }
@@ -175,7 +175,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     setState(() => _taxSaving = true);
     try {
       await _systemSettingsProvider.updateSetting('corporate_tax_percentage', value);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsTaxSaved)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.settingsTaxSaved))])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsTaxSaveFailed}: $e')));
     }
@@ -191,7 +191,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final user = response['user'] as Map<String, dynamic>?;
       if (user != null) _avatarUrl = user['avatar_url'] as String?;
       if (mounted) setState(() {});
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settingsImageChanged)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.settingsImageChanged))])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsImageChangeFailed}: $e')));
     }
@@ -218,7 +218,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         await _signatureProvider.saveSelfSignatureText(text);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.signatureSaved))])));
         _load();
       }
     } catch (e) {
@@ -233,7 +233,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     try {
       await _signatureProvider.deleteSelfSignature();
       await _load();
-      if (mounted)       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureDeleted)])));
+      if (mounted)       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.signatureDeleted))])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.signatureDeleteFailed}: $e')));
     }
@@ -246,7 +246,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     try {
       await _signatureProvider.uploadSelfSignatureImage(file);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureSaved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.signatureSaved))])));
         _load();
       }
     } catch (e) {
@@ -384,8 +384,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   Row(children: [
                     Icon(Icons.verified, size: 14, color: ShadColors.success),
                     const SizedBox(width: 6),
-                    Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
-                    const Spacer(),
+                    Expanded(child: Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
                     GestureDetector(
                       onTap: _deleteSignature,
                       child: const Icon(Icons.delete_outline, size: 16, color: ShadColors.error),

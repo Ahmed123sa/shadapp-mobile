@@ -468,7 +468,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           content: Row(children: [
             Icon(action == 'approved' ? Icons.check_circle : Icons.edit, color: action == 'approved' ? Colors.green : Colors.orange, size: 18),
             const SizedBox(width: 8),
-            Text(action == 'approved' ? AppLocalizations.of(context)!.onboarding_approvedMessage : AppLocalizations.of(context)!.onboarding_editSentMessage),
+            Expanded(child: Text(action == 'approved' ? AppLocalizations.of(context)!.onboarding_approvedMessage : AppLocalizations.of(context)!.onboarding_editSentMessage)),
           ]),
           duration: const Duration(seconds: 2),
         ));

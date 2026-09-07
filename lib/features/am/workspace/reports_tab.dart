@@ -533,12 +533,17 @@ class _ReportsTabState extends State<ReportsTab> {
                 Text(icon, style: const TextStyle(fontSize: 13)),
                 const SizedBox(width: 6),
               ],
-              Text(title, style: const TextStyle(
-                fontFamily: 'Playfair Display', fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.textPrimary,
-              )),
+              // Flexible, not Expanded: a short header still hugs its text so
+              // `extra` sits right beside it, but a long one gives way rather
+              // than pushing the trailing action off the edge.
+              Flexible(
+                child: Text(title, style: const TextStyle(
+                  fontFamily: 'Playfair Display', fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.textPrimary,
+                ), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(width: 6),
-                Text(subtitle, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                Flexible(child: Text(subtitle, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
               ],
               const Spacer(),
               if (extra != null) extra,

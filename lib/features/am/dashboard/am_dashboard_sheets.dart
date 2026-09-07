@@ -24,8 +24,7 @@ class ManagerClientsSheet extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('${l10n.amClients} $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
+          Expanded(child: Text('${l10n.amClients} $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
@@ -98,7 +97,7 @@ class AllMeetingsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(children: [
-            Text(l10n.amStatMeetings, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+            Flexible(child: Text(l10n.amStatMeetings, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -259,8 +258,7 @@ class _CreateMeetingSheetState extends State<CreateMeetingSheet> {
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text(l10n.createMeeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
+          Expanded(child: Text(l10n.createMeeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
         ]),
         const Divider(),
@@ -307,6 +305,7 @@ class _CreateMeetingSheetState extends State<CreateMeetingSheet> {
         ]),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
+          isExpanded: true,
           decoration: InputDecoration(labelText: l10n.amDurationMinutes),
           initialValue: _duration,
           items: [15, 30, 45, 60, 90, 120].map((d) => DropdownMenuItem(value: d, child: Text('$d ${l10n.amMinutes}'))).toList(),

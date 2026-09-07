@@ -75,7 +75,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
       };
       await _approvalProvider.create(widget.workspaceId!, fields, files: _selectedFiles.isNotEmpty ? _selectedFiles : null);
       if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.approvalRequestSent)])));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.approvalRequestSent))])));
         _titleController.clear();
         _descController.clear();
         setState(() { _selectedFiles = []; _selectedFileNames = []; });
@@ -243,19 +243,25 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             Text(a.description!, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
                           ],
                           const SizedBox(height: 8),
-                          Row(children: [
-                            if (requestedByName.isNotEmpty) ...[
-                              Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
-                              const SizedBox(width: 4),
-                              Text(requestedByName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
-                              const SizedBox(width: 12),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (requestedByName.isNotEmpty)
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Flexible(child: Text(requestedByName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                ]),
+                              if (createdAt != null)
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                                ]),
                             ],
-                            if (createdAt != null) ...[
-                              Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
-                              const SizedBox(width: 4),
-                              Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                            ],
-                          ]),
+                          ),
                           if (a.referenceNo != null) ...[
                             const SizedBox(height: 6),
                             Container(

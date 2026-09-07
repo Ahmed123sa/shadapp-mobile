@@ -3,6 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
@@ -64,11 +65,11 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
-            // NOTE: minifyEnabled/shrinkResources deliberately left off here.
-            // Turning those on is worth doing, but needs a real device/QA
-            // pass first (R8 can strip reflection-based plugin code silently)
-            // — do that as its own change with proguard-rules.pro (already
-            // scaffolded) once someone can actually run the release build.
+            // NOTE: minifyEnabled/shrinkResources are NOT set here on
+            // purpose — the Flutter Gradle plugin already turns both on for
+            // release and wires in android/app/proguard-rules.pro. Keep any
+            // new keep/dontwarn rules in that file; R8 can otherwise strip
+            // reflection-based plugin code silently.
         }
     }
 }

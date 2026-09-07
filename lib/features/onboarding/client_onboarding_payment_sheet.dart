@@ -54,8 +54,7 @@ void showOnboardingPaymentSheet({
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Text(AppLocalizations.of(ctx)!.onboarding_requestPaymentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
-              const Spacer(),
+              Expanded(child: Text(AppLocalizations.of(ctx)!.onboarding_requestPaymentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'), maxLines: 1, overflow: TextOverflow.ellipsis)),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
             const SizedBox(height: 16),
@@ -71,6 +70,7 @@ void showOnboardingPaymentSheet({
             ValueListenableBuilder<String>(
               valueListenable: selectedCurrency,
               builder: (_, cur, __) => DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: cur,
                 decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_currencyField),
                 items: currencies.map((c) => DropdownMenuItem(
@@ -84,6 +84,7 @@ void showOnboardingPaymentSheet({
             ValueListenableBuilder<String>(
               valueListenable: selectedMethod,
               builder: (_, val, __) => DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: val,
                 decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_paymentMethodField),
                 items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
@@ -166,11 +167,15 @@ void showOnboardingPaymentSheet({
                     }
                   },
                   icon: const Icon(Icons.upload_file, size: 18),
-                  label: Text(AppLocalizations.of(ctx)!.onboarding_attachFile),
+                  label: Text(AppLocalizations.of(ctx)!.onboarding_attachFile, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton.icon(
+              // Expanded on both halves: with only the first one flexible, the
+              // translated "take photo" label claimed its full natural width
+              // and squeezed the other button down to a few pixels.
+              Expanded(
+                child: OutlinedButton.icon(
                 onPressed: () async {
                   final r = await ImagePicker().pickImage(source: ImageSource.camera);
                   if (r != null) {
@@ -185,8 +190,9 @@ void showOnboardingPaymentSheet({
                     });
                   }
                 },
-                icon: const Icon(Icons.camera_alt, size: 18),
-                label: Text(AppLocalizations.of(ctx)!.onboarding_takePhoto),
+                  icon: const Icon(Icons.camera_alt, size: 18),
+                  label: Text(AppLocalizations.of(ctx)!.onboarding_takePhoto, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
               ),
             ]),
             if (proofFiles.isNotEmpty)
@@ -261,7 +267,7 @@ Future<void> _submitPaymentOnboarding(
     );
 
     if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.onboarding_paymentSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(ctx)!.onboarding_paymentSent))])));
       Navigator.pop(ctx);
     }
     loadClientData();

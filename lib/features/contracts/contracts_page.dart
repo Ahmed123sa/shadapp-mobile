@@ -109,7 +109,7 @@ class _ContractsPageState extends State<ContractsPage> {
     try {
       await _contractProvider.clientAction(contractId, action, reason: reason);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.contractActionDone(action))])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.contractActionDone(action)))])));
         _load();
         widget.refreshNotifier?.value++;
       }

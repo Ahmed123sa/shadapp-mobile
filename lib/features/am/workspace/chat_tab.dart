@@ -246,6 +246,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return SafeArea(
+          // Five ListTiles (two of them with subtitles) are taller than a
+          // short screen once the text scale is bumped, so the sheet scrolls.
+          child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             ListTile(
               leading: const Icon(Icons.reply, size: 18),
@@ -291,6 +294,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               onTap: () => Navigator.pop(ctx),
             ),
           ]),
+          ),
         );
       },
     );
@@ -586,8 +590,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 child: Row(children: [
                   const Icon(Icons.edit, size: 14, color: ShadColors.gold),
                   const SizedBox(width: 6),
-                  Text(l10n.chatEditMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
-                  const Spacer(),
+                  Expanded(child: Text(l10n.chatEditMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold), maxLines: 1, overflow: TextOverflow.ellipsis)),
                   GestureDetector(
                     onTap: () => setState(() { _editingMessage = null; _controller.clear(); }),
                     child: const Icon(Icons.close, size: 16, color: ShadColors.textSecondary),

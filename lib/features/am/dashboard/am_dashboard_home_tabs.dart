@@ -60,8 +60,7 @@ Widget buildAmHomeTab({
       ]),
       const SizedBox(height: 20),
       Row(children: [
-        Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
+        Expanded(child: Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
         GestureDetector(
           onTap: () => onSelectTab(1),
           child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
@@ -92,8 +91,7 @@ Widget buildAmHomeTab({
       ],
       const SizedBox(height: 20),
       Row(children: [
-        Text(l10n.amClients, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
+        Expanded(child: Text(l10n.amClients, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
         GestureDetector(
           onTap: () => onSelectTab(2),
           child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
@@ -148,8 +146,7 @@ Widget buildHomeTab({
       const SizedBox(height: 20),
       // Latest Pending Approvals
       Row(children: [
-        Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
+        Expanded(child: Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
         GestureDetector(
           onTap: () => onSelectTab(1),
           child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
@@ -181,8 +178,7 @@ Widget buildHomeTab({
       const SizedBox(height: 20),
       // Team Section
       Row(children: [
-        Text(l10n.amNavTeam, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
+        Expanded(child: Text(l10n.amNavTeam, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
         GestureDetector(
           onTap: () => onSelectTab(3),
           child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),

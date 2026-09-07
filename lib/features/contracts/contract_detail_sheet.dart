@@ -93,7 +93,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
       } else {
         await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.documentUploaded))])));
       widget.onRefresh();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
@@ -514,8 +514,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
         border: Border(bottom: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
       ),
       child: Row(children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-        const Spacer(),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
         Text(value, style: TextStyle(fontSize: 12, color: gold ? ShadColors.gold : ShadColors.textPrimary, fontWeight: gold ? FontWeight.w600 : FontWeight.w400)),
       ]),
     );

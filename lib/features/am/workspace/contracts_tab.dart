@@ -526,12 +526,16 @@ class _ContractsTabState extends State<ContractsTab> {
                 color: ShadColors.crimson,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.add, size: 18, color: Colors.white),
                 const SizedBox(width: 8),
-                Text(
-                  _wsStatus == 'active' ? l10n.contractExtraService : l10n.contractCreateMain,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                Flexible(
+                  child: Text(
+                    _wsStatus == 'active' ? l10n.contractExtraService : l10n.contractCreateMain,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ]),
             ),

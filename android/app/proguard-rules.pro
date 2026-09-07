@@ -16,3 +16,12 @@
 -keepattributes Signature
 -keepattributes *Annotation*
 -keep class * implements java.io.Serializable { *; }
+
+# Play Core (deferred components / split installs).
+# The Flutter embedding references these classes for deferred-component and
+# Play-Store-split support, but this app ships no deferred components and does
+# not depend on play:core, so R8 sees them as missing. Suppress the warnings
+# instead of pulling in the library.
+-dontwarn com.google.android.play.core.**
+-dontwarn io.flutter.embedding.android.FlutterPlayStoreSplitApplication
+-dontwarn io.flutter.embedding.engine.deferredcomponents.**

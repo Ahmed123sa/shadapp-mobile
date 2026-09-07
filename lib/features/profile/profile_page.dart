@@ -57,7 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _authProvider.uploadAvatar(file);
       _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_imageChanged)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.profile_imageChanged))])));
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profile_imageChangeFailed)));
     }
@@ -68,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _authProvider.updateProfile(name: _nameController.text.trim());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_saved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.profile_saved))])));
         Navigator.pop(context, true);
       }
     } catch (_) {

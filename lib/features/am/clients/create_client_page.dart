@@ -101,7 +101,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                       InkWell(
                         onTap: () {
                           final messenger = ScaffoldMessenger.of(ctx);
-                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.createClientEmailCopied)])));
+                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(ctx)!.createClientEmailCopied))])));
                         },
                         child: Text(AppLocalizations.of(ctx)!.createClientCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                       ),
@@ -118,7 +118,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                       InkWell(
                         onTap: () {
                           final messenger = ScaffoldMessenger.of(ctx);
-                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.createClientPasswordCopied)])));
+                          messenger.showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(ctx)!.createClientPasswordCopied))])));
                         },
                         child: Text(AppLocalizations.of(ctx)!.createClientCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
                       ),

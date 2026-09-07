@@ -1,0 +1,122 @@
+================================================================================
+GOOGLE PLAY STORE LISTING - ShadApp
+================================================================================
+
+APP NAME (max 30 characters)
+--------------------------------------------------------------------------------
+ShadApp
+                                                                    [7 / 30]
+
+
+SHORT DESCRIPTION (max 80 characters)
+--------------------------------------------------------------------------------
+Chat, contracts, e-signatures and payments with your account manager.
+                                                                   [69 / 80]
+
+  Alternatives, if you want a different emphasis:
+
+  Your client workspace: chat, contracts, e-signatures, payments, meetings.
+                                                                   [73 / 80]
+  Work with your account manager: chat, contracts, signatures and payments.
+                                                                   [73 / 80]
+
+
+FULL DESCRIPTION (max 4000 characters)
+--------------------------------------------------------------------------------
+ShadApp is the mobile workspace where clients and their account managers get
+business done together — in one thread instead of scattered across email,
+messaging apps and paperwork.
+
+Every client gets a workspace. Inside it sit the conversation, the documents,
+the contract, the meeting schedule and the payment record, all in one place and
+all up to date for everyone who can see them.
+
+WHAT YOU CAN DO
+
+Talk to your account manager
+• Message in a dedicated workspace chat, with replies, edits and read receipts
+• Attach documents and photos straight from the conversation
+• Flag a message as needing action so nothing gets lost in the scroll
+
+Handle contracts and approvals
+• Read a contract clause by clause on your phone
+• Approve, reject, or ask for an edit — with your reason recorded
+• See exactly what is waiting on you and what is waiting on the other side
+
+Sign without printing anything
+• Draw your signature on screen, type it, or upload an image
+• Signed documents are stored in the workspace and available to both sides
+
+Keep documents in order
+• Upload contracts, licences, receipts and supporting files
+• Your account manager can request specific documents; you see what is still
+  outstanding
+• Everything stays attached to the client it belongs to
+
+Track payments
+• See what has been requested, what is scheduled, what is overdue and what is
+  settled
+• Upload proof of payment — a transfer receipt or an invoice
+• Follow installment schedules without chasing anyone for a statement
+• ShadApp records payments; it never asks for your card or bank details
+
+Never miss a meeting
+• Schedule meetings, view them in a calendar, mark them complete or cancelled
+• Push notifications for new messages, payment requests, approvals and meetings
+
+FOR ACCOUNT MANAGERS
+
+ShadApp is built for both sides of the relationship. Account managers get a
+portfolio view across every client they handle: onboarding progress, pending
+approvals, outstanding documents and payment status at a glance. Reports break
+down accepted payments, client activity and team performance. Site visits can be
+checked in on location, and an audit log records who changed, approved or signed
+what, and when.
+
+Organizations can add sub-users so a client's own team members work in the same
+workspace with their own logins and their own permissions.
+
+ARABIC AND ENGLISH
+
+The whole app is available in Arabic and English, with full right-to-left
+layout. Switch language any time in settings.
+
+ACCESS
+
+ShadApp is a business tool, not a public sign-up service. Your account is created
+by your organization or your service provider, who will give you your login.
+
+PRIVACY
+
+No ads. No cross-app tracking. No selling of data. Location is read only when
+you tap Check in, and never in the background. Read the full policy at
+https://[YOUR DOMAIN]/privacy
+                                                                 [2822 / 4000]
+
+
+--------------------------------------------------------------------------------
+BEFORE YOU PASTE THIS IN
+--------------------------------------------------------------------------------
+
+1. Replace [YOUR DOMAIN] in the last line with your real privacy policy URL,
+   or delete those two lines. The policy URL is required elsewhere in the
+   Console regardless.
+
+2. Play strips or renders formatting differently than it looks here. The
+   bullet character (•) and the ALL-CAPS headings are safe and commonly used.
+   Do not add emoji to the short description.
+
+3. Because sign-up is not public, Google Play REQUIRES demo credentials for
+   review. Add them under App content > App access > "All or some
+   functionality is restricted", with a working username, password and any
+   steps a reviewer needs. Submissions that skip this are routinely rejected.
+
+4. Claims to keep out of the listing (Play policy): rankings such as "#1" or
+   "best", testimonials, price or discount claims, and anything the app does
+   not actually do yet.
+
+5. Also required for a first submission: app icon (512x512), feature graphic
+   (1024x500), at least 2 phone screenshots, content rating questionnaire,
+   target audience, data safety form, and the account deletion URL.
+
+================================================================================

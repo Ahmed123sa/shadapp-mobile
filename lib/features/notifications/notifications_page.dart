@@ -148,12 +148,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.notifications_title),
+        title: Text(l10n.notifications_title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           if (_unreadCount > 0)
             TextButton(
               onPressed: _markAllAsRead,
-              child: Text(l10n.notifications_markAllRead),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 140),
+                child: Text(l10n.notifications_markAllRead, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
             ),
         ],
       ),

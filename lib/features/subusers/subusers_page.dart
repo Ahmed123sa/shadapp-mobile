@@ -173,7 +173,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
       padding: const EdgeInsets.all(16),
       children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${l10n.subusers_title} (${_subUsers.length})', style: ShadTypography.sectionHeader),
+          Expanded(child: Text('${l10n.subusers_title} (${_subUsers.length})', style: ShadTypography.sectionHeader, maxLines: 1, overflow: TextOverflow.ellipsis)),
           if (!_isSubUser)
             TextButton.icon(
               onPressed: () => setState(() => _showForm = !_showForm),

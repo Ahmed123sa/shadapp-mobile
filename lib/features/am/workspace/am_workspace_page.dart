@@ -113,12 +113,17 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   Widget build(BuildContext context) {
     final isActive = _wsStatus == 'active';
     final l10n = AppLocalizations.of(context)!;
+    // The header paints ShadColors.surfaceDarker edge to edge, so instead of a
+    // SafeArea (which would leave a bare Scaffold-coloured strip up top) the
+    // status-bar inset is folded into the header's own top padding.
+    final topInset = MediaQuery.paddingOf(context).top;
     return Scaffold(
+      backgroundColor: ShadColors.surfaceDarker,
       body: Column(children: [
         // ── Compact Header ──
         Container(
           color: ShadColors.surfaceDarker,
-          padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
+          padding: EdgeInsetsDirectional.fromSTEB(14, 10 + topInset, 14, 8),
           child: Row(children: [
             Stack(clipBehavior: Clip.none, children: [
               CircleAvatar(
@@ -168,26 +173,36 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
           ]),
         ),
         // ── Tab Bar ──
+        // Eight tabs never fit a phone's width evenly: at isScrollable:false
+        // each got ~45dp, which fades out every label longer than "Log". It
+        // scrolls now, so each tab is sized to its own content and carries an
+        // icon — the labels stay whole in English and Arabic alike.
         Container(
           color: ShadColors.surfaceDarker,
           child: TabBar(
             controller: _tabController,
-            isScrollable: false,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicatorColor: ShadColors.gold,
             indicatorWeight: 2.5,
-            labelColor: ShadColors.textPrimary,
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: ShadColors.cardBorder,
+            dividerHeight: 1,
+            labelColor: ShadColors.gold,
             unselectedLabelColor: ShadColors.textSecondary,
-            labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+            labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            splashBorderRadius: BorderRadius.circular(8),
             tabs: [
-              Tab(text: l10n.workspaceTabChat),
-              Tab(text: l10n.workspaceTabFiles),
-              Tab(text: l10n.workspaceTabContracts),
-              Tab(text: l10n.workspaceTabPayments),
-              Tab(text: l10n.workspaceTabApprovals),
-              Tab(text: l10n.workspaceTabMeetings),
-              Tab(text: l10n.workspaceTabLog),
-              Tab(text: l10n.workspaceTabClientProfile),
+              _workspaceTab(Icons.chat_bubble_outline, l10n.workspaceTabChat),
+              _workspaceTab(Icons.folder_outlined, l10n.workspaceTabFiles),
+              _workspaceTab(Icons.description_outlined, l10n.workspaceTabContracts),
+              _workspaceTab(Icons.payments_outlined, l10n.workspaceTabPayments),
+              _workspaceTab(Icons.fact_check_outlined, l10n.workspaceTabApprovals),
+              _workspaceTab(Icons.event_outlined, l10n.workspaceTabMeetings),
+              _workspaceTab(Icons.history, l10n.workspaceTabLog),
+              _workspaceTab(Icons.person_outline, l10n.workspaceTabClientProfile),
             ],
           ),
         ),
@@ -232,4 +247,18 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
     );
   }
 
+  /// One scrollable tab: icon + label on a single 44dp-high row. Laid out with
+  /// mainAxisSize.min so the tab hugs its label instead of being stretched to
+  /// an equal share of the width.
+  Widget _workspaceTab(IconData icon, String label) => Tab(
+        height: 44,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15),
+            const SizedBox(width: 6),
+            Text(label),
+          ],
+        ),
+      );
 }

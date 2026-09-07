@@ -265,12 +265,16 @@ class _SignaturePageState extends State<SignaturePage> {
                     size: 16, color: ShadColors.gold),
               ),
               const SizedBox(width: 10),
-              Text(l10n.signature_currentSignature,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: ShadColors.textPrimary,
-                      fontFamily: 'Tajawal')),
+              Expanded(
+                child: Text(l10n.signature_currentSignature,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: ShadColors.textPrimary,
+                        fontFamily: 'Tajawal')),
+              ),
             ],
           ),
           const SizedBox(height: 12),

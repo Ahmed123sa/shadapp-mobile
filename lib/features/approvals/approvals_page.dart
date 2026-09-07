@@ -61,7 +61,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
       try {
         await _approvalProvider.respond(id, action: action, reason: reason);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(l10n.approvals_editRequested)])));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.edit, color: Colors.orange, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.approvals_editRequested))])));
           _load();
         }
       } catch (_) {
@@ -87,7 +87,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
       try {
         await _approvalProvider.respond(id, action: action);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.approvals_approved)])));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.approvals_approved))])));
           _load();
         }
       } catch (_) {
@@ -192,19 +192,25 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                           Text(a.description!, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
                         ],
                         const SizedBox(height: 8),
-                        Row(children: [
-                          if (requestedBy.isNotEmpty) ...[
-                            Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(requestedBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
-                            const SizedBox(width: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (requestedBy.isNotEmpty)
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
+                                const SizedBox(width: 4),
+                                Flexible(child: Text(requestedBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ]),
+                            if (createdAt != null)
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
+                                const SizedBox(width: 4),
+                                Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                              ]),
                           ],
-                          if (createdAt != null) ...[
-                            Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                          ],
-                        ]),
+                        ),
                         if (a.referenceNo != null) ...[
                           const SizedBox(height: 6),
                           Container(

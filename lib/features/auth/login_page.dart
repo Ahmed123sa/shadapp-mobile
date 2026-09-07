@@ -647,7 +647,12 @@ class _StaggeredText extends StatelessWidget {
       builder: (context, _) {
         final chars = text.split('');
         final staggerInterval = 0.85 / max(chars.length, 1);
-        return Row(
+        // Decorative per-character stagger: at a large text scale the glyphs
+        // are wider than the screen, so scale the whole line down rather than
+        // clip its tail.
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
           mainAxisSize: MainAxisSize.min,
           textDirection: TextDirection.ltr,
           children: List.generate(chars.length, (i) {
@@ -663,6 +668,7 @@ class _StaggeredText extends StatelessWidget {
               ),
             );
           }),
+        ),
         );
       },
     );

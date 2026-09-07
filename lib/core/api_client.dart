@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'app_log.dart';
 import 'reverb_service.dart';
 
@@ -18,9 +21,9 @@ import 'reverb_service.dart';
 /// environment get the same safe default instead of a crash.
 String _defaultBaseUrl() {
   try {
-    return dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
+    return dotenv.env['API_BASE_URL'] ?? 'https://api.shadmanagement.co/api';
   } catch (_) {
-    return 'http://localhost:8000/api';
+    return 'https://api.shadmanagement.co/api';
   }
 }
 
@@ -49,7 +52,9 @@ class ApiClient {
   void Function()? onSessionExpired;
 
   static final ApiClient _instance = ApiClient._();
-  ApiClient._() : _httpClient = http.Client(), _secureStorage = const FlutterSecureStorage();
+  ApiClient._()
+      : _httpClient = http.Client(),
+        _secureStorage = const FlutterSecureStorage();
 
   /// Test-only constructor. Bypasses the app-wide singleton and never touches
   /// the real secure-storage platform channel — supplying the token directly
@@ -251,29 +256,30 @@ class ApiClient {
 
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) async {
     final headers = await _headers();
+    log('$baseUrl$path');
     return _send(() => _httpClient.post(
-      Uri.parse('$baseUrl$path'),
-      headers: headers,
-      body: body != null ? jsonEncode(body) : null,
-    ));
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        ));
   }
 
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
     final headers = await _headers();
     return _send(() => _httpClient.put(
-      Uri.parse('$baseUrl$path'),
-      headers: headers,
-      body: jsonEncode(body),
-    ));
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: jsonEncode(body),
+        ));
   }
 
   Future<Map<String, dynamic>> patch(String path, [Map<String, dynamic>? body]) async {
     final headers = await _headers();
     return _send(() => _httpClient.patch(
-      Uri.parse('$baseUrl$path'),
-      headers: headers,
-      body: body != null ? jsonEncode(body) : null,
-    ));
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        ));
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
@@ -282,8 +288,10 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> multipartPut(String path, Map<String, dynamic> fields,
-      {List<File>? multipleFiles, String multipleFileField = 'files[]',
-       List<Uint8List>? multipleBytes, List<String>? multipleBytesNames}) async {
+      {List<File>? multipleFiles,
+      String multipleFileField = 'files[]',
+      List<Uint8List>? multipleBytes,
+      List<String>? multipleBytesNames}) async {
     final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl$path'));
     request.headers.addAll(await _headers(multipart: true));
     fields.forEach((key, value) => request.fields[key] = value.toString());
@@ -293,8 +301,11 @@ class ApiClient {
       }
     } else if (multipleBytes != null) {
       for (int i = 0; i < multipleBytes.length; i++) {
-        final fn = (multipleBytesNames != null && i < multipleBytesNames.length) ? multipleBytesNames[i] : null;
-        request.files.add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
+        final fn = (multipleBytesNames != null && i < multipleBytesNames.length)
+            ? multipleBytesNames[i]
+            : null;
+        request.files
+            .add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
       }
     }
     final streamed = await _sendMultipart(request);
@@ -303,9 +314,14 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> multipartPost(String path, Map<String, dynamic> fields,
-      {File? file, Uint8List? bytes, String? filename, String fileField = 'file',
-       List<File>? multipleFiles, String multipleFileField = 'files[]',
-       List<Uint8List>? multipleBytes, List<String>? multipleBytesNames}) async {
+      {File? file,
+      Uint8List? bytes,
+      String? filename,
+      String fileField = 'file',
+      List<File>? multipleFiles,
+      String multipleFileField = 'files[]',
+      List<Uint8List>? multipleBytes,
+      List<String>? multipleBytesNames}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
     request.headers.addAll(await _headers(multipart: true));
     fields.forEach((key, value) => request.fields[key] = value.toString());
@@ -318,8 +334,11 @@ class ApiClient {
       }
     } else if (multipleBytes != null) {
       for (int i = 0; i < multipleBytes.length; i++) {
-        final fn = (multipleBytesNames != null && i < multipleBytesNames.length) ? multipleBytesNames[i] : null;
-        request.files.add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
+        final fn = (multipleBytesNames != null && i < multipleBytesNames.length)
+            ? multipleBytesNames[i]
+            : null;
+        request.files
+            .add(http.MultipartFile.fromBytes(multipleFileField, multipleBytes[i], filename: fn));
       }
     } else if (bytes != null) {
       request.files.add(http.MultipartFile.fromBytes(fileField, bytes, filename: filename));
@@ -334,7 +353,8 @@ class ApiClient {
     return _handle(response);
   }
 
-  Future<Map<String, dynamic>> multipartPostMultiple(String path, Map<String, dynamic> fields, {required List<File> files, String fileField = 'files[]'}) async {
+  Future<Map<String, dynamic>> multipartPostMultiple(String path, Map<String, dynamic> fields,
+      {required List<File> files, String fileField = 'files[]'}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
     request.headers.addAll(await _headers(multipart: true));
     fields.forEach((key, value) => request.fields[key] = value.toString());
@@ -370,7 +390,9 @@ class ApiClient {
     if (response.statusCode == 422) {
       final errors = data['errors'] as Map<String, dynamic>?;
       final firstError = errors?.values.firstOrNull;
-      final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
+      final msg = firstError is List
+          ? firstError.first.toString()
+          : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
       throw ValidationException(msg);
     }
     // 429 is its own case: the credentials may be perfectly correct, the

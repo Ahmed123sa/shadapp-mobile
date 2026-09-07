@@ -113,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await _settingsProvider.uploadClientAvatar(cid, file);
         _load();
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_imageChanged)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.settings_imageChanged))])));
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settings_imageChangeFailed)));
     }
@@ -143,7 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await _settingsProvider.updateClientProfile(cid, body);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_saved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.settings_saved))])));
         Navigator.pop(context, true);
       }
     } catch (_) {

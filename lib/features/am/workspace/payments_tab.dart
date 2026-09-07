@@ -438,10 +438,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
           final sheetL10n = AppLocalizations.of(ctx)!;
           return Padding(
             padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+            child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(sheetL10n.paymentsScheduleTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-                const Spacer(),
+                Expanded(child: Text(sheetL10n.paymentsScheduleTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
               const SizedBox(height: 12),
@@ -452,6 +452,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: selectedCurrency,
                 decoration: InputDecoration(labelText: sheetL10n.paymentsCurrency),
                 items: currencies.map((c) => DropdownMenuItem(value: c, child: Text('$c — ${currencyLabels[c] ?? c}', style: const TextStyle(fontSize: 13)))).toList(),
@@ -537,6 +538,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 ),
               ),
             ]),
+            ),
           );
         },
       ),
@@ -549,7 +551,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     try {
       await _paymentProvider.schedulePayments(wsId, installments);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsScheduledSuccess)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.paymentsScheduledSuccess))])));
         _load();
       }
     } catch (e, s) {
@@ -565,7 +567,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     try {
       await _paymentProvider.updatePaymentSchedule(paymentId, data);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentUpdated)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.paymentsInstallmentUpdated))])));
         _load();
       }
     } catch (e, s) {
@@ -591,7 +593,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     try {
       await _paymentProvider.deletePaymentSchedule(paymentId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsInstallmentCleared)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.paymentsInstallmentCleared))])));
         _load();
       }
     } catch (e, s) {
@@ -689,8 +691,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
           padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Text(l10n.paymentsRequestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-              const Spacer(),
+              Expanded(child: Text(l10n.paymentsRequestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
             const SizedBox(height: 4),
@@ -703,6 +704,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: selectedCurrency,
               decoration: InputDecoration(labelText: l10n.paymentsCurrency),
               items: currencies.map((c) => DropdownMenuItem(value: c, child: Text('$c — ${currencyLabels[c] ?? c}', style: const TextStyle(fontSize: 13)))).toList(),
@@ -739,7 +741,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
     try {
       await _paymentProvider.requestPayment(wsId, amount, currency, notes: notes.isNotEmpty ? notes : null);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsRequestSent)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(AppLocalizations.of(context)!.paymentsRequestSent))])));
         _load();
       }
     } catch (e, s) {

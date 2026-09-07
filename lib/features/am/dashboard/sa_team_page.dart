@@ -73,7 +73,7 @@ class _SaTeamPageState extends State<SaTeamPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Row(children: [
-                  Text(l10n.amNavTeam, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+                  Flexible(child: Text(l10n.amNavTeam, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo'), maxLines: 1, overflow: TextOverflow.ellipsis)),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

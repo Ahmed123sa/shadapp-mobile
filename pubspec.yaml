@@ -1,6 +1,6 @@
 name: shadapp_client
 description: ShadApp - Client Mobile Application
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -45,6 +45,5 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
+    - assets/
     - assets/images/
-    - assets/env.txt
-

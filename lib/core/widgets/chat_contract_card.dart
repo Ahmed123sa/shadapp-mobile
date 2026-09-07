@@ -104,13 +104,20 @@ class _ChatContractCardState extends State<ChatContractCard> {
               ),
             ],
             const SizedBox(height: 8),
-            Row(children: [
+            // The action labels are translated, so their combined width is
+            // unbounded — wrapping keeps both buttons usable on a narrow
+            // bubble instead of clipping the trailing one.
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
               TextButton.icon(
                 onPressed: widget.onViewClauses,
                 icon: const Icon(Icons.list_alt, size: 18),
                 label: Text(l10n.viewClauses),
               ),
-              const Spacer(),
               if (showPayment)
                 ElevatedButton.icon(
                   onPressed: widget.onGoToPayments,
@@ -132,7 +139,8 @@ class _ChatContractCardState extends State<ChatContractCard> {
                   ),
                   child: Text(l10n.approve),
                 ),
-            ]),
+            ],
+            ),
           ],
         ),
       ),

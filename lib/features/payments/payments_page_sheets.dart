@@ -88,8 +88,7 @@ void showRequestPaymentSheet({
         padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Text(AppLocalizations.of(pageContext)!.payments_requestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
-            const Spacer(),
+            Expanded(child: Text(AppLocalizations.of(pageContext)!.payments_requestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'), maxLines: 1, overflow: TextOverflow.ellipsis)),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
           ]),
           const SizedBox(height: 16),
@@ -105,6 +104,7 @@ void showRequestPaymentSheet({
           ValueListenableBuilder<String>(
             valueListenable: selectedCurrency,
             builder: (_, cur, __) => DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: cur,
               decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_currency),
               items: currencies.map((c) => DropdownMenuItem(
@@ -119,6 +119,7 @@ void showRequestPaymentSheet({
             ValueListenableBuilder<int?>(
               valueListenable: selectedContract,
               builder: (_, val, __) => DropdownButtonFormField<int>(
+                isExpanded: true,
                 initialValue: val,
                 decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_selectContract),
                 items: payableContracts.map((c) => DropdownMenuItem(
@@ -142,6 +143,7 @@ void showRequestPaymentSheet({
           ValueListenableBuilder<String>(
             valueListenable: selectedMethod,
             builder: (_, val, __) => DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: val,
               decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_paymentMethod),
               items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
@@ -311,7 +313,7 @@ Future<void> _submitPaymentDashboard(
 
     if (ctx.mounted) {
       final l10n = AppLocalizations.of(ctx)!;
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_requestSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.payments_requestSent))])));
       Navigator.pop(ctx);
     }
     await load();
@@ -361,8 +363,7 @@ void showScheduledPaymentSheet({
           Row(children: [
             Icon(Icons.payment, size: 20, color: ShadColors.gold),
             const SizedBox(width: 8),
-            Text(l10n.payments_payScheduled(label), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic')),
-            const Spacer(),
+            Expanded(child: Text(l10n.payments_payScheduled(label), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic'), maxLines: 1, overflow: TextOverflow.ellipsis)),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
           ]),
           const SizedBox(height: 12),
@@ -379,6 +380,7 @@ void showScheduledPaymentSheet({
           ValueListenableBuilder<String>(
             valueListenable: selectedMethod,
             builder: (_, val, __) => DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: val,
               decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_paymentMethodLabel),
               items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
@@ -515,7 +517,7 @@ Future<void> _submitScheduledPaymentProof(
     );
 
     if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_proofSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(l10n.payments_proofSent))])));
       Navigator.pop(ctx);
     }
     await load();

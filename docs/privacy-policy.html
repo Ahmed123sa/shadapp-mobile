@@ -1,0 +1,774 @@
+<title>ShadApp Privacy Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #FBF9F8;
+    --surface: #FFFFFF;
+    --surface-sunk: #F4F0EE;
+    --ink: #1C1C1C;
+    --ink-muted: #6A605E;
+    --ink-faint: #8C8280;
+    --rule: #E3DBD8;
+    --rule-strong: #CFC4C0;
+    --accent: #941414;
+    --accent-soft: #F5E7E5;
+    --gold: #8A6D14;
+    --gold-soft: #F6EFDA;
+    --shadow: 0 1px 2px rgba(28, 20, 18, .05);
+    --draft-bg: #FDF3E3;
+    --draft-rule: #DFC489;
+    --draft-ink: #6B4E10;
+
+    --serif: "Spectral", Georgia, "Times New Roman", serif;
+    --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #131211;
+      --surface: #1C1C1C;
+      --surface-sunk: #232120;
+      --ink: #F0F0F0;
+      --ink-muted: #A7A09E;
+      --ink-faint: #7E7674;
+      --rule: #2E2B2A;
+      --rule-strong: #423D3B;
+      --accent: #E36B60;
+      --accent-soft: #2B1917;
+      --gold: #D4AF37;
+      --gold-soft: #2A2415;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+      --draft-bg: #2A2214;
+      --draft-rule: #6A5520;
+      --draft-ink: #E4C97E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #131211;
+    --surface: #1C1C1C;
+    --surface-sunk: #232120;
+    --ink: #F0F0F0;
+    --ink-muted: #A7A09E;
+    --ink-faint: #7E7674;
+    --rule: #2E2B2A;
+    --rule-strong: #423D3B;
+    --accent: #E36B60;
+    --accent-soft: #2B1917;
+    --gold: #D4AF37;
+    --gold-soft: #2A2415;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    --draft-bg: #2A2214;
+    --draft-rule: #6A5520;
+    --draft-ink: #E4C97E;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 0 20px;
+    margin-bottom: 32px;
+  }
+
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+
+  .masthead h1 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.02;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+    margin: 0 0 18px;
+  }
+
+  .standfirst {
+    max-width: 62ch;
+    font-size: 19px;
+    color: var(--ink-muted);
+    margin: 0 0 28px;
+  }
+
+  .docmeta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 20px 32px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+
+  .docmeta dt {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 10.5px;
+    margin-bottom: 4px;
+  }
+
+  .docmeta dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* ---------- draft notice ---------- */
+
+  .draft {
+    background: var(--draft-bg);
+    border: 1px solid var(--draft-rule);
+    border-radius: 3px;
+    padding: 18px 22px;
+    margin-bottom: 40px;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--draft-ink);
+  }
+
+  .draft strong {
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+
+  .draft p {
+    margin: 0;
+  }
+
+  .fill {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-bottom: 1px solid var(--gold);
+    padding: 1px 4px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* ---------- layout ---------- */
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (min-width: 940px) {
+    .body-grid {
+      grid-template-columns: 210px minmax(0, 1fr);
+      gap: 64px;
+    }
+    .toc {
+      position: sticky;
+      top: 32px;
+    }
+  }
+
+  .toc h2 {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    counter-reset: toc;
+  }
+
+  .toc li {
+    counter-increment: toc;
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 4px;
+  }
+
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    padding-top: 3px;
+  }
+
+  .toc a {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .toc a:hover,
+  .toc a:focus-visible {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .doc {
+    max-width: 68ch;
+    counter-reset: sec;
+  }
+
+  /* ---------- sections ---------- */
+
+  .doc section {
+    counter-increment: sec;
+    padding-top: 40px;
+  }
+
+  .doc section + section {
+    border-top: 1px solid var(--rule);
+  }
+
+  .doc section > h2 {
+    font-family: var(--sans);
+    font-size: 25px;
+    font-weight: 600;
+    letter-spacing: -.017em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0 0 18px;
+    display: grid;
+    grid-template-columns: 38px 1fr;
+  }
+
+  .doc section > h2::before {
+    content: counter(sec) ".";
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--accent);
+    padding-top: 6px;
+  }
+
+  .doc h3 {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .005em;
+    margin: 30px 0 8px;
+  }
+
+  .doc p {
+    margin: 0 0 16px;
+  }
+
+  .doc a {
+    color: var(--accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  .doc ul {
+    margin: 0 0 16px;
+    padding-left: 20px;
+  }
+
+  .doc li {
+    margin-bottom: 8px;
+  }
+
+  .doc li::marker {
+    color: var(--rule-strong);
+  }
+
+  .lede {
+    font-size: 18px;
+    color: var(--ink-muted);
+  }
+
+  .note {
+    font-size: 15px;
+    color: var(--ink-muted);
+    border-left: 2px solid var(--rule-strong);
+    padding-left: 16px;
+    margin: 0 0 16px;
+  }
+
+  .emphasis {
+    background: var(--accent-soft);
+    border-left: 2px solid var(--accent);
+    padding: 14px 18px;
+    margin: 0 0 18px;
+    font-size: 15.5px;
+  }
+
+  .emphasis p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---------- tables ---------- */
+
+  .table-wrap {
+    overflow-x: auto;
+    margin: 0 0 20px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 480px;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+
+  thead th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-sunk);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  tbody th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  tbody td,
+  tbody th {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td,
+  tbody tr:last-child th {
+    border-bottom: 0;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--surface-sunk);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  .yes { color: var(--accent); font-weight: 600; }
+  .no { color: var(--ink-faint); }
+
+  /* ---------- checklist ---------- */
+
+  .checklist {
+    margin-top: 56px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 26px 28px;
+    max-width: 68ch;
+  }
+
+  .checklist h2 {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+
+  .checklist p {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin: 0 0 16px;
+  }
+
+  .checklist ol {
+    font-family: var(--sans);
+    font-size: 14px;
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .checklist li {
+    margin-bottom: 9px;
+  }
+
+  .colophon {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    max-width: 68ch;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media print {
+    .toc, .draft, .checklist { display: none; }
+    body { background: #fff; color: #000; font-size: 11pt; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">ShadApp&nbsp;· Mobile application</p>
+    <h1>Privacy Policy</h1>
+    <p class="standfirst">How the ShadApp mobile app collects, uses, stores and shares information about you and the businesses you work with.</p>
+    <dl class="docmeta">
+      <div>
+        <dt>Effective date</dt>
+        <dd><span class="fill">[EFFECTIVE DATE]</span></dd>
+      </div>
+      <div>
+        <dt>Last updated</dt>
+        <dd>2&nbsp;September&nbsp;2026</dd>
+      </div>
+      <div>
+        <dt>Applies to</dt>
+        <dd>ShadApp v1.0.0</dd>
+      </div>
+      <div>
+        <dt>Android package</dt>
+        <dd>com.shad.shadapp</dd>
+      </div>
+    </dl>
+  </header>
+
+  <div class="draft">
+    <p><strong>Draft — five fields still need filling.</strong> Everything highlighted like <span class="fill">[THIS]</span> is a placeholder only you can supply: the legal entity, the effective date, your domain, your hosting region, and your retention periods. The complete list is at the bottom of this page. Delete this notice once they are filled in, before you paste the URL into Google Play or App Store Connect.</p>
+  </div>
+
+  <div class="body-grid">
+
+    <nav class="toc" aria-label="Contents">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#s1">Who we are</a></li>
+        <li><a href="#s2">Summary</a></li>
+        <li><a href="#s3">Information we collect</a></li>
+        <li><a href="#s4">Permissions the app requests</a></li>
+        <li><a href="#s5">How we use information</a></li>
+        <li><a href="#s6">Who we share it with</a></li>
+        <li><a href="#s7">Where data is stored</a></li>
+        <li><a href="#s8">How long we keep it</a></li>
+        <li><a href="#s9">Security</a></li>
+        <li><a href="#s10">Your choices and rights</a></li>
+        <li><a href="#s11">Deleting your account</a></li>
+        <li><a href="#s12">Children</a></li>
+        <li><a href="#s13">Changes to this policy</a></li>
+        <li><a href="#s14">Contact us</a></li>
+        <li><a href="#s15">Store disclosures</a></li>
+      </ol>
+    </nav>
+
+    <main class="doc">
+
+      <section id="s1">
+        <h2>Who we are</h2>
+        <p class="lede">ShadApp is a business workspace app. Clients, their sub-users, and account managers use it to exchange messages and documents, agree contracts, schedule meetings, sign, and track payments.</p>
+        <p><span class="fill">[LEGAL ENTITY NAME]</span> (&ldquo;we&rdquo;, &ldquo;us&rdquo;) operates the ShadApp mobile app and the backend service it connects to, and is the controller of the personal data described in this policy. This policy covers the iOS and Android apps and the ShadApp API they talk to. It does not cover any separate website, or the services of a third party you reach through a link in the app.</p>
+        <p>Accounts in ShadApp are created and administered by an organization, not by the general public. If your employer or a service provider gave you your login, they decide what business records are held about you in the app; we handle that data on the terms set out below.</p>
+      </section>
+
+      <section id="s2">
+        <h2>Summary</h2>
+        <p>The detail follows, but in short:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Question</th><th scope="col">Answer</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Do we sell your data?</th><td class="no">No. Never, to anyone, for any purpose.</td></tr>
+              <tr><th scope="row">Do we show ads or track you across apps?</th><td class="no">No. There is no advertising SDK and no cross-app tracking in ShadApp.</td></tr>
+              <tr><th scope="row">Do we handle your card details?</th><td class="no">No. The app records payment amounts and receipts. It never asks for a card number.</td></tr>
+              <tr><th scope="row">Do we read your location in the background?</th><td class="no">No. Location is read once, only when you tap <em>Check in</em>.</td></tr>
+              <tr><th scope="row">Is your data encrypted in transit?</th><td class="yes">Yes. HTTPS and secure WebSockets.</td></tr>
+              <tr><th scope="row">Can you get your data deleted?</th><td class="yes">Yes — see sections 10 and 11.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s3">
+        <h2>Information we collect</h2>
+
+        <h3>Account and profile</h3>
+        <p>Your name, email address, phone number, profile photo, chosen language, and the role your organization assigned you (client, sub-user, or account manager). Your password is never stored in readable form — it is verified against a one-way hash on our server.</p>
+
+        <h3>Business records you or your account manager enter</h3>
+        <p>Client and company details held in your workspace: company name, contact person, email, phone, country, industry, business address, client type, account status, and — where your organization records it — a date of birth for the named contact.</p>
+
+        <h3>Messages, files and signatures</h3>
+        <p>Messages you send in a workspace chat, including edits, replies, and read status. Files and photos you upload — contracts, supporting documents, and anything you attach from your camera, photo library, or device storage. Signature images, whether you draw them, type them, or upload an image of one.</p>
+
+        <h3>Meetings and approvals</h3>
+        <p>Meetings you schedule, attend, cancel or complete, and the approval decisions you record against documents and messages — including who approved or rejected an item, when, and any reason given.</p>
+
+        <h3>Payment records</h3>
+        <p>Payment amounts and currency (SAR by default), due dates, installment schedules, notes, status, and proof-of-payment files you upload such as a transfer receipt or invoice.</p>
+        <div class="emphasis">
+          <p><strong>The app never collects card or bank credentials.</strong> There is no payment form, no card entry field, and no payment processor SDK in ShadApp. It records that a payment was requested or made; the payment itself happens outside the app.</p>
+        </div>
+
+        <h3>Location — check-in only</h3>
+        <p>Account managers can record where a client site visit took place. When you tap <em>Check in</em>, the app reads your device's current coordinates once and saves them to that client's record. You can also set a client's location by dropping a pin on a map instead, which reads no device location at all.</p>
+        <p class="note">The app has no background location permission and no location tracking. Nothing is read while the app is closed, and nothing is read unless you tap the button. Denying the permission disables check-in; every other part of the app keeps working.</p>
+
+        <h3>Device and push notification data</h3>
+        <p>To deliver push notifications we collect a Firebase Cloud Messaging registration token, which identifies your app installation on your device. It is regenerated when you reinstall the app, and deleted from our records when you sign out.</p>
+
+        <h3>Diagnostics and crash reports</h3>
+        <p>In released versions the app sends crash reports to Firebase Crashlytics: the error and its stack trace, your device model, operating system version, and app version. Crash collection is switched off entirely in development builds. Crash reports are not used to build a profile of you and are not linked to your messages or documents.</p>
+
+        <h3>Stored on your device, not sent to us</h3>
+        <p>Your session token is kept in the device's own secure store — the iOS Keychain or the Android Keystore. Your name, email, avatar URL, role and language preference are cached in ordinary app storage so screens can render before the network responds. Signing out clears all of it.</p>
+      </section>
+
+      <section id="s4">
+        <h2>Permissions the app requests</h2>
+        <p>Every permission is requested at the moment it is needed and explained on screen. You can refuse or withdraw any of them in your device settings.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Permission</th><th scope="col">Why</th><th scope="col">If you refuse</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Notifications</th><td>Alerts for new messages, payment requests, approvals and meetings.</td><td>The app works; you see updates only when you open it.</td></tr>
+              <tr><th scope="row">Location&nbsp;— while in use</th><td>Recording the check-in location of a client site visit.</td><td>Check-in is unavailable. Locations can still be set by map pin.</td></tr>
+              <tr><th scope="row">Camera</th><td>Photographing a document to upload.</td><td>You can still upload files already on your device.</td></tr>
+              <tr><th scope="row">Photos&nbsp;/ files</th><td>Attaching documents, images and payment receipts.</td><td>You cannot attach files.</td></tr>
+              <tr><th scope="row">Internet</th><td>Required. The app is a client for an online service.</td><td>&mdash;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s5">
+        <h2>How we use information</h2>
+        <p>We use the information described above only to run the service:</p>
+        <ul>
+          <li>To authenticate you and keep you signed in, and to enforce what your role is allowed to see and do.</li>
+          <li>To deliver messages, files, contracts, meetings, approvals and payment records between you and the people in your workspace.</li>
+          <li>To send push notifications about activity that concerns you.</li>
+          <li>To keep an audit record of significant actions — who changed, approved or signed what, and when — which is a core function of the service and cannot be switched off.</li>
+          <li>To diagnose crashes and fix defects.</li>
+          <li>To meet legal, tax and accounting obligations that apply to contract and payment records.</li>
+        </ul>
+        <p>We do not use your data for advertising, for profiling, for training machine learning models, or for any automated decision that produces a legal or similarly significant effect on you.</p>
+      </section>
+
+      <section id="s6">
+        <h2>Who we share it with</h2>
+        <p>We share personal data only in the situations below.</p>
+
+        <h3>People in your workspace</h3>
+        <p>This is the point of the product: your account manager, your organization's administrators, and any sub-users your organization has added to a workspace can see the messages, documents, contracts, payments and client records in that workspace, according to their role.</p>
+
+        <h3>Service providers</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Provider</th><th scope="col">What it receives</th><th scope="col">Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Google&nbsp;— Firebase Cloud Messaging</th><td>Push token, notification payload</td><td>Delivering push notifications</td></tr>
+              <tr><th scope="row">Google&nbsp;— Firebase Crashlytics</th><td>Crash traces, device model, OS and app version</td><td>Diagnosing crashes</td></tr>
+              <tr><th scope="row">OpenStreetMap Foundation</th><td>Your IP address and the map area requested, when you open the map picker</td><td>Drawing map tiles</td></tr>
+              <tr><th scope="row"><span class="fill">[HOSTING PROVIDER]</span></th><td>All service data</td><td>Hosting the ShadApp backend and file storage</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Map tiles are fetched from OpenStreetMap only while the location picker is open, and your coordinates are not sent to them — only the map area you are viewing.</p>
+
+        <h3>Legal</h3>
+        <p>We may disclose data where we are legally required to, or to establish, exercise or defend legal claims. We will tell you when we do, unless we are prohibited from doing so.</p>
+
+        <h3>Business transfers</h3>
+        <p>If the service is acquired or merged, data may transfer to the acquirer under this same policy. We will notify you before that happens.</p>
+
+        <div class="emphasis">
+          <p><strong>We do not sell personal data, and we do not share it with data brokers or advertisers.</strong></p>
+        </div>
+      </section>
+
+      <section id="s7">
+        <h2>Where data is stored</h2>
+        <p>Service data is stored on servers in <span class="fill">[HOSTING REGION]</span>. Our service providers may process limited data — push tokens and crash reports in particular — on infrastructure in other countries, including the United States and the European Union. Where data leaves its country of origin, we rely on the provider's contractual safeguards and transfer terms to protect it.</p>
+      </section>
+
+      <section id="s8">
+        <h2>How long we keep it</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Data</th><th scope="col">Retention</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Account and profile</th><td>For as long as the account is active, then <span class="fill">[N]</span> days after deletion</td></tr>
+              <tr><th scope="row">Messages and uploaded files</th><td>For the life of the workspace, then <span class="fill">[N]</span> days</td></tr>
+              <tr><th scope="row">Contracts, signatures and payment records</th><td><span class="fill">[N]</span> years, to meet accounting and legal obligations</td></tr>
+              <tr><th scope="row">Audit log entries</th><td><span class="fill">[N]</span> years</td></tr>
+              <tr><th scope="row">Push notification token</th><td>Deleted at sign-out or when the token is refreshed</td></tr>
+              <tr><th scope="row">Crash reports</th><td>Retained by Firebase Crashlytics for up to 90 days</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Where a record must be kept to satisfy a legal obligation, we keep that record for the required period even after you ask for deletion, and delete it at the end of that period.</p>
+      </section>
+
+      <section id="s9">
+        <h2>Security</h2>
+        <ul>
+          <li>All traffic between the app and our servers uses HTTPS; realtime updates use a secure WebSocket connection.</li>
+          <li>Your session token is stored in the iOS Keychain or the Android Keystore, not in ordinary app storage.</li>
+          <li>Passwords are stored only as one-way hashes.</li>
+          <li>Access to workspace data is restricted by role, and enforced on the server rather than only in the app.</li>
+          <li>Significant actions are recorded in an audit log.</li>
+        </ul>
+        <p>No system is perfectly secure. If a breach affects your personal data, we will notify you and the relevant authority as required by law.</p>
+      </section>
+
+      <section id="s10">
+        <h2>Your choices and rights</h2>
+        <p>You can ask us to:</p>
+        <ul>
+          <li><strong>Show you</strong> the personal data we hold about you, and provide a copy.</li>
+          <li><strong>Correct</strong> anything inaccurate. Most profile fields you can edit yourself in the app.</li>
+          <li><strong>Delete</strong> your data, subject to the legal retention periods in section 8.</li>
+          <li><strong>Restrict or object to</strong> a particular use of your data.</li>
+        </ul>
+        <p>You can also change these at any time without contacting us:</p>
+        <ul>
+          <li><strong>Notifications</strong> — turn them off in your device settings, or per-category in the app's settings screen.</li>
+          <li><strong>Location</strong> — revoke the permission in your device settings; check-in stops working, nothing else does.</li>
+          <li><strong>Camera and photos</strong> — revoke in device settings; you can still attach files from storage.</li>
+        </ul>
+        <p>Write to <span class="fill">privacy@[YOUR DOMAIN]</span> to exercise any of these. We will respond within 30 days. We may need to verify your identity first. If your account was created by an organization, we may need to route your request through them.</p>
+      </section>
+
+      <section id="s11">
+        <h2>Deleting your account</h2>
+        <p>To delete your ShadApp account and the personal data associated with it, email <span class="fill">privacy@[YOUR DOMAIN]</span> from the address on your account, or use the account deletion request page at <span class="fill">https://[YOUR DOMAIN]/delete-account</span>.</p>
+        <p>We will confirm the request, delete your profile, credentials, push tokens and cached device data, and remove or anonymize your messages. Contracts, signatures, payment records and audit entries are retained for the periods in section 8 where law requires it, and are then deleted.</p>
+      </section>
+
+      <section id="s12">
+        <h2>Children</h2>
+        <p>ShadApp is a business tool and is not directed at children. We do not knowingly collect personal data from anyone under 18. If you believe a child has provided us with personal data, contact us and we will delete it.</p>
+      </section>
+
+      <section id="s13">
+        <h2>Changes to this policy</h2>
+        <p>When we change this policy we update the effective date at the top. For changes that materially affect how we handle your data, we will notify you in the app or by email before they take effect. Continuing to use ShadApp after a change means you accept the updated policy.</p>
+      </section>
+
+      <section id="s14">
+        <h2>Contact us</h2>
+        <p>Questions, requests, or complaints about privacy:</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Channel</th><th scope="col">Address</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Email</th><td><span class="fill">privacy@[YOUR DOMAIN]</span></td></tr>
+              <tr><th scope="row">Postal</th><td><span class="fill">[REGISTERED BUSINESS ADDRESS]</span></td></tr>
+              <tr><th scope="row">Entity</th><td><span class="fill">[LEGAL ENTITY NAME]</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>If you are not satisfied with our response, you may complain to the data protection authority in your country.</p>
+      </section>
+
+      <section id="s15">
+        <h2>Store disclosures</h2>
+        <p>This section restates the same facts in the form the app stores ask for, so the answers you give in Google Play's Data safety form and Apple's App Privacy questionnaire match this policy.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Data type</th><th scope="col">Collected</th><th scope="col">Shared</th><th scope="col">Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Name, email, phone</th><td class="yes">Yes</td><td class="no">No</td><td>Account management, app functionality</td></tr>
+              <tr><th scope="row">Photos and videos</th><td class="yes">Yes</td><td class="no">No</td><td>App functionality — document upload</td></tr>
+              <tr><th scope="row">Files and documents</th><td class="yes">Yes</td><td class="no">No</td><td>App functionality</td></tr>
+              <tr><th scope="row">Messages in app</th><td class="yes">Yes</td><td class="no">No</td><td>App functionality</td></tr>
+              <tr><th scope="row">Approximate / precise location</th><td class="yes">Yes</td><td class="no">No</td><td>App functionality — site visit check-in</td></tr>
+              <tr><th scope="row">Purchase / payment history</th><td class="yes">Yes</td><td class="no">No</td><td>App functionality — no card data</td></tr>
+              <tr><th scope="row">Crash logs and diagnostics</th><td class="yes">Yes</td><td class="yes">Firebase</td><td>Analytics and crash diagnostics</td></tr>
+              <tr><th scope="row">Device or other identifiers</th><td class="yes">Push token</td><td class="yes">Firebase</td><td>Push notification delivery</td></tr>
+              <tr><th scope="row">Advertising data, contacts, browsing history, health, financial credentials</th><td class="no">Not collected</td><td class="no">No</td><td>&mdash;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>All data is encrypted in transit. Users can request deletion (section 11). No data is used for tracking across other companies' apps or websites, so <em>App Tracking Transparency</em> does not apply and no tracking prompt is shown.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="checklist">
+    <h2>Before you publish this</h2>
+    <p>Six things to settle, then delete the draft notice at the top of the page.</p>
+    <ol>
+      <li><strong>Legal entity and registered address</strong> — the company that actually operates ShadApp, exactly as registered.</li>
+      <li><strong>Effective date</strong> — the date you publish, not today's date.</li>
+      <li><strong>Your domain</strong> — for the <code>privacy@</code> address and the account deletion URL. Google Play requires the deletion page to be reachable without signing in.</li>
+      <li><strong>Hosting provider and region</strong> — where the Laravel backend and uploaded files actually live.</li>
+      <li><strong>Retention periods</strong> — section 8. Ask whoever handles your accounting what the statutory minimum is for contract and payment records.</li>
+      <li><strong>Legal review</strong> — this document describes what the app does, accurately and in plain language. It is not legal advice, and a lawyer in your jurisdiction should read it before it goes live.</li>
+    </ol>
+  </div>
+
+  <p class="colophon">Drafted from the ShadApp Flutter client at version 1.0.0+1 — Android package com.shad.shadapp, iOS bundle Shadapp Client. Data practices described here were read from the app's manifest permissions, its Firebase integration, and its API repositories. If the app's data handling changes, this policy has to change with it.</p>
+
+</div>

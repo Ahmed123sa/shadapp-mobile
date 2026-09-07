@@ -1,0 +1,443 @@
+================================================================================
+SHADAPP - PRIVACY POLICY
+================================================================================
+
+Effective date: [EFFECTIVE DATE]
+Last updated:   2 September 2026
+Applies to:     ShadApp mobile app v1.0.0
+Android package: com.shad.shadapp
+
+--------------------------------------------------------------------------------
+BEFORE PUBLISHING: every value in [SQUARE BRACKETS] is a placeholder you must
+replace. The full list is at the end of this document. Delete this notice once
+they are filled in.
+--------------------------------------------------------------------------------
+
+CONTENTS
+
+  1.  Who we are
+  2.  Summary
+  3.  Information we collect
+  4.  Permissions the app requests
+  5.  How we use information
+  6.  Who we share it with
+  7.  Where data is stored
+  8.  How long we keep it
+  9.  Security
+  10. Your choices and rights
+  11. Deleting your account
+  12. Children
+  13. Changes to this policy
+  14. Contact us
+  15. Store disclosures
+
+
+================================================================================
+1. WHO WE ARE
+================================================================================
+
+ShadApp is a business workspace app. Clients, their sub-users, and account
+managers use it to exchange messages and documents, agree contracts, schedule
+meetings, sign, and track payments.
+
+[LEGAL ENTITY NAME] ("we", "us") operates the ShadApp mobile app and the backend
+service it connects to, and is the controller of the personal data described in
+this policy. This policy covers the iOS and Android apps and the ShadApp API
+they talk to. It does not cover any separate website, or the services of a third
+party you reach through a link in the app.
+
+Accounts in ShadApp are created and administered by an organization, not by the
+general public. If your employer or a service provider gave you your login, they
+decide what business records are held about you in the app; we handle that data
+on the terms set out below.
+
+
+================================================================================
+2. SUMMARY
+================================================================================
+
+The detail follows, but in short:
+
+  Do we sell your data?
+      No. Never, to anyone, for any purpose.
+
+  Do we show ads or track you across apps?
+      No. There is no advertising SDK and no cross-app tracking in ShadApp.
+
+  Do we handle your card details?
+      No. The app records payment amounts and receipts. It never asks for a
+      card number.
+
+  Do we read your location in the background?
+      No. Location is read once, only when you tap "Check in".
+
+  Is your data encrypted in transit?
+      Yes. HTTPS and secure WebSockets.
+
+  Can you get your data deleted?
+      Yes - see sections 10 and 11.
+
+
+================================================================================
+3. INFORMATION WE COLLECT
+================================================================================
+
+3.1 ACCOUNT AND PROFILE
+
+Your name, email address, phone number, profile photo, chosen language, and the
+role your organization assigned you (client, sub-user, or account manager). Your
+password is never stored in readable form - it is verified against a one-way
+hash on our server.
+
+3.2 BUSINESS RECORDS YOU OR YOUR ACCOUNT MANAGER ENTER
+
+Client and company details held in your workspace: company name, contact person,
+email, phone, country, industry, business address, client type, account status,
+and - where your organization records it - a date of birth for the named
+contact.
+
+3.3 MESSAGES, FILES AND SIGNATURES
+
+Messages you send in a workspace chat, including edits, replies, and read
+status. Files and photos you upload - contracts, supporting documents, and
+anything you attach from your camera, photo library, or device storage.
+Signature images, whether you draw them, type them, or upload an image of one.
+
+3.4 MEETINGS AND APPROVALS
+
+Meetings you schedule, attend, cancel or complete, and the approval decisions
+you record against documents and messages - including who approved or rejected
+an item, when, and any reason given.
+
+3.5 PAYMENT RECORDS
+
+Payment amounts and currency (SAR by default), due dates, installment schedules,
+notes, status, and proof-of-payment files you upload such as a transfer receipt
+or invoice.
+
+    THE APP NEVER COLLECTS CARD OR BANK CREDENTIALS. There is no payment form,
+    no card entry field, and no payment processor SDK in ShadApp. It records
+    that a payment was requested or made; the payment itself happens outside
+    the app.
+
+3.6 LOCATION - CHECK-IN ONLY
+
+Account managers can record where a client site visit took place. When you tap
+"Check in", the app reads your device's current coordinates once and saves them
+to that client's record. You can also set a client's location by dropping a pin
+on a map instead, which reads no device location at all.
+
+The app has no background location permission and no location tracking. Nothing
+is read while the app is closed, and nothing is read unless you tap the button.
+Denying the permission disables check-in; every other part of the app keeps
+working.
+
+3.7 DEVICE AND PUSH NOTIFICATION DATA
+
+To deliver push notifications we collect a Firebase Cloud Messaging registration
+token, which identifies your app installation on your device. It is regenerated
+when you reinstall the app, and deleted from our records when you sign out.
+
+3.8 DIAGNOSTICS AND CRASH REPORTS
+
+In released versions the app sends crash reports to Firebase Crashlytics: the
+error and its stack trace, your device model, operating system version, and app
+version. Crash collection is switched off entirely in development builds. Crash
+reports are not used to build a profile of you and are not linked to your
+messages or documents.
+
+3.9 STORED ON YOUR DEVICE, NOT SENT TO US
+
+Your session token is kept in the device's own secure store - the iOS Keychain
+or the Android Keystore. Your name, email, avatar URL, role and language
+preference are cached in ordinary app storage so screens can render before the
+network responds. Signing out clears all of it.
+
+
+================================================================================
+4. PERMISSIONS THE APP REQUESTS
+================================================================================
+
+Every permission is requested at the moment it is needed and explained on
+screen. You can refuse or withdraw any of them in your device settings.
+
+  NOTIFICATIONS
+      Why: Alerts for new messages, payment requests, approvals and meetings.
+      If you refuse: The app works; you see updates only when you open it.
+
+  LOCATION - WHILE IN USE
+      Why: Recording the check-in location of a client site visit.
+      If you refuse: Check-in is unavailable. Locations can still be set by
+      map pin.
+
+  CAMERA
+      Why: Photographing a document to upload.
+      If you refuse: You can still upload files already on your device.
+
+  PHOTOS / FILES
+      Why: Attaching documents, images and payment receipts.
+      If you refuse: You cannot attach files.
+
+  INTERNET
+      Why: Required. The app is a client for an online service.
+
+
+================================================================================
+5. HOW WE USE INFORMATION
+================================================================================
+
+We use the information described above only to run the service:
+
+  - To authenticate you and keep you signed in, and to enforce what your role
+    is allowed to see and do.
+  - To deliver messages, files, contracts, meetings, approvals and payment
+    records between you and the people in your workspace.
+  - To send push notifications about activity that concerns you.
+  - To keep an audit record of significant actions - who changed, approved or
+    signed what, and when - which is a core function of the service and cannot
+    be switched off.
+  - To diagnose crashes and fix defects.
+  - To meet legal, tax and accounting obligations that apply to contract and
+    payment records.
+
+We do not use your data for advertising, for profiling, for training machine
+learning models, or for any automated decision that produces a legal or
+similarly significant effect on you.
+
+
+================================================================================
+6. WHO WE SHARE IT WITH
+================================================================================
+
+We share personal data only in the situations below.
+
+6.1 PEOPLE IN YOUR WORKSPACE
+
+This is the point of the product: your account manager, your organization's
+administrators, and any sub-users your organization has added to a workspace can
+see the messages, documents, contracts, payments and client records in that
+workspace, according to their role.
+
+6.2 SERVICE PROVIDERS
+
+  Google - Firebase Cloud Messaging
+      Receives: Push token, notification payload
+      Why: Delivering push notifications
+
+  Google - Firebase Crashlytics
+      Receives: Crash traces, device model, OS and app version
+      Why: Diagnosing crashes
+
+  OpenStreetMap Foundation
+      Receives: Your IP address and the map area requested, when you open the
+      map picker
+      Why: Drawing map tiles
+
+  [HOSTING PROVIDER]
+      Receives: All service data
+      Why: Hosting the ShadApp backend and file storage
+
+Map tiles are fetched from OpenStreetMap only while the location picker is open,
+and your coordinates are not sent to them - only the map area you are viewing.
+
+6.3 LEGAL
+
+We may disclose data where we are legally required to, or to establish, exercise
+or defend legal claims. We will tell you when we do, unless we are prohibited
+from doing so.
+
+6.4 BUSINESS TRANSFERS
+
+If the service is acquired or merged, data may transfer to the acquirer under
+this same policy. We will notify you before that happens.
+
+    WE DO NOT SELL PERSONAL DATA, AND WE DO NOT SHARE IT WITH DATA BROKERS OR
+    ADVERTISERS.
+
+
+================================================================================
+7. WHERE DATA IS STORED
+================================================================================
+
+Service data is stored on servers in [HOSTING REGION]. Our service providers may
+process limited data - push tokens and crash reports in particular - on
+infrastructure in other countries, including the United States and the European
+Union. Where data leaves its country of origin, we rely on the provider's
+contractual safeguards and transfer terms to protect it.
+
+
+================================================================================
+8. HOW LONG WE KEEP IT
+================================================================================
+
+  Account and profile
+      For as long as the account is active, then [N] days after deletion
+
+  Messages and uploaded files
+      For the life of the workspace, then [N] days
+
+  Contracts, signatures and payment records
+      [N] years, to meet accounting and legal obligations
+
+  Audit log entries
+      [N] years
+
+  Push notification token
+      Deleted at sign-out or when the token is refreshed
+
+  Crash reports
+      Retained by Firebase Crashlytics for up to 90 days
+
+Where a record must be kept to satisfy a legal obligation, we keep that record
+for the required period even after you ask for deletion, and delete it at the
+end of that period.
+
+
+================================================================================
+9. SECURITY
+================================================================================
+
+  - All traffic between the app and our servers uses HTTPS; realtime updates
+    use a secure WebSocket connection.
+  - Your session token is stored in the iOS Keychain or the Android Keystore,
+    not in ordinary app storage.
+  - Passwords are stored only as one-way hashes.
+  - Access to workspace data is restricted by role, and enforced on the server
+    rather than only in the app.
+  - Significant actions are recorded in an audit log.
+
+No system is perfectly secure. If a breach affects your personal data, we will
+notify you and the relevant authority as required by law.
+
+
+================================================================================
+10. YOUR CHOICES AND RIGHTS
+================================================================================
+
+You can ask us to:
+
+  - SHOW YOU the personal data we hold about you, and provide a copy.
+  - CORRECT anything inaccurate. Most profile fields you can edit yourself in
+    the app.
+  - DELETE your data, subject to the legal retention periods in section 8.
+  - RESTRICT OR OBJECT TO a particular use of your data.
+
+You can also change these at any time without contacting us:
+
+  - NOTIFICATIONS - turn them off in your device settings, or per-category in
+    the app's settings screen.
+  - LOCATION - revoke the permission in your device settings; check-in stops
+    working, nothing else does.
+  - CAMERA AND PHOTOS - revoke in device settings; you can still attach files
+    from storage.
+
+Write to privacy@[YOUR DOMAIN] to exercise any of these. We will respond within
+30 days. We may need to verify your identity first. If your account was created
+by an organization, we may need to route your request through them.
+
+
+================================================================================
+11. DELETING YOUR ACCOUNT
+================================================================================
+
+To delete your ShadApp account and the personal data associated with it, email
+privacy@[YOUR DOMAIN] from the address on your account, or use the account
+deletion request page at https://[YOUR DOMAIN]/delete-account
+
+We will confirm the request, delete your profile, credentials, push tokens and
+cached device data, and remove or anonymize your messages. Contracts,
+signatures, payment records and audit entries are retained for the periods in
+section 8 where law requires it, and are then deleted.
+
+
+================================================================================
+12. CHILDREN
+================================================================================
+
+ShadApp is a business tool and is not directed at children. We do not knowingly
+collect personal data from anyone under 18. If you believe a child has provided
+us with personal data, contact us and we will delete it.
+
+
+================================================================================
+13. CHANGES TO THIS POLICY
+================================================================================
+
+When we change this policy we update the effective date at the top. For changes
+that materially affect how we handle your data, we will notify you in the app or
+by email before they take effect. Continuing to use ShadApp after a change means
+you accept the updated policy.
+
+
+================================================================================
+14. CONTACT US
+================================================================================
+
+Questions, requests, or complaints about privacy:
+
+  Email:   privacy@[YOUR DOMAIN]
+  Postal:  [REGISTERED BUSINESS ADDRESS]
+  Entity:  [LEGAL ENTITY NAME]
+
+If you are not satisfied with our response, you may complain to the data
+protection authority in your country.
+
+
+================================================================================
+15. STORE DISCLOSURES
+================================================================================
+
+This section restates the same facts in the form the app stores ask for, so the
+answers you give in Google Play's Data safety form and Apple's App Privacy
+questionnaire match this policy.
+
+  DATA TYPE                    COLLECTED    SHARED     PURPOSE
+  ---------------------------------------------------------------------------
+  Name, email, phone           Yes          No         Account management,
+                                                       app functionality
+  Photos and videos            Yes          No         App functionality -
+                                                       document upload
+  Files and documents          Yes          No         App functionality
+  Messages in app              Yes          No         App functionality
+  Approximate / precise        Yes          No         App functionality -
+    location                                           site visit check-in
+  Purchase / payment history   Yes          No         App functionality -
+                                                       no card data
+  Crash logs and diagnostics   Yes          Firebase   Analytics and crash
+                                                       diagnostics
+  Device or other identifiers  Push token   Firebase   Push notification
+                                                       delivery
+  Advertising data, contacts,  No           No         -
+    browsing history, health,
+    financial credentials
+
+All data is encrypted in transit. Users can request deletion (section 11). No
+data is used for tracking across other companies' apps or websites, so App
+Tracking Transparency does not apply and no tracking prompt is shown.
+
+
+================================================================================
+BEFORE YOU PUBLISH THIS - CHECKLIST
+================================================================================
+
+Six things to settle, then delete this checklist and the notice at the top.
+
+  1. LEGAL ENTITY AND REGISTERED ADDRESS - the company that actually operates
+     ShadApp, exactly as registered.
+
+  2. EFFECTIVE DATE - the date you publish, not today's date.
+
+  3. YOUR DOMAIN - for the privacy@ address and the account deletion URL.
+     Google Play requires the deletion page to be reachable without signing in.
+
+  4. HOSTING PROVIDER AND REGION - where the Laravel backend and uploaded files
+     actually live.
+
+  5. RETENTION PERIODS - section 8. Ask whoever handles your accounting what
+     the statutory minimum is for contract and payment records.
+
+  6. LEGAL REVIEW - this document describes what the app does, accurately and
+     in plain language. It is not legal advice, and a lawyer in your
+     jurisdiction should read it before it goes live.
+
+================================================================================
