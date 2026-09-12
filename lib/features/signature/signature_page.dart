@@ -212,6 +212,14 @@ class _SignaturePageState extends State<SignaturePage> {
       body: Stack(
         children: [
           SingleChildScrollView(
+            // The drawing area's GestureDetector (onPan*) and this
+            // ScrollView's own vertical drag recognizer used to compete in
+            // the same gesture arena for every touch on the canvas, so the
+            // page would scroll instead of (or while) the user drew. While
+            // in draw mode there's nothing on this screen that needs
+            // scrolling to reach, so scrolling is disabled outright and the
+            // pan gesture is the sole claimant.
+            physics: _mode == 'draw' ? const NeverScrollableScrollPhysics() : null,
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
