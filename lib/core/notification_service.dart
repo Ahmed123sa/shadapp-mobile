@@ -42,9 +42,30 @@ class NotificationService {
     await _initLocalNotifications();
     await _requestPermission();
 
-    _fcmToken = await _firebaseMessaging.getToken();
-    if (_fcmToken != null) {
-      _registerToken(_fcmToken!);
+    try {
+      // On iOS, FCM's getToken() throws
+      // firebase_messaging/apns-token-not-set if it's called before iOS has
+      // handed the app its APNs device token, which can take a moment right
+      // after launch. Wait for it first so getToken() doesn't throw here.
+      if (!kIsWeb && Platform.isIOS) {
+        String? apnsToken = await _firebaseMessaging.getAPNSToken();
+        var attempts = 0;
+        while (apnsToken == null && attempts < 10) {
+          await Future.delayed(const Duration(seconds: 1));
+          apnsToken = await _firebaseMessaging.getAPNSToken();
+          attempts++;
+        }
+      }
+
+      _fcmToken = await _firebaseMessaging.getToken();
+      if (_fcmToken != null) {
+        _registerToken(_fcmToken!);
+      }
+    } catch (e, s) {
+      // Push notifications are a nice-to-have, not something app startup
+      // should ever crash over — any failure here (this case or otherwise)
+      // is logged and swallowed instead of propagating.
+      AppLog.error('NotificationService.init.getToken', e, s);
     }
 
     _firebaseMessaging.onTokenRefresh.listen((token) {
