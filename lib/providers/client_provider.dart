@@ -63,8 +63,4 @@ class ClientProvider {
   /// caller navigates straight to the new workspace.
   Future<Map<String, dynamic>> createWorkspaceForClient(int clientId) => _repo.createWorkspace(clientId);
 
-  Future<void> deleteClient(int id) async {
-    await _repo.delete(id);
-    _clients = _clients.where((c) => c.id != id).toList();
-  }
 }

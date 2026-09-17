@@ -41,8 +41,4 @@ class ManagerProvider {
 
   Future<Map<String, dynamic>> updateManager(int id, Map<String, dynamic> body) => _repo.update(id, body);
 
-  Future<void> deleteManager(int id) async {
-    await _repo.delete(id);
-    _managers = _managers.where((m) => m.id != id).toList();
-  }
 }

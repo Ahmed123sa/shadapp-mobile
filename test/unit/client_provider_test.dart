@@ -127,19 +127,4 @@ void main() {
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
-
-  test('deleteClient removes the client from the in-memory list', () async {
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{"clients":[{"id":1,"company_name":"Acme"},{"id":2,"company_name":"Beta"}]}'),
-    );
-    await provider.fetchClients();
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{}'),
-    );
-
-    await provider.deleteClient(1);
-
-    expect(provider.clients, hasLength(1));
-    expect(provider.clients.first.id, 2);
-  });
 }

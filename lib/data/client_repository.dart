@@ -72,8 +72,6 @@ class ClientRepository {
     return Client.fromJson(data);
   }
 
-  Future<void> delete(int id) => _api.delete('/clients/$id');
-
   /// Raw `/clients/:id/profile` envelope (client/stats/location) — backs
   /// am/workspace/client_profile_tab.dart.
   Future<Map<String, dynamic>> fetchProfile(int clientId) => _api.get('/clients/$clientId/profile');

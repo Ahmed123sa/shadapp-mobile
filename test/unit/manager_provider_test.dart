@@ -71,19 +71,4 @@ void main() {
     expect(raw.first['managed_clients_count'], 3);
     expect(provider.managers, isEmpty);
   });
-
-  test('deleteManager removes the manager from the in-memory list', () async {
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{"managers":[{"id":1,"name":"Ahmed"},{"id":2,"name":"Sara"}]}'),
-    );
-    await provider.fetchManagers();
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{}'),
-    );
-
-    await provider.deleteManager(1);
-
-    expect(provider.managers, hasLength(1));
-    expect(provider.managers.first.id, 2);
-  });
 }

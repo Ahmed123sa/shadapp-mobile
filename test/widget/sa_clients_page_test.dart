@@ -67,38 +67,4 @@ void main() {
 
     expect(find.text('No clients'), findsOneWidget);
   });
-
-  testWidgets('deleting a client: confirming calls DELETE then reloads the list', (tester) async {
-    final httpClient = MockHttpClient();
-    final api = buildTestApiClient(client: httpClient);
-    when(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/account-managers')), headers: any(named: 'headers')))
-        .thenAnswer((_) async => jsonResponse('{"managers":[]}'));
-    var getCalls = 0;
-    when(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients')), headers: any(named: 'headers')))
-        .thenAnswer((_) async {
-      getCalls++;
-      if (getCalls == 1) {
-        return jsonResponse('{"clients":[{"id":7,"company_name":"Acme Co","contact_person":"Sara"}]}');
-      }
-      return jsonResponse('{"clients":[]}');
-    });
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer((_) async => jsonResponse('{}'));
-    final clientProvider = ClientProvider(repository: ClientRepository(api: api));
-    final managerProvider = ManagerProvider(repository: ManagerRepository(api: api));
-
-    await pumpPage(tester, clientProvider, managerProvider);
-    expect(find.text('Acme Co'), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete Client'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
-    await tester.pumpAndSettle();
-
-    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/7'))),
-        headers: any(named: 'headers'))).called(1);
-    expect(getCalls, 2);
-    expect(find.text('No clients'), findsOneWidget);
-  });
 }

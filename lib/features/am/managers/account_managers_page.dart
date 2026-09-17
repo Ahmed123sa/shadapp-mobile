@@ -41,31 +41,6 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _delete(int id, String name) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(ctx)!.accountManagersDeleteTitle),
-        content: Text(AppLocalizations.of(ctx)!.accountManagersDeleteNameConfirmation(name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx)!.delete)),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      // deleteManager() already removes the item locally, but the original
-      // screen always did a full reload after a successful delete — kept
-      // as-is so the network call sequence (DELETE then GET) is unchanged.
-      await _managerProvider.deleteManager(id);
-      _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.accountManagersDeleteFailed)));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -163,10 +138,6 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
                               final result = await context.push<bool>('/am/managers/$mgrId/edit');
                               if (result == true) _load();
                             },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 20, color: ShadColors.error),
-                            onPressed: () => _delete(mgrId, name),
                           ),
                         ]),
                       ),

@@ -343,7 +343,6 @@ class _SaClientsPageState extends State<SaClientsPage> {
 
   void _showClientActions(Map<String, dynamic> client) {
     final l10n = AppLocalizations.of(context)!;
-    final clientId = int.tryParse(client['id']?.toString() ?? '') ?? 0;
     final name = client['company_name'] as String? ?? '';
     showModalBottomSheet(
       context: context,
@@ -359,39 +358,8 @@ class _SaClientsPageState extends State<SaClientsPage> {
             title: Text(l10n.clientDetailEditTitle),
             onTap: () { Navigator.pop(ctx); context.push<bool>('/am/clients/${client['id']}').then((v) { if (v == true) _load(); }); },
           ),
-          ListTile(
-            leading: const Icon(Icons.delete_outline, color: ShadColors.error),
-            title: Text(l10n.saClientsDeleteTitle, style: const TextStyle(color: ShadColors.error)),
-            onTap: () { Navigator.pop(ctx); _deleteClient(clientId, name); },
-          ),
         ]),
       ),
     );
-  }
-
-  Future<void> _deleteClient(int id, String name) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.saClientsDeleteTitle),
-        content: Text(l10n.saClientsDeleteConfirmation(name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
-            child: Text(AppLocalizations.of(ctx)!.delete, style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      await _clientProvider.deleteClient(id);
-      _load();
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saClientsDeleteFailed)));
-    }
   }
 }

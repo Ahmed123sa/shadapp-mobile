@@ -170,15 +170,4 @@ void main() {
 
     verify(() => httpClient.send(any())).called(1);
   });
-
-  test('delete calls DELETE on the client endpoint', () async {
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{}'),
-    );
-
-    await repo.delete(9);
-
-    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9'))),
-        headers: any(named: 'headers'))).called(1);
-  });
 }

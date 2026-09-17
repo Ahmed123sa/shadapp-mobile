@@ -41,6 +41,4 @@ class ManagerRepository {
 
   Future<Map<String, dynamic>> update(int id, Map<String, dynamic> body) =>
       _api.put('/account-managers/$id', body);
-
-  Future<void> delete(int id) => _api.delete('/account-managers/$id');
 }

@@ -76,53 +76,6 @@ void main() {
     expect(call, 2);
   });
 
-  testWidgets('deleting a manager: confirming calls DELETE then reloads the list', (tester) async {
-    final httpClient = MockHttpClient();
-    var getCalls = 0;
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async {
-      getCalls++;
-      if (getCalls == 1) {
-        return jsonResponse('{"managers":[{"id":1,"name":"Ahmed"}]}');
-      }
-      return jsonResponse('{"managers":[]}');
-    });
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{}'),
-    );
-    final provider = ManagerProvider(repository: ManagerRepository(api: buildTestApiClient(client: httpClient)));
-
-    await pumpPage(tester, provider);
-    expect(find.text('Ahmed'), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.delete_outline));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
-    await tester.pumpAndSettle();
-
-    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/account-managers/1'))),
-        headers: any(named: 'headers'))).called(1);
-    expect(getCalls, 2);
-    expect(find.text('No managers yet'), findsOneWidget);
-  });
-
-  testWidgets('deleting a manager: cancelling sends no DELETE request', (tester) async {
-    final httpClient = MockHttpClient();
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{"managers":[{"id":1,"name":"Ahmed"}]}'),
-    );
-    final provider = ManagerProvider(repository: ManagerRepository(api: buildTestApiClient(client: httpClient)));
-
-    await pumpPage(tester, provider);
-
-    await tester.tap(find.byIcon(Icons.delete_outline));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-    await tester.pumpAndSettle();
-
-    verifyNever(() => httpClient.delete(any(), headers: any(named: 'headers')));
-    expect(find.text('Ahmed'), findsOneWidget);
-  });
-
   testWidgets('tapping the add button navigates to the create page', (tester) async {
     final httpClient = MockHttpClient();
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(

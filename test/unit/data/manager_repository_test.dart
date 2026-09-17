@@ -83,15 +83,4 @@ void main() {
 
     expect(res['manager']['name'], 'Renamed');
   });
-
-  test('delete calls DELETE on the manager endpoint', () async {
-    when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
-      (_) async => jsonResponse('{}'),
-    );
-
-    await repo.delete(9);
-
-    verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/account-managers/9'))),
-        headers: any(named: 'headers'))).called(1);
-  });
 }
