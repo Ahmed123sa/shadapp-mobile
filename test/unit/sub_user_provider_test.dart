@@ -29,6 +29,16 @@ void main() {
     expect(subUsers, hasLength(1));
   });
 
+  test('fetchPermissionKeys delegates to the repository', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"permissions":["can_chat"]}'),
+    );
+
+    final keys = await provider.fetchPermissionKeys();
+
+    expect(keys, ['can_chat']);
+  });
+
   test('delete delegates to the repository', () async {
     when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{}'),

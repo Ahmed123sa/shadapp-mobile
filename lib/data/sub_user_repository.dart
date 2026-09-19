@@ -14,6 +14,14 @@ class SubUserRepository {
     return safeList(res['sub_users']);
   }
 
+  /// SUBUSER_PLAN.md §6.1 — the 11 permission keys, read from the backend's
+  /// single source (`SubUser::PERMISSION_KEYS`) instead of a hardcoded copy
+  /// in subusers_page.dart.
+  Future<List<String>> fetchPermissionKeys() async {
+    final res = await _api.get('/sub-user-permissions');
+    return safeList(res['permissions']).cast<String>();
+  }
+
   /// Returns the raw response — callers need `res['sub_user']`, the newly
   /// created record.
   Future<Map<String, dynamic>> create(int clientId, Map<String, dynamic> body) =>

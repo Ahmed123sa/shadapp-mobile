@@ -8,20 +8,6 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/password_field.dart';
 import '../../providers/sub_user_provider.dart';
 
-const List<String> _permissionKeys = [
-  'can_chat',
-  'can_view_contracts',
-  'can_approve_contracts',
-  'can_view_payments',
-  'can_upload_payment_proof',
-  'can_view_approvals',
-  'can_respond_approvals',
-  'can_view_files',
-  'can_upload_files',
-  'can_view_meetings',
-  'can_join_meetings',
-];
-
 class SubUsersPage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with a mocked
   // SubUserProvider instead of hitting the network.
@@ -40,6 +26,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   List<dynamic> _subUsers = [];
+  // SUBUSER_PLAN.md §6.1 — fetched from the backend's single source
+  // (SubUser::PERMISSION_KEYS via GET /sub-user-permissions) instead of a
+  // hardcoded copy in this file.
+  List<String> _permissionKeys = [];
   bool _loading = true;
   bool _showForm = false;
   bool _saving = false;
@@ -58,7 +48,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
     if (cid == null) return;
     setState(() => _loading = true);
     try {
-      _subUsers = await _subUserProvider.fetchForClient(cid);
+      final results = await Future.wait([
+        _subUserProvider.fetchForClient(cid),
+        _subUserProvider.fetchPermissionKeys(),
+      ]);
+      _subUsers = results[0] as List<dynamic>;
+      _permissionKeys = results[1] as List<String>;
     } catch (e, s) {
       AppLog.error('subusers_page._load', e, s);
     }

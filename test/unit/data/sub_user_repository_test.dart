@@ -54,6 +54,18 @@ void main() {
         headers: any(named: 'headers'))).called(1);
   });
 
+  test('fetchPermissionKeys hits /sub-user-permissions and unwraps the list', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"permissions":["can_chat","can_view_contracts"]}'),
+    );
+
+    final keys = await repo.fetchPermissionKeys();
+
+    expect(keys, ['can_chat', 'can_view_contracts']);
+    verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-user-permissions'))),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   test('updatePermissions PATCHes the permissions map wrapped in a "permissions" key', () async {
     Map<String, dynamic>? sentBody;
     when(() => httpClient.patch(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {

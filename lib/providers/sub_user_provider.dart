@@ -8,6 +8,8 @@ class SubUserProvider {
 
   Future<List<dynamic>> fetchForClient(int clientId) => _repo.fetchForClient(clientId);
 
+  Future<List<String>> fetchPermissionKeys() => _repo.fetchPermissionKeys();
+
   /// Raw `/sub-users/:id` envelope — see [SubUserRepository.fetchOne].
   Future<Map<String, dynamic>> fetchOneRaw(int id) => _repo.fetchOne(id);
 
