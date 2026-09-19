@@ -342,11 +342,60 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       // direction to fail in — but it should never happen silently.
       AppLog.error('client_dashboard._loadSubUserPermissions', e, s);
     }
+    _enforceTabPermission();
     if (mounted) setState(() {});
+  }
+
+  /// 19 Sept 2026 — a tapped notification sets `_selectedIndex` straight
+  /// from `widget.initialTab` in initState(), with no permission check at
+  /// all (see notification_routing.dart's `fcmTabIndex`). A sub-user
+  /// without `can_view_contracts` who taps a contract notification landed
+  /// squarely on the contracts tab, which the backend happily served
+  /// (`can_view_*` flags are UI-only by design, DATA_SAFETY_PLAN.md §7.3 —
+  /// tenant isolation is the real boundary, not this flag) — a full
+  /// permission bypass via notification tap.
+  ///
+  /// This can't be checked at the point `_selectedIndex` is first set:
+  /// `_subUserPermissions` starts empty and is only filled in by this same
+  /// method (async), so a same-tick check would fail closed for every
+  /// legitimate tab too. Instead, re-validate once real permissions are in
+  /// and correct course if the currently-selected tab (whatever set it —
+  /// notification, a stale deep link, anything) isn't one this sub-user is
+  /// actually allowed to see, same self-healing shape as
+  /// `_checkAutoAdvance()`'s stage-lock correction below. Unlike that one,
+  /// this is a security gate, not a UX nudge, so it deliberately ignores
+  /// `_hasInitialTabOverride`.
+  void _enforceTabPermission() {
+    if (!_isSubUser) return;
+    const indexToTab = {0: 'contracts', 1: 'payments', 2: 'chat', 3: 'approvals', 4: 'files', 5: 'meetings', 6: 'signature', 7: 'subusers'};
+    final currentTab = indexToTab[_selectedIndex];
+    if (currentTab != null && _isTabAllowedByPermission(currentTab)) return;
+
+    for (final entry in indexToTab.entries) {
+      if (_isTabAllowedByPermission(entry.value)) {
+        _selectedIndex = entry.key;
+        return;
+      }
+    }
+    // A sub-user with literally zero permissions granted yet (the default
+    // for a newly-created one — see SubUserController::store()) has no
+    // tab this loop would pick. Falling back to 0 (contracts) rather than
+    // leaving _selectedIndex on the notification's original target
+    // mirrors _buildDashboard()'s own `allowedBottomTabs.isEmpty` fallback
+    // just below — not a new exposure, since tenant isolation (not this
+    // permission flag) is what actually bounds the data either way.
+    _selectedIndex = 0;
   }
 
   bool _isTabAllowedByPermission(String tab) {
     if (!_isSubUser) return true;
+    // signature/subusers are staff-and-client-only features (see the
+    // `if (!_isSubUser) ...` guard around their PopupMenuItems below) —
+    // they were never meant to fall into the "no permission key means
+    // always allowed" branch further down, which would otherwise let a
+    // sub-user land on either via a crafted tab index (e.g. a deep link),
+    // even though the UI never offers them a way to navigate there.
+    if (tab == 'signature' || tab == 'subusers') return false;
     const tabPermMap = {
       'contracts': 'can_view_contracts',
       'payments': 'can_view_payments',
@@ -354,8 +403,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       'approvals': 'can_view_approvals',
       'files': 'can_view_files',
       'meetings': 'can_view_meetings',
-      'signature': null,
-      'subusers': null,
     };
     final perm = tabPermMap[tab];
     if (perm == null) return true;

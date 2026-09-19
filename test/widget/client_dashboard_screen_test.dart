@@ -162,6 +162,67 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/sub-users/1')), headers: any(named: 'headers'))).called(1);
   });
 
+  // 19 Sept 2026 — regression coverage for the notification-tap permission
+  // bypass: a tapped push notification sets ClientDashboardScreen's
+  // initialTab directly (see notification_routing.dart's fcmTabIndex), and
+  // nothing checked whether the sub-user was actually allowed to see that
+  // tab before this fix. `initialTab: 3` (approvals, what an 'approval'
+  // notification maps to per fcmTabIndex) stands in for that notification
+  // tap below.
+  //
+  // Deliberately not index 0 (contracts): initState()'s
+  // `_hasInitialTabOverride` guard — which exists specifically to protect a
+  // notification-driven tab from being clobbered by _checkAutoAdvance()'s
+  // unrelated stage-advance logic — only arms on `initialTab > 0`, so index
+  // 0 would let stage-advance (this test's mocked workspace is "active",
+  // i.e. max stage) race the permission fix onto the same tab (chat, index
+  // 2) for an unrelated reason and produce a false pass either way.
+  testWidgets('a sub-user without can_view_approvals is redirected away from an approval notification tab', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'sub_user';
+    api.subUserId = 1;
+    stubCommon(httpClient, subUserJson: '{"sub_user":{"id":1,"permissions":{"can_chat":true}}}');
+
+    await pumpPage(tester, api, initialTab: 3);
+
+    // Chat (index 2) is the only tab this sub-user's permissions allow —
+    // the fix must land them there instead of leaving them on approvals.
+    final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+    expect(stack.index, 2);
+  });
+
+  testWidgets('a sub-user with the matching permission keeps the notification tab', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'sub_user';
+    api.subUserId = 1;
+    stubCommon(httpClient, subUserJson: '{"sub_user":{"id":1,"permissions":{"can_view_approvals":true}}}');
+
+    await pumpPage(tester, api, initialTab: 3);
+
+    final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+    expect(stack.index, 3);
+  });
+
+  testWidgets('a sub-user with zero permissions granted falls back to the contracts tab', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'sub_user';
+    api.subUserId = 1;
+    stubCommon(httpClient, subUserJson: '{"sub_user":{"id":1,"permissions":{}}}');
+
+    // 3 (approvals) stands in for any notification-driven tab a brand-new,
+    // not-yet-granted-anything sub-user has no business landing on.
+    await pumpPage(tester, api, initialTab: 3);
+
+    final stack = tester.widget<IndexedStack>(find.byType(IndexedStack));
+    expect(stack.index, 0);
+  });
+
   testWidgets('logout confirmation clears the token and navigates to /login', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

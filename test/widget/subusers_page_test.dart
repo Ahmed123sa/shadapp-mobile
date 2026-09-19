@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/core/widgets/loading_state.dart';
 import 'package:shadapp_client/data/sub_user_repository.dart';
 import 'package:shadapp_client/features/subusers/subusers_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -47,6 +48,29 @@ void main() {
 
     expect(find.text('Sub-Users (1)'), findsOneWidget);
     expect(find.text('Sub One'), findsOneWidget);
+  });
+
+  // 19 Sept 2026 — this page is mounted eagerly for every dashboard load
+  // regardless of role, and used to call GET /clients/{id}/sub-users
+  // unconditionally in _load(). The backend forbids a sub-user from ever
+  // listing their colleagues (SubUserPolicy), so that call always 403'd —
+  // a doomed request and an error log on every single sub-user session.
+  testWidgets('a sub-user never calls the sub-users list endpoint', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'sub_user';
+    api.userId = 9;
+    api.subUserId = 1;
+    stubGets(httpClient, '{"sub_users":[{"id":1,"name":"Sub One","email":"sub1@x.com","permissions":{}}]}');
+    final provider = SubUserProvider(repository: SubUserRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+
+    verifyNever(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users'))), headers: any(named: 'headers')));
+    // Confirms _loading was actually reset to false in the early-return
+    // branch, not just that the network call was skipped — otherwise this
+    // page would be stuck on LoadingState() forever.
+    expect(find.byType(LoadingState), findsNothing);
   });
 
   testWidgets('shows the empty state when there are no sub-users', (tester) async {

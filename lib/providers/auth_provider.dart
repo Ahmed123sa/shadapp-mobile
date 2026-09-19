@@ -99,6 +99,20 @@ class AuthProvider extends ChangeNotifier {
         isClient = true;
       }
 
+      // 19 Sept 2026 — a fresh login must start from a clean session, not
+      // build on top of whatever the previous account left behind on this
+      // device. setUserData()/setRole() below only ever WRITE a field when
+      // the new value is non-null (see ApiClient.setUserData), so if this
+      // response's workspace_id happens to be null (client has no workspace
+      // yet — see AuthController::clientLogin's null-safe lookup), the
+      // *previous* session's workspaceId silently survived untouched. Every
+      // workspace-scoped screen (contracts/chat/payments/meetings/files)
+      // reads that same stale value directly, so a sub-user or client could
+      // end up making every workspace-scoped request against someone else's
+      // workspace — 403ing on all of them since ScopeWorkspace correctly
+      // rejects the mismatch, but confusingly so, and only by luck rather
+      // than by anything actually clearing the old value.
+      await _api.clearToken();
       await _api.setToken(data['token']);
 
       if (isClient) {

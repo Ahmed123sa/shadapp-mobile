@@ -44,6 +44,19 @@ class _SubUsersPageState extends State<SubUsersPage> {
   }
 
   Future<void> _load() async {
+    // This page is mounted eagerly inside ClientDashboardScreen's
+    // IndexedStack for every dashboard load regardless of role (only the
+    // *navigation* to it is gated — behind `!_isSubUser` in the "more" menu,
+    // and _enforceTabPermission() denies index 7 outright for a sub-user).
+    // Without this guard, every sub-user dashboard load fired
+    // GET /clients/{id}/sub-users anyway — which SubUserPolicy/
+    // ClientController::subUsers() correctly 403s (a sub-user is never
+    // allowed to list their colleagues, by design), so this was pure noise:
+    // a doomed request and an error log on every single load.
+    if (_isSubUser) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     final cid = _api.userId;
     if (cid == null) return;
     setState(() => _loading = true);
