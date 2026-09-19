@@ -52,7 +52,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
         _subUserProvider.fetchForClient(cid),
         _subUserProvider.fetchPermissionKeys(),
       ]);
-      _subUsers = results[0] as List<dynamic>;
+      _subUsers = results[0];
       _permissionKeys = results[1] as List<String>;
     } catch (e, s) {
       AppLog.error('subusers_page._load', e, s);
