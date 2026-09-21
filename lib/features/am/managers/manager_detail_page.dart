@@ -25,6 +25,10 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
   List<dynamic> _clients = [];
   bool _loading = true;
   String? _error;
+  // 21 Sept 2026 — null means "no explicit pick yet"; the render below falls
+  // back to whichever currency has the largest total. See revenueCurrencies
+  // in build().
+  String? _selectedRevenueCurrency;
 
   @override
   void initState() {
@@ -57,6 +61,21 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
     return {};
   }
 
+  // SAR/USD first (matches the web Finance page's card order), rest
+  // alphabetical — applied to whatever currencies actually show up in the
+  // data, not a fixed list.
+  List<String> _sortCurrencies(Iterable<String> currencies) {
+    const order = ['SAR', 'USD'];
+    final list = currencies.toList();
+    list.sort((a, b) {
+      final ai = order.indexOf(a);
+      final bi = order.indexOf(b);
+      if (ai != -1 || bi != -1) return (ai == -1 ? 99 : ai).compareTo(bi == -1 ? 99 : bi);
+      return a.compareTo(b);
+    });
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -86,6 +105,39 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
     final pendingPayments = _stats?['pending_payments'] ?? 0;
     final contractsByStatus = _safeMap(_stats?['contracts_by_status']);
     final paymentsByMonth = _safeMap(_stats?['payments_by_month']);
+
+    // 21 Sept 2026 — totalRevenue and paymentsByMonth above both sum every
+    // currency into one number with no currency attached at all. Not
+    // mislabeled like the dashboard's old "EGP" bug, but still meaningless
+    // once currencies mix with no exchange rate. payments_by_month_by_currency
+    // is the real figure, split by currency; totalRevenue/paymentsByMonth
+    // stay as a fallback only for a backend that hasn't deployed the new key
+    // yet, or a manager with genuinely nothing approved.
+    final paymentsByMonthByCurrency = _safeMap(_stats?['payments_by_month_by_currency'])
+        .map((month, byCur) => MapEntry(month, _safeMap(byCur)));
+    final revenueCurrencySet = <String>{};
+    for (final byCur in paymentsByMonthByCurrency.values) {
+      revenueCurrencySet.addAll(byCur.keys);
+    }
+    final revenueCurrencies = _sortCurrencies(revenueCurrencySet);
+    final revenueTotalsByCurrency = <String, double>{
+      for (final cur in revenueCurrencies)
+        cur: paymentsByMonthByCurrency.values.fold<double>(0, (s, byCur) => s + _toDouble(byCur[cur])),
+    };
+    final defaultRevenueCurrency = revenueCurrencies.isEmpty
+        ? null
+        : revenueCurrencies.reduce(
+            (best, cur) => revenueTotalsByCurrency[cur]! > revenueTotalsByCurrency[best]! ? cur : best);
+    final activeRevenueCurrency =
+        (_selectedRevenueCurrency != null && revenueCurrencies.contains(_selectedRevenueCurrency))
+            ? _selectedRevenueCurrency
+            : defaultRevenueCurrency;
+    final incomeValue = defaultRevenueCurrency != null
+        ? '${_formatCurrency(revenueTotalsByCurrency[defaultRevenueCurrency]!)} $defaultRevenueCurrency'
+        : _formatCurrency(totalRevenue);
+    final chartData = activeRevenueCurrency != null
+        ? {for (final e in paymentsByMonthByCurrency.entries) e.key: e.value[activeRevenueCurrency] ?? 0}
+        : paymentsByMonth;
 
     return Scaffold(
       appBar: AppBar(
@@ -124,7 +176,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _statCard(l10n.managerDetailTotalIncome, _formatCurrency(totalRevenue), ShadColors.gold),
+              _statCard(l10n.managerDetailTotalIncome, incomeValue, ShadColors.gold),
               const SizedBox(width: 8),
               _statCard(l10n.managerDetailPendingPayments, '$pendingPayments', ShadColors.warning),
             ]),
@@ -151,10 +203,34 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
               const SizedBox(height: 20),
             ],
 
-            if (paymentsByMonth.isNotEmpty) ...[
-              _sectionLabel(l10n.managerDetailMonthlyIncome),
+            if (chartData.isNotEmpty) ...[
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                _sectionLabel(l10n.managerDetailMonthlyIncome),
+                // Chips only appear with more than one currency — a single
+                // currency needs no toggle, same rule as the dashboard's
+                // Reports page.
+                if (revenueCurrencies.length > 1)
+                  Wrap(spacing: 6, children: revenueCurrencies.map((cur) {
+                    final active = cur == activeRevenueCurrency;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedRevenueCurrency = cur),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: active ? ShadColors.goldSoft : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
+                        ),
+                        child: Text(cur, style: TextStyle(
+                          fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                          color: active ? ShadColors.gold : ShadColors.textSecondary,
+                        )),
+                      ),
+                    );
+                  }).toList()),
+              ]),
               const SizedBox(height: 8),
-              SizedBox(height: 180, child: _paymentsChart(paymentsByMonth, l10n)),
+              SizedBox(height: 180, child: _paymentsChart(chartData, l10n)),
               const SizedBox(height: 20),
             ],
 
