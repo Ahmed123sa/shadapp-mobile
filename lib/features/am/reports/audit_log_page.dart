@@ -361,11 +361,41 @@ class _AuditLogPageState extends State<AuditLogPage> {
     );
   }
 
+  /// 20 Sept 2026 — audit_logs.user_id is a foreign key into `users`, so it
+  /// only ever holds a staff id. Every action taken by a client or a
+  /// sub-user therefore arrives here with `user: null`, and this tile used
+  /// to read nothing but `log['user']['name']` — so all of those rows
+  /// rendered with a blank actor and a '?' avatar.
+  ///
+  /// That is not a small subset: it covers every `sub_user.*` row, a
+  /// contract approved or edit-requested by a client/sub-user, and (since
+  /// AuthController started recording logins) every client and sub-user
+  /// login. In other words the audit log showed no name against most
+  /// client-side activity.
+  ///
+  /// The backend eager-loads `client` alongside `user` on exactly these
+  /// rows for this reason (AuditController::index), and the dashboard has
+  /// always walked the same fallback chain — this brings mobile in line
+  /// with it rather than inventing a different one.
+  String _actorName(Map<String, dynamic> log) {
+    final user = log['user'] as Map<String, dynamic>?;
+    final staffName = user?['name'] as String?;
+    if (staffName != null && staffName.isNotEmpty) return staffName;
+
+    final client = log['client'] as Map<String, dynamic>?;
+    final companyName = client?['company_name'] as String?;
+    if (companyName != null && companyName.isNotEmpty) return companyName;
+
+    final contactPerson = client?['contact_person'] as String?;
+    if (contactPerson != null && contactPerson.isNotEmpty) return contactPerson;
+
+    return '';
+  }
+
   Widget _auditLogTile(Map<String, dynamic> log) {
     final action = log['action'] as String? ?? '';
     final createdAt = log['created_at'] as String? ?? '';
-    final user = log['user'] as Map<String, dynamic>?;
-    final userName = user?['name'] as String? ?? '';
+    final userName = _actorName(log);
     final initials = userName.length >= 2 ? userName.substring(0, 2) : (userName.isNotEmpty ? userName[0] : '?');
     final time = createdAt.length >= 16 ? createdAt.substring(11, 16) : createdAt;
     final (dotColor, badgeColor, badgeText) = _actionStyle(action);
