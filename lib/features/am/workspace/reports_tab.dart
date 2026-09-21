@@ -391,12 +391,20 @@ class _ReportsTabState extends State<ReportsTab> {
             final item = items[i];
             final name = item['name'] as String? ?? l10n.reportsManagerFallback(i + 1);
             final initials = name.length >= 2 ? name.substring(0, 2) : name[0];
-            final revenue = useStats
-                ? '${_toDouble(item['revenue']).toInt()}'
-                : '${_toDouble(_stats?['payments_by_month']?.values?.fold(0, (a, b) => _toDouble(a) + _toDouble(b)) ?? 0) ~/ (items.length - i + 1)}';
-            final pct = useStats
-                ? (_toDouble(item['revenue']) / _toDouble(items.first['revenue']) * 100).clamp(10, 100)
-                : (100 - i * 15).clamp(10, 100);
+            // 21 Sept 2026 — the `!useStats` branches used to divide the
+            // (currency-summed) total revenue by a rank-based number and a
+            // hardcoded 100/85/70 ladder, so a manager row showed a number
+            // and a bar that looked like real performance but were neither
+            // — every install, since the backend never sent manager_stats
+            // for `_managerStats` to be non-empty. Now that it does, this
+            // branch only runs if manager_stats itself is genuinely empty,
+            // and shows "no data" instead of a guess, same as the web
+            // leaderboard.
+            final topRevenue = useStats ? _toDouble(items.first['revenue']) : 0.0;
+            final revenue = useStats ? '${_toDouble(item['revenue']).toInt()}' : '—';
+            final pct = useStats && topRevenue > 0
+                ? (_toDouble(item['revenue']) / topRevenue * 100).clamp(10, 100)
+                : 10.0;
             final rankColors = [
               (ShadColors.goldSoft, ShadColors.gold, ShadColors.gold),
               (ShadColors.silverSoft, ShadColors.silver, ShadColors.silver),
