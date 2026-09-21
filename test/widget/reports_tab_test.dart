@@ -152,4 +152,60 @@ void main() {
     expect(find.text('50000'), findsNothing);
     expect(find.text('16666'), findsNothing);
   });
+
+  // 21 Sept 2026 — payments_by_month (used by both the revenue KPI card and
+  // the monthly-revenue chart above) sums every currency into one number
+  // with no currency attached at all. Same fix as manager_detail_page.dart:
+  // payments_by_month_by_currency drives a real biggest-currency headline
+  // on the KPI card and a currency toggle above the chart.
+  Future<void> pumpWithReports(WidgetTester tester, String reportsJson) async {
+    await tester.binding.setSurfaceSize(const Size(800, 2200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final httpClient = MockHttpClient();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/clients')) return jsonResponse('{"clients":[]}');
+      if (uri.path.endsWith('/account-managers')) return jsonResponse('{"managers":[]}');
+      return jsonResponse(reportsJson);
+    });
+    await pumpTab(tester, httpClient);
+  }
+
+  testWidgets('shows the largest currency total with its code on the revenue KPI card', (tester) async {
+    await pumpWithReports(tester,
+        '{"total_clients":0,"contracts_by_status":{"draft":1},"pending_approvals":0,"active_workspaces":0,'
+        '"payments_by_month_by_currency":{"2026-09":{"SAR":85000,"USD":6000}}}');
+
+    expect(find.textContaining('85.0K SAR'), findsOneWidget);
+  });
+
+  testWidgets('does not show currency chips above the chart when there is only one currency', (tester) async {
+    await pumpWithReports(tester,
+        '{"total_clients":0,"contracts_by_status":{"draft":1},"pending_approvals":0,"active_workspaces":0,'
+        '"payments_by_month_by_currency":{"2026-09":{"SAR":5000}}}');
+
+    // The KPI card's own text is "5.0K SAR" (one Text widget, not two), so
+    // an exact match on the bare code only finds something if a chip
+    // rendered one.
+    expect(find.text('SAR'), findsNothing);
+  });
+
+  testWidgets('shows a chip per currency, and switching the chart does not change the KPI headline', (tester) async {
+    await pumpWithReports(tester,
+        '{"total_clients":0,"contracts_by_status":{"draft":1},"pending_approvals":0,"active_workspaces":0,'
+        '"payments_by_month_by_currency":{"2026-08":{"SAR":1000,"USD":9000},"2026-09":{"SAR":2000,"USD":1000}}}');
+
+    // USD totals 10000 vs SAR's 3000, so USD is the KPI headline and starts
+    // selected on the chart.
+    expect(find.textContaining('10.0K USD'), findsOneWidget);
+    expect(find.text('SAR'), findsOneWidget);
+    expect(find.text('USD'), findsOneWidget);
+
+    await tester.tap(find.text('SAR'));
+    await tester.pumpAndSettle();
+
+    // Switching the chart's currency doesn't change which currency the KPI
+    // card headlines — that's always the biggest total overall.
+    expect(find.textContaining('10.0K USD'), findsOneWidget);
+  });
 }

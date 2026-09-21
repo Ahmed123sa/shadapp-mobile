@@ -29,11 +29,57 @@ class _ReportsTabState extends State<ReportsTab> {
   bool _loading = true;
 
   double _toDouble(dynamic value) => num.tryParse(value?.toString() ?? '')?.toDouble() ?? 0;
+
+  // Mirrors manager_detail_page.dart's _formatCurrency — same K/M shorthand
+  // so the two screens read consistently.
+  String _formatCurrency(double amount) {
+    if (amount >= 1000000) return '${(amount / 1000000).toStringAsFixed(1)}M';
+    if (amount >= 1000) return '${(amount / 1000).toStringAsFixed(1)}K';
+    return amount.toStringAsFixed(0);
+  }
+
   String? _error;
 
   Map<String, dynamic> _safeMap(dynamic value) {
     if (value is Map) return value.cast<String, dynamic>();
     return {};
+  }
+
+  // SAR/USD first (matches the web Finance page's card order), rest
+  // alphabetical — applied to whatever currencies actually show up in the
+  // data, not a fixed list.
+  List<String> _sortCurrencies(Iterable<String> currencies) {
+    const order = ['SAR', 'USD'];
+    final list = currencies.toList();
+    list.sort((a, b) {
+      final ai = order.indexOf(a);
+      final bi = order.indexOf(b);
+      if (ai != -1 || bi != -1) return (ai == -1 ? 99 : ai).compareTo(bi == -1 ? 99 : bi);
+      return a.compareTo(b);
+    });
+    return list;
+  }
+
+  // 21 Sept 2026 — shared by the KPI card and the revenue chart, both of
+  // which used to read payments_by_month (every currency summed into one
+  // number, no currency attached at all). Computed once per build so both
+  // call sites agree on the same currencies/totals/default.
+  (Map<String, Map<String, dynamic>>, List<String>, Map<String, double>, String?) _revenueByCurrency() {
+    final byMonth = _safeMap(_stats?['payments_by_month_by_currency'])
+        .map((month, byCur) => MapEntry(month, _safeMap(byCur)));
+    final currencySet = <String>{};
+    for (final byCur in byMonth.values) {
+      currencySet.addAll(byCur.keys);
+    }
+    final currencies = _sortCurrencies(currencySet);
+    final totals = <String, double>{
+      for (final cur in currencies)
+        cur: byMonth.values.fold<double>(0, (s, byCur) => s + _toDouble(byCur[cur])),
+    };
+    final defaultCurrency = currencies.isEmpty
+        ? null
+        : currencies.reduce((best, cur) => totals[cur]! > totals[best]! ? cur : best);
+    return (byMonth, currencies, totals, defaultCurrency);
   }
 
   String _selectedPeriod = 'all';
@@ -47,6 +93,9 @@ class _ReportsTabState extends State<ReportsTab> {
   List<Manager> _managers = [];
   List<Map<String, dynamic>> _managerStats = [];
   String _chartPeriod = '1y';
+  // 21 Sept 2026 — null means "no explicit pick yet"; the render below falls
+  // back to whichever currency has the largest total. See _revenueByCurrency.
+  String? _selectedRevenueCurrency;
 
   @override
   void initState() {
@@ -297,8 +346,18 @@ class _ReportsTabState extends State<ReportsTab> {
     final l10n = AppLocalizations.of(context)!;
     final c = _stats;
     final totalClients = '${c?['total_clients'] ?? 0}';
+    // 21 Sept 2026 — payments_by_month sums every currency into one number
+    // with no currency attached at all. payments_by_month_by_currency is the
+    // real fix (see _revenueByCurrency); payments_by_month itself stays
+    // untouched and is only used here as a fallback for a manager with no
+    // currency breakdown at all (older backend, or genuinely nothing
+    // approved), same as manager_detail_page.dart's incomeValue.
+    final (_, _, revenueTotalsByCurrency, defaultRevenueCurrency) = _revenueByCurrency();
     final payments = _safeMap(c?['payments_by_month']);
-    final totalRevenue = payments.isEmpty ? '0' : '${payments.values.map((v) => _toDouble(v)).reduce((a, b) => a + b).toInt()}';
+    final fallbackRevenue = payments.isEmpty ? 0.0 : payments.values.map((v) => _toDouble(v)).reduce((a, b) => a + b);
+    final revenueValue = defaultRevenueCurrency != null
+        ? '${_formatCurrency(revenueTotalsByCurrency[defaultRevenueCurrency]!)} $defaultRevenueCurrency'
+        : _formatCurrency(fallbackRevenue);
     final contracts = _safeMap(c?['contracts_by_status']);
     final totalContracts = '${contracts.values.map((v) => _toDouble(v)).reduce((a, b) => a + b).toInt()}';
     final pendingApprovals = '${c?['pending_approvals'] ?? 0}';
@@ -306,7 +365,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
     final kpis = [
       _kpiData('clients', l10n.reportsClients, totalClients, ShadColors.success, l10n.reportsDeltaNew, true),
-      _kpiData('revenue', l10n.reportsRevenue, totalRevenue.length > 3 ? '${totalRevenue.substring(0, totalRevenue.length - 3)}K' : totalRevenue, ShadColors.gold, l10n.reportsDeltaMonth, true),
+      _kpiData('revenue', l10n.reportsRevenue, revenueValue, ShadColors.gold, l10n.reportsDeltaMonth, true),
       _kpiData('contracts', l10n.reportsContracts, totalContracts, ShadColors.blue, l10n.reportsDeltaActive, true),
       _kpiData('pending', l10n.reportsPending, pendingApprovals, ShadColors.error, l10n.reportsNeedsAction, false),
       _kpiData('workspaces', l10n.reportsWorkspaces, activeWorkspaces, ShadColors.purple, l10n.reportsDeltaActivated, true),
@@ -330,15 +389,65 @@ class _ReportsTabState extends State<ReportsTab> {
   Widget _buildRevenueChart() {
     final l10n = AppLocalizations.of(context)!;
     final payments = _safeMap(_stats?['payments_by_month']);
+    final (byMonth, revenueCurrencies, _, defaultRevenueCurrency) = _revenueByCurrency();
+    final activeRevenueCurrency =
+        (_selectedRevenueCurrency != null && revenueCurrencies.contains(_selectedRevenueCurrency))
+            ? _selectedRevenueCurrency
+            : defaultRevenueCurrency;
+    // Falls back to the flat, currency-mixed payments_by_month only when
+    // there's no currency breakdown at all (older backend, or nothing
+    // approved yet) — same fallback rule as the KPI card above.
+    final chartData = activeRevenueCurrency != null
+        ? {for (final e in byMonth.entries) e.key: e.value[activeRevenueCurrency] ?? 0}
+        : payments;
+
     return _chartSection(
       title: l10n.reportsMonthlyRevenue,
       subtitle: l10n.reportsAcceptedPaymentsTotal,
       periodTabs: true,
-      child: SizedBox(
-        height: 130,
-        child: payments.isEmpty
-            ? reportsEmptyChart()
-            : buildRevenueLineChart(context, payments, _chartPeriod),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Chips only appear with more than one currency — a single
+          // currency needs no toggle, same rule as the dashboard's Reports
+          // page and manager_detail_page.dart. Kept on their own row (not
+          // crammed into the header next to the 6m/1y tabs) since that
+          // header Row doesn't wrap and is already tight on narrow screens.
+          if (revenueCurrencies.length > 1) ...[
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: revenueCurrencies
+                  .map((cur) => _currencyChip(cur, cur == activeRevenueCurrency))
+                  .toList(),
+            ),
+            const SizedBox(height: 8),
+          ],
+          SizedBox(
+            height: 130,
+            child: chartData.isEmpty
+                ? reportsEmptyChart()
+                : buildRevenueLineChart(context, chartData, _chartPeriod),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _currencyChip(String cur, bool active) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRevenueCurrency = cur),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        decoration: BoxDecoration(
+          color: active ? ShadColors.goldSoft : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
+        ),
+        child: Text(cur, style: TextStyle(
+          fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+          color: active ? ShadColors.gold : ShadColors.textSecondary,
+        )),
       ),
     );
   }
