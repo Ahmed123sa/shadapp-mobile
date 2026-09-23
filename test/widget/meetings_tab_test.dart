@@ -118,4 +118,30 @@ void main() {
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  // 23 Sept 2026 — the Edit/Completed/Cancel row used to inherit the
+  // app-wide OutlinedButtonThemeData padding (24px horizontal, sized for a
+  // single full-width button), which left too little room for three
+  // buttons side by side and made them collide on a real phone width.
+  testWidgets('the Edit/Completed/Cancel row renders without overflowing on a real phone width', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"meetings":[{"id":1,"title":"Future Sync","status":"scheduled","scheduled_at":"2030-01-01T10:00:00.000Z"}]}',
+      ),
+    );
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+
+    await pumpTab(tester, meetingProvider, contractProvider);
+
+    expect(tester.takeException(), isNull);
+    expect(find.widgetWithText(OutlinedButton, 'Edit'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Completed'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Cancel'), findsOneWidget);
+  });
 }

@@ -297,28 +297,47 @@ class _MeetingsTabState extends State<MeetingsTab> {
           ],
           if (isScheduled && !isSA) ...[
             const SizedBox(height: 12),
+            // 23 Sept 2026 — three buttons in equal Expanded thirds used to
+            // inherit the app-wide OutlinedButtonThemeData padding (24px
+            // horizontal, meant for a single full-width button), leaving
+            // almost no room for icon+label and causing them to collide.
+            // Same tighter-padding + explicit small-label-style override
+            // already used for multi-button rows elsewhere (see the
+            // Approve/Request-edit row in approvals_tab.dart).
             Row(children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showEditSheet(m),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: Text(l10n.edit),
+                  icon: const Icon(Icons.edit, size: 15),
+                  label: Text(l10n.edit, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _completeMeeting(m),
-                  icon: const Icon(Icons.check_circle_outline, size: 16, color: ShadColors.success),
-                  label: Text(l10n.meetingDone, style: const TextStyle(color: ShadColors.success)),
+                  icon: const Icon(Icons.check_circle_outline, size: 15, color: ShadColors.success),
+                  label: Text(l10n.meetingDone, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ShadColors.success)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _cancelMeeting(m),
-                  icon: const Icon(Icons.cancel_outlined, size: 16, color: ShadColors.error),
-                  label: Text(l10n.cancel, style: const TextStyle(color: ShadColors.error)),
+                  icon: const Icon(Icons.cancel_outlined, size: 15, color: ShadColors.error),
+                  label: Text(l10n.cancel, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ShadColors.error)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ),
             ]),
