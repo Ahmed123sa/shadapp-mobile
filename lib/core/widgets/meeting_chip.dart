@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../theme.dart';
 import '../helpers/meeting_helpers.dart';
+import 'status_badge.dart';
 
 class MeetingChip extends StatelessWidget {
   final Map<String, dynamic> metadata;
@@ -73,10 +74,26 @@ class MeetingChip extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+                // 23 Sept 2026 — a completed/cancelled meeting used to look
+                // exactly like an upcoming one here (only the Join pill
+                // below checked status). Now it gets the same StatusBadge
+                // as meetings_tab.dart, and its time line is dimmed. The
+                // backend keeps metadata.status in sync (Meeting::booted()).
+                Row(children: [
+                  Flexible(
+                    child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+                  ),
+                  if (status != 'scheduled') ...[
+                    const SizedBox(width: 6),
+                    StatusBadge(status: status, fontSize: 9),
+                  ],
+                ]),
                 if (timeText.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(timeText, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                  Text(timeText, style: TextStyle(
+                    fontSize: 10,
+                    color: status == 'scheduled' ? ShadColors.textSecondary : ShadColors.textDisabled,
+                  )),
                 ],
               ],
             ),

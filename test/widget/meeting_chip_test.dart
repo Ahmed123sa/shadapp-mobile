@@ -79,4 +79,48 @@ void main() {
     );
     expect(find.text('Join Now'), findsNothing);
   });
+
+  // 23 Sept 2026 — a completed/cancelled meeting used to look identical to an
+  // upcoming one in the chat (same "Today — 18:00 • 30m" line, no status at
+  // all). It now shows the same StatusBadge as the meetings tab.
+  testWidgets('shows a Completed badge for a completed meeting', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(metadata: {
+        'title': 'Kickoff',
+        'scheduled_at': iso(const Duration(hours: -1)),
+        'duration_minutes': 30,
+        'link': 'https://meet.example.com/x',
+        'status': 'completed',
+      }),
+    );
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Join Now'), findsNothing);
+  });
+
+  testWidgets('shows a Cancelled badge for a cancelled meeting', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(metadata: {
+        'title': 'Kickoff',
+        'scheduled_at': iso(const Duration(hours: 2)),
+        'status': 'cancelled',
+      }),
+    );
+    expect(find.text('Cancelled'), findsOneWidget);
+  });
+
+  testWidgets('shows no status badge for a scheduled meeting', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(metadata: {
+        'title': 'Kickoff',
+        'scheduled_at': iso(const Duration(hours: 2)),
+        'status': 'scheduled',
+      }),
+    );
+    expect(find.text('Scheduled'), findsNothing);
+    expect(find.text('Completed'), findsNothing);
+    expect(find.text('Cancelled'), findsNothing);
+  });
 }
