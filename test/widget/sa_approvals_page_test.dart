@@ -239,8 +239,8 @@ void main() {
     await pumpPage(tester, clientProvider, contractProvider, paymentProvider, approvalProvider);
 
     // 1 pending contract + 1 pending approval = 2 — what amCounts() reports
-    // for the same data. (Pending payments show in this list too but not in
-    // that badge — a separate, still-open question.)
+    // for the same data (it also counts payments with status 'pending',
+    // same as this list; there are none here).
     expect(find.text('2'), findsOneWidget);
   });
 

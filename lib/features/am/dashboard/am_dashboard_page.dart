@@ -13,6 +13,7 @@ import 'sa_approvals_page.dart';
 import 'sa_clients_page.dart';
 import 'sa_team_page.dart';
 import '../settings/admin_settings_page.dart';
+import '../../../data/approval_repository.dart';
 import '../../../data/client_repository.dart';
 import '../../../data/dashboard_repository.dart';
 import '../../../data/manager_repository.dart';
@@ -74,7 +75,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
   late final ContractProvider _childContractProvider = ContractProvider(api: _api);
   late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
-  late final ApprovalProvider _childApprovalProvider = ApprovalProvider();
+  late final ApprovalProvider _childApprovalProvider = ApprovalProvider(repository: ApprovalRepository(api: _api));
   late final NotificationProvider _notificationProvider =
       widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
   late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
