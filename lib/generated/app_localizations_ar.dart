@@ -539,6 +539,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingChipLabel => 'اجتماع';
 
   @override
+  String get meetingChipRescheduled => 'تم تغيير الميعاد';
+
+  @override
   String get passwordFieldLabel => 'كلمة المرور';
 
   @override

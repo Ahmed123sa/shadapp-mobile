@@ -539,6 +539,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingChipLabel => 'Meeting';
 
   @override
+  String get meetingChipRescheduled => 'Rescheduled';
+
+  @override
   String get passwordFieldLabel => 'Password';
 
   @override

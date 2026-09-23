@@ -123,4 +123,33 @@ void main() {
     expect(find.text('Completed'), findsNothing);
     expect(find.text('Cancelled'), findsNothing);
   });
+
+  // 23 Sept 2026 — a reschedule posts a fresh card flagged
+  // metadata.rescheduled; it says so, but a later status badge wins.
+  testWidgets('shows a Rescheduled pill on a reschedule card', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(metadata: {
+        'title': 'Kickoff',
+        'scheduled_at': iso(const Duration(days: 2)),
+        'status': 'scheduled',
+        'rescheduled': true,
+      }),
+    );
+    expect(find.text('Rescheduled'), findsOneWidget);
+  });
+
+  testWidgets('a completed reschedule card shows the status badge instead', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(metadata: {
+        'title': 'Kickoff',
+        'scheduled_at': iso(const Duration(hours: -1)),
+        'status': 'completed',
+        'rescheduled': true,
+      }),
+    );
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Rescheduled'), findsNothing);
+  });
 }

@@ -1142,6 +1142,12 @@ abstract class AppLocalizations {
   /// **'Meeting'**
   String get meetingChipLabel;
 
+  /// No description provided for @meetingChipRescheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescheduled'**
+  String get meetingChipRescheduled;
+
   /// No description provided for @passwordFieldLabel.
   ///
   /// In en, this message translates to:

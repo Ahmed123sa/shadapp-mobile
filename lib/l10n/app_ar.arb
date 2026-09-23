@@ -179,6 +179,7 @@
   "clientTypeIndividual": "فرد",
   "errorStateTitle": "حدث خطأ ما",
   "meetingChipLabel": "اجتماع",
+  "meetingChipRescheduled": "تم تغيير الميعاد",
   "passwordFieldLabel": "كلمة المرور",
   "passwordFieldHint": "أدخل كلمة المرور",
   "passwordStrengthWeak": "ضعيفة",

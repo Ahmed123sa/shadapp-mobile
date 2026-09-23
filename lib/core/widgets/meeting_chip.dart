@@ -17,6 +17,7 @@ class MeetingChip extends StatelessWidget {
     final scheduledAt = metadata['scheduled_at'] as String?;
     final duration = metadata['duration_minutes'] as int?;
     final status = metadata['status'] as String? ?? 'scheduled';
+    final rescheduled = metadata['rescheduled'] == true;
 
     String timeText = '';
     if (scheduledAt != null) {
@@ -86,6 +87,20 @@ class MeetingChip extends StatelessWidget {
                   if (status != 'scheduled') ...[
                     const SizedBox(width: 6),
                     StatusBadge(status: status, fontSize: 9),
+                  ] else if (rescheduled) ...[
+                    // 23 Sept 2026 — the backend posts a fresh card (with
+                    // metadata.rescheduled) when a meeting's time changes,
+                    // so the client notices; this pill says why it's there.
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: ShadColors.meetingBlueBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
+                      ),
+                      child: Text(l10n.meetingChipRescheduled, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
+                    ),
                   ],
                 ]),
                 if (timeText.isNotEmpty) ...[

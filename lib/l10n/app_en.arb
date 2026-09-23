@@ -179,6 +179,7 @@
   "clientTypeIndividual": "Individual",
   "errorStateTitle": "Something went wrong",
   "meetingChipLabel": "Meeting",
+  "meetingChipRescheduled": "Rescheduled",
   "passwordFieldLabel": "Password",
   "passwordFieldHint": "Enter your password",
   "passwordStrengthWeak": "Weak",
