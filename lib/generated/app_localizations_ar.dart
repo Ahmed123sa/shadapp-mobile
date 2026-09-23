@@ -4912,6 +4912,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reportsWorkspaces => 'مساحات';
 
   @override
+  String get saApprovalsApprovalLabel => 'موافقة';
+
+  @override
+  String saApprovalsApprovalPendingTitle(Object title) {
+    return 'في انتظار العميل — $title';
+  }
+
+  @override
   String saApprovalsContractApprovalTitle(Object title) {
     return 'اعتماد عقد — $title';
   }

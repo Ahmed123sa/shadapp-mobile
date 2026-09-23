@@ -9516,6 +9516,18 @@ abstract class AppLocalizations {
   /// **'Workspaces'**
   String get reportsWorkspaces;
 
+  /// No description provided for @saApprovalsApprovalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval'**
+  String get saApprovalsApprovalLabel;
+
+  /// No description provided for @saApprovalsApprovalPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting Client — {title}'**
+  String saApprovalsApprovalPendingTitle(Object title);
+
   /// No description provided for @saApprovalsContractApprovalTitle.
   ///
   /// In en, this message translates to:

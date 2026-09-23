@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import '../../../providers/approval_provider.dart';
 import '../../../providers/client_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/payment_provider.dart';
@@ -14,7 +15,8 @@ class SaApprovalsPage extends StatefulWidget {
   final ClientProvider? clientProvider;
   final ContractProvider? contractProvider;
   final PaymentProvider? paymentProvider;
-  const SaApprovalsPage({super.key, this.clientProvider, this.contractProvider, this.paymentProvider});
+  final ApprovalProvider? approvalProvider;
+  const SaApprovalsPage({super.key, this.clientProvider, this.contractProvider, this.paymentProvider, this.approvalProvider});
 
   @override
   State<SaApprovalsPage> createState() => _SaApprovalsPageState();
@@ -24,8 +26,15 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
+  late final ApprovalProvider _approvalProvider = widget.approvalProvider ?? ApprovalProvider();
   List<Map<String, dynamic>> _contracts = [];
   List<Map<String, dynamic>> _payments = [];
+  // 23 Sept 2026 — the "Approvals" badge on the AM dashboard counts pending
+  // Approval records (client-facing approval requests raised from a
+  // workspace's own Approvals tab) alongside pending contracts, but this
+  // screen used to only list contracts+payments — so the badge could say 2
+  // while this list showed 1. See _fetchApprovals.
+  List<Map<String, dynamic>> _approvals = [];
   bool _loading = true;
   int _filterIndex = 0;
 
@@ -50,10 +59,36 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
         AppLog.error('sa_approvals_page._load(payments)', e, s);
         _payments = [];
       }
+      try {
+        _approvals = await _fetchApprovals();
+      } catch (e, s) {
+        AppLog.error('sa_approvals_page._load(approvals)', e, s);
+        _approvals = [];
+      }
     } catch (e, s) {
       AppLog.error('sa_approvals_page._load', e, s);
     }
     if (mounted) setState(() => _loading = false);
+  }
+
+  // One request to /approvals/pending (already scoped server-side to this
+  // user's workspaces, same scope as the badge) instead of looping every
+  // client's workspace — that loop was N+1 and, since the per-workspace
+  // endpoint is paginated at 30, silently missed older pending approvals.
+  Future<List<Map<String, dynamic>>> _fetchApprovals() async {
+    final raw = await _approvalProvider.fetchAllPendingRaw();
+    return raw.whereType<Map>().map((a) {
+      final approval = Map<String, dynamic>.from(a);
+      final ws = approval['workspace'] is Map ? Map<String, dynamic>.from(approval['workspace'] as Map) : null;
+      final client = ws?['client'] is Map ? Map<String, dynamic>.from(ws!['client'] as Map) : null;
+      return <String, dynamic>{
+        'title': approval['title'] ?? '',
+        'company': client?['company_name'] ?? '',
+        'client': client,
+        'workspace_id': approval['workspace_id'] ?? ws?['id'],
+        'type': 'approval',
+      };
+    }).toList();
   }
 
   Future<List<Map<String, dynamic>>> _fetchContracts(List<String> statuses) async {
@@ -94,14 +129,15 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
     switch (_filterIndex) {
       case 1: return _contracts;
       case 2: return _payments.cast<Map<String, dynamic>>();
-      default: return [..._contracts, ..._payments.cast<Map<String, dynamic>>()];
+      case 3: return _approvals;
+      default: return [..._contracts, ..._payments.cast<Map<String, dynamic>>(), ..._approvals];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final total = _contracts.length + _payments.length;
+    final total = _contracts.length + _payments.length + _approvals.length;
     return RefreshIndicator(
       onRefresh: _load,
       child: _loading
@@ -139,6 +175,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
       (l10n.all, total),
       (l10n.saApprovalsContracts, _contracts.length),
       (l10n.saApprovalsPayments, _payments.length),
+      (l10n.approvals, _approvals.length),
     ];
     return Row(
       children: filters.asMap().entries.map((entry) {
@@ -167,17 +204,30 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
 
   Widget _approvalCard(Map<String, dynamic> item) {
     final l10n = AppLocalizations.of(context)!;
-    final isContract = item['type'] == 'contract';
-    final title = isContract ? l10n.saApprovalsContractApprovalTitle(item['title'].toString()) : l10n.saApprovalsPaymentApprovalTitle(item['company']?.toString() ?? '');
+    final type = item['type'] as String?;
+    final isContract = type == 'contract';
+    final isApproval = type == 'approval';
+    // 23 Sept 2026 — a third item type (pending Approval records, previously
+    // missing from this list entirely — see _fetchApprovals above) alongside
+    // the existing contract/payment two-way split.
+    final accentColor = isContract ? ShadColors.gold : (isApproval ? ShadColors.purple : ShadColors.sent);
+    final typeLabel = isContract ? l10n.saApprovalsContractLabel : (isApproval ? l10n.saApprovalsApprovalLabel : l10n.saApprovalsPaymentLabel);
+    final title = isContract
+        ? l10n.saApprovalsContractApprovalTitle(item['title'].toString())
+        : isApproval
+            ? l10n.saApprovalsApprovalPendingTitle(item['title'].toString())
+            : l10n.saApprovalsPaymentApprovalTitle(item['company']?.toString() ?? '');
     final subtitle = isContract
         ? '${item['company']} • ${double.tryParse(item['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${item['currency'] ?? ''}'
-        : '${item['currency'] ?? ''} ${(double.tryParse(item['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}';
+        : isApproval
+            ? '${item['company'] ?? ''}'
+            : '${item['currency'] ?? ''} ${(double.tryParse(item['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}';
 
     return GestureDetector(
       onTap: () {
         final wsId = item['workspace_id'];
         if (wsId == null) return;
-        final tab = isContract ? 2 : 3;
+        final tab = isContract ? 2 : (isApproval ? 4 : 3);
         context.push('/am/workspace/$wsId?tab=$tab');
       },
       child: Container(
@@ -192,7 +242,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
             width: 3,
             height: 56,
             decoration: BoxDecoration(
-              color: isContract ? ShadColors.gold : ShadColors.sent,
+              color: accentColor,
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
             ),
           ),
@@ -207,10 +257,10 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: (isContract ? ShadColors.gold : ShadColors.sent).withAlpha(20),
+                      color: accentColor.withAlpha(20),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(isContract ? l10n.saApprovalsContractLabel : l10n.saApprovalsPaymentLabel, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isContract ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo')),
+                    child: Text(typeLabel, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: accentColor, fontFamily: 'Archivo')),
                   ),
                 ]),
                 const SizedBox(height: 4),

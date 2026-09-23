@@ -4937,6 +4937,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportsWorkspaces => 'Workspaces';
 
   @override
+  String get saApprovalsApprovalLabel => 'Approval';
+
+  @override
+  String saApprovalsApprovalPendingTitle(Object title) {
+    return 'Awaiting Client — $title';
+  }
+
+  @override
   String saApprovalsContractApprovalTitle(Object title) {
     return 'Approve Contract — $title';
   }

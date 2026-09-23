@@ -28,6 +28,10 @@ class ApprovalProvider {
     }
   }
 
+  /// See [ApprovalRepository.fetchAllPendingRaw]. Doesn't touch
+  /// [approvals]/[isLoading]/[error] — the caller owns its own state.
+  Future<List<dynamic>> fetchAllPendingRaw() => _repo.fetchAllPendingRaw();
+
   Future<void> respond(int id, {required String action, String? reason}) =>
       _repo.respond(id, action: action, reason: reason);
 

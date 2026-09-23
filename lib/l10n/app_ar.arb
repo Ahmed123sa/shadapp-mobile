@@ -1612,6 +1612,8 @@
   "reportsThisMonth": "هذا الشهر",
   "reportsThisYear": "هذه السنة",
   "reportsWorkspaces": "مساحات",
+  "saApprovalsApprovalLabel": "موافقة",
+  "saApprovalsApprovalPendingTitle": "في انتظار العميل — {title}",
   "saApprovalsContractApprovalTitle": "اعتماد عقد — {title}",
   "saApprovalsContractLabel": "عقد",
   "saApprovalsContracts": "عقود",

@@ -1654,6 +1654,8 @@
   "reportsThisMonth": "This Month",
   "reportsThisYear": "This Year",
   "reportsWorkspaces": "Workspaces",
+  "saApprovalsApprovalLabel": "Approval",
+  "saApprovalsApprovalPendingTitle": "Awaiting Client — {title}",
   "saApprovalsContractApprovalTitle": "Approve Contract — {title}",
   "saApprovalsContractLabel": "Contract",
   "saApprovalsContracts": "Contracts",

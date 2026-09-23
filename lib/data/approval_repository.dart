@@ -13,6 +13,17 @@ class ApprovalRepository {
     return safeList(res['approvals']).map((j) => Approval.fromJson(j as Map<String, dynamic>)).toList();
   }
 
+  /// Every pending approval across all of the caller's workspaces in one
+  /// request (`/approvals/pending`, not paginated), each with its
+  /// `workspace.client` nested — raw maps, since [Approval] doesn't model
+  /// the workspace/client. Used by sa_approvals_page.dart's cross-workspace
+  /// queue instead of calling [fetchAll] once per workspace, which was both
+  /// N+1 and capped at the first 30 approvals per workspace.
+  Future<List<dynamic>> fetchAllPendingRaw() async {
+    final res = await _api.get('/approvals/pending');
+    return safeList(res['approvals']);
+  }
+
   /// Creates a new approval request, optionally with attachments — matches
   /// am/workspace/approvals_tab.dart's `_create`, which switches to a
   /// multipart request only when files are attached.

@@ -19,6 +19,7 @@ import '../../../data/manager_repository.dart';
 import '../../../data/meeting_repository.dart';
 import '../../../data/notification_repository.dart';
 import '../../../data/payment_repository.dart';
+import '../../../providers/approval_provider.dart';
 import '../../../providers/client_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/dashboard_provider.dart';
@@ -73,6 +74,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
   late final ContractProvider _childContractProvider = ContractProvider(api: _api);
   late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
+  late final ApprovalProvider _childApprovalProvider = ApprovalProvider();
   late final NotificationProvider _notificationProvider =
       widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
   late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
@@ -366,7 +368,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                       onManagerTap: _showManagerClients,
                       load: _load,
                     ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
+                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider, approvalProvider: _childApprovalProvider),
                     SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
                     SaTeamPage(managerProvider: _childManagerProvider, api: _api),
                     AdminSettingsPage(api: _api),
@@ -385,7 +387,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                       onOpenClient: _openClient,
                       load: _load,
                     ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider),
+                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider, approvalProvider: _childApprovalProvider),
                     _buildAmClientsTab(),
                     AdminSettingsPage(api: _api),
                   ],
