@@ -9,12 +9,17 @@
 //    the injected `_api` entirely — the seam commit changed this to read
 //    `_api.role` instead, which is identical in production (widget.api
 //    defaults to that same singleton) but makes it controllable from a test.
-//  - `_load()`'s non-SA branch calls `GET /clients` twice: once directly,
-//    once again inside `_fetchAllContracts`. Both call sites are stubbed
-//    identically here rather than "deduplicated".
 //  - A workspace-less client's `/all-meetings`/`/account-managers/:id` sheets
 //    aren't covered — those are exercised in the manager-clients/meetings
 //    tests below instead.
+//
+// 24 Sept 2026 (server-side-stats-plan.md, Stage 3) — `_load()` used to call
+// `GET /clients` twice (once directly, once again inside the now-deleted
+// `_fetchAllContracts()` N+1 loop over every client's workspace contracts).
+// That loop is gone: the four summary cards now come from one
+// `GET /dashboard/stats` call (stubbed below), and the "pending contracts"
+// preview list is derived from the already-fetched `/all-contracts` response
+// instead of a per-client request.
 //
 // Not covered here: the 60s notification/refresh Timer (disabled via
 // enablePolling: false, see reverb_service_test.dart / Step 0), Reverb
@@ -56,23 +61,31 @@ void main() {
     ApiClient().role = null;
   });
 
+  // Zeros everywhere — most tests here don't care about the four summary
+  // numbers, only about a specific list/action. Tests that DO care pass
+  // their own `statsJson`.
+  const zeroStatsJson =
+      '{"clients":{"total":0},"contracts":{"active":0,"awaiting_client":0},"payments":{"pending":0},'
+      '"approvals":{"pending_requests":0,"pending_contracts":0,"pending_payments":0,"total":0},'
+      '"revenue_this_month":{},"period":{"month":"2026-09","timezone":"Africa/Cairo"}}';
+
   void stubCommon(MockHttpClient httpClient, {
     String clientsJson = '{"clients":[]}',
-    String contractsPerWorkspaceJson = '{"contracts":[]}',
     String pendingPaymentsJson = '{"payments":[]}',
     String allContractsJson = '{"contracts":[]}',
     String managersJson = '{"managers":[]}',
+    String statsJson = zeroStatsJson,
   }) {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
       final path = (inv.positionalArguments[0] as Uri).path;
       if (path == '/clients') return jsonResponse(clientsJson);
-      if (path.contains('/workspaces/') && path.endsWith('/contracts')) return jsonResponse(contractsPerWorkspaceJson);
       if (path == '/payments/pending') return jsonResponse(pendingPaymentsJson);
       if (path == '/all-contracts') return jsonResponse(allContractsJson);
       if (path == '/account-managers') return jsonResponse(managersJson);
       if (path == '/notifications') return jsonResponse('{"unread_count":"0"}');
       if (path == '/badge-counts') return jsonResponse('{"approvals":"0","chat":"0"}');
       if (path == '/all-meetings') return jsonResponse('{"meetings":[]}');
+      if (path == '/dashboard/stats') return jsonResponse(statsJson);
       return jsonResponse('{}');
     });
   }
@@ -102,14 +115,40 @@ void main() {
     stubCommon(
       httpClient,
       clientsJson: '{"clients":[{"id":1,"company_name":"Acme","contact_person":"Ali","workspace":{"id":5,"status":"active"}}]}',
-      contractsPerWorkspaceJson: '{"contracts":[{"id":9,"title":"MSA","status":"company_approved","value":1000,"currency":"SAR"}]}',
       pendingPaymentsJson: '{"payments":[{"id":2,"amount":"500","currency":"SAR","workspace":{"client":{"company_name":"Acme"}}}]}',
+      statsJson: '{"clients":{"total":1},"contracts":{"active":0,"awaiting_client":0},"payments":{"pending":1},'
+          '"approvals":{"pending_requests":0,"pending_contracts":0,"pending_payments":1,"total":1},'
+          '"revenue_this_month":{},"period":{"month":"2026-09","timezone":"Africa/Cairo"}}',
     );
 
     await pumpPage(tester, api);
 
     expect(find.text('Acme'), findsWidgets); // client card on the AM home tab
-    expect(find.text('1'), findsWidgets); // Total Clients stat
+    expect(find.text('1'), findsWidgets); // Total Clients stat, from GET /dashboard/stats
+  });
+
+  // server-side-stats-plan.md, Stage 3 (M1) — the whole point of this stage:
+  // the client list the parent fetches is still capped at whatever page size
+  // the server gives back, but the "Total Clients" card must show the real,
+  // uncapped count from GET /dashboard/stats, not `allClients.length`.
+  testWidgets('total clients card reflects /dashboard/stats even when the fetched client list is smaller', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    stubCommon(
+      httpClient,
+      clientsJson: '{"clients":[{"id":1,"company_name":"Acme","contact_person":"Ali"}]}',
+      statsJson: '{"clients":{"total":57},"contracts":{"active":40,"awaiting_client":3},"payments":{"pending":9},'
+          '"approvals":{"pending_requests":1,"pending_contracts":3,"pending_payments":9,"total":13},'
+          '"revenue_this_month":{},"period":{"month":"2026-09","timezone":"Africa/Cairo"}}',
+    );
+
+    await pumpPage(tester, api);
+
+    expect(find.text('57'), findsOneWidget); // Total Clients — not "1" (the fetched list's length)
+    expect(find.text('40'), findsOneWidget); // Active Contracts
+    expect(find.text('9'), findsOneWidget); // Pending Payments
+    expect(find.text('13'), findsOneWidget); // Pending Approvals — approvals.total, not just contracts+payments
   });
 
   testWidgets('SA branch loads account managers instead of a raw client list', (tester) async {
@@ -125,6 +164,26 @@ void main() {
 
     expect(find.text('Sara Manager'), findsOneWidget);
     expect(find.text('sara@x.com'), findsOneWidget);
+  });
+
+  // server-side-stats-plan.md, Stage 3 (M5) — the SA home tab used to sum
+  // managers' `managed_clients_count` (which counts archived clients too,
+  // W5/M5's bug); it must show /dashboard/stats' clients.total instead.
+  testWidgets('SA total clients card reflects /dashboard/stats, not summed managed_clients_count', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'super_admin';
+    stubCommon(
+      httpClient,
+      managersJson: '{"managers":[{"id":1,"name":"Sara Manager","email":"sara@x.com","managed_clients_count":4}]}',
+      statsJson: '{"clients":{"total":91},"contracts":{"active":0,"awaiting_client":0},"payments":{"pending":0},'
+          '"approvals":{"pending_requests":0,"pending_contracts":0,"pending_payments":0,"total":0},'
+          '"revenue_this_month":{},"period":{"month":"2026-09","timezone":"Africa/Cairo"}}',
+    );
+
+    await pumpPage(tester, api);
+
+    expect(find.text('91'), findsOneWidget); // Total Clients — not "4" (managed_clients_count)
   });
 
   testWidgets('opening a client with an existing workspace navigates without creating one', (tester) async {
