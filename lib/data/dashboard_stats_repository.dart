@@ -16,9 +16,9 @@ class DashboardStatsRepository {
   /// [DashboardRepository.fetchBadgeCounts]: a small, stable, nested bag of
   /// counts/sums with no behavior worth wrapping in a class. See the web's
   /// `DashboardStats` type (src/types/index.ts) for the exact shape:
-  /// `{clients:{total}, contracts:{active,awaiting_client},
-  /// payments:{pending}, approvals:{pending_requests,pending_contracts,
-  /// pending_payments,total}, revenue_this_month:{<currency>:amount},
-  /// period:{month,timezone}}`.
+  /// clients.total, contracts.active/awaiting_client, payments.pending,
+  /// approvals.pending_requests/pending_contracts/pending_payments/total,
+  /// revenue_this_month (a currency-code-to-amount map, e.g.
+  /// `{"SAR": 12500, "USD": 3000}`), and period.month/timezone.
   Future<Map<String, dynamic>> fetchStats() => _api.get('/dashboard/stats');
 }
