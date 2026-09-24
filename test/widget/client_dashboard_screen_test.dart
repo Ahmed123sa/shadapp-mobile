@@ -55,12 +55,13 @@ void main() {
     String clientJson = '{"client":{"id":10,"signed_at":"2026-01-01T00:00:00Z","workspace":{"id":5,"status":"active","contracts":[],"payments":[]}}}',
     String subUserJson = '{"sub_user":{"id":1,"permissions":{}}}',
     int unreadNotifs = 0,
+    String badgeCountsJson = '{"contracts":"0","payments":"0","approvals":"0","files":"0","chat":"0"}',
   }) {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
       final path = (inv.positionalArguments[0] as Uri).path;
       if (path == '/clients/10') return jsonResponse(clientJson);
       if (path == '/notifications') return jsonResponse('{"unread_count":"$unreadNotifs"}');
-      if (path == '/badge-counts') return jsonResponse('{"contracts":"0","payments":"0","approvals":"0","files":"0"}');
+      if (path == '/badge-counts') return jsonResponse(badgeCountsJson);
       if (path == '/sub-users/1') return jsonResponse(subUserJson);
       if (path == '/workspaces/5/chat') return jsonResponse('{"messages":[]}');
       if (path == '/workspaces/5/contracts') return jsonResponse('{"contracts":[]}');
@@ -147,6 +148,24 @@ void main() {
     await pumpPage(tester, api);
 
     expect(find.text('3'), findsOneWidget);
+  });
+
+  // server-side-stats-plan.md, Stage 3 (M8) — the chat nav badge used to be
+  // computed by downloading the workspace's entire chat history and
+  // filtering it client-side (a second, redundant fetch alongside the one
+  // the always-mounted ChatPage tab already makes for its own message list).
+  // It must now come straight from /badge-counts' 'chat' field — the same
+  // count DashboardController::clientCounts() already computes server-side.
+  testWidgets('unread chat badge comes from /badge-counts', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient, badgeCountsJson: '{"contracts":"0","payments":"0","approvals":"0","files":"0","chat":"5"}');
+
+    await pumpPage(tester, api);
+
+    expect(find.text('5'), findsOneWidget); // chat tab's badge count
   });
 
   testWidgets('sub-user role loads its own permissions via /sub-users/:id', (tester) async {

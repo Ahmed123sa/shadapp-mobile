@@ -309,17 +309,16 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     } catch (e, s) {
       AppLog.error('client_dashboard._loadNotifs(unread)', e, s);
     }
-    final wsId = _api.workspaceId;
-    if (wsId != null) {
-      try {
-        final messages = await _childChatProvider.fetchMessages(wsId);
-        _unreadChat = messages.where((m) => m['sender_type'] != 'App\\Models\\Client' && m['read_at'] == null).length;
-      } catch (e, s) {
-        AppLog.error('client_dashboard._loadNotifs(chat)', e, s);
-      }
-    }
     try {
       final data = await _dashboardProvider.fetchBadgeCounts();
+      // 24 Sept 2026 (server-side-stats-plan.md, Stage 3, M8) — was a
+      // separate _childChatProvider.fetchMessages(wsId) call that downloaded
+      // the workspace's ENTIRE chat history just to filter+count it here.
+      // DashboardController::clientCounts() already computes this exact
+      // count server-side (staff messages with read_at null) for the 'chat'
+      // key below, so this now reuses the fetchBadgeCounts() call this
+      // method was already making, at no extra request.
+      _unreadChat = int.tryParse(data['chat']?.toString() ?? '') ?? 0;
       _badgeContracts = int.tryParse(data['contracts']?.toString() ?? '') ?? 0;
       _badgePayments = int.tryParse(data['payments']?.toString() ?? '') ?? 0;
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
