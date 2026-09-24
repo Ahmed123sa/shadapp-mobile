@@ -27,15 +27,19 @@ class ClientRepository {
     return safeList(res['clients']);
   }
 
-  /// Loops through every page of the unfiltered `/clients` list, combining
-  /// results into one flat raw list — used by sa_approvals_page.dart, which
-  /// needs every client (regardless of manager) to build its approvals
-  /// queue. Matches the original inline pagination loop exactly.
-  Future<List<dynamic>> fetchAllPaginatedRaw() async {
+  /// Loops through every page of the `/clients` list, combining results into
+  /// one flat raw list — used by sa_approvals_page.dart (unfiltered, to
+  /// build its approvals queue across every manager) and, with [managerId],
+  /// by sa_clients_page.dart (server-side-stats-plan.md, Stage 3, M6): that
+  /// screen used to read only page 1 (a hard 30-client cap), so a company
+  /// with more clients than that had ones simply missing from the list, not
+  /// just undercounted. Matches the original inline pagination loop exactly.
+  Future<List<dynamic>> fetchAllPaginatedRaw({int? managerId}) async {
     final all = <dynamic>[];
     var page = 1;
     while (true) {
-      final res = await _api.get('/clients?page=$page');
+      final managerQuery = managerId != null ? '&manager_id=$managerId' : '';
+      final res = await _api.get('/clients?page=$page$managerQuery');
       final batch = safeList(res['clients']);
       if (batch.isEmpty) break;
       all.addAll(batch);

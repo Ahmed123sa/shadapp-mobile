@@ -53,7 +53,13 @@ class _SaClientsPageState extends State<SaClientsPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final clients = await _clientProvider.fetchClientsRaw(managerId: _selectedManagerId);
+      // server-side-stats-plan.md, Stage 3 (M6) — was fetchClientsRaw(), a
+      // single page (server-side hard cap of 30). A company with more
+      // clients than that had the rest simply missing from this list (not
+      // just from a count), and the filter-pill counts below were computed
+      // from that same incomplete list. Every page, still scoped to the
+      // selected manager when one is chosen.
+      final clients = await _clientProvider.fetchAllClientsPaginatedRaw(managerId: _selectedManagerId);
       if (mounted) setState(() { _allClients = clients.cast<Map<String, dynamic>>(); });
     } catch (e, s) {
       AppLog.error('sa_clients_page._load', e, s);

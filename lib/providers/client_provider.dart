@@ -47,9 +47,9 @@ class ClientProvider {
   /// [ClientRepository.fetchAllRaw].
   Future<List<dynamic>> fetchClientsRaw({int? managerId}) => _repo.fetchAllRaw(managerId: managerId);
 
-  /// Every client across every page, unfiltered — see
+  /// Every client across every page, optionally scoped to one manager — see
   /// [ClientRepository.fetchAllPaginatedRaw].
-  Future<List<dynamic>> fetchAllClientsPaginatedRaw() => _repo.fetchAllPaginatedRaw();
+  Future<List<dynamic>> fetchAllClientsPaginatedRaw({int? managerId}) => _repo.fetchAllPaginatedRaw(managerId: managerId);
 
   /// Raw `/clients/:id/profile` envelope — see [ClientRepository.fetchProfile].
   Future<Map<String, dynamic>> fetchClientProfile(int clientId) => _repo.fetchProfile(clientId);

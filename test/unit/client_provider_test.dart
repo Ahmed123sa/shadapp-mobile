@@ -79,6 +79,18 @@ void main() {
     expect(all, hasLength(2));
   });
 
+  test('fetchAllClientsPaginatedRaw forwards managerId to the repository', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      expect(uri.query, 'page=1&manager_id=7');
+      return jsonResponse('{"clients":[{"id":1}]}');
+    });
+
+    final all = await provider.fetchAllClientsPaginatedRaw(managerId: 7);
+
+    expect(all, hasLength(1));
+  });
+
   test('updateClient puts the body and returns the parsed client', () async {
     when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
       (_) async => jsonResponse('{"client":{"id":5,"company_name":"Renamed"}}'),

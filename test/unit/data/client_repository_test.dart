@@ -53,6 +53,26 @@ void main() {
     verify(() => httpClient.get(any(), headers: any(named: 'headers'))).called(1);
   });
 
+  // server-side-stats-plan.md, Stage 3 (M6) — sa_clients_page.dart's manager
+  // filter has to survive across every page, not just page 1.
+  test('fetchAllPaginatedRaw includes manager_id on every page when given', () async {
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      call++;
+      final uri = inv.positionalArguments[0] as Uri;
+      expect(uri.query, 'page=$call&manager_id=7');
+      if (call == 1) {
+        return jsonResponse('{"clients":{"data":[{"id":1}],"last_page":2}}');
+      }
+      return jsonResponse('{"clients":{"data":[{"id":2}],"last_page":2}}');
+    });
+
+    final all = await repo.fetchAllPaginatedRaw(managerId: 7);
+
+    expect(all, hasLength(2));
+    expect(call, 2);
+  });
+
   test('fetchProfile hits /clients/:id/profile', () async {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse('{"client":{"id":9},"stats":{},"location":{}}'),
