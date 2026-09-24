@@ -44,6 +44,29 @@ void main() {
     expect(find.text('Past Sync'), findsOneWidget);
   });
 
+  // 23 Sept 2026 — a super admin's tab used to load /all-meetings and show
+  // every client's meetings inside this one workspace.
+  testWidgets('a super admin sees only this workspace\'s meetings', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'super_admin';
+    final requested = <Uri>[];
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      requested.add(inv.positionalArguments.first as Uri);
+      return jsonResponse(
+        '{"meetings":[{"id":1,"title":"Future Sync","status":"scheduled","scheduled_at":"2030-01-01T10:00:00.000Z"}]}',
+      );
+    });
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+
+    await pumpTab(tester, meetingProvider, contractProvider);
+
+    expect(requested.map((u) => u.path), everyElement(endsWith('/workspaces/5/meetings')));
+    expect(requested.any((u) => u.path.contains('all-meetings')), isFalse);
+    expect(find.text('Future Sync'), findsOneWidget);
+  });
+
   testWidgets('shows the empty state when there are no meetings', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

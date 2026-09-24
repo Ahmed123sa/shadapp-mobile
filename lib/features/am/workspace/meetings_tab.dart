@@ -37,12 +37,12 @@ class _MeetingsTabState extends State<MeetingsTab> {
   }
 
   Future<void> _load() async {
-    final isSA = _api.role == 'super_admin';
     setState(() { if (_meetings.isEmpty) _loading = true; _error = null; });
     try {
-      _meetings = isSA
-          ? await _meetingProvider.fetchAllWorkspacesRaw()
-          : await _meetingProvider.fetchForWorkspaceRaw((widget.workspaceId ?? _api.workspaceId)!);
+      // 23 Sept 2026 - a super admin used to load /all-meetings here, so this
+      // workspace's tab listed every client's meetings. Everyone now loads
+      // this workspace's meetings only.
+      _meetings = await _meetingProvider.fetchForWorkspaceRaw((widget.workspaceId ?? _api.workspaceId)!);
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)?.amMeetingsLoadFailed;
     }
