@@ -60,7 +60,10 @@ class _SignatureTabState extends State<SignatureTab> {
       });
       if (sigData != null && sigData.isNotEmpty) {
         if (sigData.startsWith('http') || sigData.startsWith('/')) {
-          setState(() => _existingSigUrl = _api.resolveFileUrl(sigData));
+          // signature_url: the backend's signed link - /storage/... doesn't
+          // exist in production (23 Sept 2026).
+          final signedUrl = client?['signature_url'] as String?;
+          setState(() => _existingSigUrl = signedUrl ?? _api.resolveFileUrl(sigData));
         } else {
           setState(() => _existingSigText = sigData);
         }

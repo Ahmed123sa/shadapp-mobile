@@ -243,12 +243,16 @@ class _ContractsTabState extends State<ContractsTab> {
   Future<void> _companyApproveWithSignature(Map<String, dynamic> contract) async {
     final messenger = ScaffoldMessenger.of(context);
     String? savedSignature;
+    // signature_url: the backend's signed link for showing an uploaded
+    // image. /storage/... doesn't exist in production (23 Sept 2026).
+    String? savedSignatureUrl;
 
     try {
       final me = await _contractProvider.fetchCurrentUser();
       final user = me['user'] as Map<String, dynamic>?;
       if (user != null) {
         savedSignature = user['signature_data'] as String?;
+        savedSignatureUrl = user['signature_url'] as String?;
       }
     } catch (e, s) {
       // Falls through to the manual signature pad, which is a safe default.
@@ -259,6 +263,7 @@ class _ContractsTabState extends State<ContractsTab> {
 
     if (savedSignature != null && savedSignature.isNotEmpty) {
       final sig = savedSignature;
+      final sigUrl = savedSignatureUrl;
       final useSaved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -272,7 +277,7 @@ class _ContractsTabState extends State<ContractsTab> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Image.network(
-                  sig.startsWith('http') ? sig : '${_api.baseUrl.replaceAll('/api', '')}$sig',
+                  sigUrl ?? (sig.startsWith('http') ? sig : '${_api.baseUrl.replaceAll('/api', '')}$sig'),
                   height: 50, fit: BoxFit.contain,
                 ),
               )

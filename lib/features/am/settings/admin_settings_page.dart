@@ -81,7 +81,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final sigData = user['signature_data'] as String?;
       if (sigData != null && sigData.isNotEmpty) {
         if (sigData.startsWith('http') || sigData.startsWith('/storage')) {
-          _existingSigUrl = sigData.startsWith('http') ? sigData : '${_api.baseUrl.replaceAll('/api', '')}$sigData';
+          // signature_url: the backend's signed link — /storage/... doesn't
+          // exist in production (23 Sept 2026).
+          _existingSigUrl = user['signature_url'] as String? ??
+              (sigData.startsWith('http') ? sigData : '${_api.baseUrl.replaceAll('/api', '')}$sigData');
         } else {
           _existingSigText = sigData;
         }
