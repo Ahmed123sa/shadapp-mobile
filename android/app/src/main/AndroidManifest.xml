@@ -45,5 +45,17 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- 23 Sept 2026: Android 11+ hides other apps from canLaunchUrl()
+             unless they're declared here, so every "open / download" button
+             (files, contracts, certificates, meeting links, maps) returned
+             false and did nothing. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
     </queries>
 </manifest>
