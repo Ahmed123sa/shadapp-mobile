@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/helpers/client_status.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../models/manager.dart';
@@ -126,8 +127,8 @@ class _SaClientsPageState extends State<SaClientsPage> {
     }
     switch (_filterIndex) {
       case 1: return filtered.where((c) => (c['workspace'] as Map<String, dynamic>?)?['status'] == 'active').toList();
-      case 2: return filtered.where((c) => c['signed_at'] == null).toList();
-      case 3: return filtered.where((c) => c['signed_at'] != null && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').toList();
+      case 2: return filtered.where((c) => !clientHasSignedContract(c)).toList();
+      case 3: return filtered.where((c) => clientHasSignedContract(c) && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').toList();
       default: return filtered;
     }
   }
@@ -232,8 +233,8 @@ class _SaClientsPageState extends State<SaClientsPage> {
   Widget _buildPillsFilter() {
     final l10n = AppLocalizations.of(context)!;
     final active = _allClients.where((c) => (c['workspace'] as Map<String, dynamic>?)?['status'] == 'active').length;
-    final pending = _allClients.where((c) => c['signed_at'] == null).length;
-    final review = _allClients.where((c) => c['signed_at'] != null && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').length;
+    final pending = _allClients.where((c) => !clientHasSignedContract(c)).length;
+    final review = _allClients.where((c) => clientHasSignedContract(c) && (c['workspace'] as Map<String, dynamic>?)?['status'] != 'active').length;
     final filters = [
       (l10n.all, _allClients.length),
       (l10n.active, active),
@@ -275,7 +276,7 @@ class _SaClientsPageState extends State<SaClientsPage> {
     final name = client['company_name'] as String? ?? '';
     final person = client['contact_person'] as String? ?? '';
     final phone = client['phone'] as String?;
-    final signedAt = client['signed_at'] as String?;
+    final contracted = clientHasSignedContract(client);
     final initials = name.isNotEmpty ? name.substring(0, name.length.clamp(0, 2)).toUpperCase() : '?';
 
     return GestureDetector(
@@ -321,12 +322,12 @@ class _SaClientsPageState extends State<SaClientsPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: (wsActive ? ShadColors.success : signedAt == null ? ShadColors.gold : ShadColors.sent).withAlpha(20),
+                  color: (wsActive ? ShadColors.success : !contracted ? ShadColors.gold : ShadColors.sent).withAlpha(20),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  wsActive ? l10n.active : signedAt == null ? l10n.pending : l10n.underReview,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: wsActive ? ShadColors.success : signedAt == null ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo'),
+                  wsActive ? l10n.active : !contracted ? l10n.pending : l10n.underReview,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: wsActive ? ShadColors.success : !contracted ? ShadColors.gold : ShadColors.sent, fontFamily: 'Archivo'),
                 ),
               ),
               const SizedBox(height: 4),

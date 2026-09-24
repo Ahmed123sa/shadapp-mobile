@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/helpers/client_status.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 
@@ -298,7 +299,7 @@ Widget _clientCard(BuildContext context, ApiClient api, Map<String, dynamic> cli
   final name = client['company_name'] as String? ?? '';
   final person = client['contact_person'] as String? ?? '';
   final paymentStatus = client['payment_status'] as String?;
-  final signedAt = client['signed_at'] as String?;
+  final contracted = clientHasSignedContract(client);
 
   return Container(
     margin: const EdgeInsets.only(bottom: 8),
@@ -358,7 +359,7 @@ Widget _clientCard(BuildContext context, ApiClient api, Map<String, dynamic> cli
             spacing: 6,
             runSpacing: 4,
             children: [
-              _statusChip(Icons.description_outlined, signedAt != null ? l10n.amStatusContracted : l10n.amStatusNotContracted, signedAt != null ? ShadColors.success : ShadColors.textDisabled),
+              _statusChip(Icons.description_outlined, contracted ? l10n.amStatusContracted : l10n.amStatusNotContracted, contracted ? ShadColors.success : ShadColors.textDisabled),
               _statusChip(Icons.payment, paymentStatus == 'approved' ? l10n.amStatusPaid : paymentStatus == 'pending' ? l10n.amStatusPending : '—',
                 paymentStatus == 'approved' ? ShadColors.success : paymentStatus == 'pending' ? ShadColors.warning : ShadColors.textDisabled),
               _statusChip(wsActive ? Icons.check_circle : Icons.schedule, wsActive ? l10n.amStatusActive : l10n.amStatusPending,
