@@ -92,4 +92,63 @@ void main() {
 
     expect(find.text('No events'), findsOneWidget);
   });
+
+  // 24 Sept 2026 - a contract with neither date used to be skipped; it now
+  // shows once, on the day it was signed off (falling back to created_at).
+  testWidgets('shows a contract that has no start or end date', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path.endsWith('/contracts')) {
+        return jsonResponse(
+          '{"contracts":[{"id":2,"title":"Retainer","status":"company_approved","created_at":"2026-09-01T09:00:00Z","company_signed_at":"2026-09-05T09:00:00Z"}]}',
+        );
+      }
+      return jsonResponse('{"meetings":[],"payments":[],"approvals":[]}');
+    });
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+    final paymentProvider = PaymentProvider(repository: PaymentRepository(api: api));
+    final approvalProvider = ApprovalProvider(repository: ApprovalRepository(api: api));
+
+    await pumpTab(tester, meetingProvider, contractProvider, paymentProvider, approvalProvider, api);
+
+    expect(find.textContaining('Contract: Retainer'), findsOneWidget);
+    expect(find.text('No events'), findsNothing);
+  });
+
+  // 24 Sept 2026 - each provider swallows its own fetch error, so a failed
+  // section used to come out silently empty. It now shows the error state.
+  testWidgets('shows an error with retry when a section fails to load', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    var failPayments = true;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path.endsWith('/payments') && failPayments) {
+        return jsonResponse('{"message":"Server error"}', 500);
+      }
+      if (path.endsWith('/meetings')) {
+        return jsonResponse('{"meetings":[{"id":1,"title":"Kickoff","status":"scheduled","scheduled_at":"2026-09-01T10:00:00Z"}]}');
+      }
+      return jsonResponse('{"contracts":[],"payments":[],"approvals":[]}');
+    });
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+    final paymentProvider = PaymentProvider(repository: PaymentRepository(api: api));
+    final approvalProvider = ApprovalProvider(repository: ApprovalRepository(api: api));
+
+    await pumpTab(tester, meetingProvider, contractProvider, paymentProvider, approvalProvider, api);
+
+    expect(find.text('Failed to load data'), findsOneWidget);
+    expect(find.textContaining('Kickoff'), findsNothing);
+
+    failPayments = false;
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Failed to load data'), findsNothing);
+    expect(find.textContaining('Kickoff'), findsOneWidget);
+  });
 }

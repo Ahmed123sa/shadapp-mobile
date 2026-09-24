@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../providers/approval_provider.dart';
 import '../../../providers/contract_provider.dart';
@@ -39,6 +40,7 @@ class _CalendarTabState extends State<CalendarTab> {
   late final ApprovalProvider _approvalProvider = widget.approvalProvider ?? ApprovalProvider();
   List<Map<String, dynamic>> _events = [];
   bool _loading = true;
+  String? _error;
   String _filter = 'all';
 
   @override
@@ -50,7 +52,7 @@ class _CalendarTabState extends State<CalendarTab> {
   Future<void> _load() async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
-    setState(() => _loading = true);
+    setState(() { _loading = true; _error = null; });
     _events = [];
 
     await _meetingProvider.fetchForWorkspace(wsId);
@@ -87,6 +89,23 @@ class _CalendarTabState extends State<CalendarTab> {
           'date': c['end_date'],
           'ref': c['reference_no'],
         });
+      }
+      // 24 Sept 2026 - start/end dates are optional (and the "show contract
+      // dates" setting can hide them), so a contract with neither never
+      // appeared here. It now shows once, on the day it was signed off or,
+      // failing that, created - the same rule as the web calendar.
+      if (c['start_date'] == null && c['end_date'] == null) {
+        final fallback = c['company_signed_at'] ?? c['created_at'];
+        if (fallback != null) {
+          _events.add({
+            'id': c['id'],
+            'title': '${l10n.calendarContract}: ${c['title']}',
+            'type': 'contract',
+            'status': c['status'],
+            'date': fallback,
+            'ref': c['reference_no'],
+          });
+        }
       }
     }
 
@@ -125,12 +144,23 @@ class _CalendarTabState extends State<CalendarTab> {
       return da.compareTo(db);
     });
 
-    if (mounted) setState(() => _loading = false);
+    // 24 Sept 2026 - each provider swallows its own fetch error, so a failed
+    // section used to just come out empty with no message, looking like
+    // there was nothing to show. Any failure now shows the error state with
+    // a retry, the same as the web calendar.
+    final failed = [_meetingProvider.error, _contractProvider.error, _paymentProvider.error, _approvalProvider.error]
+        .any((e) => e != null);
+    if (mounted) {
+      setState(() {
+        _loading = false;
+        if (failed) _error = l10n.dataLoadFailed;
+      });
+    }
   }
 
   List<Map<String, dynamic>> get _filtered {
     if (_filter == 'all') return _events;
-    return _events.where((e) => e['type'] == _filter || (_filter == 'contract' && (e['type'] == 'contract_start' || e['type'] == 'contract_deadline'))).toList();
+    return _events.where((e) => e['type'] == _filter || (_filter == 'contract' && (e['type'] == 'contract_start' || e['type'] == 'contract_deadline' || e['type'] == 'contract'))).toList();
   }
 
   String _formatDate(String? dt, AppLocalizations l10n) {
@@ -157,6 +187,7 @@ class _CalendarTabState extends State<CalendarTab> {
       case 'meeting': return ShadColors.primary;
       case 'contract_start': return ShadColors.success;
       case 'contract_deadline': return ShadColors.error;
+      case 'contract': return ShadColors.sent;
       case 'approval': return ShadColors.calendarMeeting;
       case 'payment': return ShadColors.gold;
       default: return ShadColors.textSecondary;
@@ -168,6 +199,7 @@ class _CalendarTabState extends State<CalendarTab> {
       case 'meeting': return Icons.videocam;
       case 'contract_start': return Icons.play_circle;
       case 'contract_deadline': return Icons.warning_rounded;
+      case 'contract': return Icons.description;
       case 'approval': return Icons.check_circle;
       case 'payment': return Icons.payments;
       default: return Icons.event;
@@ -177,6 +209,7 @@ class _CalendarTabState extends State<CalendarTab> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
+    if (_error != null) return ErrorState(message: _error!, onRetry: _load);
     final l10n = AppLocalizations.of(context)!;
 
     return Column(children: [

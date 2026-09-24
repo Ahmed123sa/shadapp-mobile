@@ -1294,6 +1294,7 @@
   "calendarAllEvents": "All Events",
   "calendarApproval": "Approval",
   "calendarApprovals": "Approvals",
+  "calendarContract": "Contract",
   "calendarContractEndLegend": "Contract End",
   "calendarContractStartLegend": "Contract Start",
   "calendarDateFormat": "{weekday}, {year}/{month}/{day}",

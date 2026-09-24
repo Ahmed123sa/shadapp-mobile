@@ -3776,6 +3776,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get calendarApprovals => 'موافقات';
 
   @override
+  String get calendarContract => 'عقد';
+
+  @override
   String get calendarContractEndLegend => 'نهاية عقد';
 
   @override

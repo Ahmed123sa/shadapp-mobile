@@ -3789,6 +3789,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarApprovals => 'Approvals';
 
   @override
+  String get calendarContract => 'Contract';
+
+  @override
   String get calendarContractEndLegend => 'Contract End';
 
   @override

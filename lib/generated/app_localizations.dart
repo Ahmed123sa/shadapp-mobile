@@ -7354,6 +7354,12 @@ abstract class AppLocalizations {
   /// **'Approvals'**
   String get calendarApprovals;
 
+  /// No description provided for @calendarContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract'**
+  String get calendarContract;
+
   /// No description provided for @calendarContractEndLegend.
   ///
   /// In en, this message translates to:

@@ -1252,6 +1252,7 @@
   "calendarAllEvents": "كل الأحداث",
   "calendarApproval": "موافقة",
   "calendarApprovals": "موافقات",
+  "calendarContract": "عقد",
   "calendarContractEndLegend": "نهاية عقد",
   "calendarContractStartLegend": "بداية عقد",
   "calendarDateFormat": "{weekday}، {year}/{month}/{day}",
