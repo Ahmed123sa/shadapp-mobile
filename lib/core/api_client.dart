@@ -281,11 +281,22 @@ class ApiClient {
     return _send(() => _httpClient.delete(Uri.parse('$baseUrl$path'), headers: headers));
   }
 
+  /// Sends a POST with a `_method=PUT` field rather than a real multipart
+  /// PUT request. PHP does not parse the body of a multipart PUT request at
+  /// all (neither files nor fields reach the request) — this is PHP's own
+  /// behavior, not something specific to this backend. Laravel's method
+  /// spoofing (`_method`) is the standard workaround, and the web dashboard
+  /// already uses it for this exact route (ClientPayments.tsx). Before this,
+  /// a client uploading proof for a scheduled installment had their file
+  /// silently dropped: the request "succeeded" (the field-less PUT still
+  /// validated, since proof_files is nullable) and the payment moved to
+  /// pending with no proof attached at all.
   Future<Map<String, dynamic>> multipartPut(String path, Map<String, dynamic> fields,
       {List<File>? multipleFiles, String multipleFileField = 'files[]',
        List<Uint8List>? multipleBytes, List<String>? multipleBytesNames}) async {
-    final request = http.MultipartRequest('PUT', Uri.parse('$baseUrl$path'));
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
     request.headers.addAll(await _headers(multipart: true));
+    request.fields['_method'] = 'PUT';
     fields.forEach((key, value) => request.fields[key] = value.toString());
     if (multipleFiles != null) {
       for (final f in multipleFiles) {

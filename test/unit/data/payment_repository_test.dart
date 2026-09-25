@@ -139,14 +139,20 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 
-  test('uploadProof sends a multipart PUT with native files', () async {
+  // PHP does not parse the body of a multipart PUT request at all (files
+  // and fields both go missing), so a real PUT here would silently drop the
+  // proof file it's supposed to attach — the exact bug this sends a POST
+  // with _method=PUT instead to avoid, matching the web dashboard's
+  // ClientPayments.tsx on this same route.
+  test('uploadProof sends the multipart request as POST with _method=PUT, not a real PUT', () async {
     final tmp = await File('${Directory.systemTemp.path}/payment_proof2.png').create();
     await tmp.writeAsBytes([0, 1, 2]);
     addTearDown(() => tmp.delete());
 
     when(() => httpClient.send(any())).thenAnswer((inv) async {
       final req = inv.positionalArguments[0] as http.MultipartRequest;
-      expect(req.method, 'PUT');
+      expect(req.method, 'POST');
+      expect(req.fields['_method'], 'PUT');
       expect(req.url.path, endsWith('/workspaces/5/payments/9'));
       return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
     });
