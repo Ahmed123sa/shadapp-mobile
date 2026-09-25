@@ -7,11 +7,9 @@
 
 import 'dart:io' show File;
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import '../../core/helpers/proof_image_picker.dart';
 import '../../core/theme.dart';
 import '../../providers/payment_provider.dart';
 
@@ -152,17 +150,9 @@ void showOnboardingPaymentSheet({
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final r = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'], withData: kIsWeb);
-                    if (r != null && r.files.isNotEmpty) {
-                      setSheetState(() {
-                        for (final f in r.files) {
-                          if (kIsWeb) {
-                            proofFiles.add({'bytes': f.bytes, 'name': f.name});
-                          } else {
-                            proofFiles.add({'file': File(f.path!), 'name': f.name});
-                          }
-                        }
-                      });
+                    final picked = await pickProofFromGallery(multiple: true);
+                    if (picked.isNotEmpty) {
+                      setSheetState(() { proofFiles.addAll(picked); });
                     }
                   },
                   icon: const Icon(Icons.upload_file, size: 18),
@@ -172,17 +162,9 @@ void showOnboardingPaymentSheet({
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () async {
-                  final r = await ImagePicker().pickImage(source: ImageSource.camera);
-                  if (r != null) {
-                    setSheetState(() {
-                      if (kIsWeb) {
-                        r.readAsBytes().then((bytes) {
-                          setSheetState(() { proofFiles.add({'bytes': bytes, 'name': r.name}); });
-                        });
-                      } else {
-                        proofFiles.add({'file': File(r.path), 'name': r.name});
-                      }
-                    });
+                  final picked = await pickProofFromCamera();
+                  if (picked != null) {
+                    setSheetState(() { proofFiles.add(picked); });
                   }
                 },
                 icon: const Icon(Icons.camera_alt, size: 18),
