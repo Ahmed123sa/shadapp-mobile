@@ -25,6 +25,12 @@ void main() {
       test('falls back to tab 0 for an unrecognized type', () {
         expect(fcmTabIndex('something_else', isClient: true), 0);
       });
+
+      // plans/notifications-badges-toasts-plan.md ن14 — matches the web's
+      // NotificationBell, which routes this to the payments tab.
+      test('routes workspace_activated to the payments tab', () {
+        expect(fcmTabIndex('workspace_activated', isClient: true), 1);
+      });
     });
 
     group('AM workspace (isClient: false)', () {
@@ -42,6 +48,15 @@ void main() {
 
       test('falls back to tab 0 for an unrecognized type', () {
         expect(fcmTabIndex('something_else'), 0);
+      });
+
+      // plans/notifications-badges-toasts-plan.md ن14 — this used to fall
+      // through to the default (chat) tab here, while notifications_page.dart's
+      // now-removed private _tabIndexForType() routed it to contracts
+      // instead — two different answers for the same notification type
+      // depending on which screen handled the tap.
+      test('routes workspace_activated to the payments tab', () {
+        expect(fcmTabIndex('workspace_activated'), 3);
       });
     });
   });

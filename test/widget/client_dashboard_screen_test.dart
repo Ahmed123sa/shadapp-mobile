@@ -150,6 +150,66 @@ void main() {
     expect(find.text('3'), findsOneWidget);
   });
 
+  // plans/notifications-badges-toasts-plan.md ن12 — the bell used to leave
+  // its badge showing the stale pre-visit count until the next 60s poll
+  // tick, even though the notifications page itself just marked things
+  // read/deleted. Uses its own router (not pumpPage's shared one) because
+  // the /notifications stub needs a way to pop back.
+  testWidgets('refreshes the unread badge after returning from the notifications page', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    var unread = 3;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path == '/clients/10') {
+        return jsonResponse('{"client":{"id":10,"signed_at":"2026-01-01T00:00:00Z","workspace":{"id":5,"status":"active","contracts":[],"payments":[]}}}');
+      }
+      if (path == '/notifications') return jsonResponse('{"unread_count":"$unread"}');
+      if (path == '/badge-counts') return jsonResponse('{"contracts":"0","payments":"0","approvals":"0","files":"0","chat":"0"}');
+      if (path == '/workspaces/5/chat') return jsonResponse('{"messages":[]}');
+      if (path == '/workspaces/5/contracts') return jsonResponse('{"contracts":[]}');
+      if (path == '/workspaces/5/payments') return jsonResponse('{"payments":[],"available_methods":[],"tax_summary":null}');
+      if (path == '/workspaces/5/approvals') return jsonResponse('{"approvals":[]}');
+      if (path == '/workspaces/5/files') return jsonResponse('{"files":[],"definitions":[],"paymentFiles":[]}');
+      if (path == '/workspaces/5/meetings') return jsonResponse('{"meetings":[]}');
+      if (path == '/workspaces/5') return jsonResponse('{"workspace":{"status":"active"},"nextMeeting":null,"nextPayment":null}');
+      return jsonResponse('{}');
+    });
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, __) => ClientDashboardScreen(api: api, reverb: ReverbService.forTesting(), enableFcm: false, enablePolling: false)),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, __) => Scaffold(body: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('BACK'))),
+        ),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+    ));
+    await pumpBriefly(tester);
+    expect(find.text('3'), findsOneWidget);
+
+    // The notifications page marks everything read server-side while the
+    // user is on it — simulated here by changing what the next /notifications
+    // GET returns.
+    unread = 0;
+    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await pumpBriefly(tester);
+    expect(find.text('BACK'), findsOneWidget);
+
+    await tester.tap(find.text('BACK'));
+    await pumpBriefly(tester);
+
+    expect(find.text('3'), findsNothing);
+  });
+
   // server-side-stats-plan.md, Stage 3 (M8) — the chat nav badge used to be
   // computed by downloading the workspace's entire chat history and
   // filtering it client-side (a second, redundant fetch alongside the one

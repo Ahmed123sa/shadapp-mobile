@@ -11,10 +11,16 @@ import 'app_log.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // plans/notifications-badges-toasts-plan.md ن6 — every push already
+  // carries a `notification` block (FirebaseService::sendMessage on the
+  // backend always sets one), which Android's FCM SDK auto-displays in the
+  // system tray whenever the app isn't in the foreground — this handler
+  // used to ALSO call _showLocalNotification() for the same message,
+  // stacking two entries in the tray for one push. Tapping the
+  // system-displayed one is already routed via
+  // FirebaseMessaging.onMessageOpenedApp / getInitialMessage() (see init()
+  // below), so nothing is lost by not showing a local one here too.
   await Firebase.initializeApp();
-  final notifService = NotificationService();
-  await notifService._initLocalNotifications();
-  await notifService._showLocalNotification(message);
 }
 
 class NotificationService {

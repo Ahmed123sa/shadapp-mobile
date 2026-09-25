@@ -358,14 +358,23 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
         actions: [
           Stack(children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => context.push('/notifications')),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              // plans/notifications-badges-toasts-plan.md ن12 — this used to
+              // leave the badge showing its stale pre-visit count until the
+              // next 60s poll tick, even though the notifications page
+              // itself just marked things read/deleted.
+              onPressed: () => context.push('/notifications').then((_) => _loadNotifs()),
+            ),
             if (_unreadNotifs > 0)
               Positioned(
                 right: 6, top: 6,
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
-                  child: Text('$_unreadNotifs', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                  // ن12 — capped at 99+ like every other tab badge in this
+                  // app; this one was left uncapped.
+                  child: Text(_unreadNotifs > 99 ? '99+' : '$_unreadNotifs', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
           ]),

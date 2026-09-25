@@ -22,14 +22,17 @@ int fcmTabIndex(String? type, {bool isClient = false}) {
     // Client tabs: 0=contracts, 1=payments, 2=chat, 3=approvals, 4=files
     if (type == null || type == 'chat') return 2;
     if (type.startsWith('contract')) return 0;
-    if (type.startsWith('payment')) return 1;
+    // plans/notifications-badges-toasts-plan.md ن14 — matches the web's
+    // NotificationBell, which routes workspace_activated to the payments
+    // tab (it fires right after a payment is approved).
+    if (type.startsWith('payment') || type == 'workspace_activated') return 1;
     if (type.startsWith('approval')) return 3;
     return 0;
   }
   // AM workspace tabs: 0=chat, 1=files, 2=contracts, 3=payments, 4=approvals, 5=meetings
   if (type == null || type == 'chat') return 0;
   if (type.startsWith('contract')) return 2;
-  if (type.startsWith('payment')) return 3;
+  if (type.startsWith('payment') || type == 'workspace_activated') return 3;
   if (type.startsWith('approval')) return 4;
   if (type.startsWith('meeting')) return 5;
   return 0;

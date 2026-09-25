@@ -33,7 +33,11 @@ class AppNotification {
       id: _idStr(json['id']) ?? '',
       type: _str(data['type']),
       title: _str(data['title']) ?? '',
-      message: _str(data['message']) ?? '',
+      // plans/notifications-badges-toasts-plan.md ن4 — several backend
+      // notification types only ever sent 'body', not 'message' (and rows
+      // stored before ح3 shipped never got backfilled), so this rendered an
+      // empty line for those instead of falling back.
+      message: _str(data['message']) ?? _str(data['body']) ?? '',
       readAt: _str(json['read_at']),
       createdAt: _str(json['created_at']) ?? '',
       workspaceId: _idStr(data['workspace_id']),

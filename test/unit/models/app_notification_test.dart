@@ -43,5 +43,25 @@ void main() {
       final n = AppNotification.fromJson({'id': 42});
       expect(n.id, '42');
     });
+
+    // plans/notifications-badges-toasts-plan.md ن4 — several backend
+    // notification types only ever send 'body', not 'message' (and rows
+    // stored before ح3 shipped never got backfilled), so this used to
+    // render an empty line for those instead of falling back.
+    test('falls back to body when message is absent', () {
+      final n = AppNotification.fromJson({
+        'id': 3,
+        'data': {'type': 'payment_reminder', 'title': 'تذكير', 'body': 'دفعة مستحقة اليوم'},
+      });
+      expect(n.message, 'دفعة مستحقة اليوم');
+    });
+
+    test('prefers message over body when both are present', () {
+      final n = AppNotification.fromJson({
+        'id': 4,
+        'data': {'message': 'from message', 'body': 'from body'},
+      });
+      expect(n.message, 'from message');
+    });
   });
 }

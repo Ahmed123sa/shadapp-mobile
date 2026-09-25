@@ -62,19 +62,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (route != null) context.push(route);
   }
 
-  int _tabIndexForType(String? type) {
-    if (type == null || type == 'chat') return 0;
-    if (type.startsWith('contract') || type.startsWith('workspace')) return 2;
-    if (type.startsWith('payment')) return 3;
-    if (type.startsWith('approval')) return 4;
-    if (type.startsWith('meeting')) return 5;
-    return 0;
-  }
-
   String? _resolveRoute(String? role, String? workspaceId, String? clientId, String? type) {
     final isAdmin = role == 'account_manager' || role == 'super_admin';
     if (isAdmin && workspaceId != null && workspaceId.isNotEmpty) {
-      return '/am/workspace/$workspaceId?tab=${_tabIndexForType(type)}';
+      // plans/notifications-badges-toasts-plan.md ن14 — this used to have
+      // its own private _tabIndexForType(), which mapped 'workspace_*' types
+      // to the contracts tab while fcmTabIndex() (used just below for the
+      // client/sub_user branch, and by main.dart for FCM taps) left them
+      // falling through to chat. Now both branches share the one mapping.
+      return '/am/workspace/$workspaceId?tab=${fcmTabIndex(type)}';
     }
     if (isAdmin && clientId != null && clientId.isNotEmpty) {
       return '/am/clients/$clientId';

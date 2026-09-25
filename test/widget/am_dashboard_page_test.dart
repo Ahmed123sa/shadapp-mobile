@@ -127,6 +127,75 @@ void main() {
     expect(find.text('1'), findsWidgets); // Total Clients stat, from GET /dashboard/stats
   });
 
+  // plans/notifications-badges-toasts-plan.md ن12 — this badge was missing
+  // the 99+ cap every other badge in the app already had. No tap involved:
+  // just confirms the cap renders on initial load.
+  testWidgets('caps the unread badge at 99+', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    stubCommon(httpClient);
+    when(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/notifications')), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse('{"unread_count":"150"}'));
+
+    await pumpPage(tester, api);
+
+    expect(find.text('99+'), findsOneWidget);
+    expect(find.text('150'), findsNothing);
+  });
+
+  // plans/notifications-badges-toasts-plan.md ن12 — the bell used to leave
+  // its badge showing the stale pre-visit count until the next 60s poll
+  // tick, even though the notifications page itself just marked things
+  // read/deleted.
+  testWidgets('refreshes the unread badge after returning from the notifications page', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    var unread = 3;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path == '/clients') return jsonResponse('{"clients":[]}');
+      if (path == '/payments/pending') return jsonResponse('{"payments":[]}');
+      if (path == '/all-contracts') return jsonResponse('{"contracts":[]}');
+      if (path == '/account-managers') return jsonResponse('{"managers":[]}');
+      if (path == '/notifications') return jsonResponse('{"unread_count":"$unread"}');
+      if (path == '/badge-counts') return jsonResponse('{"approvals":"0","chat":"0"}');
+      if (path == '/all-meetings') return jsonResponse('{"meetings":[]}');
+      if (path == '/dashboard/stats') return jsonResponse(zeroStatsJson);
+      return jsonResponse('{}');
+    });
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, __) => AmDashboardPage(api: api, enablePolling: false, reverb: ReverbService.forTesting())),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, __) => Scaffold(body: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('BACK'))),
+        ),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3'), findsOneWidget);
+
+    unread = 0;
+    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('BACK'), findsOneWidget);
+
+    await tester.tap(find.text('BACK'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3'), findsNothing);
+  });
+
   // server-side-stats-plan.md, Stage 3 (M1) — the whole point of this stage:
   // the client list the parent fetches is still capped at whatever page size
   // the server gives back, but the "Total Clients" card must show the real,
