@@ -884,6 +884,12 @@ abstract class AppLocalizations {
   /// **'Server Error'**
   String get serverError;
 
+  /// No description provided for @fileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File is too large'**
+  String get fileTooLarge;
+
   /// No description provided for @dataLoadFailed.
   ///
   /// In en, this message translates to:

@@ -133,6 +133,7 @@
   "sessionExpired": "Session Expired",
   "invalidCredentials": "Invalid Credentials",
   "serverError": "Server Error",
+  "fileTooLarge": "File is too large",
   "dataLoadFailed": "Failed to load data",
   "retry": "Retry",
   "noItems": "No Items",

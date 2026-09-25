@@ -404,6 +404,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverError => 'Server Error';
 
   @override
+  String get fileTooLarge => 'File is too large';
+
+  @override
   String get dataLoadFailed => 'Failed to load data';
 
   @override

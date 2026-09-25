@@ -122,6 +122,20 @@ void main() {
       );
     });
 
+    // nginx's own body-size cap rejects an oversized upload with an HTML
+    // page, not JSON from Laravel — this has to be its own case (not lumped
+    // into the generic 4xx/5xx branch below) since there's no server message
+    // to surface, only a fixed, actionable one.
+    // payment-proof-upload-plan.md, Stage 2.
+    test('413 throws ValidationException with a fixed file-too-large message', () async {
+      final api = buildClient();
+      when(() => client.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+        (_) async => http.Response('<html>413 Request Entity Too Large</html>', 413),
+      );
+
+      await expectLater(api.post('/workspaces/5/payments', {}), throwsA(isA<ValidationException>()));
+    });
+
     test('429 throws RateLimitException, distinct from a generic server error', () async {
       final api = buildClient();
       when(() => client.get(any(), headers: any(named: 'headers'))).thenAnswer(

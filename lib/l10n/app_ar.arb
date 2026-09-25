@@ -133,6 +133,7 @@
   "sessionExpired": "انتهت الجلسة",
   "invalidCredentials": "بيانات الدخول غير صحيحة",
   "serverError": "خطأ في الخادم",
+  "fileTooLarge": "حجم الملف أكبر من المسموح به",
   "dataLoadFailed": "فشل تحميل البيانات",
   "retry": "إعادة المحاولة",
   "noItems": "لا توجد عناصر",

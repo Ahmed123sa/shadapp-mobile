@@ -224,6 +224,13 @@ class ApiClient {
     return _handle(response);
   }
 
+  /// Longer than [_timeout]: a file upload has to actually transfer bytes
+  /// over whatever connection the phone has, not just wait on a server
+  /// round-trip like every other request here. 30s was tripping on real
+  /// (slow/mobile) networks well before the upload itself was the problem —
+  /// payment-proof-upload-plan.md, Stage 2.
+  final Duration _uploadTimeout = const Duration(seconds: 120);
+
   /// Same "never got a response" -> [ConnectionException] translation as
   /// [_send], but for the multipart trio below. Those build an
   /// [http.MultipartRequest] and call `_httpClient.send(...)` directly
@@ -234,13 +241,13 @@ class ApiClient {
   /// docs/mobile-review-2026-08.md, P1 #3.
   Future<http.StreamedResponse> _sendMultipart(http.MultipartRequest request) async {
     try {
-      return await _httpClient.send(request).timeout(_timeout);
+      return await _httpClient.send(request).timeout(_uploadTimeout);
     } on SocketException catch (e) {
       throw ConnectionException(e.message.isNotEmpty ? e.message : 'Network unreachable');
     } on http.ClientException catch (e) {
       throw ConnectionException(e.message);
     } on TimeoutException {
-      throw ConnectionException('Request timed out after ${_timeout.inSeconds}s');
+      throw ConnectionException('Request timed out after ${_uploadTimeout.inSeconds}s');
     }
   }
 
@@ -383,6 +390,15 @@ class ApiClient {
       final firstError = errors?.values.firstOrNull;
       final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
       throw ValidationException(msg);
+    }
+    // A reverse proxy's own body-size cap (nginx's client_max_body_size,
+    // commonly a 1MB default) rejects an oversized upload before it ever
+    // reaches Laravel, so `data` here is empty (an HTML error page, not
+    // JSON) — there's no server-provided message to surface, only this
+    // generic one. Compressing images before upload (see proof_image_picker)
+    // keeps uploads well under this in practice.
+    if (response.statusCode == 413) {
+      throw ValidationException(l10n?.fileTooLarge ?? 'File is too large');
     }
     // 429 is its own case: the credentials may be perfectly correct, the
     // caller just tripped Laravel's `throttle` middleware. Reporting it as a

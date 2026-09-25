@@ -404,6 +404,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get serverError => 'خطأ في الخادم';
 
   @override
+  String get fileTooLarge => 'حجم الملف أكبر من المسموح به';
+
+  @override
   String get dataLoadFailed => 'فشل تحميل البيانات';
 
   @override
