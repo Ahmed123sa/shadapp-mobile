@@ -17,6 +17,7 @@
 // `flutter test`, same reasoning documented throughout this migration (see
 // contracts_page_test.dart). Only the no-files plain-POST payment branch is
 // exercised here.
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -133,6 +134,45 @@ void main() {
           headers: any(named: 'headers'),
           body: any(named: 'body'),
         )).called(1);
+  });
+
+  // plans/payment-currency-plan.md ح4: the onboarding payment sheet used to
+  // show a free 9-currency dropdown defaulting to SAR, ignoring the
+  // client's actual contract. It's now a fixed value threaded through from
+  // buildPaymentStage, displayed read-only — the backend enforces this
+  // regardless via PaymentController::resolveCurrency().
+  testWidgets('sending a payment for an EGP contract posts currency EGP without offering a free choice', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"active","contracts":[{"id":7,"status":"company_approved","value":"1000","currency":"EGP"}],"payments":[]}}}');
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await pumpScreen(tester, api);
+
+    final ctaButton = find.widgetWithText(ElevatedButton, 'Send Payment');
+    await scrollTo(tester, ctaButton);
+    await tester.tap(ctaButton);
+    await tester.pumpAndSettle();
+
+    // Only the payment-method dropdown (bank_transfer/swift/...) remains —
+    // also a DropdownButtonFormField<String>, so we assert exactly one
+    // rather than none, and confirm the currency itself is shown as
+    // read-only text instead of a second dropdown.
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    expect(find.text('EGP'), findsWidgets);
+
+    final submitButton = find.widgetWithText(ElevatedButton, 'Send Payment').last;
+    await scrollTo(tester, submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    expect(sentBody?['currency'], 'EGP');
   });
 
   // payment-proof-upload-plan.md, Stage 4 (ح1) — same fix as

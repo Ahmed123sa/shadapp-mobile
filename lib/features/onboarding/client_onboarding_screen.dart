@@ -480,10 +480,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     }
   }
 
-  void _showPaymentBottomSheet(double suggestedAmount, int? workspaceId) => showOnboardingPaymentSheet(
+  void _showPaymentBottomSheet(double suggestedAmount, int? workspaceId, String currency) => showOnboardingPaymentSheet(
     context: context,
     suggestedAmount: suggestedAmount,
     workspaceId: workspaceId,
+    currency: currency,
     paymentProvider: _paymentProvider,
     loadClientData: _loadClientData,
   );

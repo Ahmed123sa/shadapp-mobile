@@ -299,4 +299,57 @@ void main() {
     expect(sentBody!.containsKey('contract_id'), isFalse);
     expect(find.text('Payment request sent'), findsOneWidget);
   });
+
+  // plans/payment-currency-plan.md ح4 (م5 fix): switching the selected
+  // contract in the multi-contract dropdown used to update the amount
+  // field's currency prefix but leave the separate currency dropdown
+  // (defaulted from the first payable contract) stale. Both are now driven
+  // by the same selectedContract notifier via a shared currencyFor()
+  // helper, so switching to an EGP contract must update the displayed
+  // currency AND the currency actually submitted.
+  testWidgets('switching the selected contract updates the displayed and submitted currency', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) {
+        return jsonResponse(
+          '{"contracts":[{"id":1,"title":"MSA","status":"company_approved","value":5000,"currency":"SAR"},'
+          '{"id":2,"title":"MSA II","status":"company_approved","value":9000,"currency":"EGP"}]}',
+        );
+      }
+      return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+    });
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    // Two payable contracts with different currencies: the sheet falls back
+    // to the first contract's currency (SAR) until one is explicitly picked.
+    expect(find.text('SAR'), findsWidgets);
+    expect(find.text('EGP'), findsNothing);
+
+    await tester.enterText(find.byType(TextField).first, '250');
+    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MSA II (9000 EGP)').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('EGP'), findsWidgets);
+    expect(find.text('SAR'), findsNothing);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!['contract_id'], 2);
+    expect(sentBody!['currency'], 'EGP');
+    expect(find.text('Payment request sent'), findsOneWidget);
+  });
 }

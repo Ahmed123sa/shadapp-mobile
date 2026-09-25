@@ -50,22 +50,30 @@ void showRequestPaymentSheet({
   };
 
   final contractCur = getContractCurrency?.call() ?? 'SAR';
-  final currencies = [contractCur];
-  final currencyLabels = <String, String>{
-    'SAR': l10n.currency_sar, 'USD': l10n.currency_usd, 'EUR': l10n.currency_eur,
-    'AED': l10n.currency_aed, 'EGP': l10n.currency_egp, 'KWD': l10n.currency_kwd,
-    'QAR': l10n.currency_qar, 'BHD': l10n.currency_bhd, 'OMR': l10n.currency_omr,
-  };
+  // The payment's currency is always the linked contract's — enforced
+  // server-side by PaymentController::resolveCurrency() regardless of what
+  // gets submitted (plans/payment-currency-plan.md). This used to be a free
+  // dropdown locked to a single [contractCur] item that never updated when
+  // the contract picker below was switched (م5) — currencyFor() now derives
+  // the right value from whichever contract is actually selected, so the
+  // display and the submitted currency both follow it.
+  final payableContracts = getPayableContracts();
+  String currencyFor(int? contractId) {
+    if (contractId != null) {
+      final match = payableContracts.firstWhere((c) => c['id'] == contractId, orElse: () => <String, dynamic>{});
+      final cur = match['currency'] as String?;
+      if (cur != null) return cur;
+    }
+    return contractCur;
+  }
 
   final available = getAvailableMethods().isNotEmpty ? getAvailableMethods() : methodLabels.keys.toList();
   final amountCtrl = TextEditingController();
   final selectedMethod = ValueNotifier<String>(available.first);
-  final selectedCurrency = ValueNotifier<String>(contractCur);
   // Only let the user pick a contract when there is more than one payable
   // contract; 0/1 keeps the legacy auto-link behaviour byte-identical and the
   // payload stays contract_id-free so the backend falls back to the latest
   // contract. The id is only read off this notifier after an explicit pick.
-  final payableContracts = getPayableContracts();
   final selectedContract = ValueNotifier<int?>(null);
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
@@ -96,25 +104,20 @@ void showRequestPaymentSheet({
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
           ]),
           const SizedBox(height: 16),
-          ValueListenableBuilder<String>(
-            valueListenable: selectedCurrency,
-            builder: (_, cur, __) => TextField(
+          ValueListenableBuilder<int?>(
+            valueListenable: selectedContract,
+            builder: (_, contractId, __) => TextField(
               controller: amountCtrl,
-              decoration: InputDecoration(labelText: '${AppLocalizations.of(pageContext)!.payments_amount} *', hintText: '0.00', prefixText: '$cur '),
+              decoration: InputDecoration(labelText: '${AppLocalizations.of(pageContext)!.payments_amount} *', hintText: '0.00', prefixText: '${currencyFor(contractId)} '),
               keyboardType: TextInputType.number,
             ),
           ),
           const SizedBox(height: 12),
-          ValueListenableBuilder<String>(
-            valueListenable: selectedCurrency,
-            builder: (_, cur, __) => DropdownButtonFormField<String>(
-              initialValue: cur,
+          ValueListenableBuilder<int?>(
+            valueListenable: selectedContract,
+            builder: (_, contractId, __) => InputDecorator(
               decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_currency),
-              items: currencies.map((c) => DropdownMenuItem(
-                value: c,
-                child: Text('$c — ${currencyLabels[c] ?? ''}'),
-              )).toList(),
-              onChanged: (v) { if (v != null) selectedCurrency.value = v; },
+              child: Text(currencyFor(contractId), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
             ),
           ),
           const SizedBox(height: 12),
@@ -246,7 +249,7 @@ void showRequestPaymentSheet({
               child: ElevatedButton(
                 onPressed: uploading ? null : () => _submitPaymentDashboard(
                   ctx, setSheetState, uploadingNotifier, errorNotifier,
-                  amountCtrl, selectedCurrency.value, selectedMethod.value, selectedContract.value, proofFiles,
+                  amountCtrl, currencyFor(selectedContract.value), selectedMethod.value, selectedContract.value, proofFiles,
                   paymentProvider, api, load,
                 ),
                 child: uploading

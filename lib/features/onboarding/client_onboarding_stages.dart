@@ -190,7 +190,7 @@ Widget buildPaymentStage({
   required Map<String, dynamic>? workspace,
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
-  required void Function(double suggestedAmount, int? workspaceId) onSendPayment,
+  required void Function(double suggestedAmount, int? workspaceId, String currency) onSendPayment,
 }) {
   final ws = workspace;
   double totalAmount = 0;
@@ -342,7 +342,7 @@ Widget buildPaymentStage({
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => onSendPayment(remaining > 0 ? remaining : grandTotal, ws?['id']),
+            onPressed: () => onSendPayment(remaining > 0 ? remaining : grandTotal, ws?['id'], currency),
             icon: const Icon(Icons.add_circle_outline, size: 20),
             label: Text(AppLocalizations.of(context)!.onboarding_sendPayment),
             style: ElevatedButton.styleFrom(

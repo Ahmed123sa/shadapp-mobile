@@ -1,9 +1,12 @@
 // Extracted from client_onboarding_screen.dart as part of بند ٨ (file splitting).
-// The "request payment" bottom sheet + its submit handler, preserved byte-for-byte
-// behaviorally: the outer function still builds methodLabels/currencyLabels using
-// the page's own `context` (matching the original, which computed them before
-// calling showModalBottomSheet), while everything inside the sheet builder keeps
-// using the sheet's own `ctx`.
+// The "request payment" bottom sheet + its submit handler. The outer function
+// still builds methodLabels using the page's own `context` (matching the
+// original, which computed them before calling showModalBottomSheet), while
+// everything inside the sheet builder keeps using the sheet's own `ctx`.
+//
+// `currency` is no longer a free choice — it's the caller-supplied contract
+// currency, shown read-only (plans/payment-currency-plan.md ح4); the backend
+// enforces this regardless via PaymentController::resolveCurrency().
 
 import 'dart:io' show File;
 import 'dart:typed_data';
@@ -19,6 +22,13 @@ void showOnboardingPaymentSheet({
   required BuildContext context,
   required double suggestedAmount,
   required int? workspaceId,
+  // The payment's currency is always the linked contract's — enforced
+  // server-side by PaymentController::resolveCurrency() regardless of what
+  // gets submitted (plans/payment-currency-plan.md). This used to be a free
+  // 9-currency dropdown defaulting to SAR; it's now a fixed value passed in
+  // by buildPaymentStage (derived from the workspace's contract), displayed
+  // as read-only text rather than offered as a choice.
+  required String currency,
   required PaymentProvider paymentProvider,
   required Future<void> Function() loadClientData,
 }) {
@@ -31,15 +41,7 @@ void showOnboardingPaymentSheet({
     'mobile_wallet': AppLocalizations.of(context)!.payments_methodMobileWallet,
   };
 
-  const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-  final currencyLabels = {
-    'SAR': AppLocalizations.of(context)!.currency_sar, 'USD': AppLocalizations.of(context)!.currency_usd, 'EUR': AppLocalizations.of(context)!.currency_eur,
-    'AED': AppLocalizations.of(context)!.currency_aed, 'EGP': AppLocalizations.of(context)!.currency_egp, 'KWD': AppLocalizations.of(context)!.currency_kwd,
-    'QAR': AppLocalizations.of(context)!.currency_qar, 'BHD': AppLocalizations.of(context)!.currency_bhd, 'OMR': AppLocalizations.of(context)!.currency_omr,
-  };
-
   final amountCtrl = TextEditingController(text: suggestedAmount > 0 ? suggestedAmount.toStringAsFixed(0) : '');
-  final selectedCurrency = ValueNotifier<String>('SAR');
   final selectedMethod = ValueNotifier<String>('bank_transfer');
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
@@ -60,26 +62,15 @@ void showOnboardingPaymentSheet({
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
             const SizedBox(height: 16),
-            ValueListenableBuilder<String>(
-              valueListenable: selectedCurrency,
-              builder: (_, cur, __) => TextField(
-                controller: amountCtrl,
-                decoration: InputDecoration(labelText: '${AppLocalizations.of(ctx)!.onboarding_amountField} *', hintText: '0.00', prefixText: '$cur '),
-                keyboardType: TextInputType.number,
-              ),
+            TextField(
+              controller: amountCtrl,
+              decoration: InputDecoration(labelText: '${AppLocalizations.of(ctx)!.onboarding_amountField} *', hintText: '0.00', prefixText: '$currency '),
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
-            ValueListenableBuilder<String>(
-              valueListenable: selectedCurrency,
-              builder: (_, cur, __) => DropdownButtonFormField<String>(
-                initialValue: cur,
-                decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_currencyField),
-                items: currencies.map((c) => DropdownMenuItem(
-                  value: c,
-                  child: Text('$c — ${currencyLabels[c] ?? ''}'),
-                )).toList(),
-                onChanged: (v) { if (v != null) selectedCurrency.value = v; },
-              ),
+            InputDecorator(
+              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_currencyField),
+              child: Text(currency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
             ),
             const SizedBox(height: 12),
             ValueListenableBuilder<String>(
@@ -196,7 +187,7 @@ void showOnboardingPaymentSheet({
                 child: ElevatedButton(
                   onPressed: uploading ? null : () => _submitPaymentOnboarding(
                     ctx, setSheetState, uploadingNotifier, errorNotifier, workspaceId,
-                    amountCtrl, selectedCurrency.value, selectedMethod.value, proofFiles,
+                    amountCtrl, currency, selectedMethod.value, proofFiles,
                     paymentProvider, loadClientData,
                   ),
                   child: uploading
