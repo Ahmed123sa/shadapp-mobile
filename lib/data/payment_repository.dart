@@ -124,13 +124,17 @@ class PaymentRepository {
   Future<void> deleteSchedule(int paymentId) => _api.delete('/payments/$paymentId/schedule');
 
   /// Sends a payment request to the client. [notes] is only included when
-  /// non-empty, matching the original inline call.
-  Future<void> requestPayment(int workspaceId, double amount, String currency, {String? notes}) => _api.post(
+  /// non-empty, matching the original inline call. [contractId] links the
+  /// request to a specific contract when the workspace has more than one
+  /// contract currency — see PaymentController::resolveCurrency() /
+  /// plans/payment-currency-plan.md.
+  Future<void> requestPayment(int workspaceId, double amount, String currency, {String? notes, int? contractId}) => _api.post(
         '/workspaces/$workspaceId/payments/request',
         {
           'amount': amount,
           'currency': currency,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
+          if (contractId != null) 'contract_id': contractId,
         },
       );
 }

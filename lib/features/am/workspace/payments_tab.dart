@@ -108,6 +108,37 @@ class _PaymentsTabState extends State<PaymentsTab> {
     return (contracts.isNotEmpty ? (contracts.first['currency'] as String?) : null) ?? 'SAR';
   }
 
+  // A payment's currency is server-enforced from its linked contract (see
+  // PaymentController::resolveCurrency(), plans/payment-currency-plan.md
+  // ح3) — these mirror that logic here for display/pre-fill only in the
+  // schedule/request sheets below. Uses ALL of the workspace's contracts
+  // (not just payable ones), matching the backend's ambiguity check —
+  // unlike [_contractCurrency] above, which only looks at payable contracts
+  // for the summary card.
+  List<String> get _allContractCurrencies {
+    return _contracts
+        .cast<Map<String, dynamic>?>()
+        .map((c) => (c?['currency'] as String?) ?? 'SAR')
+        .toSet()
+        .toList();
+  }
+
+  bool get _hasSingleCurrency => _allContractCurrencies.length <= 1;
+
+  String get _singleCurrency => _allContractCurrencies.isNotEmpty ? _allContractCurrencies.first : 'SAR';
+
+  String _resolvedCurrencyFor(int? contractId) {
+    if (contractId != null) {
+      for (final c in _contracts) {
+        if (c is Map && c['id'] == contractId) {
+          final cur = c['currency'] as String?;
+          if (cur != null) return cur;
+        }
+      }
+    }
+    return _singleCurrency;
+  }
+
   String _installmentLabel(int index, AppLocalizations l10n) {
     final labels = [l10n.paymentsOrdinalFirst, l10n.paymentsOrdinalSecond, l10n.paymentsOrdinalThird, l10n.paymentsOrdinalFourth, l10n.paymentsOrdinalFifth, l10n.paymentsOrdinalSixth, l10n.paymentsOrdinalSeventh, l10n.paymentsOrdinalEighth, l10n.paymentsOrdinalNinth, l10n.paymentsOrdinalTenth];
     return index < labels.length ? l10n.paymentsInstallmentFormat(labels[index]) : l10n.paymentsInstallmentFormatNumbered(index + 1);
@@ -415,19 +446,17 @@ class _PaymentsTabState extends State<PaymentsTab> {
   }
 
   void _showScheduleSheet() {
-    final l10n = AppLocalizations.of(context)!;
     final installments = <Map<String, dynamic>>[];
     final amountCtrl = TextEditingController();
     final labelCtrl = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(days: 30));
-    String selectedCurrency = 'SAR';
-
-    const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-    final currencyLabels = {
-      'SAR': l10n.currencySar, 'USD': l10n.currencyUsd, 'EUR': l10n.currencyEur,
-      'AED': l10n.currencyAed, 'EGP': l10n.currencyEgp, 'KWD': l10n.currencyKwd,
-      'QAR': l10n.currencyQar, 'BHD': l10n.currencyBhd, 'OMR': l10n.currencyOmr,
-    };
+    // Currency is no longer a free choice (plans/payment-currency-plan.md
+    // ح3) — it's derived from the picked contract, or the workspace's
+    // single shared currency when there's no ambiguity to resolve.
+    int? selectedContractId;
+    final hasSingleCurrency = _hasSingleCurrency;
+    final singleCurrency = _singleCurrency;
+    final contracts = _contracts;
 
     showModalBottomSheet(
       context: context,
@@ -438,6 +467,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
           final sheetL10n = AppLocalizations.of(ctx)!;
           return Padding(
             padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+            // Wrapped in a scroll view: the currency block below now grows by
+            // a dropdown + hint line for multi-currency workspaces
+            // (plans/payment-currency-plan.md ح3), which pushed this sheet's
+            // fixed-height Column past the available height on shorter
+            // screens (and in tests) — was fine as a plain Column before
+            // that extra content existed.
+            child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Text(sheetL10n.paymentsScheduleTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
@@ -451,12 +487,27 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: selectedCurrency,
-                decoration: InputDecoration(labelText: sheetL10n.paymentsCurrency),
-                items: currencies.map((c) => DropdownMenuItem(value: c, child: Text('$c — ${currencyLabels[c] ?? c}', style: const TextStyle(fontSize: 13)))).toList(),
-                onChanged: (v) { if (v != null) setSheetState(() => selectedCurrency = v); },
-              ),
+              if (hasSingleCurrency)
+                InputDecorator(
+                  decoration: InputDecoration(labelText: sheetL10n.paymentsCurrency),
+                  child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                )
+              else ...[
+                DropdownButtonFormField<int>(
+                  initialValue: selectedContractId,
+                  decoration: InputDecoration(labelText: sheetL10n.paymentsCurrency),
+                  hint: Text(sheetL10n.paymentsSelectContract, style: const TextStyle(fontSize: 13)),
+                  items: contracts.map<DropdownMenuItem<int>>((c) {
+                    final id = c['id'] as int;
+                    final title = (c['title'] as String?) ?? '';
+                    final cur = (c['currency'] as String?) ?? 'SAR';
+                    return DropdownMenuItem(value: id, child: Text('$title ($cur)', style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
+                  }).toList(),
+                  onChanged: (v) => setSheetState(() => selectedContractId = v),
+                ),
+                const SizedBox(height: 4),
+                Text(sheetL10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+              ],
               const SizedBox(height: 8),
               TextField(
                 controller: labelCtrl,
@@ -483,13 +534,14 @@ class _PaymentsTabState extends State<PaymentsTab> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: (!hasSingleCurrency && selectedContractId == null) ? null : () {
                     final amount = double.tryParse(amountCtrl.text);
                     if (amount == null || amount <= 0) return;
                     setSheetState(() {
                       installments.add({
                         'amount': amount,
-                        'currency': selectedCurrency,
+                        'currency': _resolvedCurrencyFor(selectedContractId),
+                        if (selectedContractId != null) 'contract_id': selectedContractId,
                         'due_date': selectedDate.toIso8601String().split('T')[0],
                         'installment_label': labelCtrl.text.isNotEmpty ? labelCtrl.text : sheetL10n.paymentsInstallmentFormatNumbered(installments.length + 1),
                       });
@@ -537,6 +589,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 ),
               ),
             ]),
+            ),
           );
         },
       ),
@@ -671,14 +724,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
     final l10n = AppLocalizations.of(context)!;
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
-    String selectedCurrency = 'SAR';
-
-    const currencies = ['SAR', 'USD', 'EUR', 'AED', 'EGP', 'KWD', 'QAR', 'BHD', 'OMR'];
-    final currencyLabels = {
-      'SAR': l10n.currencySar, 'USD': l10n.currencyUsd, 'EUR': l10n.currencyEur,
-      'AED': l10n.currencyAed, 'EGP': l10n.currencyEgp, 'KWD': l10n.currencyKwd,
-      'QAR': l10n.currencyQar, 'BHD': l10n.currencyBhd, 'OMR': l10n.currencyOmr,
-    };
+    // Currency is no longer a free choice (plans/payment-currency-plan.md
+    // ح3) — it's derived from the picked contract, or the workspace's
+    // single shared currency when there's no ambiguity to resolve.
+    int? selectedContractId;
+    final hasSingleCurrency = _hasSingleCurrency;
+    final singleCurrency = _singleCurrency;
+    final contracts = _contracts;
 
     showModalBottomSheet(
       context: context,
@@ -687,6 +739,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          // Scrollable for the same reason as _showScheduleSheet above: the
+          // currency block can now grow by a dropdown + hint line.
+          child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(l10n.paymentsRequestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
@@ -702,12 +757,27 @@ class _PaymentsTabState extends State<PaymentsTab> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: selectedCurrency,
-              decoration: InputDecoration(labelText: l10n.paymentsCurrency),
-              items: currencies.map((c) => DropdownMenuItem(value: c, child: Text('$c — ${currencyLabels[c] ?? c}', style: const TextStyle(fontSize: 13)))).toList(),
-              onChanged: (v) { if (v != null) setSheetState(() => selectedCurrency = v); },
-            ),
+            if (hasSingleCurrency)
+              InputDecorator(
+                decoration: InputDecoration(labelText: l10n.paymentsCurrency),
+                child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+              )
+            else ...[
+              DropdownButtonFormField<int>(
+                initialValue: selectedContractId,
+                decoration: InputDecoration(labelText: l10n.paymentsCurrency),
+                hint: Text(l10n.paymentsSelectContract, style: const TextStyle(fontSize: 13)),
+                items: contracts.map<DropdownMenuItem<int>>((c) {
+                  final id = c['id'] as int;
+                  final title = (c['title'] as String?) ?? '';
+                  final cur = (c['currency'] as String?) ?? 'SAR';
+                  return DropdownMenuItem(value: id, child: Text('$title ($cur)', style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
+                }).toList(),
+                onChanged: (v) => setSheetState(() => selectedContractId = v),
+              ),
+              const SizedBox(height: 4),
+              Text(l10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            ],
             const SizedBox(height: 8),
             TextField(
               controller: noteCtrl,
@@ -717,27 +787,28 @@ class _PaymentsTabState extends State<PaymentsTab> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () async {
+                onPressed: (!hasSingleCurrency && selectedContractId == null) ? null : () async {
                   final amount = double.tryParse(amountCtrl.text);
                   if (amount == null || amount <= 0) return;
                   Navigator.pop(ctx);
-                  await _requestPayment(amount, selectedCurrency, noteCtrl.text);
+                  await _requestPayment(amount, _resolvedCurrencyFor(selectedContractId), noteCtrl.text, contractId: selectedContractId);
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: ShadColors.gold),
                 child: Text(l10n.paymentsSendRequest, style: const TextStyle(color: Colors.black)),
               ),
             ),
           ]),
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _requestPayment(double amount, String currency, String notes) async {
+  Future<void> _requestPayment(double amount, String currency, String notes, {int? contractId}) async {
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
     try {
-      await _paymentProvider.requestPayment(wsId, amount, currency, notes: notes.isNotEmpty ? notes : null);
+      await _paymentProvider.requestPayment(wsId, amount, currency, notes: notes.isNotEmpty ? notes : null, contractId: contractId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.paymentsRequestSent)])));
         _load();

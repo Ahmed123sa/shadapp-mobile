@@ -4720,6 +4720,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsNoteHint => 'مثال: دفعة العقد الأول';
 
   @override
+  String get paymentsMultiCurrencyContractHint => 'العميل عنده عقود بأكتر من عملة، اختار العقد عشان نحدد العملة';
+
+  @override
   String get paymentsNoteOptional => 'ملاحظة (اختياري)';
 
   @override
@@ -4792,6 +4795,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentsScheduleTitle => 'جدولة دفعات';
+
+  @override
+  String get paymentsSelectContract => '-- اختر العقد --';
 
   @override
   String get paymentsSendFailed => 'فشل إرسال الطلب';

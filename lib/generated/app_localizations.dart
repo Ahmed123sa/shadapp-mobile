@@ -9149,6 +9149,12 @@ abstract class AppLocalizations {
   /// **'Example: first contract payment'**
   String get paymentsNoteHint;
 
+  /// No description provided for @paymentsMultiCurrencyContractHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This client has contracts in multiple currencies — pick a contract to determine the payment currency'**
+  String get paymentsMultiCurrencyContractHint;
+
   /// No description provided for @paymentsNoteOptional.
   ///
   /// In en, this message translates to:
@@ -9287,6 +9293,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Schedule Payments'**
   String get paymentsScheduleTitle;
+
+  /// No description provided for @paymentsSelectContract.
+  ///
+  /// In en, this message translates to:
+  /// **'-- Select Contract --'**
+  String get paymentsSelectContract;
 
   /// No description provided for @paymentsSendFailed.
   ///

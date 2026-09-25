@@ -4744,6 +4744,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentsNoteHint => 'Example: first contract payment';
 
   @override
+  String get paymentsMultiCurrencyContractHint => 'This client has contracts in multiple currencies — pick a contract to determine the payment currency';
+
+  @override
   String get paymentsNoteOptional => 'Note (optional)';
 
   @override
@@ -4817,6 +4820,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsScheduleTitle => 'Schedule Payments';
+
+  @override
+  String get paymentsSelectContract => '-- Select Contract --';
 
   @override
   String get paymentsSendFailed => 'Failed to send request';
