@@ -167,6 +167,41 @@ void main() {
     verifyNever(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')));
   });
 
+  // payment-proof-upload-plan.md, Stage 4 (ح1): the real server error must
+  // show up inside the still-open sheet, not a SnackBar the user might not
+  // see behind it (م1/م2). Only the plain-amount path is testable here — the
+  // proof-attached path needs the camera/gallery, which are real platform
+  // channels with no mock under plain `flutter test` (see
+  // client_onboarding_screen_test.dart for the same documented gap).
+  testWidgets('requesting a payment that the server rejects shows its message inside the sheet and keeps it open', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+    });
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"message":"The given data was invalid.","errors":{"amount":["Amount exceeds the remaining contract value"]}}',
+        422,
+      ),
+    );
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '250');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Amount exceeds the remaining contract value'), findsOneWidget);
+    expect(find.text('Payment request sent'), findsNothing);
+    // The sheet is still open (not popped), unlike the success path.
+    expect(find.widgetWithText(ElevatedButton, 'Send Payment'), findsOneWidget);
+  });
+
   testWidgets('paying a scheduled payment without attaching proof shows a validation message and does not call the API', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

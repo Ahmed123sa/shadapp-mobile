@@ -23,6 +23,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/helpers/proof_image_picker.dart';
 import '../../core/theme.dart';
 import '../../providers/payment_provider.dart';
@@ -68,6 +69,10 @@ void showRequestPaymentSheet({
   final selectedContract = ValueNotifier<int?>(null);
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
+  // Shown as a red line inside the sheet on failure — never a SnackBar, since
+  // a SnackBar renders behind this still-open sheet and goes unnoticed.
+  // payment-proof-upload-plan.md, Stage 4 (ح1).
+  final errorNotifier = ValueNotifier<String?>(null);
 
   // Auto-suggest grand total
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -224,6 +229,15 @@ void showRequestPaymentSheet({
               child: const Icon(Icons.camera_alt, size: 18),
             ),
           ]),
+          ValueListenableBuilder<String?>(
+            valueListenable: errorNotifier,
+            builder: (_, err, __) => err == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
+                  ),
+          ),
           const SizedBox(height: 20),
           ValueListenableBuilder<bool>(
             valueListenable: uploadingNotifier,
@@ -231,7 +245,7 @@ void showRequestPaymentSheet({
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: uploading ? null : () => _submitPaymentDashboard(
-                  ctx, setSheetState, uploadingNotifier,
+                  ctx, setSheetState, uploadingNotifier, errorNotifier,
                   amountCtrl, selectedCurrency.value, selectedMethod.value, selectedContract.value, proofFiles,
                   paymentProvider, api, load,
                 ),
@@ -251,6 +265,7 @@ Future<void> _submitPaymentDashboard(
   BuildContext ctx,
   void Function(void Function()) setSheetState,
   ValueNotifier<bool> uploadingNotifier,
+  ValueNotifier<String?> errorNotifier,
   TextEditingController amountCtrl,
   String currency,
   String methodType,
@@ -260,14 +275,22 @@ Future<void> _submitPaymentDashboard(
   ApiClient api,
   Future<void> Function() load,
 ) async {
+  // Captured once, before any `await`: looking it up again inside the catch
+  // blocks below (after the request has actually gone out) is exactly the
+  // `use_build_context_synchronously` pattern flutter analyze flags, since it
+  // can't tell a caught exception means ctx is still safe to read from.
+  final l10n = AppLocalizations.of(ctx)!;
+  errorNotifier.value = null;
   final amount = double.tryParse(amountCtrl.text);
   if (amount == null || amount <= 0) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_enterValidAmount)));
+    errorNotifier.value = l10n.payments_enterValidAmount;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   final wsId = api.workspaceId;
   if (wsId == null) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_workspaceUnavailable)));
+    errorNotifier.value = l10n.payments_workspaceUnavailable;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   uploadingNotifier.value = true;
@@ -293,13 +316,22 @@ Future<void> _submitPaymentDashboard(
     );
 
     if (ctx.mounted) {
-      final l10n = AppLocalizations.of(ctx)!;
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_requestSent)])));
       Navigator.pop(ctx);
     }
     await load();
-  } catch (_) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.payments_sendFailed)));
+  } on ValidationException catch (e) {
+    AppLog.error('payments_page_sheets._submitPaymentDashboard', e);
+    errorNotifier.value = e.message;
+  } on ConnectionException catch (e) {
+    AppLog.error('payments_page_sheets._submitPaymentDashboard', e);
+    errorNotifier.value = l10n.connectionFailedMessage;
+  } on ServerException catch (e) {
+    AppLog.error('payments_page_sheets._submitPaymentDashboard', e);
+    errorNotifier.value = e.message.isNotEmpty ? e.message : l10n.serverErrorMessage;
+  } catch (e, s) {
+    AppLog.error('payments_page_sheets._submitPaymentDashboard', e, s);
+    errorNotifier.value = l10n.payments_sendFailed;
   }
   uploadingNotifier.value = false;
   if (ctx.mounted) setSheetState(() {});
@@ -328,6 +360,7 @@ void showScheduledPaymentSheet({
   final selectedMethod = ValueNotifier<String>(available.first);
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
+  final errorNotifier = ValueNotifier<String?>(null);
   final paymentId = p['id'];
   final amount = p['amount']?.toString() ?? '0';
   final currency = p['currency']?.toString() ?? 'SAR';
@@ -425,6 +458,15 @@ void showScheduledPaymentSheet({
               child: const Icon(Icons.camera_alt, size: 18),
             ),
           ]),
+          ValueListenableBuilder<String?>(
+            valueListenable: errorNotifier,
+            builder: (_, err, __) => err == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
+                  ),
+          ),
           const SizedBox(height: 16),
           ValueListenableBuilder<bool>(
             valueListenable: uploadingNotifier,
@@ -432,7 +474,7 @@ void showScheduledPaymentSheet({
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: uploading ? null : () => _submitScheduledPaymentProof(
-                  ctx, setSheetState, uploadingNotifier, paymentId, selectedMethod.value, proofFiles,
+                  ctx, setSheetState, uploadingNotifier, errorNotifier, paymentId, selectedMethod.value, proofFiles,
                   paymentProvider, api, load,
                 ),
                 child: uploading
@@ -451,6 +493,7 @@ Future<void> _submitScheduledPaymentProof(
   BuildContext ctx,
   void Function(void Function()) setSheetState,
   ValueNotifier<bool> uploadingNotifier,
+  ValueNotifier<String?> errorNotifier,
   dynamic paymentId,
   String methodType,
   List<Map<String, dynamic>> proofFiles,
@@ -459,13 +502,16 @@ Future<void> _submitScheduledPaymentProof(
   Future<void> Function() load,
 ) async {
   final l10n = AppLocalizations.of(ctx)!;
+  errorNotifier.value = null;
   if (proofFiles.isEmpty) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_requireProof)));
+    errorNotifier.value = l10n.payments_requireProof;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   final wsId = api.workspaceId;
   if (wsId == null) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_workspaceUnavailableMsg)));
+    errorNotifier.value = l10n.payments_workspaceUnavailableMsg;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   uploadingNotifier.value = true;
@@ -489,8 +535,18 @@ Future<void> _submitScheduledPaymentProof(
       Navigator.pop(ctx);
     }
     await load();
-  } catch (_) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(l10n.payments_proofSendFailed)));
+  } on ValidationException catch (e) {
+    AppLog.error('payments_page_sheets._submitScheduledPaymentProof', e);
+    errorNotifier.value = e.message;
+  } on ConnectionException catch (e) {
+    AppLog.error('payments_page_sheets._submitScheduledPaymentProof', e);
+    errorNotifier.value = l10n.connectionFailedMessage;
+  } on ServerException catch (e) {
+    AppLog.error('payments_page_sheets._submitScheduledPaymentProof', e);
+    errorNotifier.value = e.message.isNotEmpty ? e.message : l10n.serverErrorMessage;
+  } catch (e, s) {
+    AppLog.error('payments_page_sheets._submitScheduledPaymentProof', e, s);
+    errorNotifier.value = l10n.payments_proofSendFailed;
   }
   uploadingNotifier.value = false;
   if (ctx.mounted) setSheetState(() {});

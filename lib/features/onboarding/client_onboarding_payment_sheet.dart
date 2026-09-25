@@ -9,6 +9,8 @@ import 'dart:io' show File;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import '../../core/helpers/proof_image_picker.dart';
 import '../../core/theme.dart';
 import '../../providers/payment_provider.dart';
@@ -41,6 +43,7 @@ void showOnboardingPaymentSheet({
   final selectedMethod = ValueNotifier<String>('bank_transfer');
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
+  final errorNotifier = ValueNotifier<String?>(null);
 
   showModalBottomSheet(
     context: context,
@@ -176,6 +179,15 @@ void showOnboardingPaymentSheet({
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(AppLocalizations.of(ctx)!.onboarding_filesAttached(proofFiles.length), style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
               ),
+            ValueListenableBuilder<String?>(
+              valueListenable: errorNotifier,
+              builder: (_, err, __) => err == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
+                    ),
+            ),
             const SizedBox(height: 20),
             ValueListenableBuilder<bool>(
               valueListenable: uploadingNotifier,
@@ -183,7 +195,7 @@ void showOnboardingPaymentSheet({
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: uploading ? null : () => _submitPaymentOnboarding(
-                    ctx, setSheetState, uploadingNotifier, workspaceId,
+                    ctx, setSheetState, uploadingNotifier, errorNotifier, workspaceId,
                     amountCtrl, selectedCurrency.value, selectedMethod.value, proofFiles,
                     paymentProvider, loadClientData,
                   ),
@@ -204,6 +216,7 @@ Future<void> _submitPaymentOnboarding(
   BuildContext ctx,
   void Function(void Function()) setSheetState,
   ValueNotifier<bool> uploadingNotifier,
+  ValueNotifier<String?> errorNotifier,
   int? workspaceId,
   TextEditingController amountCtrl,
   String currency,
@@ -212,13 +225,21 @@ Future<void> _submitPaymentOnboarding(
   PaymentProvider paymentProvider,
   Future<void> Function() loadClientData,
 ) async {
+  // Captured once, before any `await`: looking it up again inside the catch
+  // blocks below (after the request has actually gone out) is exactly the
+  // `use_build_context_synchronously` pattern flutter analyze flags, since it
+  // can't tell a caught exception means ctx is still safe to read from.
+  final l10n = AppLocalizations.of(ctx)!;
+  errorNotifier.value = null;
   final amount = double.tryParse(amountCtrl.text);
   if (amount == null || amount <= 0) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_enterValidAmount)));
+    errorNotifier.value = l10n.onboarding_enterValidAmount;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   if (workspaceId == null) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_workspaceUnavailable)));
+    errorNotifier.value = l10n.onboarding_workspaceUnavailable;
+    if (ctx.mounted) setSheetState(() {});
     return;
   }
   uploadingNotifier.value = true;
@@ -243,12 +264,22 @@ Future<void> _submitPaymentOnboarding(
     );
 
     if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(ctx)!.onboarding_paymentSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.onboarding_paymentSent)])));
       Navigator.pop(ctx);
     }
     loadClientData();
-  } catch (_) {
-    if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.onboarding_paymentFailed)));
+  } on ValidationException catch (e) {
+    AppLog.error('client_onboarding_payment_sheet._submitPaymentOnboarding', e);
+    errorNotifier.value = e.message;
+  } on ConnectionException catch (e) {
+    AppLog.error('client_onboarding_payment_sheet._submitPaymentOnboarding', e);
+    errorNotifier.value = l10n.connectionFailedMessage;
+  } on ServerException catch (e) {
+    AppLog.error('client_onboarding_payment_sheet._submitPaymentOnboarding', e);
+    errorNotifier.value = e.message.isNotEmpty ? e.message : l10n.serverErrorMessage;
+  } catch (e, s) {
+    AppLog.error('client_onboarding_payment_sheet._submitPaymentOnboarding', e, s);
+    errorNotifier.value = l10n.onboarding_paymentFailed;
   }
   uploadingNotifier.value = false;
   if (ctx.mounted) setSheetState(() {});

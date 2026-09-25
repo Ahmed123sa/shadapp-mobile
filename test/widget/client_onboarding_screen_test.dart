@@ -134,4 +134,39 @@ void main() {
           body: any(named: 'body'),
         )).called(1);
   });
+
+  // payment-proof-upload-plan.md, Stage 4 (ح1) — same fix as
+  // payments_page_test.dart's equivalent test, applied to onboarding's own
+  // payment sheet.
+  testWidgets('sending a payment that the server rejects shows its message inside the sheet and keeps it open', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"active","contracts":[{"id":7,"status":"company_approved","value":"1000","currency":"SAR"}],"payments":[]}}}');
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"message":"The given data was invalid.","errors":{"amount":["Amount exceeds the remaining contract value"]}}',
+        422,
+      ),
+    );
+
+    await pumpScreen(tester, api);
+
+    final ctaButton = find.widgetWithText(ElevatedButton, 'Send Payment');
+    await scrollTo(tester, ctaButton);
+    await tester.tap(ctaButton);
+    await tester.pumpAndSettle();
+    final submitButton = find.widgetWithText(ElevatedButton, 'Send Payment').last;
+    await scrollTo(tester, submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Amount exceeds the remaining contract value'), findsOneWidget);
+    // The sheet is still open (not popped): both the page's own "Send
+    // Payment" CTA behind it and the sheet's submit button (same label) are
+    // still on screen. If the sheet had been popped, only the CTA would
+    // remain.
+    expect(find.widgetWithText(ElevatedButton, 'Send Payment'), findsNWidgets(2));
+  });
 }
