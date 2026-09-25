@@ -21,13 +21,33 @@ class NotificationService {
   AppLocalizations? l10n;
 
   static final NotificationService _instance = NotificationService._();
-  NotificationService._();
+  NotificationService._({ApiClient? api}) : _api = api ?? ApiClient();
 
   factory NotificationService() => _instance;
 
-  final _firebaseMessaging = FirebaseMessaging.instance;
+  /// A separate instance from the app-wide singleton above, with an injected
+  /// [ApiClient] — for tests that need to exercise [registerCurrentToken]'s
+  /// network call without touching the real `ApiClient()` singleton (which
+  /// [NotificationService()] always uses) or the real Firebase plugins (never
+  /// touched here since [init] is never called on this instance).
+  @visibleForTesting
+  factory NotificationService.forTesting({required ApiClient api}) => NotificationService._(api: api);
+
+  // `late` matters here, not just style: an eager `final _firebaseMessaging =
+  // FirebaseMessaging.instance;` ran the instant ANY NotificationService was
+  // constructed — including the app-wide singleton's very first reference
+  // and every NotificationService.forTesting() instance — and
+  // FirebaseMessaging.instance throws outside a real Firebase.initializeApp()
+  // context, which plain `flutter test` never provides. That made
+  // registerCurrentToken() (which never touches Firebase messaging, only
+  // _api and _fcmToken) crash on construction anyway, and broke every test
+  // that builds an AuthProvider — not just the ones that call
+  // login()/logout(). `late` defers the actual FirebaseMessaging.instance
+  // call to init()'s first real use of it, which nothing in
+  // registerCurrentToken()'s path ever triggers.
+  late final _firebaseMessaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
-  final _api = ApiClient();
+  final ApiClient _api;
 
   String? _fcmToken;
   bool _initialized = false;
@@ -168,7 +188,38 @@ class NotificationService {
     return 'android';
   }
 
+  /// Re-sends this device's FCM token to the backend. [init] registers it
+  /// once at app startup (see main.dart), which runs regardless of whether
+  /// anyone is logged in yet — for a user who isn't, that first attempt hits
+  /// `/notifications/register-token` unauthenticated, gets a 401, and is
+  /// silently swallowed by [_registerToken]'s own catch. Nothing retried it
+  /// afterwards, so a freshly logged-in user got no push notifications until
+  /// the app was fully closed and relaunched (plans/notifications-badges-
+  /// toasts-plan.md, ن1). AuthProvider calls this right after a successful
+  /// login/authenticate so the token gets attached to the now-authenticated
+  /// session immediately.
+  ///
+  /// [token] is optional so tests can exercise the POST without needing a
+  /// real cached [_fcmToken] (which only [init] — never called in tests —
+  /// ever sets). Production callers omit it and the cached token is used; if
+  /// there isn't one yet (permission still pending, Firebase still
+  /// initializing), this is a silent no-op rather than something worth
+  /// blocking login on.
+  Future<void> registerCurrentToken({String? token}) async {
+    final t = token ?? _fcmToken;
+    if (t != null) await _registerToken(t);
+  }
+
   String? get fcmToken => _fcmToken;
+
+  /// Test-only seam so a [forTesting] instance can simulate having already
+  /// obtained an FCM token, the way a real instance's [init] would after
+  /// talking to Firebase — which tests never exercise. Lets a test verify
+  /// [registerCurrentToken]'s no-arg (cached-token) path, the one production
+  /// callers (AuthProvider) actually use, instead of only its explicit
+  /// [token] override.
+  @visibleForTesting
+  set fcmTokenForTesting(String? value) => _fcmToken = value;
 
   void dispose() {
     _messageSubscription?.cancel();

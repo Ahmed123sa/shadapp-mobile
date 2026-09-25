@@ -3,10 +3,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/app_log.dart';
+import '../core/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiClient _api;
-  AuthProvider({ApiClient? api}) : _api = api ?? ApiClient();
+  final NotificationService _notificationService;
+  AuthProvider({ApiClient? api, NotificationService? notificationService})
+      : _api = api ?? ApiClient(),
+        _notificationService = notificationService ?? NotificationService();
   bool _isLoading = false;
   String? _error;
   bool _isLoggedIn = false;
@@ -35,6 +39,13 @@ class AuthProvider extends ChangeNotifier {
       _role = user['role'];
       _userName = user['name'];
       _isLoggedIn = true;
+      // plans/notifications-badges-toasts-plan.md ن1 — the token
+      // NotificationService.init() registered at app startup (main.dart) was
+      // sent unauthenticated and 401'd silently, since nothing retried it
+      // once a user actually logged in. This resends the already-cached
+      // token now that there's a session for it to attach to; a no-op if
+      // there isn't one yet (registerCurrentToken swallows its own errors).
+      await _notificationService.registerCurrentToken();
       return true;
     } catch (e) {
       _error = e.toString();
@@ -60,6 +71,9 @@ class AuthProvider extends ChangeNotifier {
       await _api.setUserData(id: client['id'], workspace: res['workspace_id']);
       _role = 'client';
       _isLoggedIn = true;
+      // See the matching comment in login() above — plans/notifications-
+      // badges-toasts-plan.md ن1.
+      await _notificationService.registerCurrentToken();
       return true;
     } catch (e) {
       _error = e.toString();
@@ -143,6 +157,9 @@ class AuthProvider extends ChangeNotifier {
         _userName = user['name'] as String?;
       }
       _isLoggedIn = true;
+      // See the matching comment in login() above — plans/notifications-
+      // badges-toasts-plan.md ن1. This is the path LoginPage actually calls.
+      await _notificationService.registerCurrentToken();
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -182,6 +199,24 @@ class AuthProvider extends ChangeNotifier {
   Future<void> requestClientPasswordReset(String email) => _api.post('/auth/client/forgot-password', {'email': email});
 
   Future<void> logout() async {
+    // plans/notifications-badges-toasts-plan.md ن1 — without this, the
+    // device's FCM token stayed registered to this account after logout, so
+    // whoever logged in next on the same phone kept receiving the previous
+    // person's push notifications until the app was fully closed and
+    // reopened. Must happen *before* /auth/logout below: that call revokes
+    // the Sanctum token this request needs to authenticate.
+    final fcmToken = _notificationService.fcmToken;
+    if (fcmToken != null) {
+      try {
+        await _api.post('/notifications/unregister-token', {'token': fcmToken});
+      } catch (e, s) {
+        // Non-fatal, same reasoning as the /auth/logout failure below: worst
+        // case this device keeps getting push for the account that just
+        // logged out until FcmChannel's own unregistered-token cleanup
+        // catches it server-side.
+        AppLog.error('AuthProvider.logout.unregisterToken', e, s);
+      }
+    }
     try {
       await _api.post('/auth/logout');
     } catch (e, s) {

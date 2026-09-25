@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shadapp_client/core/api_client.dart';
+import 'package:shadapp_client/core/notification_service.dart';
 import 'package:shadapp_client/providers/auth_provider.dart';
 import '../helpers/mock_http_client.dart';
 
@@ -250,6 +251,87 @@ void main() {
       expect(provider.role, isNull);
       expect(provider.userName, isNull);
       expect(await api.getToken(), isNull);
+    });
+  });
+
+  // plans/notifications-badges-toasts-plan.md ن1 — a freshly logged-in user
+  // used to get no push notifications until the app was fully closed and
+  // reopened, since NotificationService.init()'s own registration attempt
+  // (at app startup, before login) always 401s. And logging out never told
+  // the server to stop sending push to this device, so the next person to
+  // log in on the same phone kept getting the previous account's
+  // notifications. Both are exercised here via a NotificationService.forTesting
+  // instance sharing this test's mocked httpClient, so both the auth calls and
+  // the push-token calls land on the same mock and can be asserted together.
+  group('push token registration', () {
+    test('login registers the already-cached FCM token', () async {
+      final notificationService = NotificationService.forTesting(api: api)..fcmTokenForTesting = 'device-abc';
+      provider = AuthProvider(api: api, notificationService: notificationService);
+      when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        if (uri.path.contains('/auth/login')) {
+          return jsonResponse('{"token":"tok-1","user":{"id":1,"name":"Ahmed","role":"account_manager"}}');
+        }
+        return jsonResponse('{}');
+      });
+
+      final ok = await provider.login('a@a.com', 'secret');
+
+      expect(ok, isTrue);
+      final captured = verify(() => httpClient.post(
+            any(that: predicate<Uri>((u) => u.path.endsWith('/notifications/register-token'))),
+            headers: any(named: 'headers'),
+            body: captureAny(named: 'body'),
+          )).captured;
+      expect(captured, hasLength(1));
+      final sentBody = jsonDecode(captured.single as String) as Map<String, dynamic>;
+      expect(sentBody['token'], 'device-abc');
+    });
+
+    test('logout unregisters the device token before revoking the session', () async {
+      final notificationService = NotificationService.forTesting(api: api)..fcmTokenForTesting = 'device-xyz';
+      provider = AuthProvider(api: api, notificationService: notificationService);
+      final calledPaths = <String>[];
+      Map<String, dynamic>? unregisterBody;
+      when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        calledPaths.add(uri.path);
+        if (uri.path.contains('/auth/login')) {
+          return jsonResponse('{"token":"tok-1","user":{"id":1,"name":"Ahmed","role":"account_manager"}}');
+        }
+        if (uri.path.contains('/notifications/unregister-token')) {
+          unregisterBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+        }
+        return jsonResponse('{}');
+      });
+      await provider.login('a@a.com', 'secret');
+      calledPaths.clear();
+
+      await provider.logout();
+
+      final unregisterIndex = calledPaths.indexOf('/notifications/unregister-token');
+      final logoutIndex = calledPaths.indexOf('/auth/logout');
+      expect(unregisterIndex, greaterThanOrEqualTo(0));
+      expect(logoutIndex, greaterThan(unregisterIndex));
+      expect(unregisterBody?['token'], 'device-xyz');
+    });
+
+    test('logout does not call unregister-token when no FCM token is cached', () async {
+      // The default AuthProvider(api: api) (no notificationService override)
+      // falls back to the real NotificationService() singleton, whose
+      // fcmToken is never set in a test process — this is the same setup
+      // the pre-existing logout test above uses.
+      when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+          .thenAnswer((_) async => jsonResponse('{"token":"tok-1","user":{"id":1,"name":"Ahmed","role":"account_manager"}}'));
+      await provider.login('a@a.com', 'secret');
+
+      await provider.logout();
+
+      verifyNever(() => httpClient.post(
+            any(that: predicate<Uri>((u) => u.path.endsWith('/notifications/unregister-token'))),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          ));
     });
   });
 }
