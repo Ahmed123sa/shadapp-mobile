@@ -120,6 +120,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   Map<String, dynamic> _subUserPermissions = {};
   bool get _isSubUser => _api.role == 'sub_user';
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  // plans/notifications-badges-toasts-plan.md ن15 — ReverbService's callback
+  // fields are listener lists now, not single values another screen's
+  // connect() call could silently overwrite. Each addXxxListener() call
+  // below returns its own removal callback; dispose() calls them all so this
+  // screen's closures don't linger on the shared singleton once it's gone.
+  final List<VoidCallback> _reverbUnsubscribers = [];
 
   int _computeStage() {
     final client = _client;
@@ -185,7 +191,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     if (cid == null) return;
     final reverb = _reverb;
     reverb.connectForClient(cid);
-    reverb.onNotificationReceived = (payload) {
+    _reverbUnsubscribers.add(reverb.addNotificationReceivedListener((payload) {
       _loadNotifs();
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -197,19 +203,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
       ));
-    };
-    reverb.onContractStatusChanged = () {
+    }));
+    _reverbUnsubscribers.add(reverb.addContractStatusChangedListener(() {
       _loadClientData();
       _contractRefreshNotifier.value++;
-    };
+    }));
     // REALTIME_PLAN.md Stage 5 — mirrors onContractStatusChanged above.
     // These two cover the first-contract "waiting for activation" screen
     // (PaymentStatusChanged/WorkspaceStatusChanged are what actually change
     // during that wait, per REALTIME_PLAN.md section 2's مسار أ), so a plain
     // reload of the client (which nests the workspace) is enough — no new
     // state beyond what _loadClientData() already fetches.
-    reverb.onWorkspaceStatusChanged = (_) => _loadClientData();
-    reverb.onPaymentStatusChanged = (_) => _loadClientData();
+    _reverbUnsubscribers.add(reverb.addWorkspaceStatusChangedListener((_) => _loadClientData()));
+    _reverbUnsubscribers.add(reverb.addPaymentStatusChangedListener((_) => _loadClientData()));
     if (widget.enableFcm) {
       _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
@@ -247,6 +253,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     WidgetsBinding.instance.removeObserver(this);
     _contractRefreshNotifier.removeListener(_onChildDataChanged);
     _fcmSubscription?.cancel();
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
+    }
     super.dispose();
   }
 

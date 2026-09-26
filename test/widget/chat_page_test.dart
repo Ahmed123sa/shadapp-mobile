@@ -144,7 +144,7 @@ void main() {
       headers: any(named: 'headers'),
     )).called(1);
 
-    reverb.onContractStatusChanged?.call();
+    reverb.debugDispatch('contract.status_changed', null);
     await tester.pumpAndSettle();
 
     // Confirmed empirically: mocktail's verify() consumes the interactions
@@ -374,5 +374,34 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
         headers: any(named: 'headers'))).called(1);
     expect(find.text('No active meeting'), findsOneWidget);
+  });
+
+  // plans/notifications-badges-toasts-plan.md ن15 — this screen used to call
+  // reverb.connectForClient(cid) on dispose to *restore* the client's own
+  // notifications channel, because opening chat had taken the connection's
+  // one and only channel over. Now that connect(wsId) is additive, the
+  // client channel (joined by whichever dashboard screen opened this chat)
+  // is never dropped in the first place — this screen only needs to leave
+  // the one channel it joined itself when it disposes.
+  testWidgets('leaves its own workspace channel on dispose without touching the clients notification channel', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.workspaceId = 5;
+    stubDefaultGets(httpClient);
+    final reverb = ReverbService.forTesting();
+    // Simulates client_dashboard_screen.dart already having joined its own
+    // notifications channel before this chat tab (kept alive in the same
+    // IndexedStack) ever ran its own initState.
+    await reverb.connectForClient(10);
+
+    await pumpPage(tester, api, reverb: reverb);
+    expect(reverb.debugChannels, containsAll(<String>['App.Models.Client.10', 'workspace.5']));
+
+    // Simulates navigating away from this screen.
+    await tester.pumpWidget(const SizedBox());
+
+    expect(reverb.debugChannels, contains('App.Models.Client.10'));
+    expect(reverb.debugChannels, isNot(contains('workspace.5')));
   });
 }

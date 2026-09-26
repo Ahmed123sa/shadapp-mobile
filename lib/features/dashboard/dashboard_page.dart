@@ -48,6 +48,13 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   String? _error;
   StreamSubscription? _fcmSubscription;
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  // plans/notifications-badges-toasts-plan.md ن15 — see the identical field
+  // in client_dashboard_screen.dart for why this list exists. This screen
+  // never used to unsubscribe at all — harmless under the old design (the
+  // next screen's assignment just overwrote this field's single closure),
+  // but with listener lists that would leak a closure over a disposed State
+  // every time a client goes onboarding -> dashboard -> logout -> back in.
+  final List<VoidCallback> _reverbUnsubscribers = [];
 
   @override
   void initState() {
@@ -62,7 +69,7 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
     if (cid == null) return;
     final reverb = _reverb;
     reverb.connectForClient(cid);
-    reverb.onContractStatusChanged = () => _loadClientData();
+    _reverbUnsubscribers.add(reverb.addContractStatusChangedListener(() => _loadClientData()));
     if (widget.enableFcm) {
       _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
@@ -82,6 +89,9 @@ class _DashboardPageState extends State<DashboardPage> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fcmSubscription?.cancel();
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
+    }
     super.dispose();
   }
 

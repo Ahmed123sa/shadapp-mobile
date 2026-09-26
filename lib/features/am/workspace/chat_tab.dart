@@ -85,6 +85,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   Map<String, dynamic>? _replyTo;
   int? get _wsId => widget.workspaceId ?? _api.workspaceId;
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  // plans/notifications-badges-toasts-plan.md ن15 — see the identical field
+  // in client_dashboard_screen.dart for why this list exists.
+  final List<VoidCallback> _reverbUnsubscribers = [];
 
   @override
   void initState() {
@@ -97,7 +100,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId != null) {
       final reverb = _reverb;
-      reverb.onMessageReceived = chatOnMessageReceived(
+      _reverbUnsubscribers.add(reverb.addMessageReceivedListener(chatOnMessageReceived(
         state: this,
         setState: setState,
         // Guards against the same message arriving twice — a real
@@ -110,21 +113,21 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           _messages.add(msg);
         },
         scrollToBottom: _scrollToBottom,
-      );
-      reverb.onMessageUpdated = chatOnMessageUpdated(
+      )));
+      _reverbUnsubscribers.add(reverb.addMessageUpdatedListener(chatOnMessageUpdated(
         state: this,
         setState: setState,
         updateMessage: (msg) {
           final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
           if (idx >= 0) _messages[idx] = msg;
         },
-      );
-      reverb.onContractStatusChanged = () {
+      )));
+      _reverbUnsubscribers.add(reverb.addContractStatusChangedListener(() {
         if (mounted) _load();
-      };
-      reverb.onPaymentScheduleChanged = (_) {
+      }));
+      _reverbUnsubscribers.add(reverb.addPaymentScheduleChangedListener((_) {
         if (mounted) _loadWorkspace();
-      };
+      }));
       reverb.connect(wsId);
     }
   }
@@ -383,11 +386,19 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     _poller.stop();
     _controller.dispose();
     _scrollController.dispose();
-    final uid = _api.userId;
-    if (uid != null) {
-      _reverb.connectForUser(uid);
-    } else {
-      _reverb.disconnect();
+    // plans/notifications-badges-toasts-plan.md ن15 — used to reconnect for
+    // the AM's own user channel here to *override* the workspace channel
+    // this screen had taken over, since only one channel could ever be
+    // subscribed at a time. Now that connect(wsId) above is additive, the
+    // user channel (joined by am_dashboard_page.dart before this screen ever
+    // opened) was never dropped in the first place — this screen only needs
+    // to leave the one channel it joined itself.
+    final wsId = _wsId;
+    if (wsId != null) {
+      _reverb.leaveWorkspace(wsId);
+    }
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
     }
     super.dispose();
   }

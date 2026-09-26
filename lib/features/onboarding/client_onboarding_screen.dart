@@ -50,6 +50,9 @@ class ClientOnboardingScreen extends StatefulWidget {
 class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  // plans/notifications-badges-toasts-plan.md ن15 — see the identical field
+  // in client_dashboard_screen.dart for why this list exists.
+  final List<VoidCallback> _reverbUnsubscribers = [];
   late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider(repository: ClientRepository(api: _api));
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider(repository: PaymentRepository(api: _api));
@@ -96,7 +99,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     final cid = _api.userId;
     if (cid == null) return;
     _reverb.connectForClient(cid);
-    _reverb.onNotificationReceived = (payload) {
+    _reverbUnsubscribers.add(_reverb.addNotificationReceivedListener((payload) {
       _loadClientData();
       _contractRefreshNotifier.value++;
       if (!mounted) return;
@@ -108,11 +111,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
       ));
-    };
-    _reverb.onContractStatusChanged = () {
+    }));
+    _reverbUnsubscribers.add(_reverb.addContractStatusChangedListener(() {
       _loadClientData();
       _contractRefreshNotifier.value++;
-    };
+    }));
     if (widget.enableFcm) {
       _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
@@ -137,6 +140,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fcmSubscription?.cancel();
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
+    }
     super.dispose();
   }
 

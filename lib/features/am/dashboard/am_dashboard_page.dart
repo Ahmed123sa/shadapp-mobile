@@ -123,13 +123,16 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   }
 
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
+  // plans/notifications-badges-toasts-plan.md ن15 — see the identical field
+  // in client_dashboard_screen.dart for why this list exists.
+  final List<VoidCallback> _reverbUnsubscribers = [];
 
   void _setupRealtimeNotifications() {
     final uid = _api.userId;
     if (uid == null) return;
     final reverb = _reverb;
     reverb.connectForUser(uid);
-    reverb.onNotificationReceived = (payload) {
+    _reverbUnsubscribers.add(reverb.addNotificationReceivedListener((payload) {
       _loadNotifs();
       if (!mounted) return;
       final msg = (payload['data'] as Map?)?['message'] as String? ?? AppLocalizations.of(context)!.amNewNotification;
@@ -140,7 +143,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
       ));
-    };
+    }));
   }
 
   Future<void> _load() async {
@@ -320,6 +323,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   void dispose() {
     _pollTimer?.cancel();
     _searchController.dispose();
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
+    }
     super.dispose();
   }
 

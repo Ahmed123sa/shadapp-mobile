@@ -28,6 +28,8 @@
 // individual embedded screens' own behavior beyond "it loads without
 // crashing" — each of those already has its own characterization/unit test
 // suite.
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -337,7 +339,7 @@ void main() {
     // SignatureTab's), same as the first test in this file.
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(2);
 
-    reverb.onWorkspaceStatusChanged?.call({'status': 'active'});
+    reverb.debugDispatch('workspace.status_changed', jsonEncode({'status': 'active'}));
     await pumpBriefly(tester);
 
     // Confirmed empirically in chat_page_test.dart: mocktail's verify()
@@ -356,7 +358,7 @@ void main() {
     final reverb = await pumpPage(tester, api);
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(2);
 
-    reverb.onPaymentStatusChanged?.call({'status': 'approved'});
+    reverb.debugDispatch('payment.status_changed', jsonEncode({'status': 'approved'}));
     await pumpBriefly(tester);
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(1);

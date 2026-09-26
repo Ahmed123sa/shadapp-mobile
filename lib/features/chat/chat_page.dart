@@ -74,6 +74,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Map<String, dynamic>? _nextMeeting;
   late final ReverbService _reverb = widget.reverb ?? ReverbService();
   Map<String, dynamic>? _nextPayment;
+  // plans/notifications-badges-toasts-plan.md ن15 — see the identical field
+  // in client_dashboard_screen.dart for why this list exists.
+  final List<VoidCallback> _reverbUnsubscribers = [];
 
   @override
   void initState() {
@@ -86,7 +89,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId != null) {
       final reverb = _reverb;
-      reverb.onMessageReceived = chatOnMessageReceived(
+      _reverbUnsubscribers.add(reverb.addMessageReceivedListener(chatOnMessageReceived(
         state: this,
         setState: setState,
         // Guards against the same message arriving twice — a real
@@ -99,18 +102,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           _messages.add(msg);
         },
         scrollToBottom: _scrollToBottom,
-      );
-      reverb.onMessageUpdated = chatOnMessageUpdated(
+      )));
+      _reverbUnsubscribers.add(reverb.addMessageUpdatedListener(chatOnMessageUpdated(
         state: this,
         setState: setState,
         updateMessage: (msg) {
           final idx = _messages.indexWhere((m) => m['id'] == msg['id']);
           if (idx >= 0) _messages[idx] = msg;
         },
-      );
-      reverb.onPaymentScheduleChanged = (_) {
+      )));
+      _reverbUnsubscribers.add(reverb.addPaymentScheduleChangedListener((_) {
         if (mounted) _checkWorkspace();
-      };
+      }));
       // Was missing here — chat_tab.dart (the AM-facing side of this same
       // chat feature) has always listened for this, so a contract getting
       // approved/rejected/etc. refreshes the AM's view live. The client's
@@ -118,9 +121,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       // the client had this screen open would silently show stale bubble
       // state until the next fallback poll. See
       // docs/state-layer-migration-plan.md, بند ٥'s "اكتشاف جانبي".
-      reverb.onContractStatusChanged = () {
+      _reverbUnsubscribers.add(reverb.addContractStatusChangedListener(() {
         if (mounted) _load();
-      };
+      }));
       reverb.connect(wsId);
     }
   }
@@ -147,11 +150,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _scrollController.removeListener(_onScroll);
     _controller.dispose();
     _scrollController.dispose();
-    final cid = _api.userId;
-    if (cid != null) {
-      _reverb.connectForClient(cid);
-    } else {
-      _reverb.disconnect();
+    // plans/notifications-badges-toasts-plan.md ن15 — used to reconnect for
+    // the client's own channel here to *override* the workspace channel this
+    // screen had taken over, since only one channel could ever be subscribed
+    // at a time — which meant the notifications channel (joined by whichever
+    // dashboard screen opened this chat) went silent for as long as the chat
+    // was open. Now that connect(wsId) above is additive, that channel was
+    // never dropped in the first place — this screen only needs to leave the
+    // one channel it joined itself.
+    final wsId = _wsId;
+    if (wsId != null) {
+      _reverb.leaveWorkspace(wsId);
+    }
+    for (final unsubscribe in _reverbUnsubscribers) {
+      unsubscribe();
     }
     super.dispose();
   }

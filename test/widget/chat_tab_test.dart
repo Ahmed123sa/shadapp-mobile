@@ -79,7 +79,7 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((_) async => jsonResponse('{}'));
   }
 
-  Future<void> pumpTab(WidgetTester tester, dynamic api, {String wsStatus = 'active'}) async {
+  Future<void> pumpTab(WidgetTester tester, dynamic api, {String wsStatus = 'active', ReverbService? reverb}) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -94,7 +94,7 @@ void main() {
           chatProvider: ChatProvider(repository: ChatRepository(api: api)),
           contractProvider: ContractProvider(api: api),
           meetingProvider: MeetingProvider(repository: MeetingRepository(api: api)),
-          reverb: ReverbService.forTesting(),
+          reverb: reverb ?? ReverbService.forTesting(),
           enablePolling: false,
         ),
       ),
@@ -326,5 +326,34 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
         headers: any(named: 'headers'))).called(1);
     expect(find.text('No active meeting'), findsOneWidget);
+  });
+
+  // plans/notifications-badges-toasts-plan.md ن15 — this tab used to call
+  // reverb.connectForUser(uid) on dispose to *restore* the AM's own
+  // notifications channel, because opening a client's chat had taken the
+  // connection's one and only channel over. Now that connect(wsId) is
+  // additive, the user channel (joined here by am_dashboard_page.dart before
+  // this tab ever opens) is never dropped in the first place — this tab only
+  // needs to leave the one channel it joined itself when it disposes.
+  testWidgets('leaves its own workspace channel on dispose without touching the AMs user channel', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    api.userId = 10;
+    stubDefaultGets(httpClient);
+    final reverb = ReverbService.forTesting();
+    // Simulates am_dashboard_page.dart already having joined its own
+    // notifications channel before the AM ever opened this client's chat.
+    await reverb.connectForUser(10);
+
+    await pumpTab(tester, api, reverb: reverb);
+    expect(reverb.debugChannels, containsAll(<String>['App.Models.User.10', 'workspace.5']));
+
+    // Simulates navigating away from this client's workspace (e.g. back to
+    // the AM's client list).
+    await tester.pumpWidget(const SizedBox());
+
+    expect(reverb.debugChannels, contains('App.Models.User.10'));
+    expect(reverb.debugChannels, isNot(contains('workspace.5')));
   });
 }

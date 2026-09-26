@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show visibleForTesting, VoidCallback;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'api_client.dart';
@@ -12,10 +12,13 @@ class ReverbService {
   ReverbService._() : _silent = false;
 
   /// Test-only constructor. Produces an independent, non-singleton instance
-  /// (mirrors [ApiClient.forTesting]) whose connect*() methods are no-ops —
-  /// no WebSocket is ever opened, no dotenv/network access happens. Screens
-  /// that accept an optional `ReverbService?` and wire this through can be
-  /// pumped in plain `flutter test` without a real socket connection hanging
+  /// (mirrors [ApiClient.forTesting]) whose connect*() methods never open a
+  /// real WebSocket — no dotenv/network access happens. Channel bookkeeping
+  /// (joining/leaving, listener registration) still works under this mode,
+  /// which is what lets tests exercise the multi-channel behavior below
+  /// without a socket; see [debugChannels] and [debugDispatch]. Screens that
+  /// accept an optional `ReverbService?` and wire this through can be pumped
+  /// in plain `flutter test` without a real socket connection hanging
   /// `pumpAndSettle`.
   @visibleForTesting
   ReverbService.forTesting() : _silent = true;
@@ -32,10 +35,20 @@ class ReverbService {
   Timer? _pingTimer;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
-  int? _currentWorkspaceId;
-  int? _currentUserId;
-  bool _isClientChannel = false;
   String? _socketId;
+
+  // plans/notifications-badges-toasts-plan.md ن15 — replaces the old
+  // _currentWorkspaceId/_currentUserId/_isClientChannel trio, which meant
+  // exactly one channel could be "current" on this connection at a time:
+  // chat_page.dart calling connect(wsId) while the dashboard already had
+  // connectForClient(cid) active silently dropped the client channel (and
+  // with it, the dashboard's notification listeners) for as long as chat was
+  // open. All channels this service joins now share the one socket
+  // connection, tracked here instead of in separate single-value fields.
+  final Set<String> _channels = {};
+
+  @visibleForTesting
+  Set<String> get debugChannels => Set.unmodifiable(_channels);
 
   /// Exposed so ApiClient can attach X-Socket-Id to outgoing requests — see
   /// the header wiring in api_client.dart's _headers() for why.
@@ -51,20 +64,61 @@ class ReverbService {
   /// let them stop polling while events are still going nowhere.
   bool get isConnected => _channel != null && _socketId != null;
   DateTime _lastNotifTime = DateTime.now().subtract(const Duration(seconds: 1));
-  void Function(Map<String, dynamic>)? onMessageReceived;
-  void Function(Map<String, dynamic>)? onMessageUpdated;
-  void Function()? onContractStatusChanged;
-  void Function(Map<String, dynamic>)? onPaymentScheduleChanged;
-  void Function(Map<String, dynamic>)? onNotificationReceived;
+
+  // plans/notifications-badges-toasts-plan.md ن15 — these used to be single
+  // nullable callback fields (`void Function(...)? onMessageReceived`), so
+  // whichever screen called `reverb.onXxx = callback` *last* silently
+  // replaced whatever an earlier screen had registered. They're now listener
+  // lists: every registered callback fires, and addXxxListener() returns a
+  // callback that removes just that one listener again, for use in a
+  // screen's dispose().
+  final List<void Function(Map<String, dynamic>)> _messageReceivedListeners = [];
+  final List<void Function(Map<String, dynamic>)> _messageUpdatedListeners = [];
+  final List<void Function()> _contractStatusChangedListeners = [];
+  final List<void Function(Map<String, dynamic>)> _paymentScheduleChangedListeners = [];
+  final List<void Function(Map<String, dynamic>)> _notificationReceivedListeners = [];
   // REALTIME_PLAN.md Stage 5 — mirrors the dashboard's onWorkspaceStatusChanged
   // / onPaymentStatusChanged (see src/lib/echo.ts's subscribeToWorkspace).
   // Payload shapes match the backend events' broadcastWith():
   // WorkspaceStatusChanged -> {workspace_id, status, activated_at};
   // PaymentStatusChanged -> {payment_id, status, amount, currency}.
-  // Not wired into any screen yet — same "capability first, consumers later"
-  // split the dashboard went through across its own Stage 2/Stage 3.
-  void Function(Map<String, dynamic>)? onWorkspaceStatusChanged;
-  void Function(Map<String, dynamic>)? onPaymentStatusChanged;
+  final List<void Function(Map<String, dynamic>)> _workspaceStatusChangedListeners = [];
+  final List<void Function(Map<String, dynamic>)> _paymentStatusChangedListeners = [];
+
+  VoidCallback addMessageReceivedListener(void Function(Map<String, dynamic>) listener) {
+    _messageReceivedListeners.add(listener);
+    return () => _messageReceivedListeners.remove(listener);
+  }
+
+  VoidCallback addMessageUpdatedListener(void Function(Map<String, dynamic>) listener) {
+    _messageUpdatedListeners.add(listener);
+    return () => _messageUpdatedListeners.remove(listener);
+  }
+
+  VoidCallback addContractStatusChangedListener(void Function() listener) {
+    _contractStatusChangedListeners.add(listener);
+    return () => _contractStatusChangedListeners.remove(listener);
+  }
+
+  VoidCallback addPaymentScheduleChangedListener(void Function(Map<String, dynamic>) listener) {
+    _paymentScheduleChangedListeners.add(listener);
+    return () => _paymentScheduleChangedListeners.remove(listener);
+  }
+
+  VoidCallback addNotificationReceivedListener(void Function(Map<String, dynamic>) listener) {
+    _notificationReceivedListeners.add(listener);
+    return () => _notificationReceivedListeners.remove(listener);
+  }
+
+  VoidCallback addWorkspaceStatusChangedListener(void Function(Map<String, dynamic>) listener) {
+    _workspaceStatusChangedListeners.add(listener);
+    return () => _workspaceStatusChangedListeners.remove(listener);
+  }
+
+  VoidCallback addPaymentStatusChangedListener(void Function(Map<String, dynamic>) listener) {
+    _paymentStatusChangedListeners.add(listener);
+    return () => _paymentStatusChangedListeners.remove(listener);
+  }
 
   void configure({String? host, String? port, String? key}) {
     if (host != null) this.host = host;
@@ -84,34 +138,56 @@ class ReverbService {
     }
   }
 
+  /// Joins `workspace.{workspaceId}` — additive: any channel already joined
+  /// (e.g. a dashboard's own user/client channel) stays joined.
   Future<void> connect(int workspaceId) async {
-    if (_silent) return;
-    _currentWorkspaceId = workspaceId;
-    _currentUserId = null;
-    _isClientChannel = false;
-    await _connectAndListen();
+    await _join('workspace.$workspaceId');
   }
 
   Future<void> connectForUser(int userId) async {
-    if (_silent) return;
-    _currentUserId = userId;
-    _isClientChannel = false;
-    _currentWorkspaceId = null;
-    await _connectAndListen();
-    await _subscribePrivateChannel('App.Models.User.$userId');
+    await _join('App.Models.User.$userId');
   }
 
   Future<void> connectForClient(int clientId) async {
+    await _join('App.Models.Client.$clientId');
+  }
+
+  /// Leaves `workspace.{workspaceId}` without touching any other channel
+  /// this service has joined — what chat_page.dart's dispose() now calls
+  /// instead of the old "reconnect to the client/user channel to overwrite
+  /// the workspace one" workaround, which no longer applies now that joining
+  /// a workspace never dropped that other channel in the first place.
+  Future<void> leaveWorkspace(int workspaceId) async {
+    await _leave('workspace.$workspaceId');
+  }
+
+  Future<void> leaveUserChannel(int userId) async {
+    await _leave('App.Models.User.$userId');
+  }
+
+  Future<void> leaveClientChannel(int clientId) async {
+    await _leave('App.Models.Client.$clientId');
+  }
+
+  Future<void> _join(String channel) async {
+    if (_channels.contains(channel)) return;
+    _channels.add(channel);
     if (_silent) return;
-    _currentUserId = clientId;
-    _isClientChannel = true;
-    _currentWorkspaceId = null;
-    await _connectAndListen();
-    await _subscribePrivateChannel('App.Models.Client.$clientId');
+    if (_channel == null) {
+      await _connectAndListen();
+    } else {
+      await _subscribePrivateChannel(channel);
+    }
+  }
+
+  Future<void> _leave(String channel) async {
+    if (!_channels.remove(channel)) return;
+    if (_silent) return;
+    _send({'event': 'pusher:unsubscribe', 'data': {'channel': 'private-$channel'}});
   }
 
   Future<void> _connectAndListen() async {
-    await _disconnect();
+    await _disconnectSocket();
     _autoConfigureFromApi();
 
     final url = '$scheme://$host:$port/app/$key?protocol=7&client=flutter&version=7.6.2';
@@ -127,52 +203,7 @@ class ReverbService {
       _streamSubscription = _channel!.stream.listen(
         (data) {
           final msg = jsonDecode(data as String) as Map<String, dynamic>;
-          final event = msg['event'] as String?;
-          if (event == 'pusher:connection_established') {
-            _socketId = _extractSocketId(msg['data']);
-            // A real connection is up — the next drop should retry quickly
-            // again, not carry over a long backoff from a previous outage.
-            _reconnectAttempts = 0;
-            if (_currentUserId != null) {
-              final channel = _isClientChannel
-                  ? 'App.Models.Client.$_currentUserId'
-                  : 'App.Models.User.$_currentUserId';
-              _subscribePrivateChannel(channel);
-            }
-            if (_currentWorkspaceId != null) {
-              // Must go through the authenticated path — see
-              // _subscribePrivateChannel for why. This used to call
-              // _subscribe() directly, which asked Reverb for the *public*
-              // "workspace.{id}" channel and skipped auth entirely: with the
-              // server broadcasting on the matching private channel, that
-              // meant workspace chat/payment events were reachable by
-              // anyone who could guess a workspace id.
-              _subscribePrivateChannel('workspace.$_currentWorkspaceId');
-            }
-          } else if (event == 'message.sent') {
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onMessageReceived?.call(payload);
-          } else if (event == 'message.updated') {
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onMessageUpdated?.call(payload);
-          } else if (event == 'contract.status_changed') {
-            onContractStatusChanged?.call();
-          } else if (event == 'payment.schedule.changed') {
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onPaymentScheduleChanged?.call(payload);
-          } else if (event == 'workspace.status_changed') {
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onWorkspaceStatusChanged?.call(payload);
-          } else if (event == 'payment.status_changed') {
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onPaymentStatusChanged?.call(payload);
-          } else if (event == 'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated') {
-            final now = DateTime.now();
-            if (now.difference(_lastNotifTime) < const Duration(seconds: 1)) return;
-            _lastNotifTime = now;
-            final payload = jsonDecode(msg['data'] as String) as Map<String, dynamic>;
-            onNotificationReceived?.call(payload);
-          }
+          _dispatchEvent(msg['event'] as String?, msg['data']);
         },
         onError: (_) => _reconnect(),
         onDone: () => _reconnect(),
@@ -181,6 +212,71 @@ class ReverbService {
       _reconnect();
     }
   }
+
+  /// Handles one decoded socket frame — pulled out of the stream listener
+  /// above so [debugDispatch] can feed it a frame directly in tests, without
+  /// a real socket. `pusher:connection_established` re-subscribes every
+  /// channel currently in [_channels] (not just one), which is also what
+  /// makes reconnecting after a drop restore every channel that was joined
+  /// before, not only whichever single one the old design remembered.
+  void _dispatchEvent(String? event, dynamic rawData) {
+    if (event == 'pusher:connection_established') {
+      _socketId = _extractSocketId(rawData);
+      // A real connection is up — the next drop should retry quickly
+      // again, not carry over a long backoff from a previous outage.
+      _reconnectAttempts = 0;
+      for (final channel in _channels) {
+        _subscribePrivateChannel(channel);
+      }
+    } else if (event == 'message.sent') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_messageReceivedListeners)) {
+        l(payload);
+      }
+    } else if (event == 'message.updated') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_messageUpdatedListeners)) {
+        l(payload);
+      }
+    } else if (event == 'contract.status_changed') {
+      for (final l in List.of(_contractStatusChangedListeners)) {
+        l();
+      }
+    } else if (event == 'payment.schedule.changed') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_paymentScheduleChangedListeners)) {
+        l(payload);
+      }
+    } else if (event == 'workspace.status_changed') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_workspaceStatusChangedListeners)) {
+        l(payload);
+      }
+    } else if (event == 'payment.status_changed') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_paymentStatusChangedListeners)) {
+        l(payload);
+      }
+    } else if (event == 'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated') {
+      final now = DateTime.now();
+      if (now.difference(_lastNotifTime) < const Duration(seconds: 1)) return;
+      _lastNotifTime = now;
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_notificationReceivedListeners)) {
+        l(payload);
+      }
+    }
+  }
+
+  /// Test-only: feeds a decoded socket frame straight into [_dispatchEvent],
+  /// so a forTesting() instance can prove listener registration/removal and
+  /// multi-channel behavior without a real socket. `rawData` should be
+  /// whatever the real frame's `data` field would be — a JSON-encoded string
+  /// for the payload-carrying events, matching what jsonDecode(data) expects
+  /// above (e.g. `jsonEncode({'id': 1})`), or a plain map for
+  /// `pusher:connection_established`.
+  @visibleForTesting
+  void debugDispatch(String event, dynamic rawData) => _dispatchEvent(event, rawData);
 
   String? _extractSocketId(dynamic data) {
     if (data is String) {
@@ -265,19 +361,13 @@ class ReverbService {
     final delaySeconds = (10 * (1 << _reconnectAttempts)).clamp(10, 60);
     _reconnectAttempts++;
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
-      if (_currentWorkspaceId != null) {
-        connect(_currentWorkspaceId!);
-      } else if (_currentUserId != null) {
-        if (_isClientChannel) {
-          connectForClient(_currentUserId!);
-        } else {
-          connectForUser(_currentUserId!);
-        }
+      if (_channels.isNotEmpty) {
+        _connectAndListen();
       }
     });
   }
 
-  Future<void> _disconnect() async {
+  Future<void> _disconnectSocket() async {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _pingTimer?.cancel();
@@ -289,10 +379,22 @@ class ReverbService {
     _channel = null;
   }
 
+  /// Full teardown — every joined channel and every registered listener is
+  /// dropped, and the socket (if any) is closed. Used at logout, where the
+  /// identity everything was authorized under is about to disappear. Screens
+  /// leaving a *single* channel of their own (e.g. chat closing) should use
+  /// leaveWorkspace()/leaveUserChannel()/leaveClientChannel() instead — this
+  /// method is deliberately not selective.
   void disconnect() {
-    _currentWorkspaceId = null;
-    _currentUserId = null;
+    _channels.clear();
+    _messageReceivedListeners.clear();
+    _messageUpdatedListeners.clear();
+    _contractStatusChangedListeners.clear();
+    _paymentScheduleChangedListeners.clear();
+    _notificationReceivedListeners.clear();
+    _workspaceStatusChangedListeners.clear();
+    _paymentStatusChangedListeners.clear();
     _reconnectAttempts = 0;
-    _disconnect();
+    _disconnectSocket();
   }
 }
