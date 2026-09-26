@@ -30,4 +30,33 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/dashboard/stats'))),
         headers: any(named: 'headers'))).called(1);
   });
+
+  // pending-approvals-plan.md ك5 — sa_approvals_page.dart's single-request
+  // replacement for its old per-client-workspace N+1 loop.
+  test('fetchPendingApprovals hits /dashboard/pending-approvals with the given limit', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"awaiting_you":{"contracts":[],"payments":[]},"awaiting_client":{"contracts":[],"approvals":[]}}'),
+    );
+
+    final result = await repo.fetchPendingApprovals(limit: 75);
+
+    expect(result['awaiting_you'], isNotNull);
+    verify(() => httpClient.get(
+          any(that: predicate<Uri>((u) => u.path.endsWith('/dashboard/pending-approvals') && u.queryParameters['limit'] == '75')),
+          headers: any(named: 'headers'),
+        )).called(1);
+  });
+
+  test('fetchPendingApprovals defaults to the endpoint-max limit of 200', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"awaiting_you":{"contracts":[],"payments":[]},"awaiting_client":{"contracts":[],"approvals":[]}}'),
+    );
+
+    await repo.fetchPendingApprovals();
+
+    verify(() => httpClient.get(
+          any(that: predicate<Uri>((u) => u.queryParameters['limit'] == '200')),
+          headers: any(named: 'headers'),
+        )).called(1);
+  });
 }

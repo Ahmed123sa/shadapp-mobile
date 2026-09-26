@@ -11,4 +11,8 @@ class DashboardStatsProvider {
   DashboardStatsProvider({DashboardStatsRepository? repository}) : _repo = repository ?? DashboardStatsRepository();
 
   Future<Map<String, dynamic>> fetchStats() => _repo.fetchStats();
+
+  /// See [DashboardStatsRepository.fetchPendingApprovals].
+  Future<Map<String, dynamic>> fetchPendingApprovals({int limit = 200}) =>
+      _repo.fetchPendingApprovals(limit: limit);
 }

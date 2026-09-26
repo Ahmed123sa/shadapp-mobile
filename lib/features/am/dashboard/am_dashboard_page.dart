@@ -13,7 +13,6 @@ import 'sa_approvals_page.dart';
 import 'sa_clients_page.dart';
 import 'sa_team_page.dart';
 import '../settings/admin_settings_page.dart';
-import '../../../data/approval_repository.dart';
 import '../../../data/client_repository.dart';
 import '../../../data/dashboard_repository.dart';
 import '../../../data/dashboard_stats_repository.dart';
@@ -21,7 +20,6 @@ import '../../../data/manager_repository.dart';
 import '../../../data/meeting_repository.dart';
 import '../../../data/notification_repository.dart';
 import '../../../data/payment_repository.dart';
-import '../../../providers/approval_provider.dart';
 import '../../../providers/client_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/dashboard_provider.dart';
@@ -81,7 +79,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   late final ManagerProvider _childManagerProvider = ManagerProvider(repository: ManagerRepository(api: _api));
   late final ContractProvider _childContractProvider = ContractProvider(api: _api);
   late final PaymentProvider _childPaymentProvider = PaymentProvider(repository: PaymentRepository(api: _api));
-  late final ApprovalProvider _childApprovalProvider = ApprovalProvider(repository: ApprovalRepository(api: _api));
   late final NotificationProvider _notificationProvider =
       widget.notificationProvider ?? NotificationProvider(repository: NotificationRepository(api: _api));
   late final DashboardProvider _dashboardProvider = widget.dashboardProvider ?? DashboardProvider(repository: DashboardRepository(api: _api));
@@ -411,7 +408,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                       paymentsPending: _statInt('payments', 'pending'),
                       approvalsTotal: _statInt('approvals', 'total'),
                     ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider, approvalProvider: _childApprovalProvider),
+                    SaApprovalsPage(dashboardStatsProvider: _dashboardStatsProvider),
                     SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
                     SaTeamPage(managerProvider: _childManagerProvider, api: _api),
                     AdminSettingsPage(api: _api),
@@ -433,7 +430,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                       paymentsPending: _statInt('payments', 'pending'),
                       approvalsTotal: _statInt('approvals', 'total'),
                     ),
-                    SaApprovalsPage(clientProvider: _childClientProvider, contractProvider: _childContractProvider, paymentProvider: _childPaymentProvider, approvalProvider: _childApprovalProvider),
+                    SaApprovalsPage(dashboardStatsProvider: _dashboardStatsProvider),
                     _buildAmClientsTab(),
                     AdminSettingsPage(api: _api),
                   ],

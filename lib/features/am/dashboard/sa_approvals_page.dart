@@ -1,39 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
-import '../../../providers/approval_provider.dart';
-import '../../../providers/client_provider.dart';
-import '../../../providers/contract_provider.dart';
-import '../../../providers/payment_provider.dart';
+import '../../../data/dashboard_stats_repository.dart';
+import '../../../providers/dashboard_stats_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
 class SaApprovalsPage extends StatefulWidget {
-  // Optional so this screen can be pumped in a widget test with mocked
-  // providers instead of hitting the network.
-  final ClientProvider? clientProvider;
-  final ContractProvider? contractProvider;
-  final PaymentProvider? paymentProvider;
-  final ApprovalProvider? approvalProvider;
-  const SaApprovalsPage({super.key, this.clientProvider, this.contractProvider, this.paymentProvider, this.approvalProvider});
+  // Optional so this screen can be pumped in a widget test with a mocked
+  // provider instead of hitting the network.
+  //
+  // pending-approvals-plan.md ك5 — replaced the four separate
+  // client/contract/payment/approval providers this screen used to drive its
+  // own N+1 per-workspace fetch loop with. Everything now comes from one
+  // GET /dashboard/pending-approvals call via this single provider.
+  final DashboardStatsProvider? dashboardStatsProvider;
+  const SaApprovalsPage({super.key, this.dashboardStatsProvider});
 
   @override
   State<SaApprovalsPage> createState() => _SaApprovalsPageState();
 }
 
 class _SaApprovalsPageState extends State<SaApprovalsPage> {
-  late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
-  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
-  late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
-  late final ApprovalProvider _approvalProvider = widget.approvalProvider ?? ApprovalProvider();
+  late final DashboardStatsProvider _dashboardStatsProvider =
+      widget.dashboardStatsProvider ?? DashboardStatsProvider(repository: DashboardStatsRepository());
   List<Map<String, dynamic>> _contracts = [];
   List<Map<String, dynamic>> _payments = [];
   // 23 Sept 2026 — the "Approvals" badge on the AM dashboard counts pending
   // Approval records (client-facing approval requests raised from a
   // workspace's own Approvals tab) alongside pending contracts, but this
   // screen used to only list contracts+payments — so the badge could say 2
-  // while this list showed 1. See _fetchApprovals.
+  // while this list showed 1. Now covered by the same endpoint call below.
   List<Map<String, dynamic>> _approvals = [];
   bool _loading = true;
   int _filterIndex = 0;
@@ -44,85 +43,60 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
     _load();
   }
 
+  // pending-approvals-plan.md ك5 — one request to
+  // GET /dashboard/pending-approvals (already scoped server-side to this
+  // user, same DashboardScope the badge/stats endpoints use) instead of the
+  // old loop: fetch every client, then that client's workspace's contracts,
+  // one request per workspace, plus two more full-pagination loops for
+  // payments and approvals. That old loop was N+1 and, since it paginated at
+  // 30/request, could still silently miss older pending items on a large
+  // book of clients. `limit: 200` (the endpoint's own max) is passed
+  // explicitly so this screen keeps its previous "no real cap" behavior
+  // rather than falling back to the endpoint's own default of 50.
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      _contracts = await _fetchContracts(['sent', 'client_approved']);
-      try {
-        final allPayments = await _paymentProvider.fetchAllPendingRaw();
-        _payments = allPayments.cast<Map<String, dynamic>>().map((p) => {
-          ...p,
-          'type': 'payment',
-          'workspace_id': p['workspace_id'] ?? p['workspace']?['id'],
-        }).toList();
-      } catch (e, s) {
-        AppLog.error('sa_approvals_page._load(payments)', e, s);
-        _payments = [];
-      }
-      try {
-        _approvals = await _fetchApprovals();
-      } catch (e, s) {
-        AppLog.error('sa_approvals_page._load(approvals)', e, s);
-        _approvals = [];
-      }
+      final response = await _dashboardStatsProvider.fetchPendingApprovals(limit: 200);
+      final awaitingYou = _asMap(response['awaiting_you']);
+      final awaitingClient = _asMap(response['awaiting_client']);
+      // Both groups render as identical "Approve Contract" cards — this
+      // screen never visually distinguished a 'client_approved' contract
+      // (awaiting_you) from a 'sent' one (awaiting_client) even before this
+      // migration, see saApprovalsContractApprovalTitle below — so they're
+      // merged back into one flat list here, same as the old loop produced.
+      _contracts = [
+        ..._mapItems(safeList(awaitingClient['contracts']), 'contract'),
+        ..._mapItems(safeList(awaitingYou['contracts']), 'contract'),
+      ];
+      _payments = _mapItems(safeList(awaitingYou['payments']), 'payment');
+      _approvals = _mapItems(safeList(awaitingClient['approvals']), 'approval');
     } catch (e, s) {
       AppLog.error('sa_approvals_page._load', e, s);
+      _contracts = [];
+      _payments = [];
+      _approvals = [];
     }
     if (mounted) setState(() => _loading = false);
   }
 
-  // One request to /approvals/pending (already scoped server-side to this
-  // user's workspaces, same scope as the badge) instead of looping every
-  // client's workspace — that loop was N+1 and, since the per-workspace
-  // endpoint is paginated at 30, silently missed older pending approvals.
-  Future<List<Map<String, dynamic>>> _fetchApprovals() async {
-    final raw = await _approvalProvider.fetchAllPendingRaw();
-    return raw.whereType<Map>().map((a) {
-      final approval = Map<String, dynamic>.from(a);
-      final ws = approval['workspace'] is Map ? Map<String, dynamic>.from(approval['workspace'] as Map) : null;
-      final client = ws?['client'] is Map ? Map<String, dynamic>.from(ws!['client'] as Map) : null;
+  Map<String, dynamic> _asMap(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+
+  // Normalizes one group of endpoint items (each already carrying id, title
+  // or amount, value, currency, status, workspace_id, client) into the flat
+  // shape _approvalCard expects: same fields plus a top-level 'company'
+  // (read off the nested client) and a 'type' tag, matching the shape the
+  // old per-source fetch methods used to build by hand.
+  List<Map<String, dynamic>> _mapItems(List<dynamic> raw, String type) {
+    return raw.whereType<Map>().map((i) {
+      final item = Map<String, dynamic>.from(i);
+      final client = item['client'] is Map ? Map<String, dynamic>.from(item['client'] as Map) : null;
       return <String, dynamic>{
-        'title': approval['title'] ?? '',
+        ...item,
         'company': client?['company_name'] ?? '',
         'client': client,
-        'workspace_id': approval['workspace_id'] ?? ws?['id'],
-        'type': 'approval',
+        'type': type,
       };
     }).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchContracts(List<String> statuses) async {
-    final results = <Map<String, dynamic>>[];
-    try {
-      final allClients = await _clientProvider.fetchAllClientsPaginatedRaw();
-      for (final client in allClients) {
-        final ws = client['workspace'] as Map<String, dynamic>?;
-        if (ws == null) continue;
-        try {
-          final allContracts = await _contractProvider.fetchWorkspaceContractsPaginatedRaw(ws['id'] as int);
-          for (final c in allContracts) {
-            if (statuses.contains(c['status'])) {
-              results.add({
-                'title': c['title'] ?? '',
-                'value': c['value'] ?? 0,
-                'currency': c['currency'] ?? 'SAR',
-                'company': client['company_name'] ?? '',
-                'client': client,
-                'workspace_id': ws['id'],
-                'type': 'contract',
-              });
-            }
-          }
-        } catch (e, s) {
-          // One workspace failing shouldn't drop the whole list.
-          AppLog.error('sa_approvals_page._loadApprovals(workspace)', e, s);
-          continue;
-        }
-      }
-    } catch (e, s) {
-      AppLog.error('sa_approvals_page._loadApprovals', e, s);
-    }
-    return results;
   }
 
   List<Map<String, dynamic>> get _filteredItems {

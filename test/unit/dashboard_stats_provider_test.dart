@@ -28,4 +28,19 @@ void main() {
 
     expect(stats['payments']['pending'], 7);
   });
+
+  // pending-approvals-plan.md ك5.
+  test('fetchPendingApprovals delegates to the repository', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"awaiting_you":{"contracts":[],"payments":[]},"awaiting_client":{"contracts":[],"approvals":[]},"counts":{"total":0}}'),
+    );
+
+    final result = await provider.fetchPendingApprovals();
+
+    expect(result['counts']['total'], 0);
+    verify(() => httpClient.get(
+          any(that: predicate<Uri>((u) => u.path.endsWith('/dashboard/pending-approvals'))),
+          headers: any(named: 'headers'),
+        )).called(1);
+  });
 }
