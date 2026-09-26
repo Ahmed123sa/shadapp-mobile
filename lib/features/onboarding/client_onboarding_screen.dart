@@ -7,6 +7,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/shad_logo.dart';
@@ -81,8 +82,15 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (contractsList.any((c) => c is Map && c['status'] == 'archived')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'company_approved')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'client_approved')) return 3;
-    if (contractsList.any((c) => c is Map && c['status'] == 'edit_requested')) return 2;
-    if (contractsList.any((c) => c is Map && c['status'] == 'sent')) return 2;
+    // client-signature-plan.md ن3 — a contract sitting at 'sent' or
+    // 'edit_requested' is waiting on the client's own response (review +
+    // approve/request-edits). Before this, that jumped straight to stage 2
+    // even for a client who had never saved a signature — the backend now
+    // rejects approving without one (ك3), but this screen used to offer the
+    // approve button anyway, so the client hit a rejection with no
+    // explanation for why. Route them to the signature stage first instead.
+    final awaitingClientResponse = contractsList.any((c) => c is Map && (c['status'] == 'edit_requested' || c['status'] == 'sent'));
+    if (awaitingClientResponse) return client['signed_at'] != null ? 2 : 0;
     if (client['signed_at'] != null) return 1;
     return 0;
   }
@@ -480,6 +488,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
         ));
       }
     } catch (e) {
+      if (!mounted) return;
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.onboarding_failedWithError(e.toString()))));
       }

@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/loading_state.dart';
@@ -113,7 +114,9 @@ class _ContractsPageState extends State<ContractsPage> {
         _load();
         widget.refreshNotifier?.value++;
       }
-    } catch (_) {
+    } catch (e) {
+      if (!mounted) return;
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.actionFailed)));
     }
   }

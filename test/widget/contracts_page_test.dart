@@ -88,6 +88,29 @@ void main() {
         )).called(1);
   });
 
+  // client-signature-plan.md ن3/ك5 — a 422 signature_required rejection from
+  // POST /contracts/:id/client-action (ك3) should surface the shared
+  // signature-required dialog instead of the generic actionFailed snackbar.
+  testWidgets('approving a contract the backend rejects for missing signature shows the signature-required dialog', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    stubCommon(httpClient);
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{"message":"لازم تحفظ توقيعك الأول قبل ما توافق على العقد.","code":"signature_required"}', 422),
+    );
+
+    await pumpPage(tester, api);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirm').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Signature Required'), findsOneWidget);
+    expect(find.text('Sign Now'), findsOneWidget);
+  });
+
   testWidgets('opening a contract card loads its uploaded files', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

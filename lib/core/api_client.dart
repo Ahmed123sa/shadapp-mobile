@@ -389,7 +389,13 @@ class ApiClient {
       final errors = data['errors'] as Map<String, dynamic>?;
       final firstError = errors?.values.firstOrNull;
       final msg = firstError is List ? firstError.first.toString() : (data['message'] ?? l10n?.invalidData ?? 'Invalid data');
-      throw ValidationException(msg);
+      // A handful of 422s carry a machine-readable `code` alongside the
+      // human-readable `message` (e.g. 'signature_required' from
+      // ContractController::clientAction/ChatController::respond — see
+      // client-signature-plan.md) so a caller can react to the specific
+      // reason instead of just showing the generic message. Absent on plain
+      // Laravel validation-rule failures, which never set this field.
+      throw ValidationException(msg, code: data['code'] as String?);
     }
     // A reverse proxy's own body-size cap (nginx's client_max_body_size,
     // commonly a 1MB default) rejects an oversized upload before it ever
@@ -429,7 +435,8 @@ class AuthException implements Exception {
 
 class ValidationException implements Exception {
   final String message;
-  ValidationException(this.message);
+  final String? code;
+  ValidationException(this.message, {this.code});
   @override
   String toString() => message;
 }

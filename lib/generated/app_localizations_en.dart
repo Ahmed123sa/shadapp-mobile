@@ -3310,6 +3310,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to approve this contract?';
 
   @override
+  String get signatureRequiredTitle => 'Signature Required';
+
+  @override
+  String get signatureRequiredMessage =>
+      'You need to save your signature before approving.';
+
+  @override
+  String get signatureRequiredSubUserMessage =>
+      'The primary account needs to save a signature first.';
+
+  @override
+  String get signatureRequiredAction => 'Sign Now';
+
+  @override
   String get editReasonHint => 'Enter the reason for editing...';
 
   @override

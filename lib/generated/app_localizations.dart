@@ -6418,6 +6418,30 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to approve this contract?'**
   String get approveContractConfirm;
 
+  /// No description provided for @signatureRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signature Required'**
+  String get signatureRequiredTitle;
+
+  /// No description provided for @signatureRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to save your signature before approving.'**
+  String get signatureRequiredMessage;
+
+  /// No description provided for @signatureRequiredSubUserMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The primary account needs to save a signature first.'**
+  String get signatureRequiredSubUserMessage;
+
+  /// No description provided for @signatureRequiredAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Now'**
+  String get signatureRequiredAction;
+
   /// No description provided for @editReasonHint.
   ///
   /// In en, this message translates to:

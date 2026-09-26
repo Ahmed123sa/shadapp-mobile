@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
+import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/reverb_service.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/payment_banner.dart';
@@ -274,6 +275,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _load();
     } catch (e, s) {
       AppLog.error('chat_page._approve', e, s);
+      if (mounted) await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null);
     }
   }
 
@@ -298,6 +300,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         _load();
       } catch (e, s) {
         AppLog.error('chat_page._respondToMessage', e, s);
+        if (!mounted) return;
+        if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.actionFailed)));
       }
     }

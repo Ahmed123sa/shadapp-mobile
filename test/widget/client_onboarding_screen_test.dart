@@ -111,6 +111,50 @@ void main() {
         )).called(1);
   });
 
+  // client-signature-plan.md ن3 — _computeStage() now keeps a client with no
+  // saved signature on the signature stage even once a contract is sitting
+  // at 'sent', instead of jumping them straight to the approve screen (which
+  // used to offer an Approve button the backend would then reject, per ك3,
+  // with no explanation of why).
+  testWidgets('a sent contract with no saved signature shows the signature stage instead of Approve', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+        '"workspace":{"id":5,"status":"pending","contracts":[{"id":7,"status":"sent"}],"payments":[]}}}');
+
+    await pumpScreen(tester, api);
+
+    expect(find.text('Sign Now'), findsOneWidget);
+    expect(find.text('Approve'), findsNothing);
+  });
+
+  // Fallback path for the same ن3 bug: if the backend still rejects an
+  // 'approved' action for missing signature (e.g. a client whose signed_at
+  // is stale or desynced from the server's own signature_data check), the
+  // reactive maybeShowSignatureRequiredDialog wiring in
+  // _respondToContractById's catch block should surface it instead of a
+  // generic failure message.
+  testWidgets('a backend signature_required rejection on approve shows the signature-required dialog', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"active","contracts":[{"id":7,"status":"sent"}],"payments":[]}}}');
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{"message":"لازم تحفظ توقيعك الأول قبل ما توافق.","code":"signature_required"}', 422),
+    );
+
+    await pumpScreen(tester, api);
+
+    expect(find.text('Approve'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Signature Required'), findsOneWidget);
+    expect(find.text('Sign Now'), findsOneWidget);
+  });
+
   testWidgets('sending a payment with no attached proof posts to /workspaces/:id/payments', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

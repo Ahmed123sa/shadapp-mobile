@@ -3298,6 +3298,19 @@ class AppLocalizationsAr extends AppLocalizations {
       'هل أنت متأكد من الموافقة على هذا العقد؟';
 
   @override
+  String get signatureRequiredTitle => 'التوقيع مطلوب';
+
+  @override
+  String get signatureRequiredMessage => 'لازم تحفظ توقيعك الأول قبل ما توافق.';
+
+  @override
+  String get signatureRequiredSubUserMessage =>
+      'الحساب الرئيسي لازم يحفظ التوقيع الأول.';
+
+  @override
+  String get signatureRequiredAction => 'توقيع الآن';
+
+  @override
   String get editReasonHint => 'اذكر سبب التعديل...';
 
   @override
