@@ -186,6 +186,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     if (mounted) _loadClientData();
   }
 
+  int? _joinedWsId;
+
   void _setupRealtimeNotifications() {
     final cid = _api.userId;
     if (cid == null) return;
@@ -195,7 +197,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       _loadNotifs();
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? l10n.dashboard_newNotification;
+      final rawData = payload['data'];
+      final dataMap = rawData is Map ? rawData : null;
+      final msg = (payload['message'] ?? payload['text'] ?? dataMap?['message'] ?? dataMap?['text']) as String? 
+          ?? l10n.dashboard_newNotification;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         behavior: SnackBarBehavior.floating,
@@ -256,6 +261,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     for (final unsubscribe in _reverbUnsubscribers) {
       unsubscribe();
     }
+    if (_joinedWsId != null) {
+      _reverb.leaveWorkspace(_joinedWsId!);
+    }
     super.dispose();
   }
 
@@ -269,8 +277,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
         _workspace = data['client']?['workspace'] as Map<String, dynamic>?;
         if (_workspace != null) {
           final wsId = _workspace!['id'] as int?;
-          if (wsId != null && wsId != _api.workspaceId) {
-            await _api.setUserData(workspace: wsId);
+          if (wsId != null) {
+            if (wsId != _api.workspaceId) {
+              await _api.setUserData(workspace: wsId);
+            }
+            if (_joinedWsId != wsId) {
+              await _reverb.connect(wsId);
+              _joinedWsId = wsId;
+            }
           }
         }
         _checkAutoAdvance();

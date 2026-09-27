@@ -21,6 +21,7 @@ import '../../providers/system_settings_provider.dart';
 import '../contracts/contract_detail_modal.dart';
 import 'client_onboarding_payment_sheet.dart';
 import 'client_onboarding_stages.dart';
+import 'onboarding_toast_keys.dart';
 
 class ClientOnboardingScreen extends StatefulWidget {
   final ApiClient? api;
@@ -28,6 +29,9 @@ class ClientOnboardingScreen extends StatefulWidget {
   // Lets widget tests skip FirebaseMessaging.onMessage/.onMessageOpenedApp,
   // same reasoning as client_dashboard_screen.dart's identical seam.
   final bool enableFcm;
+  /// Optional stream seam for widget tests to drive foreground FCM messages
+  /// without requiring a live Firebase / MethodChannel runtime.
+  final Stream<RemoteMessage>? foregroundMessages;
   final ClientProvider? clientProvider;
   final ContractProvider? contractProvider;
   final PaymentProvider? paymentProvider;
@@ -38,6 +42,7 @@ class ClientOnboardingScreen extends StatefulWidget {
     this.api,
     this.reverb,
     this.enableFcm = true,
+    this.foregroundMessages,
     this.clientProvider,
     this.contractProvider,
     this.paymentProvider,
@@ -104,17 +109,12 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
   int? _joinedWsId;
-  DateTime? _lastToastTime;
-  String? _lastToastKey;
+  final Map<String, DateTime> _recentToasts = {};
 
   void _showToastOnce(String? text, {required String key}) {
     if (text == null || text.trim().isEmpty) return;
     final now = DateTime.now();
-    if (_lastToastKey == key && _lastToastTime != null && now.difference(_lastToastTime!).inSeconds < 5) {
-      return;
-    }
-    _lastToastKey = key;
-    _lastToastTime = now;
+    if (!shouldShowToast(_recentToasts, key, now)) return;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(text, style: const TextStyle(fontSize: 13)),
@@ -137,8 +137,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       final dataMap = rawData is Map ? rawData : null;
       final msg = (payload['message'] ?? payload['text'] ?? dataMap?['message'] ?? dataMap?['text']) as String? 
           ?? AppLocalizations.of(context)!.onboarding_newNotification;
-      final key = 'reverb:${payload['type'] ?? ''}:${payload['contract_id'] ?? payload['payment_id'] ?? payload['id'] ?? ''}';
-      _showToastOnce(msg, key: key);
+      _showToastOnce(msg, key: toastKeyFromBroadcast(payload));
     }));
     _reverbUnsubscribers.add(_reverb.addContractStatusChangedListener(() {
       _loadClientData();
@@ -147,16 +146,19 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     _reverbUnsubscribers.add(_reverb.addWorkspaceStatusChangedListener((_) {
       _loadClientData();
     }));
-    if (widget.enableFcm) {
-      _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
+    final fcmStream = widget.foregroundMessages ??
+        (widget.enableFcm ? FirebaseMessaging.onMessage : null);
+    if (fcmStream != null) {
+      _fcmSubscription = fcmStream.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
         if (!(type.startsWith('contract.') || type.startsWith('payment.') || type.startsWith('workspace.'))) return;
         _loadClientData();
         _contractRefreshNotifier.value++;
         final body = msg.notification?.body ?? msg.data['message'] as String?;
-        final key = 'fcm:$type:${msg.data['id'] ?? msg.data['contract_id'] ?? msg.data['payment_id'] ?? ''}';
-        _showToastOnce(body, key: key);
+        _showToastOnce(body, key: toastKeyFromFcm(msg.data));
       });
+    }
+    if (widget.enableFcm && widget.foregroundMessages == null) {
       FirebaseMessaging.onMessageOpenedApp.listen((msg) {
         _loadClientData();
       });

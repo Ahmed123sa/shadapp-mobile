@@ -46,9 +46,13 @@ class ReverbService {
   // open. All channels this service joins now share the one socket
   // connection, tracked here instead of in separate single-value fields.
   final Set<String> _channels = {};
+  final Map<String, int> _channelRefs = {};
 
   @visibleForTesting
   Set<String> get debugChannels => Set.unmodifiable(_channels);
+
+  @visibleForTesting
+  Map<String, int> get debugChannelRefs => Map.unmodifiable(_channelRefs);
 
   /// Exposed so ApiClient can attach X-Socket-Id to outgoing requests — see
   /// the header wiring in api_client.dart's _headers() for why.
@@ -182,6 +186,8 @@ class ReverbService {
   }
 
   Future<void> _join(String channel) async {
+    final count = _channelRefs[channel] ?? 0;
+    _channelRefs[channel] = count + 1;
     if (_channels.contains(channel)) return;
     _channels.add(channel);
     if (_silent) return;
@@ -193,9 +199,15 @@ class ReverbService {
   }
 
   Future<void> _leave(String channel) async {
-    if (!_channels.remove(channel)) return;
-    if (_silent) return;
-    _send({'event': 'pusher:unsubscribe', 'data': {'channel': 'private-$channel'}});
+    final count = _channelRefs[channel] ?? 0;
+    if (count <= 1) {
+      _channelRefs.remove(channel);
+      if (!_channels.remove(channel)) return;
+      if (_silent) return;
+      _send({'event': 'pusher:unsubscribe', 'data': {'channel': 'private-$channel'}});
+    } else {
+      _channelRefs[channel] = count - 1;
+    }
   }
 
   Future<void> _connectAndListen() async {
@@ -399,6 +411,7 @@ class ReverbService {
   /// method is deliberately not selective.
   void disconnect() {
     _channels.clear();
+    _channelRefs.clear();
     _messageReceivedListeners.clear();
     _messageUpdatedListeners.clear();
     _contractStatusChangedListeners.clear();

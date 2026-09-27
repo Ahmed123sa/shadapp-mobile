@@ -363,4 +363,39 @@ void main() {
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(1);
   });
+
+  testWidgets('joins workspace channel on load and leaves it on dispose', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient);
+
+    final reverb = await pumpPage(tester, api);
+    expect(reverb.debugChannels, contains('App.Models.Client.10'));
+    expect(reverb.debugChannels, contains('workspace.5'));
+
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpAndSettle();
+
+    expect(reverb.debugChannels, isNot(contains('workspace.5')));
+  });
+
+  testWidgets('shows toast from top-level message in broadcast notification payload', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient);
+
+    final reverb = await pumpPage(tester, api);
+
+    reverb.debugDispatch(
+      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+      jsonEncode({'message': 'New meeting scheduled', 'type': 'meeting.created'}),
+    );
+    await tester.pump();
+
+    expect(find.text('New meeting scheduled'), findsOneWidget);
+  });
 }

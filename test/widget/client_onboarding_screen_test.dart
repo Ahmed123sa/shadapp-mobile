@@ -17,7 +17,9 @@
 // `flutter test`, same reasoning documented throughout this migration (see
 // contracts_page_test.dart). Only the no-files plain-POST payment branch is
 // exercised here.
+import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -57,11 +59,22 @@ void main() {
         .thenAnswer((_) async => jsonResponse('{}'));
   }
 
-  Future<void> pumpScreen(WidgetTester tester, dynamic api) async {
+  Future<void> pumpScreen(
+    WidgetTester tester,
+    dynamic api, {
+    ReverbService? reverb,
+    bool enableFcm = false,
+    Stream<RemoteMessage>? foregroundMessages,
+  }) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: ClientOnboardingScreen(api: api, reverb: ReverbService.forTesting(), enableFcm: false),
+      home: ClientOnboardingScreen(
+        api: api,
+        reverb: reverb ?? ReverbService.forTesting(),
+        enableFcm: enableFcm,
+        foregroundMessages: foregroundMessages,
+      ),
     ));
     await tester.pumpAndSettle();
   }
@@ -252,5 +265,127 @@ void main() {
     // still on screen. If the sheet had been popped, only the CTA would
     // remain.
     expect(find.widgetWithText(ElevatedButton, 'Send Payment'), findsNWidgets(2));
+  });
+
+  group('realtime toasts and channel management', () {
+    testWidgets('joins client and workspace channels when workspace id is known', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final reverb = ReverbService.forTesting();
+
+      await pumpScreen(tester, api, reverb: reverb);
+
+      expect(reverb.debugChannels, contains('App.Models.Client.10'));
+      expect(reverb.debugChannels, contains('workspace.5'));
+    });
+
+    testWidgets('Reverb broadcast notification shows SnackBar and reloads client data', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final reverb = ReverbService.forTesting();
+
+      await pumpScreen(tester, api, reverb: reverb);
+
+      reverb.debugDispatch(
+        'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+        jsonEncode({'message': 'Contract updated', 'type': 'contract.updated', 'contract_id': 7}),
+      );
+      await tester.pump();
+
+      expect(find.text('Contract updated'), findsOneWidget);
+    });
+
+    testWidgets('Reverb broadcast followed by matching FCM payload within 5s deduplicates toast', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final reverb = ReverbService.forTesting();
+      final fcmController = StreamController<RemoteMessage>.broadcast();
+      addTearDown(() => fcmController.close());
+
+      await pumpScreen(tester, api, reverb: reverb, foregroundMessages: fcmController.stream);
+
+      // Reverb arrives first
+      reverb.debugDispatch(
+        'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+        jsonEncode({'message': 'Contract approved', 'type': 'contract.approved', 'contract_id': 7}),
+      );
+      await tester.pump();
+      expect(find.text('Contract approved'), findsOneWidget);
+
+      // FCM arrives 500ms later for the exact same contract
+      fcmController.add(const RemoteMessage(
+        data: {'type': 'contract.approved', 'id': '7', 'message': 'Contract approved'},
+      ));
+      await tester.pump();
+
+      // Only one SnackBar is shown on screen
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
+    testWidgets('foreground FCM alone displays SnackBar and reloads client data', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final fcmController = StreamController<RemoteMessage>.broadcast();
+      addTearDown(() => fcmController.close());
+
+      await pumpScreen(tester, api, foregroundMessages: fcmController.stream);
+
+      fcmController.add(const RemoteMessage(
+        data: {'type': 'payment.approved', 'id': '12', 'message': 'Payment approved'},
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Payment approved'), findsOneWidget);
+    });
+
+    testWidgets('unrelated FCM notification type is ignored without showing toast', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final fcmController = StreamController<RemoteMessage>.broadcast();
+      addTearDown(() => fcmController.close());
+
+      await pumpScreen(tester, api, foregroundMessages: fcmController.stream);
+
+      fcmController.add(const RemoteMessage(
+        data: {'type': 'system.ping', 'id': '99', 'message': 'System ping'},
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('System ping'), findsNothing);
+    });
+
+    testWidgets('disposing screen leaves workspace channel', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+          '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+      final reverb = ReverbService.forTesting();
+
+      await pumpScreen(tester, api, reverb: reverb);
+      expect(reverb.debugChannels, contains('workspace.5'));
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pumpAndSettle();
+
+      expect(reverb.debugChannels, isNot(contains('workspace.5')));
+    });
   });
 }

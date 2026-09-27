@@ -127,13 +127,62 @@ void main() {
       expect(reverb.debugChannels, isEmpty);
     });
 
-    test('joining the same channel twice does not duplicate it', () async {
+    test('joining the same channel twice increments ref count and stays subscribed until both leave', () async {
       final reverb = ReverbService.forTesting();
 
       await reverb.connect(5);
       await reverb.connect(5);
 
-      expect(reverb.debugChannels.where((c) => c == 'workspace.5').length, 1);
+      expect(reverb.debugChannels, contains('workspace.5'));
+      expect(reverb.debugChannelRefs['workspace.5'], 2);
+
+      await reverb.leaveWorkspace(5);
+      expect(reverb.debugChannels, contains('workspace.5'));
+      expect(reverb.debugChannelRefs['workspace.5'], 1);
+
+      await reverb.leaveWorkspace(5);
+      expect(reverb.debugChannels, isNot(contains('workspace.5')));
+      expect(reverb.debugChannelRefs.containsKey('workspace.5'), isFalse);
+    });
+  });
+
+  group('resolveHost', () {
+    test('prefers explicit envHost when provided', () {
+      final host = ReverbService.resolveHost(
+        envHost: 'ws.example.com',
+        apiBaseUrl: 'https://api.example.com/api',
+      );
+      expect(host, 'ws.example.com');
+    });
+
+    test('extracts hostname from apiBaseUrl when envHost is null or empty', () {
+      final host1 = ReverbService.resolveHost(
+        envHost: null,
+        apiBaseUrl: 'https://api.example.com/api/v1',
+      );
+      expect(host1, 'api.example.com');
+
+      final host2 = ReverbService.resolveHost(
+        envHost: '   ',
+        apiBaseUrl: 'http://192.168.1.50:8000/api',
+      );
+      expect(host2, '192.168.1.50');
+    });
+
+    test('falls back when apiBaseUrl is localhost or invalid', () {
+      final host1 = ReverbService.resolveHost(
+        envHost: null,
+        apiBaseUrl: 'http://localhost:8000/api',
+        fallback: 'fallback.local',
+      );
+      expect(host1, 'fallback.local');
+
+      final host2 = ReverbService.resolveHost(
+        envHost: null,
+        apiBaseUrl: 'not a uri',
+        fallback: 'default.host',
+      );
+      expect(host2, 'default.host');
     });
   });
 
