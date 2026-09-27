@@ -126,16 +126,28 @@ class ReverbService {
     if (key != null) this.key = key;
   }
 
+  static String resolveHost({String? envHost, String? apiBaseUrl, String fallback = 'localhost'}) {
+    if (envHost != null && envHost.trim().isNotEmpty) {
+      return envHost.trim();
+    }
+    if (apiBaseUrl != null && apiBaseUrl.trim().isNotEmpty) {
+      final uri = Uri.tryParse(apiBaseUrl);
+      if (uri != null && uri.host.isNotEmpty && uri.host != 'localhost') {
+        return uri.host;
+      }
+    }
+    return fallback;
+  }
+
   void _autoConfigureFromApi() {
-    host = dotenv.env['REVERB_HOST'] ?? host;
     port = dotenv.env['REVERB_PORT'] ?? port;
     key = dotenv.env['REVERB_KEY'] ?? key;
     scheme = dotenv.env['REVERB_SCHEME'] ?? scheme;
-    final baseUrl = ApiClient().baseUrl;
-    final uri = Uri.tryParse(baseUrl);
-    if (uri != null && uri.host.isNotEmpty && uri.host != 'localhost') {
-      host = uri.host;
-    }
+    host = resolveHost(
+      envHost: dotenv.env['REVERB_HOST'],
+      apiBaseUrl: ApiClient().baseUrl,
+      fallback: host,
+    );
   }
 
   /// Joins `workspace.{workspaceId}` — additive: any channel already joined

@@ -103,6 +103,28 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     WidgetsBinding.instance.addObserver(this);
   }
 
+  int? _joinedWsId;
+  DateTime? _lastToastTime;
+  String? _lastToastKey;
+
+  void _showToastOnce(String? text, {required String key}) {
+    if (text == null || text.trim().isEmpty) return;
+    final now = DateTime.now();
+    if (_lastToastKey == key && _lastToastTime != null && now.difference(_lastToastTime!).inSeconds < 5) {
+      return;
+    }
+    _lastToastKey = key;
+    _lastToastTime = now;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(text, style: const TextStyle(fontSize: 13)),
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      duration: const Duration(seconds: 3),
+    ));
+  }
+
   void _setupRealtimeNotifications() {
     final cid = _api.userId;
     if (cid == null) return;
@@ -111,25 +133,29 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       _loadClientData();
       _contractRefreshNotifier.value++;
       if (!mounted) return;
-      final msg = (payload['data'] as Map?)?['message'] as String? ?? (payload['data'] as Map?)?['text'] as String? ?? AppLocalizations.of(context)!.onboarding_newNotification;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(msg, style: const TextStyle(fontSize: 13)),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
-      ));
+      final dynamic rawData = payload['data'];
+      final dataMap = rawData is Map ? rawData : null;
+      final msg = (payload['message'] ?? payload['text'] ?? dataMap?['message'] ?? dataMap?['text']) as String? 
+          ?? AppLocalizations.of(context)!.onboarding_newNotification;
+      final key = 'reverb:${payload['type'] ?? ''}:${payload['contract_id'] ?? payload['payment_id'] ?? payload['id'] ?? ''}';
+      _showToastOnce(msg, key: key);
     }));
     _reverbUnsubscribers.add(_reverb.addContractStatusChangedListener(() {
       _loadClientData();
       _contractRefreshNotifier.value++;
     }));
+    _reverbUnsubscribers.add(_reverb.addWorkspaceStatusChangedListener((_) {
+      _loadClientData();
+    }));
     if (widget.enableFcm) {
       _fcmSubscription = FirebaseMessaging.onMessage.listen((msg) {
         final type = msg.data['type'] as String? ?? '';
-        if (type == 'contract.company_approved' || type == 'contract.completed' || type == 'payment.approved') {
-          _loadClientData();
-        }
+        if (!(type.startsWith('contract.') || type.startsWith('payment.') || type.startsWith('workspace.'))) return;
+        _loadClientData();
+        _contractRefreshNotifier.value++;
+        final body = msg.notification?.body ?? msg.data['message'] as String?;
+        final key = 'fcm:$type:${msg.data['id'] ?? msg.data['contract_id'] ?? msg.data['payment_id'] ?? ''}';
+        _showToastOnce(body, key: key);
       });
       FirebaseMessaging.onMessageOpenedApp.listen((msg) {
         _loadClientData();
@@ -151,6 +177,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     for (final unsubscribe in _reverbUnsubscribers) {
       unsubscribe();
     }
+    if (_joinedWsId != null) {
+      _reverb.leaveWorkspace(_joinedWsId!);
+    }
     super.dispose();
   }
 
@@ -169,8 +198,14 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       _taxSettings = settingsData['settings'] as Map<String, dynamic>?;
       if (_workspace != null) {
         final wsId = _workspace!['id'] as int?;
-        if (wsId != null && wsId != _api.workspaceId) {
-          await _api.setUserData(workspace: wsId);
+        if (wsId != null) {
+          if (wsId != _api.workspaceId) {
+            await _api.setUserData(workspace: wsId);
+          }
+          if (_joinedWsId != wsId) {
+            await _reverb.connect(wsId);
+            _joinedWsId = wsId;
+          }
         }
       }
       _checkAutoAdvance();
