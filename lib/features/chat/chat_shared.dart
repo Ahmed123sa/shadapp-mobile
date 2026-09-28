@@ -79,11 +79,16 @@ Widget chatSenderAvatar(ApiClient api, Map<String, dynamic> m) {
   );
 }
 
-Widget chatMeetingBubble(Map<String, dynamic> metadata, Map<String, dynamic> m) {
+Widget chatMeetingBubble(
+  Map<String, dynamic> metadata,
+  Map<String, dynamic> m, {
+  Future<void> Function(int meetingId)? onEnter,
+  bool? isHost,
+}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      MeetingChip(metadata: metadata),
+      MeetingChip(metadata: metadata, onEnter: onEnter, isHost: isHost),
       if (m['created_at'] != null)
         Padding(
           padding: const EdgeInsetsDirectional.only(top: 3, start: 2),

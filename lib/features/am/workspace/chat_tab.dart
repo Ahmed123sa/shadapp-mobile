@@ -74,12 +74,16 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     _pollTick++;
     // The workspace header (next meeting / next payment) changes far less
     // often than the messages do, so it rides along every fourth refresh.
-    if (_pollTick % 4 == 0) _loadWorkspace();
+    if (_pollTick % 4 == 0) {
+      _loadWorkspace();
+      _loadMeetings();
+    }
   });
   int _pollTick = 0;
   Map<String, dynamic>? _workspaceData;
   Map<String, dynamic>? _nextMeeting;
   Map<String, dynamic>? _nextPayment;
+  Map<int, int?> _hostByMeetingId = {};
   bool _requestApproval = false;
   Map<String, dynamic>? _editingMessage;
   Map<String, dynamic>? _replyTo;
@@ -95,6 +99,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _load().then((_) => _markRead());
     _loadWorkspace();
+    _loadMeetings();
     _startPolling();
     _scrollController.addListener(_onScroll);
     final wsId = _wsId;
@@ -126,7 +131,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         if (mounted) _load();
       }));
       _reverbUnsubscribers.add(reverb.addPaymentScheduleChangedListener((_) {
-        if (mounted) _loadWorkspace();
+        if (mounted) {
+          _loadWorkspace();
+          _loadMeetings();
+        }
       }));
       reverb.connect(wsId);
     }
@@ -154,6 +162,26 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     } catch (e, s) {
       AppLog.error('chat_tab._loadWorkspace', e, s);
     }
+  }
+
+  Future<void> _loadMeetings() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    try {
+      final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
+      final hosts = <int, int?>{};
+      for (final m in meetings) {
+        if (m is Map) {
+          final id = m['id'] as int?;
+          if (id != null) {
+            hosts[id] = m['host_user_id'] as int?;
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _hostByMeetingId = hosts);
+      }
+    } catch (_) {}
   }
 
   Future<void> _load() async {
@@ -332,29 +360,34 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _enterMeeting(Map<String, dynamic> m) async {
-    final meetingId = m['id'] as int?;
-    final isZoom = m['zoom_meeting_id'] != null;
+  Future<void> _enterMeetingById(int meetingId) async {
     try {
-      if (isZoom && meetingId != null) {
-        final res = await _meetingProvider.enterMeeting(meetingId);
-        final uri = Uri.tryParse(res.url);
-        if (uri != null && await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      } else {
-        final link = m['link'] as String?;
-        final uri = link != null ? Uri.tryParse(link) : null;
-        if (uri != null && await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
+      final res = await _meetingProvider.enterMeeting(meetingId);
+      final uri = Uri.tryParse(res.url);
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
+      _loadMeetings();
     } catch (e, s) {
-      AppLog.error('chat_tab._enterMeeting', e, s);
+      AppLog.error('chat_tab._enterMeetingById', e, s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
         ));
+      }
+    }
+  }
+
+  Future<void> _enterMeeting(Map<String, dynamic> m) async {
+    final meetingId = m['id'] as int?;
+    final isZoom = m['zoom_meeting_id'] != null;
+    if (isZoom && meetingId != null) {
+      await _enterMeetingById(meetingId);
+    } else {
+      final link = m['link'] as String?;
+      final uri = link != null ? Uri.tryParse(link) : null;
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     }
   }
@@ -713,5 +746,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     messages: _messages,
     api: _api,
     onLongPressMessage: _showMessageActions,
+    onEnterMeeting: _enterMeetingById,
+    isHostFor: (meetingId) {
+      final hostId = _hostByMeetingId[meetingId];
+      return hostId == null || hostId == _api.userId;
+    },
   );
 }

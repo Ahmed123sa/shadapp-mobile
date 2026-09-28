@@ -449,4 +449,39 @@ void main() {
     expect(reverb.debugChannels, contains('App.Models.Client.10'));
     expect(reverb.debugChannels, isNot(contains('workspace.5')));
   });
+
+  testWidgets('client tapping a meeting message card does not call enter endpoint', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.workspaceId = 5;
+    final nowIso = DateTime.now().toUtc().add(const Duration(minutes: -2)).toIso8601String();
+    final meetingMsg = {
+      'id': 102,
+      'message': 'Meeting scheduled',
+      'sender_type': 'App\\Models\\User',
+      'sender_id': 99,
+      'type': 'meeting',
+      'metadata': {
+        'meeting_id': 77,
+        'title': 'Sprint Review',
+        'link': 'https://zoom.us/j/777',
+        'scheduled_at': nowIso,
+        'duration_minutes': 30,
+        'status': 'scheduled',
+      },
+      'created_at': nowIso,
+    };
+    stubDefaultGets(httpClient, messages: [meetingMsg]);
+
+    await pumpPage(tester, api);
+    expect(find.text('Sprint Review'), findsOneWidget);
+    expect(find.text('Join Now'), findsOneWidget);
+
+    await tester.tap(find.text('Join Now'));
+    await tester.pump();
+
+    verifyNever(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/enter'))),
+        headers: any(named: 'headers'), body: any(named: 'body')));
+  });
 }

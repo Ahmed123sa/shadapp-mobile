@@ -324,7 +324,7 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
-        headers: any(named: 'headers'))).called(1);
+        headers: any(named: 'headers'))).called(2);
     expect(find.text('No active meeting'), findsOneWidget);
   });
 
@@ -355,5 +355,42 @@ void main() {
 
     expect(reverb.debugChannels, contains('App.Models.User.10'));
     expect(reverb.debugChannels, isNot(contains('workspace.5')));
+  });
+
+  testWidgets('tapping a meeting message card calls POST /meetings/:id/enter', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    api.userId = 10;
+    final nowIso = DateTime.now().toUtc().add(const Duration(minutes: -2)).toIso8601String();
+    final meetingMsg = {
+      'id': 101,
+      'message': 'Meeting scheduled',
+      'sender_type': 'App\\Models\\User',
+      'sender_id': 10,
+      'type': 'meeting',
+      'metadata': {
+        'meeting_id': 77,
+        'title': 'Sprint Review',
+        'link': 'https://zoom.us/j/777',
+        'scheduled_at': nowIso,
+        'duration_minutes': 30,
+        'status': 'scheduled',
+      },
+      'created_at': nowIso,
+    };
+    stubDefaultGets(httpClient, messages: [meetingMsg]);
+    when(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/meetings/77/enter'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((_) async => jsonResponse('{"url":"https://zoom.us/s/777?zak=token","as":"host"}'));
+
+    await pumpTab(tester, api);
+    expect(find.text('Sprint Review'), findsOneWidget);
+    expect(find.text('Start meeting'), findsOneWidget);
+
+    await tester.tap(find.text('Start meeting'));
+    await tester.pump();
+
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/meetings/77/enter'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 }

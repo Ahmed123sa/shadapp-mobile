@@ -20,6 +20,8 @@ List<Widget> buildChatTabMessageList({
   required List<dynamic> messages,
   required ApiClient api,
   required void Function(dynamic msg) onLongPressMessage,
+  required Future<void> Function(int meetingId) onEnterMeeting,
+  bool Function(int meetingId)? isHostFor,
 }) {
   final l10n = AppLocalizations.of(context)!;
   final widgets = <Widget>[];
@@ -50,7 +52,14 @@ List<Widget> buildChatTabMessageList({
 
     Widget bubble;
     if (type == 'meeting' && metadata != null) {
-      bubble = chatMeetingBubble(metadata, m);
+      final meetingId = metadata['meeting_id'] as int?;
+      final isHost = (meetingId != null && isHostFor != null) ? isHostFor(meetingId) : true;
+      bubble = chatMeetingBubble(
+        metadata,
+        m,
+        onEnter: onEnterMeeting,
+        isHost: isHost,
+      );
     } else if (hasContract) {
       bubble = _contractBubble(context, m, contract, isClient);
     } else {

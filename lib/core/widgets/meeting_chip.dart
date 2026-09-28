@@ -7,7 +7,12 @@ import 'status_badge.dart';
 
 class MeetingChip extends StatelessWidget {
   final Map<String, dynamic> metadata;
-  const MeetingChip({super.key, required this.metadata});
+  /// Staff entry: when set, tapping calls this instead of opening
+  /// metadata['link'] (the participant join_url), so the backend can make
+  /// the manager/super admin the host. Clients leave it null.
+  final Future<void> Function(int meetingId)? onEnter;
+  final bool? isHost;
+  const MeetingChip({super.key, required this.metadata, this.onEnter, this.isHost});
 
   @override
   Widget build(BuildContext context) {
@@ -118,9 +123,17 @@ class MeetingChip extends StatelessWidget {
             Builder(
               builder: (ctx) {
                 final joinStatus = getMeetingJoinStatus(scheduledAt, l10n);
+                final buttonLabel = onEnter != null
+                    ? ((isHost ?? true) ? l10n.meeting_startAsHost : l10n.meeting_join)
+                    : joinStatus.label;
                 if (joinStatus.canJoin) {
                   return GestureDetector(
                     onTap: () async {
+                      final meetingId = metadata['meeting_id'] as int?;
+                      if (onEnter != null && meetingId != null) {
+                        await onEnter!(meetingId);
+                        return;
+                      }
                       final uri = Uri.tryParse(link);
                       if (uri != null && await canLaunchUrl(uri)) {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -132,7 +145,7 @@ class MeetingChip extends StatelessWidget {
                         color: ShadColors.success,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(joinStatus.label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                      child: Text(buttonLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
                     ),
                   );
                 }

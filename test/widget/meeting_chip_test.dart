@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shadapp_client/core/widgets/meeting_chip.dart';
 import '../helpers/pump_app.dart';
@@ -151,5 +152,64 @@ void main() {
     );
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Rescheduled'), findsNothing);
+  });
+
+  testWidgets('with onEnter, tapping calls it with meeting_id instead of opening link', (tester) async {
+    int? entered;
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(
+        metadata: {
+          'meeting_id': 7,
+          'title': 'Kickoff',
+          'link': 'https://zoom.us/j/1',
+          'scheduled_at': iso(const Duration(minutes: -5)),
+          'duration_minutes': 30,
+          'status': 'scheduled',
+        },
+        onEnter: (id) async => entered = id,
+      ),
+    );
+    await tester.tap(find.byType(GestureDetector).last);
+    await tester.pump();
+    expect(entered, 7);
+  });
+
+  testWidgets('with onEnter and isHost: true (or default), button shows "Start meeting"', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(
+        metadata: {
+          'meeting_id': 7,
+          'title': 'Kickoff',
+          'link': 'https://zoom.us/j/1',
+          'scheduled_at': iso(const Duration(minutes: -5)),
+          'duration_minutes': 30,
+          'status': 'scheduled',
+        },
+        onEnter: (id) async {},
+        isHost: true,
+      ),
+    );
+    expect(find.text('Start meeting'), findsOneWidget);
+  });
+
+  testWidgets('with onEnter and isHost: false, button shows "Join"', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      MeetingChip(
+        metadata: {
+          'meeting_id': 7,
+          'title': 'Kickoff',
+          'link': 'https://zoom.us/j/1',
+          'scheduled_at': iso(const Duration(minutes: -5)),
+          'duration_minutes': 30,
+          'status': 'scheduled',
+        },
+        onEnter: (id) async {},
+        isHost: false,
+      ),
+    );
+    expect(find.text('Join'), findsOneWidget);
   });
 }
