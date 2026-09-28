@@ -1775,8 +1775,10 @@
   "amNavSettings": "Settings",
   "amSettings": "Settings",
   "amTotalClientsStat": "Total Clients",
-  "amTotalManagers": "Total Managers",
   "approvalLoadFailed": "Failed to load approvals",
   "filesLoadFailed": "Failed to load files",
-  "paymentsFailedToLoad": "Failed to load payments"
+  "paymentsFailedToLoad": "Failed to load payments",
+  "meeting_startAsHost": "Start meeting",
+  "meeting_join": "Join",
+  "meeting_opening": "Opening…"
 }

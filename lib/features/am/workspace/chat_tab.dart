@@ -332,27 +332,53 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _enterMeeting(Map<String, dynamic> m) async {
+    final meetingId = m['id'] as int?;
+    final isZoom = m['zoom_meeting_id'] != null;
+    try {
+      if (isZoom && meetingId != null) {
+        final res = await _meetingProvider.enterMeeting(meetingId);
+        final uri = Uri.tryParse(res.url);
+        if (uri != null && await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        final link = m['link'] as String?;
+        final uri = link != null ? Uri.tryParse(link) : null;
+        if (uri != null && await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (e, s) {
+      AppLog.error('chat_tab._enterMeeting', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+        ));
+      }
+    }
+  }
+
   Future<void> _openLatestZoomLink() async {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
       final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
       if (!mounted) return;
-      String? zoomLink;
-      String? scheduledAt;
+      Map<String, dynamic>? targetMeeting;
       for (final m in meetings.reversed) {
         final link = m['link'] as String?;
         final status = m['status'] as String?;
         if (link != null && status == 'scheduled') {
-          zoomLink = link;
-          scheduledAt = m['scheduled_at'] as String?;
+          targetMeeting = m is Map<String, dynamic> ? m : Map<String, dynamic>.from(m);
           break;
         }
       }
-      if (zoomLink == null) {
+      if (targetMeeting == null) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatNoActiveMeeting)));
         return;
       }
+      final scheduledAt = targetMeeting['scheduled_at'] as String?;
       if (scheduledAt != null) {
         final joinStatus = getMeetingJoinStatus(scheduledAt, AppLocalizations.of(context)!);
         if (!joinStatus.canJoin) {
@@ -360,10 +386,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           return;
         }
       }
-      final uri = Uri.tryParse(zoomLink);
-      if (uri != null && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      await _enterMeeting(targetMeeting);
     } catch (e, s) {
       AppLog.error('chat_tab._openLatestZoomLink', e, s);
     }
@@ -486,6 +509,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         inHoursLabel: l10n.chatInHours,
         inDaysLabel: l10n.chatInDays,
         joinLabel: l10n.chatJoin,
+        onTap: () => _enterMeeting(_nextMeeting!),
       ),
       // Upcoming Payment Banner
       if (_nextPayment != null)

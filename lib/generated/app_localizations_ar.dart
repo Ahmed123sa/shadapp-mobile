@@ -4730,10 +4730,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsMethodVodafoneCash => 'فودافون كاش';
 
   @override
-  String get paymentsNoteHint => 'مثال: دفعة العقد الأول';
+  String get paymentsMultiCurrencyContractHint =>
+      'العميل عنده عقود بأكتر من عملة، اختار العقد عشان نحدد العملة';
 
   @override
-  String get paymentsMultiCurrencyContractHint => 'العميل عنده عقود بأكتر من عملة، اختار العقد عشان نحدد العملة';
+  String get paymentsNoteHint => 'مثال: دفعة العقد الأول';
 
   @override
   String get paymentsNoteOptional => 'ملاحظة (اختياري)';
@@ -5288,9 +5289,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get amTotalClientsStat => 'إجمالي العملاء';
 
   @override
-  String get amTotalManagers => 'إجمالي المديرين';
-
-  @override
   String get approvalLoadFailed => 'فشل تحميل طلبات الموافقة';
 
   @override
@@ -5298,4 +5296,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentsFailedToLoad => 'فشل تحميل المدفوعات';
+
+  @override
+  String get meeting_startAsHost => 'ابدأ الاجتماع';
+
+  @override
+  String get meeting_join => 'انضم';
+
+  @override
+  String get meeting_opening => 'جارٍ الفتح…';
 }

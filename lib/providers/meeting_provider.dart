@@ -54,4 +54,12 @@ class MeetingProvider {
 
   Future<void> updateMeeting(int workspaceId, int meetingId, Map<String, dynamic> payload) =>
       _repo.update(workspaceId, meetingId, payload);
+
+  /// Staff entry into a Zoom meeting. The backend makes the first
+  /// manager/super admin the host (fresh start_url) and gives everyone after
+  /// that the participant join_url, so this can never kick an existing host.
+  Future<({String url, bool asHost})> enterMeeting(int meetingId) async {
+    final data = await _repo.enter(meetingId);
+    return (url: data['url'] as String, asHost: data['as'] == 'host');
+  }
 }

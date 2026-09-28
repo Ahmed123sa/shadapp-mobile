@@ -135,6 +135,29 @@ class _MeetingsTabState extends State<MeetingsTab> {
     }
   }
 
+  int? _enteringMeetingId;
+
+  Future<void> _enterMeeting(dynamic m) async {
+    final meetingId = m['id'] as int?;
+    if (meetingId == null || _enteringMeetingId != null) return;
+    setState(() => _enteringMeetingId = meetingId);
+    try {
+      final res = await _meetingProvider.enterMeeting(meetingId);
+      await launchUrl(Uri.parse(res.url), mode: LaunchMode.externalApplication);
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+        ));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _enteringMeetingId = null);
+      }
+    }
+  }
+
   String _formatDate(String? dt) {
     if (dt == null) return '';
     try {
@@ -257,13 +280,37 @@ class _MeetingsTabState extends State<MeetingsTab> {
             Builder(
               builder: (ctx) {
                 final joinStatus = getMeetingJoinStatus(m['scheduled_at'], AppLocalizations.of(ctx)!);
+                final isZoom = m['zoom_meeting_id'] != null;
+                final hostUserId = m['host_user_id'] as int?;
+                final isHost = hostUserId == null || hostUserId == _api.userId;
+                final isEntering = _enteringMeetingId == m['id'];
+
+                final String buttonLabel;
+                if (isEntering) {
+                  buttonLabel = l10n.meeting_opening;
+                } else if (isZoom) {
+                  buttonLabel = isHost ? l10n.meeting_startAsHost : l10n.meeting_join;
+                } else {
+                  buttonLabel = joinStatus.label;
+                }
+
                 return Row(children: [
                   Expanded(
                     child: joinStatus.canJoin
                         ? OutlinedButton.icon(
-                            onPressed: () => launchUrl(Uri.parse(m['link']), mode: LaunchMode.externalApplication),
-                            icon: const Icon(Icons.videocam, size: 18),
-                            label: Text(joinStatus.label),
+                            onPressed: isEntering
+                                ? null
+                                : () => isZoom
+                                    ? _enterMeeting(m)
+                                    : launchUrl(Uri.parse(m['link']), mode: LaunchMode.externalApplication),
+                            icon: isEntering
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.videocam, size: 18),
+                            label: Text(buttonLabel),
                           )
                         : Container(
                             padding: const EdgeInsets.symmetric(vertical: 8),

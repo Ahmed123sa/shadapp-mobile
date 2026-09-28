@@ -9167,17 +9167,17 @@ abstract class AppLocalizations {
   /// **'Vodafone Cash'**
   String get paymentsMethodVodafoneCash;
 
-  /// No description provided for @paymentsNoteHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Example: first contract payment'**
-  String get paymentsNoteHint;
-
   /// No description provided for @paymentsMultiCurrencyContractHint.
   ///
   /// In en, this message translates to:
   /// **'This client has contracts in multiple currencies — pick a contract to determine the payment currency'**
   String get paymentsMultiCurrencyContractHint;
+
+  /// No description provided for @paymentsNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: first contract payment'**
+  String get paymentsNoteHint;
 
   /// No description provided for @paymentsNoteOptional.
   ///
@@ -10242,12 +10242,6 @@ abstract class AppLocalizations {
   /// **'Total Clients'**
   String get amTotalClientsStat;
 
-  /// No description provided for @amTotalManagers.
-  ///
-  /// In en, this message translates to:
-  /// **'Total Managers'**
-  String get amTotalManagers;
-
   /// No description provided for @approvalLoadFailed.
   ///
   /// In en, this message translates to:
@@ -10265,6 +10259,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load payments'**
   String get paymentsFailedToLoad;
+
+  /// No description provided for @meeting_startAsHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Start meeting'**
+  String get meeting_startAsHost;
+
+  /// No description provided for @meeting_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get meeting_join;
+
+  /// No description provided for @meeting_opening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening…'**
+  String get meeting_opening;
 }
 
 class _AppLocalizationsDelegate

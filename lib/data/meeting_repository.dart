@@ -38,4 +38,7 @@ class MeetingRepository {
 
   Future<void> update(int workspaceId, int meetingId, Map<String, dynamic> payload) =>
       _api.put('/workspaces/$workspaceId/meetings/$meetingId', payload);
+
+  Future<Map<String, dynamic>> enter(int meetingId) =>
+      _api.post('/meetings/$meetingId/enter', {});
 }

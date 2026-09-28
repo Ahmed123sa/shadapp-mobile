@@ -70,4 +70,17 @@ void main() {
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  test('enterMeeting posts to /meetings/:id/enter and parses response', () async {
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => jsonResponse('{"url":"https://zoom.us/s/123?zak=xyz","as":"host"}'));
+
+    final res = await provider.enterMeeting(9);
+
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/meetings/9/enter'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+    expect(res.url, 'https://zoom.us/s/123?zak=xyz');
+    expect(res.asHost, isTrue);
+  });
 }
+

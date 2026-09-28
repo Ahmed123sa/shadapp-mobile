@@ -4755,10 +4755,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentsMethodVodafoneCash => 'Vodafone Cash';
 
   @override
-  String get paymentsNoteHint => 'Example: first contract payment';
+  String get paymentsMultiCurrencyContractHint =>
+      'This client has contracts in multiple currencies — pick a contract to determine the payment currency';
 
   @override
-  String get paymentsMultiCurrencyContractHint => 'This client has contracts in multiple currencies — pick a contract to determine the payment currency';
+  String get paymentsNoteHint => 'Example: first contract payment';
 
   @override
   String get paymentsNoteOptional => 'Note (optional)';
@@ -5313,9 +5314,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get amTotalClientsStat => 'Total Clients';
 
   @override
-  String get amTotalManagers => 'Total Managers';
-
-  @override
   String get approvalLoadFailed => 'Failed to load approvals';
 
   @override
@@ -5323,4 +5321,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsFailedToLoad => 'Failed to load payments';
+
+  @override
+  String get meeting_startAsHost => 'Start meeting';
+
+  @override
+  String get meeting_join => 'Join';
+
+  @override
+  String get meeting_opening => 'Opening…';
 }

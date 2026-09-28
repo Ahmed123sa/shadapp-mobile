@@ -11,6 +11,7 @@ class Meeting {
   final int? durationMinutes;
   final String? link;
   final String? passcode;
+  final int? hostUserId;
 
   const Meeting({
     required this.id,
@@ -20,6 +21,7 @@ class Meeting {
     this.durationMinutes,
     this.link,
     this.passcode,
+    this.hostUserId,
   });
 
   factory Meeting.fromJson(Map<String, dynamic> json) => Meeting(
@@ -30,6 +32,7 @@ class Meeting {
         durationMinutes: _int(json['duration_minutes']),
         link: _str(json['link']),
         passcode: _str(json['passcode']),
+        hostUserId: _int(json['host_user_id']),
       );
 }
 

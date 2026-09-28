@@ -1,4 +1,4 @@
-﻿{
+{
   "@@locale": "ar",
 
   "appTitle": "ShadApp",
@@ -1733,8 +1733,10 @@
   "amNavSettings": "الإعدادات",
   "amSettings": "الإعدادات",
   "amTotalClientsStat": "إجمالي العملاء",
-  "amTotalManagers": "إجمالي المديرين",
   "approvalLoadFailed": "فشل تحميل طلبات الموافقة",
   "filesLoadFailed": "فشل تحميل الملفات",
-  "paymentsFailedToLoad": "فشل تحميل المدفوعات"
+  "paymentsFailedToLoad": "فشل تحميل المدفوعات",
+  "meeting_startAsHost": "ابدأ الاجتماع",
+  "meeting_join": "انضم",
+  "meeting_opening": "جارٍ الفتح…"
 }

@@ -167,4 +167,51 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, 'Completed'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Cancel'), findsOneWidget);
   });
+
+  testWidgets('Zoom meeting displays "Start meeting" when no host is claimed, and clicking calls enter', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 42;
+    api.role = 'account_manager';
+    final now = DateTime.now().toUtc().toIso8601String();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"meetings":[{"id":10,"title":"Zoom Host Sync","status":"scheduled","scheduled_at":"$now","link":"https://zoom.us/j/123","zoom_meeting_id":"123","host_user_id":null}]}',
+      ),
+    );
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => jsonResponse('{"url":"https://zoom.us/s/123?zak=token","as":"host"}'));
+
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+
+    await pumpTab(tester, meetingProvider, contractProvider);
+
+    expect(find.widgetWithText(OutlinedButton, 'Start meeting'), findsOneWidget);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Start meeting'));
+    await tester.pump();
+
+    verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/meetings/10/enter'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  testWidgets('Zoom meeting displays "Join" when another host is already claimed', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 42;
+    api.role = 'account_manager';
+    final now = DateTime.now().toUtc().toIso8601String();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"meetings":[{"id":11,"title":"Zoom Other Host Sync","status":"scheduled","scheduled_at":"$now","link":"https://zoom.us/j/123","zoom_meeting_id":"123","host_user_id":99}]}',
+      ),
+    );
+
+    final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+    final contractProvider = ContractProvider(api: api);
+
+    await pumpTab(tester, meetingProvider, contractProvider);
+
+    expect(find.widgetWithText(OutlinedButton, 'Join'), findsOneWidget);
+  });
 }

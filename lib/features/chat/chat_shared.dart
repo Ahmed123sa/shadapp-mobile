@@ -337,6 +337,7 @@ Widget chatUpcomingMeetingBanner({
   required String Function(int) inHoursLabel,
   required String Function(int) inDaysLabel,
   required String joinLabel,
+  VoidCallback? onTap,
 }) {
   final title = meeting['title'] as String? ?? fallbackTitle;
   final link = meeting['link'] as String?;
@@ -356,7 +357,7 @@ Widget chatUpcomingMeetingBanner({
     // Runs inside build(), so reporting it would fire on every frame.
   }
   return GestureDetector(
-    onTap: link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null,
+    onTap: onTap ?? (link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null),
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
