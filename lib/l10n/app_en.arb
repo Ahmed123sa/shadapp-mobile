@@ -1,6 +1,5 @@
 {
   "@@locale": "en",
-
   "appTitle": "ShadApp",
   "chat": "Chat",
   "contracts": "Contracts",
@@ -129,7 +128,6 @@
   "editRequestedStatus": "Edit Requested",
   "pending": "Pending",
   "noData": "No Data",
-
   "sessionExpired": "Session Expired",
   "invalidCredentials": "Invalid Credentials",
   "serverError": "Server Error",
@@ -146,7 +144,6 @@
   "create": "Create",
   "update": "Update",
   "saveChanges": "Save Changes",
-
   "loginTitle": "Login",
   "emailLabel": "Email",
   "passwordLabel": "Password",
@@ -159,7 +156,6 @@
   "connectionFailedMessage": "Could not reach the server. Check your connection and make sure the server is running.",
   "tooManyAttemptsMessage": "Too many login attempts. Please wait a minute and try again.",
   "loginSuccess": "Login successful",
-
   "scheduled": "Scheduled",
   "cancelled": "Cancelled",
   "paid": "Paid",
@@ -168,7 +164,6 @@
   "underReview": "Under Review",
   "approved_status": "Approved",
   "rejected_status": "Rejected",
-
   "chatContractCard_fileOpenFailed": "Failed to open file",
   "contractValueExclVat": "Contract Value (Excl. VAT)",
   "contractApprovedUploadPayment": "Contract approved! Please upload payment proof.",
@@ -206,7 +201,6 @@
   "paymentBanner_tomorrow": "Due Tomorrow",
   "paymentBanner_daysOverdue": "{days} days overdue",
   "paymentBanner_daysAhead": "{days} days ahead",
-
   "chat_editFailed": "Failed to edit message",
   "chat_attachFailed": "Failed to attach file",
   "chat_editRequested": "Edit Requested",
@@ -239,7 +233,6 @@
   "chat_replyAction": "Reply",
   "chat_contracts": "Contracts",
   "chat_noContracts": "No contracts available",
-
   "contract_all": "All",
   "contract_uploaded": "Uploaded",
   "contract_uploadFailed": "Upload failed",
@@ -306,7 +299,6 @@
   "contract_requiredDocsLabel": "Required Documents",
   "contract_docInputHint": "Tap to select files",
   "contract_noContracts": "No contracts available",
-
   "dashboard_failedToLoad": "Failed to load dashboard",
   "dashboard_retry": "Retry",
   "dashboard_newNotification": "New Notification",
@@ -338,7 +330,6 @@
   "dashboard_notifications_minutesAgo": "{minutes}m ago",
   "dashboard_notifications_hoursAgo": "{hours}h ago",
   "dashboard_notifications_daysAgo": "{days}d ago",
-
   "files_chooseDocType": "Choose Document Type",
   "files_chooseAndUpload": "Choose and Upload",
   "files_uploadFailed": "Failed to upload file",
@@ -349,7 +340,6 @@
   "files_deleted": "File deleted successfully",
   "files_deleteFailed": "Failed to delete file",
   "files_docDefinitions": "Document Definitions",
-
   "meetings_noMeetings": "No meetings",
   "meetings_upcoming": "Upcoming",
   "meetings_previous": "Previous",
@@ -358,14 +348,12 @@
   "meetings_minutesLeft": "{minutes} min left",
   "meetings_hoursLeft": "{hours}h left",
   "meetings_daysLeft": "{days}d left",
-
   "notifications_title": "Notifications",
   "notifications_markAllRead": "Mark All Read",
   "notifications_empty": "No notifications",
   "notifications_minutesAgo": "{minutes}m ago",
   "notifications_hoursAgo": "{hours}h ago",
   "notifications_daysAgo": "{days}d ago",
-
   "settings_title": "Settings",
   "settings_profilePicture": "Profile Picture",
   "settings_changePicture": "Change Profile Picture",
@@ -384,7 +372,6 @@
   "settings_imageChangeFailed": "Failed to update profile picture",
   "settings_saved": "Settings saved successfully",
   "settings_saveFailed": "Failed to save settings",
-
   "signature_deleted": "Signature deleted",
   "signature_deleteFailed": "Failed to delete signature",
   "signature_saved": "Signature saved",
@@ -404,7 +391,6 @@
   "signature_saved_willReturn": "Signature saved. You will be returned.",
   "signature_fileReadFailed": "Failed to read signature file",
   "signature_renderFailed": "Failed to render signature",
-
   "subusers_permission_chat": "Chat",
   "subusers_permission_viewContracts": "View Contracts",
   "subusers_permission_approveContracts": "Approve Contracts",
@@ -431,7 +417,6 @@
   "subusers_addUser": "Add Sub-User",
   "subusers_noUsers": "No sub-users",
   "subusers_permissionsCount": "{count} permission(s)",
-
   "approvals_noWorkspace": "No workspace selected",
   "approvals_failedToLoad": "Failed to load approvals",
   "approvals_editRequested": "Edit Requested",
@@ -456,7 +441,6 @@
   "approvals_editReasonLabel": "Edit Reason",
   "approvals_approveButton": "Approve",
   "approvals_requestEditButton": "Request Edit",
-
   "payments_installmentLabel": "Installment",
   "payments_failedToLoad": "Failed to load payments",
   "payments_paidInFull": "Paid in Full",
@@ -501,7 +485,6 @@
   "payments_proofSendFailed": "Failed to send payment proof",
   "payments_scheduledLabel": "Scheduled",
   "payments_overdueLabel": "Overdue",
-
   "profile_imageChanged": "Profile picture updated",
   "profile_imageChangeFailed": "Failed to update profile picture",
   "profile_saved": "Profile saved",
@@ -511,7 +494,6 @@
   "profile_displayName": "Display Name",
   "profile_displayNameHint": "Enter your display name",
   "profile_save": "Save",
-
   "am_newNotification": "New Notification",
   "am_workspaceCreateFailed": "Failed to create workspace",
   "am_noClientsAvailable": "No clients available",
@@ -577,7 +559,6 @@
   "am_meeting_minutes": "minutes",
   "am_meeting_notes": "Notes",
   "am_meeting_create": "Create",
-
   "sa_team_title": "Team Management",
   "sa_team_manage": "Manage Account Managers",
   "sa_team_noManagers": "No account managers",
@@ -597,7 +578,6 @@
   "sa_clients_selectManager": "Select Manager",
   "sa_clients_allManagers": "All Managers",
   "sa_clients_managerLabel": "Manager",
-
   "clientDetail_imageChanged": "Profile picture updated",
   "clientDetail_imageChangeFailed": "Failed to update profile picture",
   "clientDetail_saved": "Client data saved",
@@ -627,7 +607,6 @@
   "clientDetail_subUsers": "Sub-Users",
   "clientDetail_saveChanges": "Save Changes",
   "clientDetail_cancel": "Cancel",
-
   "createClient_success": "Client created successfully",
   "createClient_email": "Email",
   "createClient_emailCopied": "Email copied",
@@ -653,7 +632,6 @@
   "createClient_notesHint": "Additional notes...",
   "createClient_createButton": "Create Client",
   "createClient_cancel": "Cancel",
-
   "managerDetail_failedToLoad": "Failed to load manager details",
   "managerDetail_retry": "Retry",
   "managerDetail_stats": "Statistics",
@@ -714,7 +692,6 @@
   "accountManagers_emptyHint": "Account managers will appear here",
   "accountManagers_addButton": "Add Manager",
   "accountManagers_clientCount": "{count} client(s)",
-
   "adminSettings_saved": "Settings saved",
   "adminSettings_saveFailed": "Failed to save settings",
   "adminSettings_enterValidPercentage": "Please enter a valid percentage (0-100)",
@@ -775,7 +752,6 @@
   "adminSettings_clauseSaveOrder": "Save order",
   "adminSettings_clausesEmpty": "No clauses yet — add your first template.",
   "adminSettings_clausesLoadFailed": "Failed to load clauses",
-
   "auditLog_noEvents": "No events found",
   "auditLog_noActivities": "No activities found",
   "auditLog_retry": "Retry",
@@ -829,7 +805,6 @@
   "auditLog_action_updateMeeting": "Meeting updated",
   "auditLog_action_createClient": "Client created",
   "auditLog_action_deleteClient": "Client deleted",
-
   "contractBuilder_currencySAR": "SAR",
   "contractBuilder_currencyUSD": "USD",
   "contractBuilder_currencyEUR": "EUR",
@@ -852,7 +827,6 @@
   "contractBuilder_editTitle": "Edit Contract",
   "contractBuilder_createExtraTitle": "Create Extra Service",
   "contractBuilder_createNewTitle": "Create New Contract",
-
   "onboarding_newNotification": "New Notification",
   "onboarding_spaceActivated": "Your workspace is now active!",
   "onboarding_failedToLoad": "Failed to load onboarding data",
@@ -939,7 +913,6 @@
   "currency_qar": "Qatari Riyal",
   "currency_bhd": "Bahraini Dinar",
   "currency_omr": "Omani Riyal",
-
   "preview_vibeTitle": "Theme Preview",
   "preview_bestFor": "Best for",
   "preview_colors": "Colors",
@@ -960,7 +933,6 @@
   "preview_headings": "Headings",
   "preview_headingSample": "Headings in {font} regular text",
   "preview_chooseDirection": "Choose Direction",
-
   "online": "Online",
   "offline": "Offline",
   "upcomingMeeting": "Upcoming meeting",
@@ -1027,11 +999,8 @@
   "editRequestHint2": "Mention the required edits...",
   "contractActionDone": "Contract {action}",
   "contractActionDialog": "{action} Contract",
-
   "dashboard_notifications_appBarTitle": "Notifications",
-
   "dashboard_tabLockedMessage": "This tab is locked — you must complete the stage \"{stage}\" first",
-
   "payments_methodBankTransfer": "Bank transfer",
   "payments_methodSwift": "SWIFT transfer",
   "payments_methodCorporateAccount": "Corporate account",
@@ -1054,14 +1023,12 @@
   "payments_installmentFormat": "Installment {ordinal}",
   "payments_installmentFormatNumbered": "Installment {number}",
   "payments_payScheduled": "Pay {label}",
-
   "files_uploadedFiles": "Uploaded files",
   "files_uploading": "Uploading...",
   "files_uploadFile": "Upload file",
   "files_noFiles": "No files",
   "files_paymentProofs": "Payment proofs",
   "files_paymentProof": "Payment proof",
-
   "subusers_noSubUsers": "No sub-users",
   "invalidData": "Invalid data",
   "notificationChannelName": "ShadApp Notifications",
@@ -1767,5 +1734,41 @@
   "amTotalManagers": "Total Managers",
   "approvalLoadFailed": "Failed to load approvals",
   "filesLoadFailed": "Failed to load files",
-  "paymentsFailedToLoad": "Failed to load payments"
+  "paymentsFailedToLoad": "Failed to load payments",
+  "registerNow": "Register Now",
+  "register_title": "Create Account",
+  "register_subtitle": "Tell us about your company. Our team reviews every request before the account goes live.",
+  "register_sectionCompany": "Company",
+  "register_sectionContact": "Contact",
+  "register_sectionSecurity": "Security",
+  "register_companyName": "Company Name",
+  "register_companyNameHint": "e.g. Shad Media",
+  "register_contactPerson": "Contact Person",
+  "register_contactPersonHint": "Full name",
+  "register_emailHint": "you@company.com",
+  "register_phone": "Phone Number",
+  "register_phoneHint": "+20 100 000 0000",
+  "register_country": "Country",
+  "register_countryHint": "e.g. Egypt",
+  "register_industry": "Industry",
+  "register_industryHint": "e.g. Real Estate",
+  "register_optional": "Optional",
+  "register_password": "Password",
+  "register_passwordHint": "At least 8 characters",
+  "register_confirmPassword": "Confirm Password",
+  "register_submit": "Send Request",
+  "register_sending": "Sending your request…",
+  "register_haveAccount": "Already have an account?",
+  "register_signIn": "Sign in",
+  "register_errFixFields": "Please fix the highlighted fields and try again.",
+  "register_errCompanyName": "Enter your company name",
+  "register_errContactPerson": "Enter the contact person's name",
+  "register_errEmail": "Enter a valid email address",
+  "register_errPhone": "Enter a valid phone number",
+  "register_errPassword": "Password must be at least 8 characters",
+  "register_errConfirmPassword": "Passwords don't match",
+  "register_successTitle": "Request Sent Successfully",
+  "register_successBody": "Your registration request has been sent. An administrator will review it and you'll get an email as soon as your account is approved.",
+  "register_successNote": "Reviews usually take 1–2 business days.",
+  "register_successAction": "Back to Login"
 }

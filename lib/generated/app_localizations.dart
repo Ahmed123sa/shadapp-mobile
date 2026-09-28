@@ -10199,6 +10199,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load payments'**
   String get paymentsFailedToLoad;
+
+  /// No description provided for @registerNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Register Now'**
+  String get registerNow;
+
+  /// No description provided for @register_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get register_title;
+
+  /// No description provided for @register_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about your company. Our team reviews every request before the account goes live.'**
+  String get register_subtitle;
+
+  /// No description provided for @register_sectionCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get register_sectionCompany;
+
+  /// No description provided for @register_sectionContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get register_sectionContact;
+
+  /// No description provided for @register_sectionSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get register_sectionSecurity;
+
+  /// No description provided for @register_companyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Name'**
+  String get register_companyName;
+
+  /// No description provided for @register_companyNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Shad Media'**
+  String get register_companyNameHint;
+
+  /// No description provided for @register_contactPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Person'**
+  String get register_contactPerson;
+
+  /// No description provided for @register_contactPersonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get register_contactPersonHint;
+
+  /// No description provided for @register_emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'you@company.com'**
+  String get register_emailHint;
+
+  /// No description provided for @register_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get register_phone;
+
+  /// No description provided for @register_phoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'+20 100 000 0000'**
+  String get register_phoneHint;
+
+  /// No description provided for @register_country.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get register_country;
+
+  /// No description provided for @register_countryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Egypt'**
+  String get register_countryHint;
+
+  /// No description provided for @register_industry.
+  ///
+  /// In en, this message translates to:
+  /// **'Industry'**
+  String get register_industry;
+
+  /// No description provided for @register_industryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Real Estate'**
+  String get register_industryHint;
+
+  /// No description provided for @register_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get register_optional;
+
+  /// No description provided for @register_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get register_password;
+
+  /// No description provided for @register_passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get register_passwordHint;
+
+  /// No description provided for @register_confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get register_confirmPassword;
+
+  /// No description provided for @register_submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Request'**
+  String get register_submit;
+
+  /// No description provided for @register_sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending your request…'**
+  String get register_sending;
+
+  /// No description provided for @register_haveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get register_haveAccount;
+
+  /// No description provided for @register_signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get register_signIn;
+
+  /// No description provided for @register_errFixFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fix the highlighted fields and try again.'**
+  String get register_errFixFields;
+
+  /// No description provided for @register_errCompanyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your company name'**
+  String get register_errCompanyName;
+
+  /// No description provided for @register_errContactPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the contact person\'s name'**
+  String get register_errContactPerson;
+
+  /// No description provided for @register_errEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get register_errEmail;
+
+  /// No description provided for @register_errPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid phone number'**
+  String get register_errPhone;
+
+  /// No description provided for @register_errPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get register_errPassword;
+
+  /// No description provided for @register_errConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords don\'t match'**
+  String get register_errConfirmPassword;
+
+  /// No description provided for @register_successTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Sent Successfully'**
+  String get register_successTitle;
+
+  /// No description provided for @register_successBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your registration request has been sent. An administrator will review it and you\'ll get an email as soon as your account is approved.'**
+  String get register_successBody;
+
+  /// No description provided for @register_successNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews usually take 1–2 business days.'**
+  String get register_successNote;
+
+  /// No description provided for @register_successAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get register_successAction;
 }
 
 class _AppLocalizationsDelegate

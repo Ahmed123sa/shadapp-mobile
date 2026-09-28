@@ -5286,4 +5286,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsFailedToLoad => 'Failed to load payments';
+
+  @override
+  String get registerNow => 'Register Now';
+
+  @override
+  String get register_title => 'Create Account';
+
+  @override
+  String get register_subtitle =>
+      'Tell us about your company. Our team reviews every request before the account goes live.';
+
+  @override
+  String get register_sectionCompany => 'Company';
+
+  @override
+  String get register_sectionContact => 'Contact';
+
+  @override
+  String get register_sectionSecurity => 'Security';
+
+  @override
+  String get register_companyName => 'Company Name';
+
+  @override
+  String get register_companyNameHint => 'e.g. Shad Media';
+
+  @override
+  String get register_contactPerson => 'Contact Person';
+
+  @override
+  String get register_contactPersonHint => 'Full name';
+
+  @override
+  String get register_emailHint => 'you@company.com';
+
+  @override
+  String get register_phone => 'Phone Number';
+
+  @override
+  String get register_phoneHint => '+20 100 000 0000';
+
+  @override
+  String get register_country => 'Country';
+
+  @override
+  String get register_countryHint => 'e.g. Egypt';
+
+  @override
+  String get register_industry => 'Industry';
+
+  @override
+  String get register_industryHint => 'e.g. Real Estate';
+
+  @override
+  String get register_optional => 'Optional';
+
+  @override
+  String get register_password => 'Password';
+
+  @override
+  String get register_passwordHint => 'At least 8 characters';
+
+  @override
+  String get register_confirmPassword => 'Confirm Password';
+
+  @override
+  String get register_submit => 'Send Request';
+
+  @override
+  String get register_sending => 'Sending your request…';
+
+  @override
+  String get register_haveAccount => 'Already have an account?';
+
+  @override
+  String get register_signIn => 'Sign in';
+
+  @override
+  String get register_errFixFields =>
+      'Please fix the highlighted fields and try again.';
+
+  @override
+  String get register_errCompanyName => 'Enter your company name';
+
+  @override
+  String get register_errContactPerson => 'Enter the contact person\'s name';
+
+  @override
+  String get register_errEmail => 'Enter a valid email address';
+
+  @override
+  String get register_errPhone => 'Enter a valid phone number';
+
+  @override
+  String get register_errPassword => 'Password must be at least 8 characters';
+
+  @override
+  String get register_errConfirmPassword => 'Passwords don\'t match';
+
+  @override
+  String get register_successTitle => 'Request Sent Successfully';
+
+  @override
+  String get register_successBody =>
+      'Your registration request has been sent. An administrator will review it and you\'ll get an email as soon as your account is approved.';
+
+  @override
+  String get register_successNote => 'Reviews usually take 1–2 business days.';
+
+  @override
+  String get register_successAction => 'Back to Login';
 }

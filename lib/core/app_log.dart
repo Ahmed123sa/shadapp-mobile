@@ -16,6 +16,19 @@ import 'package:flutter/foundation.dart';
 class AppLog {
   const AppLog._();
 
+  /// A condition that is expected, benign, and worth seeing while developing
+  /// — but that must never reach Crashlytics.
+  ///
+  /// The distinction matters in both directions. [error] exists so handled
+  /// failures aren't *hidden*; this exists so the dashboard doesn't cry wolf.
+  /// A non-fatal that fires on every run (the iOS simulator never completes
+  /// APNs registration, so anything gated on it reliably comes up empty)
+  /// trains everyone to ignore the dashboard, which costs exactly as much as
+  /// swallowing the exception did.
+  static void info(String context, Object message) {
+    debugPrint('[$context] $message');
+  }
+
   /// [context] should say where this came from and what was being attempted,
   /// e.g. `'chat_page._load'` — it becomes the grouping key in Crashlytics.
   static void error(String context, Object error, [StackTrace? stack]) {

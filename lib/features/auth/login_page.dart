@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'dart:ui';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
@@ -71,19 +73,23 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    _cardController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _cardController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _cardFade = CurvedAnimation(parent: _cardController, curve: Curves.easeOut);
     _cardSlide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
         .animate(CurvedAnimation(parent: _cardController, curve: Curves.easeOutCubic));
 
-    _fieldsController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _fieldsController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _fieldsFade = CurvedAnimation(parent: _fieldsController, curve: Curves.easeOut);
 
-    _particlesController = AnimationController(vsync: this, duration: const Duration(seconds: 60))..repeat();
+    _particlesController = AnimationController(vsync: this, duration: const Duration(seconds: 60))
+      ..repeat();
 
     // ── SHAD reveal: once, 3 seconds ──
     _shimmerController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 3000),
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
     );
     _shimmerController.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
@@ -97,26 +103,31 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     // ── SHAD glow: fades in after reveal ──
     _logoGlowController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1000),
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
     );
     _logoGlowAnim = CurvedAnimation(parent: _logoGlowController, curve: Curves.easeOut);
 
     // ── "Shorter Road." letter reveal: 1.4s, starts after SHAD ──
     _roadRevealController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1400),
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
     );
 
-    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _shakeController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
     _breathController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 4000),
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
     )..repeat(reverse: true);
     _breathAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
     );
 
     _focusGlowController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 300),
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
     );
     _focusGlowAnim = CurvedAnimation(parent: _focusGlowController, curve: Curves.easeOut);
 
@@ -125,7 +136,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
     for (int i = 0; i < 20; i++) {
       _particles.add(_Particle(
-        x: _random.nextDouble(), y: _random.nextDouble(),
+        x: _random.nextDouble(),
+        y: _random.nextDouble(),
         size: _random.nextDouble() * 4 + 2,
         speedX: (_random.nextDouble() - 0.5) * 0.003,
         speedY: (_random.nextDouble() - 0.5) * 0.003,
@@ -240,11 +252,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             builder: (context, _) {
               final t = _breathAnimation.value;
               return Container(
-                decoration: BoxDecoration(gradient: LinearGradient(
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
                     for (var i = 0; i < ShadColors.loginGradientFrom.length; i++)
-                      Color.lerp(ShadColors.loginGradientFrom[i], ShadColors.loginGradientTo[i], t)!,
+                      Color.lerp(
+                          ShadColors.loginGradientFrom[i], ShadColors.loginGradientTo[i], t)!,
                   ],
                 )),
               );
@@ -256,15 +271,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             animation: _particlesController,
             builder: (context, _) => CustomPaint(
               size: size,
-              painter: _ParticlePainter(particles: _particles, animValue: _particlesController.value),
+              painter:
+                  _ParticlePainter(particles: _particles, animValue: _particlesController.value),
             ),
           ),
 
           // ── Decorative Circles ──
           Positioned(
-            top: -60, right: -40,
+            top: -60,
+            right: -40,
             child: Container(
-              width: 160, height: 160,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: ShadColors.crimson.withAlpha(30),
@@ -272,9 +290,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           ),
           Positioned(
-            bottom: -50, left: -30,
+            bottom: -50,
+            left: -30,
             child: Container(
-              width: 120, height: 120,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: ShadColors.gold.withAlpha(20),
@@ -365,7 +385,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         borderRadius: BorderRadius.circular(14),
                                         child: Image.asset(
                                           'assets/images/logo.jpg',
-                                          width: 72, height: 72,
+                                          width: 72,
+                                          height: 72,
                                           fit: BoxFit.contain,
                                         ),
                                       ),
@@ -381,17 +402,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                           if (_shimmerComplete) {
                                             // After reveal: plain white + gold glow
                                             final glow = _logoGlowAnim.value;
-                                            return Text('SHAD', style: TextStyle(
-                                              fontSize: 26, fontWeight: FontWeight.w700,
-                                              letterSpacing: 6, color: Colors.white,
-                                              fontFamily: 'PlayfairDisplay',
-                                              shadows: [
-                                                Shadow(
-                                                  color: ShadColors.gold.withAlpha((glow * 100).toInt()),
-                                                  blurRadius: lerpDouble(0, 8, glow)!,
-                                                ),
-                                              ],
-                                            ));
+                                            return Text('SHAD',
+                                                style: TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 6,
+                                                  color: Colors.white,
+                                                  fontFamily: 'PlayfairDisplay',
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: ShadColors.gold
+                                                          .withAlpha((glow * 100).toInt()),
+                                                      blurRadius: lerpDouble(0, 8, glow)!,
+                                                    ),
+                                                  ],
+                                                ));
                                           }
                                           // During reveal: gold sweep diagonal
                                           return ShaderMask(
@@ -399,8 +424,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                             shaderCallback: (bounds) {
                                               return LinearGradient(
                                                 colors: const [
-                                                  Colors.white30, Colors.white, ShadColors.gold,
-                                                  Colors.white, Colors.white30,
+                                                  Colors.white30,
+                                                  Colors.white,
+                                                  ShadColors.gold,
+                                                  Colors.white,
+                                                  Colors.white30,
                                                 ],
                                                 stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
                                                 begin: const Alignment(-1.0, -1.0),
@@ -410,11 +438,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                                 ),
                                               ).createShader(bounds);
                                             },
-                                            child: const Text('SHAD', style: TextStyle(
-                                              fontSize: 26, fontWeight: FontWeight.w700,
-                                              letterSpacing: 6, color: Colors.white,
-                                              fontFamily: 'PlayfairDisplay',
-                                            )),
+                                            child: const Text('SHAD',
+                                                style: TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 6,
+                                                  color: Colors.white,
+                                                  fontFamily: 'PlayfairDisplay',
+                                                )),
                                           );
                                         },
                                       ),
@@ -444,12 +475,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                             decoration: BoxDecoration(
                                               color: ShadColors.crimson.withAlpha(30),
                                               borderRadius: BorderRadius.circular(10),
-                                              border: Border.all(color: ShadColors.crimson.withAlpha(50)),
+                                              border: Border.all(
+                                                  color: ShadColors.crimson.withAlpha(50)),
                                             ),
-                                            child: Text(error, style: TextStyle(
-                                              fontSize: 12, color: ShadColors.gold,
-                                              fontFamily: isAr ? 'NotoSansArabic' : 'Archivo',
-                                            )),
+                                            child: Text(error,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: ShadColors.gold,
+                                                  fontFamily: isAr ? 'NotoSansArabic' : 'Archivo',
+                                                )),
                                           );
                                         },
                                       ),
@@ -488,13 +522,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         // functional and silently did nothing.
                                         onPressed: () => context.push('/forgot-password'),
                                         style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero, minimumSize: Size.zero,
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
                                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text(
                                           l10n.forgotPassword,
-                                          style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(160),
-                                            fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.white.withAlpha(160),
+                                              fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
                                         ),
                                       ),
                                     ],
@@ -503,7 +540,25 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 50),
+                          TextButton(
+                            // This button existed but was wired to
+                            // an empty callback — it looked
+                            // functional and silently did nothing.
+                            onPressed: () => context.push('/register'),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              l10n.registerNow,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white.withAlpha(160),
+                                  fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -528,10 +583,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(
-          fontSize: 11, color: Colors.white.withAlpha(120),
-          fontFamily: Localizations.localeOf(context).languageCode == 'ar' ? 'NotoSansArabic' : 'Archivo',
-        )),
+        Text(label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withAlpha(120),
+              fontFamily: Localizations.localeOf(context).languageCode == 'ar'
+                  ? 'NotoSansArabic'
+                  : 'Archivo',
+            )),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -562,7 +621,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             suffixIcon: obscure
                 ? IconButton(
                     icon: Icon(_passwordVisible ? Icons.visibility_off : Icons.visibility,
-                      size: 18, color: Colors.white.withAlpha(120)),
+                        size: 18, color: Colors.white.withAlpha(120)),
                     onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                   )
                 : null,
@@ -591,7 +650,10 @@ class _LoginButtonState extends State<_LoginButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.95),
-      onTapUp: (_) { setState(() => _scale = 1.0); widget.onPressed(); },
+      onTapUp: (_) {
+        setState(() => _scale = 1.0);
+        widget.onPressed();
+      },
       onTapCancel: () => setState(() => _scale = 1.0),
       child: AnimatedScale(
         scale: _scale,
@@ -610,11 +672,17 @@ class _LoginButtonState extends State<_LoginButton> {
               shadowColor: ShadColors.crimson.withAlpha(80),
             ),
             child: widget.loading
-                ? const SizedBox(width: 22, height: 22,
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                : Text(widget.label, style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700,
-                    fontFamily: Localizations.localeOf(context).languageCode == 'ar' ? 'NotoSansArabic' : 'Archivo')),
+                : Text(widget.label,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'NotoSansArabic'
+                            : 'Archivo')),
           ),
         ),
       ),
@@ -653,22 +721,23 @@ class _StaggeredText extends StatelessWidget {
         return FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
-          mainAxisSize: MainAxisSize.min,
-          textDirection: TextDirection.ltr,
-          children: List.generate(chars.length, (i) {
-            final charStart = i * staggerInterval;
-            final charEnd = min(charStart + 0.25, 1.0);
-            final localProgress = ((animation.value - charStart) / (charEnd - charStart)).clamp(0.0, 1.0);
-            final eased = Curves.easeOut.transform(localProgress);
-            return Opacity(
-              opacity: eased * 0.7,
-              child: Transform.translate(
-                offset: Offset(0, (1 - eased) * 6),
-                child: Text(chars[i], style: style),
-              ),
-            );
-          }),
-        ),
+            mainAxisSize: MainAxisSize.min,
+            textDirection: TextDirection.ltr,
+            children: List.generate(chars.length, (i) {
+              final charStart = i * staggerInterval;
+              final charEnd = min(charStart + 0.25, 1.0);
+              final localProgress =
+                  ((animation.value - charStart) / (charEnd - charStart)).clamp(0.0, 1.0);
+              final eased = Curves.easeOut.transform(localProgress);
+              return Opacity(
+                opacity: eased * 0.7,
+                child: Transform.translate(
+                  offset: Offset(0, (1 - eased) * 6),
+                  child: Text(chars[i], style: style),
+                ),
+              );
+            }),
+          ),
         );
       },
     );
@@ -682,8 +751,14 @@ class _Particle {
   final double speedX, speedY;
   final double opacity;
   final double phase;
-  _Particle({required this.x, required this.y, required this.size,
-    required this.speedX, required this.speedY, required this.opacity, required this.phase});
+  _Particle(
+      {required this.x,
+      required this.y,
+      required this.size,
+      required this.speedX,
+      required this.speedY,
+      required this.opacity,
+      required this.phase});
 }
 
 // ── Particle Painter ──
@@ -696,8 +771,12 @@ class _ParticlePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
     for (final p in particles) {
-      final px = ((p.x + p.speedX * animValue * 200 + sin(animValue * 2 * pi + p.phase) * 0.02) % 1.0) * size.width;
-      final py = ((p.y + p.speedY * animValue * 200 + cos(animValue * 2 * pi + p.phase) * 0.02) % 1.0) * size.height;
+      final px =
+          ((p.x + p.speedX * animValue * 200 + sin(animValue * 2 * pi + p.phase) * 0.02) % 1.0) *
+              size.width;
+      final py =
+          ((p.y + p.speedY * animValue * 200 + cos(animValue * 2 * pi + p.phase) * 0.02) % 1.0) *
+              size.height;
       paint.color = ShadColors.gold.withAlpha((p.opacity * 255).toInt());
       canvas.drawCircle(Offset(px, py), p.size, paint);
     }
