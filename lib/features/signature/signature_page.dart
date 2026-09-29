@@ -6,7 +6,6 @@ import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../providers/client_provider.dart';
 import '../../providers/signature_provider.dart';
-import 'render_signature.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/signature_pad_screen.dart';
 
@@ -27,13 +26,10 @@ class _SignaturePageState extends State<SignaturePage> {
   late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
   late final SignatureProvider _signatureProvider = widget.signatureProvider ?? SignatureProvider();
   final _textController = TextEditingController();
-  final List<List<Offset>> _strokes = [];
-  List<Offset> _currentStroke = [];
   bool _saving = false;
   bool _signed = false;
   String _mode = 'draw';
 
-  final _boundaryKey = GlobalKey();
   String? _existingSigUrl;
   String? _existingSigText;
 
@@ -76,8 +72,7 @@ class _SignaturePageState extends State<SignaturePage> {
   }
 
   void _clear() => setState(() {
-        _strokes.clear();
-        _currentStroke.clear();
+        _textController.clear();
       });
 
   Future<void> _deleteSignature() async {
@@ -159,41 +154,6 @@ class _SignaturePageState extends State<SignaturePage> {
         }
       }
     }
-  }
-
-  Future<void> _saveDrawing() async {
-    if (_strokes.isEmpty && _currentStroke.isEmpty) return;
-    setState(() => _saving = true);
-    try {
-      final renderBox =
-          _boundaryKey.currentContext?.findRenderObject() as RenderBox?;
-      final size = renderBox?.size ?? const Size(400, 200);
-      final pngBytes = await renderSignatureAsPng(
-          strokes: _strokes, currentStroke: _currentStroke, size: size);
-      final cid = _api.userId;
-      if (cid == null) throw Exception('User ID not found');
-      final dir = Directory.systemTemp;
-      final file = File(
-          '${dir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(pngBytes);
-      await _signatureProvider.uploadImage(cid, file);
-      if (mounted) {
-        setState(() => _signed = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
-        );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.pop(context, true);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
-        );
-      }
-    }
-    if (mounted) setState(() => _saving = false);
   }
 
   Future<void> _saveText() async {
@@ -437,53 +397,39 @@ class _SignaturePageState extends State<SignaturePage> {
 
   Widget _buildDrawArea() {
     final l10n = AppLocalizations.of(context)!;
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _saving ? null : _openFullscreenSignature,
-            icon: const Icon(Icons.fullscreen, size: 18, color: ShadColors.gold),
-            label: Text(l10n.signatureDrawSignature, style: const TextStyle(color: ShadColors.gold, fontSize: 13, fontFamily: 'Tajawal')),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: ShadColors.gold),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-            ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: ShadColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ShadColors.cardBorder),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.draw_outlined, size: 40, color: ShadColors.gold.withValues(alpha: 0.8)),
+          const SizedBox(height: 10),
+          Text(
+            l10n.signatureDrawSignature,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Tajawal'),
           ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          width: double.infinity,
-          height: 220,
-          decoration: BoxDecoration(
-            color: ShadColors.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: ShadColors.cardBorder),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: GestureDetector(
-              onPanStart: (_) => setState(() => _currentStroke = []),
-              onPanUpdate: (details) {
-                setState(() => _currentStroke.add(details.localPosition));
-              },
-              onPanEnd: (_) => setState(() {
-                _strokes.add(List.from(_currentStroke));
-                _currentStroke = [];
-              }),
-              child: RepaintBoundary(
-                key: _boundaryKey,
-                child: CustomPaint(
-                  painter: _SignaturePainter(
-                      strokes: _strokes, currentStroke: _currentStroke),
-                  size: Size.infinite,
-                ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _saving ? null : _openFullscreenSignature,
+              icon: const Icon(Icons.fullscreen, size: 20),
+              label: Text(l10n.signatureOpenFullscreen, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Tajawal')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ShadColors.gold,
+                foregroundColor: ShadColors.background,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -520,6 +466,7 @@ class _SignaturePageState extends State<SignaturePage> {
 
   Widget _buildActionButtons() {
     final l10n = AppLocalizations.of(context)!;
+    if (_mode == 'draw') return const SizedBox.shrink();
     return Row(
       children: [
         Expanded(
@@ -540,7 +487,7 @@ class _SignaturePageState extends State<SignaturePage> {
         Expanded(
           flex: 2,
           child: ElevatedButton.icon(
-            onPressed: _saving ? null : (_mode == 'draw' ? _saveDrawing : _saveText),
+            onPressed: _saving ? null : _saveText,
             icon: _saving
                 ? const SizedBox(
                     width: 16,
@@ -629,47 +576,4 @@ class _SignaturePageState extends State<SignaturePage> {
       ),
     );
   }
-}
-
-class _SignaturePainter extends CustomPainter {
-  final List<List<Offset>> strokes;
-  final List<Offset> currentStroke;
-
-  _SignaturePainter({required this.strokes, required this.currentStroke});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = ShadColors.signatureOverlay;
-    for (double x = 12; x < size.width; x += 24) {
-      for (double y = 12; y < size.height; y += 24) {
-        canvas.drawCircle(Offset(x, y), 1, bgPaint);
-      }
-    }
-
-    final linePaint = Paint()
-      ..color = ShadColors.signatureOverlaySoft
-      ..strokeWidth = 1;
-    canvas.drawLine(
-        Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), linePaint);
-
-    final paint = Paint()
-      ..color = ShadColors.gold
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    for (final stroke in strokes) {
-      _drawStroke(canvas, stroke, paint);
-    }
-    _drawStroke(canvas, currentStroke, paint);
-  }
-
-  void _drawStroke(Canvas canvas, List<Offset> points, Paint paint) {
-    for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SignaturePainter oldDelegate) => true;
 }

@@ -215,18 +215,54 @@ void main() {
         )).called(1);
   });
 
-  testWidgets('deleting the existing signature calls DELETE /auth/sign', (tester) async {
+  testWidgets('deleting the existing signature calls DELETE /auth/sign and clears from UI', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
     api.role = 'super_admin';
-    stubCommon(httpClient, meJson: '{"user":{"name":"Sara Admin","official_email":"sara@shad.app","signature_data":"Sara A."}}');
+    var meCalls = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final path = (inv.positionalArguments[0] as Uri).path;
+      if (path == '/auth/me') {
+        meCalls++;
+        if (meCalls == 1) {
+          return jsonResponse('{"user":{"name":"Sara Admin","official_email":"sara@shad.app","signature_data":"Sara A."}}');
+        }
+        return jsonResponse('{"user":{"name":"Sara Admin","official_email":"sara@shad.app","signature_data":null}}');
+      }
+      if (path == '/settings') return jsonResponse('{"settings":{"corporate_tax_percentage":{"value":"15"}}}');
+      if (path == '/contract-clause-templates') return jsonResponse('{"templates":[]}');
+      return jsonResponse('{}');
+    });
+    when(() => httpClient.delete(any(), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse('{}'));
 
     await pumpPage(tester, api);
+    expect(find.text('Sara A.'), findsOneWidget);
 
     await scrollTo(tester, find.byIcon(Icons.delete_outline));
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path == '/auth/sign')), headers: any(named: 'headers'))).called(1);
+    expect(find.text('Sara A.'), findsNothing);
+  });
+
+  testWidgets('toggling show_contract_dates switch puts /settings', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'super_admin';
+    stubCommon(httpClient, settingsJson: '{"settings":{"corporate_tax_percentage":{"value":"15"},"show_contract_dates":{"value":"1"}}}');
+
+    await pumpPage(tester, api);
+
+    await scrollTo(tester, find.text('Contract Start and End Dates'));
+    await tester.tap(find.byType(Switch).last);
+    await tester.pumpAndSettle();
+
+    verify(() => httpClient.put(
+          any(that: predicate<Uri>((u) => u.path == '/settings')),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).called(1);
   });
 }

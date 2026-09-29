@@ -1796,6 +1796,9 @@
   },
   "settingManagersCanReviewFiles": "Manager Client Files Review",
   "settingManagersCanReviewFilesDesc": "Allow account managers to approve or reject regular files for their clients",
+  "settingShowContractDates": "Contract Start and End Dates",
+  "settingShowContractDatesDesc": "Show or hide contract start and end date fields during contract creation (on web and mobile)",
+  "signatureOpenFullscreen": "Open Signature Pad",
   "onboardingWaitingEditContract": "Contract Edit Under Review",
   "onboardingWaitingEditContractMsg": "Our team is reviewing your edit request. An updated contract will be sent to you soon.",
   "signatureDrawSignature": "Draw Signature"

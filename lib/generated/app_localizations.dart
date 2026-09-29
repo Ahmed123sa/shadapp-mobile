@@ -10338,6 +10338,24 @@ abstract class AppLocalizations {
   /// **'Allow account managers to approve or reject regular files for their clients'**
   String get settingManagersCanReviewFilesDesc;
 
+  /// No description provided for @settingShowContractDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract Start and End Dates'**
+  String get settingShowContractDates;
+
+  /// No description provided for @settingShowContractDatesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide contract start and end date fields during contract creation (on web and mobile)'**
+  String get settingShowContractDatesDesc;
+
+  /// No description provided for @signatureOpenFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Signature Pad'**
+  String get signatureOpenFullscreen;
+
   /// No description provided for @onboardingWaitingEditContract.
   ///
   /// In en, this message translates to:

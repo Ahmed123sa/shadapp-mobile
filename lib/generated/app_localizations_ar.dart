@@ -5341,6 +5341,16 @@ class AppLocalizationsAr extends AppLocalizations {
       'السماح لمدير الحساب بالموافقة على الملفات العادية لعملائه أو رفضها';
 
   @override
+  String get settingShowContractDates => 'تواريخ بداية ونهاية العقود';
+
+  @override
+  String get settingShowContractDatesDesc =>
+      'إظهار أو إخفاء حقول تاريخ بداية ونهاية العقد أثناء إنشاء العقود (في الويب والموبايل)';
+
+  @override
+  String get signatureOpenFullscreen => 'فتح لوحة التوقيع';
+
+  @override
   String get onboardingWaitingEditContract => 'طلب تعديل العقد قيد المعالجة';
 
   @override

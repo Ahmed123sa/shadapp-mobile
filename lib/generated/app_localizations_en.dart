@@ -5366,6 +5366,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Allow account managers to approve or reject regular files for their clients';
 
   @override
+  String get settingShowContractDates => 'Contract Start and End Dates';
+
+  @override
+  String get settingShowContractDatesDesc =>
+      'Show or hide contract start and end date fields during contract creation (on web and mobile)';
+
+  @override
+  String get signatureOpenFullscreen => 'Open Signature Pad';
+
+  @override
   String get onboardingWaitingEditContract => 'Contract Edit Under Review';
 
   @override

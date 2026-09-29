@@ -1754,6 +1754,9 @@
   },
   "settingManagersCanReviewFiles": "صلاحية مراجعة ملفات العميل",
   "settingManagersCanReviewFilesDesc": "السماح لمدير الحساب بالموافقة على الملفات العادية لعملائه أو رفضها",
+  "settingShowContractDates": "تواريخ بداية ونهاية العقود",
+  "settingShowContractDatesDesc": "إظهار أو إخفاء حقول تاريخ بداية ونهاية العقد أثناء إنشاء العقود (في الويب والموبايل)",
+  "signatureOpenFullscreen": "فتح لوحة التوقيع",
   "onboardingWaitingEditContract": "طلب تعديل العقد قيد المعالجة",
   "onboardingWaitingEditContractMsg": "يقوم فريق العمل بمراجعة طلب التعديل الخاص بك، وسيتم إرسال العقد المعدل إليك قريباً.",
   "signatureDrawSignature": "رسم التوقيع"

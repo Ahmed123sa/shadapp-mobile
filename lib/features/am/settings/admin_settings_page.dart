@@ -11,7 +11,6 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/signature_provider.dart';
 import '../../../providers/system_settings_provider.dart';
-import '../../signature/render_signature.dart';
 import 'admin_settings_clauses.dart';
 import '../../../core/widgets/signature_pad_screen.dart';
 
@@ -41,9 +40,6 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
   final _sigTextController = TextEditingController();
-  final _boundaryKey = GlobalKey();
-  final List<List<Offset>> _strokes = [];
-  List<Offset> _currentStroke = [];
   bool _loading = true;
   bool _saving = false;
   String _sigMode = 'draw';
@@ -54,6 +50,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   bool _taxSaving = false;
   bool _managersCanReviewFiles = false;
   bool _savingManagersCanReviewFiles = false;
+  bool _showContractDates = true;
+  bool _savingShowContractDates = false;
   List<Map<String, dynamic>> _clauses = [];
   bool _clausesLoading = true;
   bool _clauseSaving = false;
@@ -74,6 +72,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _existingSigUrl = null;
+      _existingSigText = null;
+    });
     try {
       final data = await _authProvider.fetchCurrentUser();
       final user = data['user'] as Map<String, dynamic>? ?? {};
@@ -102,6 +104,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         _taxController.text = (settings['corporate_tax_percentage']?['value'] ?? '15').toString();
         final mcr = settings['managers_can_review_files']?['value'];
         _managersCanReviewFiles = mcr == true || mcr == 1 || mcr == '1' || mcr == 'true';
+        final scd = settings['show_contract_dates']?['value'];
+        _showContractDates = scd == null || scd == true || scd == 1 || scd == '1' || scd == 'true';
       } catch (e, s) {
         AppLog.error('admin_settings._load(settings)', e, s);
       }
@@ -219,6 +223,35 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     }
   }
 
+  Future<void> _toggleShowContractDates(bool val) async {
+    setState(() => _savingShowContractDates = true);
+    try {
+      await _systemSettingsProvider.updateSetting('show_contract_dates', val ? '1' : '0');
+      setState(() => _showContractDates = val);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                const SizedBox(width: 8),
+                Text(AppLocalizations.of(context)!.settingsSaved),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingShowContractDates = false);
+    }
+  }
+
   Future<void> _openFullscreenSignature() async {
     final bytes = await SignaturePadScreen.show(context);
     if (bytes == null) return;
@@ -271,19 +304,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   Future<void> _saveSignature() async {
     setState(() => _saving = true);
     try {
-      if (_sigMode == 'draw') {
-        if (_strokes.isEmpty && _currentStroke.isEmpty) {
-          if (mounted) setState(() => _saving = false);
-          return;
-        }
-        final renderBox = _boundaryKey.currentContext?.findRenderObject() as RenderBox?;
-        final size = renderBox?.size ?? const Size(400, 200);
-        final pngBytes = await renderSignatureAsPng(strokes: _strokes, currentStroke: _currentStroke, size: size);
-        final dir = Directory.systemTemp;
-        final file = File('${dir.path}/sig_${DateTime.now().millisecondsSinceEpoch}.png');
-        await file.writeAsBytes(pngBytes);
-        await _signatureProvider.uploadSelfSignatureImage(file);
-      } else if (_sigMode == 'text') {
+      if (_sigMode == 'text') {
         final text = _sigTextController.text.trim();
         if (text.isEmpty) return;
         await _signatureProvider.saveSelfSignatureText(text);
@@ -298,13 +319,15 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     if (mounted) setState(() => _saving = false);
   }
 
-  void _clearStrokes() => setState(() { _strokes.clear(); _currentStroke.clear(); });
-
   Future<void> _deleteSignature() async {
     try {
       await _signatureProvider.deleteSelfSignature();
+      setState(() {
+        _existingSigUrl = null;
+        _existingSigText = null;
+      });
       await _load();
-      if (mounted)       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureDeleted)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.signatureDeleted)])));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.signatureDeleteFailed}: $e')));
     }
@@ -520,97 +543,38 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   const SizedBox(width: 8),
                   _modeChip('text', l10n.signatureTextMode, Icons.text_fields),
                 ]),
-                const SizedBox(height: 10),
-
-                // Fullscreen signature button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _saving ? null : _openFullscreenSignature,
-                    icon: const Icon(Icons.fullscreen, size: 18, color: ShadColors.gold),
-                    label: Text(l10n.signatureDrawSignature, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: ShadColors.gold),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Upload image button (always visible)
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _pickImage,
-                    icon: const Icon(Icons.image, size: 16, color: ShadColors.gold),
-                    label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: ShadColors.gold),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
 
                 // Draw mode
                 if (_sigMode == 'draw') ...[
-                  _subLabel(l10n.settingsSignHere),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: ShadColors.black,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: ShadColors.cardBorder),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: GestureDetector(
-                        onPanStart: (_) => setState(() => _currentStroke = []),
-                        onPanUpdate: (details) => setState(() => _currentStroke.add(details.localPosition)),
-                        onPanEnd: (_) => setState(() { _strokes.add(List.from(_currentStroke)); _currentStroke = []; }),
-                        child: RepaintBoundary(
-                          key: _boundaryKey,
-                          child: CustomPaint(
-                            painter: _SigPainter(strokes: _strokes, currentStroke: _currentStroke),
-                            size: Size.infinite,
-                          ),
-                        ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _saving ? null : _openFullscreenSignature,
+                      icon: const Icon(Icons.fullscreen, size: 20),
+                      label: Text(l10n.signatureOpenFullscreen, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ShadColors.gold,
+                        foregroundColor: ShadColors.background,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: OutlinedButton.icon(
-                      onPressed: _clearStrokes,
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: Text(l10n.signatureClear, style: const TextStyle(fontSize: 12)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : _pickImage,
+                      icon: const Icon(Icons.image, size: 16, color: ShadColors.gold),
+                      label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: ShadColors.textSecondary,
-                        side: const BorderSide(color: ShadColors.cardBorder),
+                        side: const BorderSide(color: ShadColors.gold),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    )),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _saving ? null : _saveSignature,
-                        icon: _saving
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.check_circle, size: 18),
-                        label: Text(l10n.signatureSaveSignature, style: const TextStyle(fontSize: 12)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ShadColors.crimson,
-                          foregroundColor: ShadColors.textOnCrimson,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                  ]),
+                  ),
                 ],
 
                 // Text mode
@@ -723,6 +687,23 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     activeThumbColor: ShadColors.gold,
                   ),
                 ]),
+                const SizedBox(height: 12),
+                const Divider(color: ShadColors.cardBorder),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(l10n.settingShowContractDates, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                      const SizedBox(height: 4),
+                      Text(l10n.settingShowContractDatesDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                    ]),
+                  ),
+                  Switch(
+                    value: _showContractDates,
+                    onChanged: _savingShowContractDates ? null : _toggleShowContractDates,
+                    activeThumbColor: ShadColors.gold,
+                  ),
+                ]),
               ]),
             ),
           ],
@@ -794,36 +775,4 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       ),
     );
   }
-}
-
-class _SigPainter extends CustomPainter {
-  final List<List<Offset>> strokes;
-  final List<Offset> currentStroke;
-  _SigPainter({required this.strokes, required this.currentStroke});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = ShadColors.cardBorder.withAlpha(40);
-    for (double x = 0; x < size.width; x += 20) {
-      for (double y = 0; y < size.height; y += 20) {
-        canvas.drawCircle(Offset(x, y), 1, bgPaint);
-      }
-    }
-    final paint = Paint()
-      ..color = ShadColors.gold
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    for (final stroke in strokes) { _drawStroke(canvas, stroke, paint); }
-    _drawStroke(canvas, currentStroke, paint);
-  }
-
-  void _drawStroke(Canvas canvas, List<Offset> points, Paint paint) {
-    for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SigPainter oldDelegate) => true;
 }
