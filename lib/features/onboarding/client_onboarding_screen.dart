@@ -20,6 +20,7 @@ import '../../providers/contract_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/system_settings_provider.dart';
 import '../contracts/contract_detail_modal.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'client_onboarding_payment_sheet.dart';
 import 'client_onboarding_stages.dart';
 import 'onboarding_toast_keys.dart';
@@ -415,6 +416,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.sent,
           title: AppLocalizations.of(context)!.onboarding_waitingContract,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingContractSendMsg,
+          onContactSupport: _contactSupport,
         );
       case 2:
         return buildContractReviewStage(
@@ -430,6 +432,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.companyApproved,
           title: AppLocalizations.of(context)!.onboarding_waitingCompanyApproval,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingCompanyReviewMsg,
+          onContactSupport: _contactSupport,
         );
       case 4:
         return buildPaymentStage(
@@ -446,6 +449,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.warning,
           title: AppLocalizations.of(context)!.onboarding_reviewingPayment,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingActivation,
+          onContactSupport: _contactSupport,
         );
       case 6:
         return buildWaitingStage(
@@ -454,6 +458,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.warning,
           title: AppLocalizations.of(context)!.onboardingWaitingEditContract,
           subtitle: AppLocalizations.of(context)!.onboardingWaitingEditContractMsg,
+          onContactSupport: _contactSupport,
         );
       default:
         return buildSignatureStage(
@@ -464,6 +469,32 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             _loadClientData();
           },
         );
+    }
+  }
+
+  Future<void> _contactSupport() async {
+    final manager = _workspace?['manager'] as Map<String, dynamic>?;
+    final phone = (manager?['phone'] ?? '').toString().trim();
+    final clientName = (_client?['company_name'] ?? _client?['contact_person'] ?? '').toString();
+
+    var cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.startsWith('00')) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+
+    if (cleanPhone.isNotEmpty) {
+      final text = 'مرحباً، أنا العميل $clientName وأحتاج مساعدة في مرحلة الإعداد.';
+      final uri = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(text)}');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('رقم هاتف مدير الحساب غير متاح حالياً')),
+      );
     }
   }
 

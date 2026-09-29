@@ -108,6 +108,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   int _badgeApprovals = 0;
   int _badgeFiles = 0;
   final ValueNotifier<int> _contractRefreshNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<int> _fileRefreshNotifier = ValueNotifier<int>(0);
 
   Map<String, dynamic>? _client;
   Map<String, dynamic>? _workspace;
@@ -497,7 +498,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       PaymentsPage(initialPaymentId: _targetPaymentId, onTargetPaymentHandled: () => _targetPaymentId = null, paymentProvider: _childPaymentProvider, contractProvider: _childContractProvider, api: _api),
       ChatPage(onGoToPayments: _goToPayments, reverb: widget.reverb, enablePolling: widget.enablePolling, chatProvider: _childChatProvider, contractProvider: _childContractProvider, meetingProvider: _childMeetingProvider, api: _api),
       ApprovalsPage(workspaceId: _workspace?['id'] as int?, approvalProvider: _childApprovalProvider, api: _api),
-      ClientFilesPage(fileProvider: _childFileProvider, api: _api),
+      ClientFilesPage(fileProvider: _childFileProvider, api: _api, refreshNotifier: _fileRefreshNotifier),
     ];
 
     const tabKeys = ['contracts', 'payments', 'chat', 'approvals', 'files'];
@@ -620,6 +621,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
               return;
             }
             setState(() => _selectedIndex = targetTab);
+            if (targetTab == 0) _contractRefreshNotifier.value++;
+            if (targetTab == 4) _fileRefreshNotifier.value++;
           },
           indicatorColor: Colors.transparent,
           destinations: [

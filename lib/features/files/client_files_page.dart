@@ -16,7 +16,8 @@ class ClientFilesPage extends StatefulWidget {
   // FileProvider instead of hitting the network.
   final FileProvider? fileProvider;
   final ApiClient? api;
-  const ClientFilesPage({super.key, this.fileProvider, this.api});
+  final ValueNotifier<int>? refreshNotifier;
+  const ClientFilesPage({super.key, this.fileProvider, this.api, this.refreshNotifier});
 
   @override
   State<ClientFilesPage> createState() => _ClientFilesPageState();
@@ -30,11 +31,26 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
   List<dynamic> _paymentFiles = [];
   bool _loading = true;
   bool _uploading = false;
+  VoidCallback? _refreshListener;
 
   @override
   void initState() {
     super.initState();
     _load();
+    if (widget.refreshNotifier != null) {
+      _refreshListener = () {
+        if (mounted) _load();
+      };
+      widget.refreshNotifier!.addListener(_refreshListener!);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_refreshListener != null) {
+      widget.refreshNotifier?.removeListener(_refreshListener!);
+    }
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -161,9 +177,13 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     if (_loading) return const LoadingState();
     final l10n = AppLocalizations.of(context)!;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: ShadColors.gold,
+      backgroundColor: ShadColors.card,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
         if (_definitions.isNotEmpty) ...[
           Text(l10n.files_docDefinitions, style: ShadTypography.sectionHeader),
           const SizedBox(height: 8),
@@ -350,6 +370,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           }),
         ],
       ],
+    ),
     );
   }
 }

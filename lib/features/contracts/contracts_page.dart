@@ -38,6 +38,7 @@ class _ContractsPageState extends State<ContractsPage> {
   late final FileProvider _fileProvider = widget.fileProvider ?? FileProvider(repository: FileRepository(api: _api));
   List<dynamic> _contracts = [];
   String? _clientType;
+  String? _workspaceStatus;
   bool _loading = true;
   String? _error;
   VoidCallback? _refreshListener;
@@ -65,7 +66,9 @@ class _ContractsPageState extends State<ContractsPage> {
       final contractsFuture = _contractProvider.fetchWorkspaceContractsRaw(wsId);
       final workspaceFuture = _contractProvider.fetchWorkspaceRaw(wsId).catchError((_) => <String, dynamic>{});
       _contracts = await contractsFuture;
-      _clientType = (await workspaceFuture)['client']?['client_type'] as String?;
+      final wsData = await workspaceFuture;
+      _clientType = wsData['client']?['client_type'] as String?;
+      _workspaceStatus = (wsData['workspace']?['status'] ?? wsData['status']) as String?;
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -178,7 +181,7 @@ class _ContractsPageState extends State<ContractsPage> {
     final l10n = AppLocalizations.of(context)!;
     final status = c['status'] as String? ?? '';
     final needsAction = status == 'sent';
-    final isApproved = status == 'company_approved';
+    final isApproved = status == 'company_approved' && _workspaceStatus != 'active';
 
     return GestureDetector(
       onTap: () => _showDetailModal(c),
@@ -354,5 +357,21 @@ class _ContractsPageState extends State<ContractsPage> {
     );
   }
 
-  void _showDetailModal(dynamic c) { showModalBottomSheet(context: context, isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))), builder: (_) => ContractDetailSheet(contract: c, clientType: _clientType, onAction: _clientAction, onRefresh: _load, onGoToPayments: widget.onGoToPayments, api: _api, fileProvider: _fileProvider)); }
+  void _showDetailModal(dynamic c) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => ContractDetailSheet(
+        contract: c,
+        clientType: _clientType,
+        wsActive: _workspaceStatus == 'active',
+        onAction: _clientAction,
+        onRefresh: _load,
+        onGoToPayments: widget.onGoToPayments,
+        api: _api,
+        fileProvider: _fileProvider,
+      ),
+    );
+  }
 }

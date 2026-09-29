@@ -26,6 +26,7 @@ import '../../providers/file_provider.dart';
 class ContractDetailSheet extends StatefulWidget {
   final dynamic contract;
   final String? clientType;
+  final bool wsActive;
   final Future<void> Function(int, String) onAction;
   final VoidCallback onRefresh;   final VoidCallback? onGoToPayments;
   final ApiClient? api;
@@ -35,6 +36,7 @@ class ContractDetailSheet extends StatefulWidget {
     super.key,
     required this.contract,
     this.clientType,
+    this.wsActive = false,
     required this.onAction,
     required this.onRefresh,     required this.onGoToPayments,
     this.api,
@@ -95,6 +97,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
+      await _loadUploadedFiles();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
     }
@@ -109,15 +112,19 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
     final clauses = c['clauses'] as List<dynamic>? ?? [];
     final requiredDocs = c['required_documents'] as List<dynamic>? ?? [];
     final needsAction = status == 'sent';
-    final isCompanyApproved = status == 'company_approved';
+    final isCompanyApproved = status == 'company_approved' && !widget.wsActive;
 
     final progress = c['progress'] is num ? (c['progress'] as num).toDouble() : 0.0;
     final stageIndex = _computeStageIndex(c);
 
     final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
       if (d is! Map) return false;
-      final files = d['files'] as List<dynamic>?;
-      if (files != null && files.isNotEmpty) {
+      final dId = d['id'];
+      final rawFiles = d['files'] as List<dynamic>?;
+      final files = (rawFiles != null && rawFiles.isNotEmpty)
+          ? rawFiles
+          : _uploadedFiles.where((f) => f['contract_required_document_id'] == dId || f['document_definition_id'] == dId).toList();
+      if (files.isNotEmpty) {
         return !files.any((f) => f is Map && f['status'] != 'rejected');
       }
       return d['status'] != 'approved' && d['status'] != 'pending';

@@ -63,6 +63,7 @@ Widget buildWaitingStage({
   required Color iconColor,
   required String title,
   required String subtitle,
+  VoidCallback? onContactSupport,
 }) {
   return Center(
     child: Padding(
@@ -95,7 +96,7 @@ Widget buildWaitingStage({
         ),
         const SizedBox(height: 32),
         TextButton.icon(
-          onPressed: () {},
+          onPressed: onContactSupport,
           icon: const Icon(Icons.headset_mic, size: 18),
           label: Text(AppLocalizations.of(context)!.onboarding_contactSupport),
           style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),

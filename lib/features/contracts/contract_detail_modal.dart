@@ -59,10 +59,10 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     _loadFullContract();
   }
 
-  Future<void> _loadFullContract() async {
+  Future<void> _loadFullContract({bool force = false}) async {
     final existingClauses = widget.contract['clauses'] as List<dynamic>?;
     final existingReqDocs = widget.contract['required_documents'] as List<dynamic>?;
-    if ((existingClauses?.isNotEmpty == true) || (existingReqDocs?.isNotEmpty == true)) return;
+    if (!force && ((existingClauses?.isNotEmpty == true) || (existingReqDocs?.isNotEmpty == true))) return;
 
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
@@ -118,7 +118,10 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       }
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
       widget.onRefresh();
-      await _loadUploadedFiles();
+      await Future.wait([
+        _loadUploadedFiles(),
+        _loadFullContract(force: true),
+      ]);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
     }
@@ -140,8 +143,12 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
 
     final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
       if (d is! Map) return false;
-      final files = d['files'] as List<dynamic>?;
-      if (files != null && files.isNotEmpty) {
+      final dId = d['id'];
+      final rawFiles = d['files'] as List<dynamic>?;
+      final files = (rawFiles != null && rawFiles.isNotEmpty)
+          ? rawFiles
+          : _uploadedFiles.where((f) => f['contract_required_document_id'] == dId || f['document_definition_id'] == dId).toList();
+      if (files.isNotEmpty) {
         return !files.any((f) => f is Map && f['status'] != 'rejected');
       }
       return d['status'] != 'approved' && d['status'] != 'pending';
