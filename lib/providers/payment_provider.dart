@@ -24,7 +24,7 @@ class PaymentProvider {
   String? get error => _error;
 
   /// AM-side approve/reject decision — see [PaymentRepository.review].
-  Future<Map<String, dynamic>> reviewPayment(int paymentId, String action) => _repo.review(paymentId, action);
+  Future<Map<String, dynamic>> reviewPayment(int paymentId, String action, {String? notes}) => _repo.review(paymentId, action, notes: notes);
 
   /// Creates an installment schedule — see [PaymentRepository.schedule].
   Future<void> schedulePayments(int workspaceId, List<Map<String, dynamic>> installments) =>

@@ -12,10 +12,19 @@ import '../../providers/payment_provider.dart';
 import 'payments_page_sheets.dart';
 
 class PaymentsPage extends StatefulWidget {
+  final int? initialPaymentId;
+  final VoidCallback? onTargetPaymentHandled;
   final ApiClient? api;
   final PaymentProvider? paymentProvider;
   final ContractProvider? contractProvider;
-  const PaymentsPage({super.key, this.api, this.paymentProvider, this.contractProvider});
+  const PaymentsPage({
+    super.key,
+    this.initialPaymentId,
+    this.onTargetPaymentHandled,
+    this.api,
+    this.paymentProvider,
+    this.contractProvider,
+  });
 
   @override
   State<PaymentsPage> createState() => _PaymentsPageState();
@@ -131,7 +140,22 @@ class _PaymentsPageState extends State<PaymentsPage> {
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)!.payments_failedToLoad;
     }
-    if (mounted) setState(() => _loading = false);
+    if (mounted) {
+      setState(() => _loading = false);
+      if (widget.initialPaymentId != null) {
+        final target = _payments.firstWhere(
+          (p) => p['id'] == widget.initialPaymentId,
+          orElse: () => null,
+        );
+        if (target != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _submitScheduledPayment(target);
+            widget.onTargetPaymentHandled?.call();
+          });
+        }
+      }
+    }
   }
 
   List<Map<String, dynamic>> get _payableContracts {
@@ -342,6 +366,21 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
                   ]),
                 ],
+                if (isRejected && (p['notes'] as String? ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: ShadColors.error.withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ShadColors.error.withAlpha(50)),
+                    ),
+                    child: Text(
+                      '${l10n.paymentsRejectionReason}: ${p['notes']}',
+                      style: const TextStyle(fontSize: 11, color: ShadColors.error, fontFamily: 'NotoSansArabic'),
+                    ),
+                  ),
+                ],
               ]),
             ),
           ]),
@@ -394,6 +433,22 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   ),
                 ));
               })(),
+            if (isRejected)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.upload_file, size: 14, color: ShadColors.gold),
+                    label: Text(l10n.paymentsReuploadProof, style: const TextStyle(fontSize: 12, color: ShadColors.gold, fontFamily: 'NotoSansArabic')),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: ShadColors.gold),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onPressed: () => _submitScheduledPayment(p),
+                  ),
+                ),
+              ),
           ]),
         ),
       ]),

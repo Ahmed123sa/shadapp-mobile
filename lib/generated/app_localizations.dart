@@ -9360,6 +9360,36 @@ abstract class AppLocalizations {
   /// **'Scheduled'**
   String get paymentsStatusScheduled;
 
+  /// No description provided for @paymentsStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get paymentsStatusRejected;
+
+  /// No description provided for @paymentsRejectionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejection Reason'**
+  String get paymentsRejectionReason;
+
+  /// No description provided for @paymentsRejectionReasonOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejection Reason (Optional)'**
+  String get paymentsRejectionReasonOptional;
+
+  /// No description provided for @paymentsRejectionReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter rejection reason here...'**
+  String get paymentsRejectionReasonHint;
+
+  /// No description provided for @paymentsReuploadProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-upload Payment Proof'**
+  String get paymentsReuploadProof;
+
   /// No description provided for @paymentsTaxDetails.
   ///
   /// In en, this message translates to:

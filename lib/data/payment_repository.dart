@@ -111,8 +111,12 @@ class PaymentRepository {
   }
 
   /// AM-side approve/reject decision — matches am/workspace/payments_tab.dart.
-  Future<Map<String, dynamic>> review(int paymentId, String action) =>
-      _api.post('/payments/$paymentId/review', {'action': action});
+  Future<Map<String, dynamic>> review(int paymentId, String action, {String? notes}) =>
+      _api.post('/payments/$paymentId/review', {
+        'action': action,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+        if (notes != null && notes.isNotEmpty) 'rejection_reason': notes,
+      });
 
   /// Creates an installment schedule for a workspace.
   Future<void> schedule(int workspaceId, List<Map<String, dynamic>> installments) =>

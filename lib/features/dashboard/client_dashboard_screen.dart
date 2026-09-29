@@ -160,8 +160,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     return map[stage] ?? 0;
   }
 
-  void _goToPayments() {
-    setState(() => _selectedIndex = 1);
+  int? _targetPaymentId;
+
+  void _goToPayments({int? targetPaymentId}) {
+    setState(() {
+      _targetPaymentId = targetPaymentId;
+      _selectedIndex = 1;
+    });
   }
 
   @override
@@ -489,7 +494,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   Widget _buildDashboard() {
     final pages = <Widget>[
       ContractsPage(onGoToPayments: _goToPayments, refreshNotifier: _contractRefreshNotifier, api: _api),
-      PaymentsPage(paymentProvider: _childPaymentProvider, contractProvider: _childContractProvider, api: _api),
+      PaymentsPage(initialPaymentId: _targetPaymentId, onTargetPaymentHandled: () => _targetPaymentId = null, paymentProvider: _childPaymentProvider, contractProvider: _childContractProvider, api: _api),
       ChatPage(onGoToPayments: _goToPayments, reverb: widget.reverb, enablePolling: widget.enablePolling, chatProvider: _childChatProvider, contractProvider: _childContractProvider, meetingProvider: _childMeetingProvider, api: _api),
       ApprovalsPage(workspaceId: _workspace?['id'] as int?, approvalProvider: _childApprovalProvider, api: _api),
       ClientFilesPage(fileProvider: _childFileProvider, api: _api),

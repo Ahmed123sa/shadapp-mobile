@@ -4858,6 +4858,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentsStatusScheduled => 'Scheduled';
 
   @override
+  String get paymentsStatusRejected => 'Rejected';
+
+  @override
+  String get paymentsRejectionReason => 'Rejection Reason';
+
+  @override
+  String get paymentsRejectionReasonOptional => 'Rejection Reason (Optional)';
+
+  @override
+  String get paymentsRejectionReasonHint => 'Enter rejection reason here...';
+
+  @override
+  String get paymentsReuploadProof => 'Re-upload Payment Proof';
+
+  @override
   String get paymentsTaxDetails => 'Tax Details';
 
   @override

@@ -20,7 +20,7 @@ import 'chat_page_widgets.dart';
 import 'chat_shared.dart';
 
 class ChatPage extends StatefulWidget {
-  final VoidCallback? onGoToPayments;
+  final void Function({int? targetPaymentId})? onGoToPayments;
   // Step 0 of the state-layer migration plan: lets widget tests suppress the
   // fallback-refresh Timer so `pumpAndSettle` doesn't hang on a pending
   // periodic timer. Defaults to true — zero behavior change for every
@@ -608,8 +608,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   void _onPaymentBannerTap(Map<String, dynamic> payment) {
     final isDirectRequest = payment['due_date'] == null;
+    final paymentId = (payment['id'] as num?)?.toInt();
     if (isDirectRequest) {
-      widget.onGoToPayments?.call();
+      widget.onGoToPayments?.call(targetPaymentId: paymentId);
     } else {
       showModalBottomSheet(
         context: context,
@@ -619,7 +620,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           showPayButton: true,
           onPay: () {
             Navigator.pop(context);
-            widget.onGoToPayments?.call();
+            widget.onGoToPayments?.call(targetPaymentId: paymentId);
           },
         ),
       );
@@ -633,7 +634,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     api: _api,
     onApprove: _approve,
     onRespondToMessage: _respondToMessage,
-    onGoToPayments: widget.onGoToPayments,
+    onGoToPayments: widget.onGoToPayments != null ? () => widget.onGoToPayments!.call() : null,
     onLongPressMessage: _showReplyMenu,
   );
 

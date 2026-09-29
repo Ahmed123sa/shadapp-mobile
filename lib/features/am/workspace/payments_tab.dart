@@ -158,24 +158,62 @@ class _PaymentsTabState extends State<PaymentsTab> {
     if (_api.role != 'super_admin') return;
     final displayAction = action;
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(action == 'approved' ? l10n.paymentsApprovePayment : l10n.paymentsRejectPayment),
-        content: Text(action == 'approved' ? l10n.paymentsApproveConfirmMsg : l10n.paymentsRejectConfirmMsg),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: action == 'approved' ? ShadColors.success : ShadColors.error),
-            child: Text(action == 'approved' ? l10n.confirm : l10n.reject),
+    String? reason;
+    if (action == 'rejected') {
+      final controller = TextEditingController();
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.paymentsRejectPayment),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.paymentsRejectConfirmMsg),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: l10n.paymentsRejectionReasonOptional,
+                  hintText: l10n.paymentsRejectionReasonHint,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
+              child: Text(l10n.reject),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+      reason = controller.text.trim();
+    } else {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.paymentsApprovePayment),
+          content: Text(l10n.paymentsApproveConfirmMsg),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: ShadColors.success),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    }
+
     try {
-      final data = await _paymentProvider.reviewPayment(id, displayAction);
+      final data = await _paymentProvider.reviewPayment(id, displayAction, notes: reason);
       if (mounted) {
         final wsActive = data['workspace']?['status'] == 'active';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -298,9 +336,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
           final isApproved = p['status'] == 'approved';
           final isScheduled = p['status'] == 'scheduled';
           final isOverdue = p['status'] == 'overdue';
+          final isRejected = p['status'] == 'rejected';
           final isManagerScheduled = p['requested_by_manager'] == true;
-          final statusColor = isApproved ? ShadColors.success : isPending ? ShadColors.gold : isOverdue ? ShadColors.error : isScheduled ? ShadColors.gold : ShadColors.textDisabled;
-          final statusText = isApproved ? l10n.paymentsStatusApproved : isPending ? l10n.paymentsStatusPending : isOverdue ? l10n.paymentsStatusOverdue : isScheduled ? l10n.paymentsStatusScheduled : p['status'] ?? '';
+          final statusColor = isApproved ? ShadColors.success : isPending ? ShadColors.gold : isOverdue ? ShadColors.error : isRejected ? ShadColors.error : isScheduled ? ShadColors.gold : ShadColors.textDisabled;
+          final statusText = isApproved ? l10n.paymentsStatusApproved : isPending ? l10n.paymentsStatusPending : isOverdue ? l10n.paymentsStatusOverdue : isRejected ? l10n.paymentsStatusRejected : isScheduled ? l10n.paymentsStatusScheduled : p['status'] ?? '';
 
           final methodLabels = {'bank_transfer': l10n.paymentsMethodBankTransfer, 'swift': l10n.paymentsMethodSwift, 'corporate_account': l10n.paymentsMethodCorporateAccount, 'instapay': l10n.paymentsMethodInstapay, 'vodafone_cash': l10n.paymentsMethodVodafoneCash, 'mobile_wallet': l10n.paymentsMethodMobileWallet};
 
@@ -309,7 +348,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             decoration: BoxDecoration(
               color: ShadColors.card,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isPending ? ShadColors.gold : ShadColors.cardBorder, width: isPending ? 1.5 : 0.5),
+              border: Border.all(color: isPending ? ShadColors.gold : isRejected ? ShadColors.error.withAlpha(100) : ShadColors.cardBorder, width: isPending ? 1.5 : 0.5),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,6 +379,21 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         Text(l10n.paymentsDueDateFormat(_formatDate(p['due_date'])),
                           style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary)),
                       ]),
+                    ],
+                    if (isRejected && (p['notes'] as String? ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: ShadColors.error.withAlpha(20),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: ShadColors.error.withAlpha(50)),
+                        ),
+                        child: Text(
+                          '${l10n.paymentsRejectionReason}: ${p['notes']}',
+                          style: const TextStyle(fontSize: 11, color: ShadColors.error),
+                        ),
+                      ),
                     ],
                   ]),
                 ),

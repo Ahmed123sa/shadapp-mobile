@@ -4832,6 +4832,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsStatusScheduled => 'مجدول';
 
   @override
+  String get paymentsStatusRejected => 'مرفوضة';
+
+  @override
+  String get paymentsRejectionReason => 'سبب الرفض';
+
+  @override
+  String get paymentsRejectionReasonOptional => 'سبب الرفض (اختياري)';
+
+  @override
+  String get paymentsRejectionReasonHint => 'اكتب سبب الرفض هنا...';
+
+  @override
+  String get paymentsReuploadProof => 'إعادة إرسال إثبات الدفع';
+
+  @override
   String get paymentsTaxDetails => 'تفاصيل الضريبة';
 
   @override
