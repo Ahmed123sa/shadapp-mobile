@@ -8,6 +8,7 @@ import '../../core/api_client.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme.dart';
 import '../../core/helpers/signature_required_dialog.dart';
+import '../../core/helpers/required_documents_dialog.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/shad_logo.dart';
@@ -87,15 +88,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (contractsList.any((c) => c is Map && c['status'] == 'archived')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'company_approved')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'client_approved')) return 3;
-    // client-signature-plan.md ن3 — a contract sitting at 'sent' or
-    // 'edit_requested' is waiting on the client's own response (review +
-    // approve/request-edits). Before this, that jumped straight to stage 2
-    // even for a client who had never saved a signature — the backend now
-    // rejects approving without one (ك3), but this screen used to offer the
-    // approve button anyway, so the client hit a rejection with no
-    // explanation for why. Route them to the signature stage first instead.
-    final awaitingClientResponse = contractsList.any((c) => c is Map && (c['status'] == 'edit_requested' || c['status'] == 'sent'));
-    if (awaitingClientResponse) return client['signed_at'] != null ? 2 : 0;
+    final hasSent = contractsList.any((c) => c is Map && c['status'] == 'sent');
+    if (hasSent) return client['signed_at'] != null ? 2 : 0;
+    final hasEditRequested = contractsList.any((c) => c is Map && c['status'] == 'edit_requested');
+    if (hasEditRequested) return 6;
     if (client['signed_at'] != null) return 1;
     return 0;
   }
@@ -451,6 +447,14 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           title: AppLocalizations.of(context)!.onboarding_reviewingPayment,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingActivation,
         );
+      case 6:
+        return buildWaitingStage(
+          context: context,
+          icon: Icons.edit_note,
+          iconColor: ShadColors.warning,
+          title: AppLocalizations.of(context)!.onboardingWaitingEditContract,
+          subtitle: AppLocalizations.of(context)!.onboardingWaitingEditContractMsg,
+        );
       default:
         return buildSignatureStage(
           context: context,
@@ -489,7 +493,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (ws == null) return;
     final contracts = safeList(ws['contracts']);
     if (contracts.isEmpty) return;
-    final c = contracts.first as Map;
+    final c = contracts.firstWhere(
+      (contract) => contract is Map && contract['status'] == 'sent',
+      orElse: () => contracts.first,
+    ) as Map;
     await _respondToContractById(c['id'] as int, action);
   }
 
@@ -527,6 +534,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     } catch (e) {
       if (!mounted) return;
       if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
+      if (!mounted) return;
+      if (await maybeShowRequiredDocumentsDialog(context, e)) return;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.onboarding_failedWithError(e.toString()))));
       }

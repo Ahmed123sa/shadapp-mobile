@@ -1780,5 +1780,18 @@
   "paymentsFailedToLoad": "Failed to load payments",
   "meeting_startAsHost": "Start meeting",
   "meeting_join": "Join",
-  "meeting_opening": "Opening…"
+  "meeting_opening": "Opening…",
+  "contractDocsRequiredTitle": "Required Documents",
+  "contractUploadRequiredFirst": "You must upload the required documents before approving the contract.",
+  "contractUploadRequiredFirstWithDocs": "Upload the required documents first: {docs}",
+  "@contractUploadRequiredFirstWithDocs": {
+    "placeholders": {
+      "docs": { "type": "String" }
+    }
+  },
+  "settingManagersCanReviewFiles": "Manager Client Files Review",
+  "settingManagersCanReviewFilesDesc": "Allow account managers to approve or reject regular files for their clients",
+  "onboardingWaitingEditContract": "Contract Edit Under Review",
+  "onboardingWaitingEditContractMsg": "Our team is reviewing your edit request. An updated contract will be sent to you soon.",
+  "signatureDrawSignature": "Draw Signature"
 }

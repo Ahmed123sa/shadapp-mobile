@@ -127,6 +127,13 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           if (idx >= 0) _messages[idx] = msg;
         },
       )));
+      _reverbUnsubscribers.add(reverb.addMessageDeletedListener(chatOnMessageDeleted(
+        state: this,
+        setState: setState,
+        deleteMessage: (messageId) {
+          _messages.removeWhere((m) => m['id'] == messageId);
+        },
+      )));
       _reverbUnsubscribers.add(reverb.addContractStatusChangedListener(() {
         if (mounted) _load();
       }));

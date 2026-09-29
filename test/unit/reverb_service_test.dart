@@ -241,5 +241,20 @@ void main() {
 
       expect(received, {'id': 'n1'});
     });
+
+    test('message.deleted event triggers addMessageDeletedListener with payload', () {
+      final reverb = ReverbService.forTesting();
+      Map<String, dynamic>? deletedPayload;
+      final unsubscribe = reverb.addMessageDeletedListener((payload) => deletedPayload = payload);
+
+      reverb.debugDispatch('message.deleted', jsonEncode({'message_id': 42}));
+
+      expect(deletedPayload, {'message_id': 42});
+
+      deletedPayload = null;
+      unsubscribe();
+      reverb.debugDispatch('message.deleted', jsonEncode({'message_id': 43}));
+      expect(deletedPayload, isNull);
+    });
   });
 }

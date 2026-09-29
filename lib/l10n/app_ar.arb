@@ -1738,5 +1738,18 @@
   "paymentsFailedToLoad": "فشل تحميل المدفوعات",
   "meeting_startAsHost": "ابدأ الاجتماع",
   "meeting_join": "انضم",
-  "meeting_opening": "جارٍ الفتح…"
+  "meeting_opening": "جارٍ الفتح…",
+  "contractDocsRequiredTitle": "المستندات المطلوبة",
+  "contractUploadRequiredFirst": "لازم ترفع المستندات المطلوبة الأول قبل الموافقة على العقد.",
+  "contractUploadRequiredFirstWithDocs": "ارفع المستندات المطلوبة الأول: {docs}",
+  "@contractUploadRequiredFirstWithDocs": {
+    "placeholders": {
+      "docs": { "type": "String" }
+    }
+  },
+  "settingManagersCanReviewFiles": "صلاحية مراجعة ملفات العميل",
+  "settingManagersCanReviewFilesDesc": "السماح لمدير الحساب بالموافقة على الملفات العادية لعملائه أو رفضها",
+  "onboardingWaitingEditContract": "طلب تعديل العقد قيد المعالجة",
+  "onboardingWaitingEditContractMsg": "يقوم فريق العمل بمراجعة طلب التعديل الخاص بك، وسيتم إرسال العقد المعدل إليك قريباً.",
+  "signatureDrawSignature": "رسم التوقيع"
 }

@@ -5305,4 +5305,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meeting_opening => 'جارٍ الفتح…';
+
+  @override
+  String get contractDocsRequiredTitle => 'المستندات المطلوبة';
+
+  @override
+  String get contractUploadRequiredFirst =>
+      'لازم ترفع المستندات المطلوبة الأول قبل الموافقة على العقد.';
+
+  @override
+  String contractUploadRequiredFirstWithDocs(String docs) {
+    return 'ارفع المستندات المطلوبة الأول: $docs';
+  }
+
+  @override
+  String get settingManagersCanReviewFiles => 'صلاحية مراجعة ملفات العميل';
+
+  @override
+  String get settingManagersCanReviewFilesDesc =>
+      'السماح لمدير الحساب بالموافقة على الملفات العادية لعملائه أو رفضها';
+
+  @override
+  String get onboardingWaitingEditContract => 'طلب تعديل العقد قيد المعالجة';
+
+  @override
+  String get onboardingWaitingEditContractMsg =>
+      'يقوم فريق العمل بمراجعة طلب التعديل الخاص بك، وسيتم إرسال العقد المعدل إليك قريباً.';
+
+  @override
+  String get signatureDrawSignature => 'رسم التوقيع';
 }

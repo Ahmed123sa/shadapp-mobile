@@ -111,6 +111,24 @@ Widget buildContractReviewStage({
   required void Function(Map) onPreviewContract,
   required void Function(String) onRespond,
 }) {
+  final l10n = AppLocalizations.of(context)!;
+  final ws = workspace;
+  final contracts = ws != null ? safeList(ws['contracts']) : [];
+  final sentContract = contracts.firstWhere(
+    (c) => c is Map && c['status'] == 'sent',
+    orElse: () => contracts.isNotEmpty ? contracts.first : null,
+  ) as Map?;
+
+  final requiredDocs = sentContract != null ? safeList(sentContract['required_documents']) : [];
+  final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
+    if (d is! Map) return false;
+    final files = d['files'] as List<dynamic>?;
+    if (files != null && files.isNotEmpty) {
+      return !files.any((f) => f is Map && f['status'] != 'rejected');
+    }
+    return d['status'] != 'approved' && d['status'] != 'pending';
+  });
+
   return SingleChildScrollView(
     padding: const EdgeInsets.all(24),
     child: Column(
@@ -126,12 +144,12 @@ Widget buildContractReviewStage({
         ),
         const SizedBox(height: 24),
         Text(
-          AppLocalizations.of(context)!.onboarding_contractReceived,
+          l10n.onboarding_contractReceived,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
         ),
         const SizedBox(height: 12),
         Text(
-          AppLocalizations.of(context)!.onboarding_reviewContractPrompt,
+          l10n.onboarding_reviewContractPrompt,
           style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
         ),
         const SizedBox(height: 32),
@@ -139,17 +157,12 @@ Widget buildContractReviewStage({
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              final ws = workspace;
-              if (ws != null) {
-                final contracts = safeList(ws['contracts']);
-                if (contracts.isNotEmpty) {
-                  final c = contracts.first as Map;
-                  onPreviewContract(c);
-                }
+              if (sentContract != null) {
+                onPreviewContract(sentContract);
               }
             },
             icon: const Icon(Icons.visibility, size: 20),
-            label: Text(AppLocalizations.of(context)!.onboarding_previewContract),
+            label: Text(l10n.onboarding_previewContract),
             style: OutlinedButton.styleFrom(
               foregroundColor: ShadColors.gold,
               side: const BorderSide(color: ShadColors.gold),
@@ -158,18 +171,28 @@ Widget buildContractReviewStage({
             ),
           ),
         ),
+        if (hasMissingDocs) ...[
+          const SizedBox(height: 12),
+          Text(
+            l10n.contractUploadRequiredFirst,
+            style: const TextStyle(fontSize: 12, color: ShadColors.warning, fontWeight: FontWeight.w500),
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => onRespond('approved'),
+            onPressed: hasMissingDocs ? null : () => onRespond('approved'),
             icon: const Icon(Icons.thumb_up, size: 20),
-            label: Text(AppLocalizations.of(context)!.onboarding_approve),
+            label: Text(l10n.onboarding_approve),
             style: ElevatedButton.styleFrom(
               backgroundColor: ShadColors.crimson,
               foregroundColor: ShadColors.textOnCrimson,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              disabledBackgroundColor: ShadColors.cardBorder,
+              disabledForegroundColor: ShadColors.textDisabled,
             ),
           ),
         ),
@@ -177,7 +200,7 @@ Widget buildContractReviewStage({
         TextButton.icon(
           onPressed: () => onRespond('edit_requested'),
           icon: const Icon(Icons.edit_note, size: 18),
-          label: Text(AppLocalizations.of(context)!.onboarding_requestEdit),
+          label: Text(l10n.onboarding_requestEdit),
           style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),
         ),
       ],

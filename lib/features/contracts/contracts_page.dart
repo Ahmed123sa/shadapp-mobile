@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/helpers/signature_required_dialog.dart';
+import '../../core/helpers/required_documents_dialog.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/loading_state.dart';
@@ -117,6 +118,8 @@ class _ContractsPageState extends State<ContractsPage> {
     } catch (e) {
       if (!mounted) return;
       if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
+      if (!mounted) return;
+      if (await maybeShowRequiredDocumentsDialog(context, e)) return;
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.actionFailed)));
     }
   }
@@ -248,42 +251,68 @@ class _ContractsPageState extends State<ContractsPage> {
             ),
           ],
           if (needsAction) ...[
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(
-                child: SizedBox(
-                  height: 32,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _clientAction(c['id'], 'approved'),
-                    icon: const Icon(Icons.check, size: 14),
-                    label: Text(l10n.approve, style: const TextStyle(fontSize: 11)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.success,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            Builder(builder: (_) {
+              final requiredDocs = c['required_documents'] as List<dynamic>? ?? [];
+              final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
+                if (d is! Map) return false;
+                final files = d['files'] as List<dynamic>?;
+                if (files != null && files.isNotEmpty) {
+                  return !files.any((f) => f is Map && f['status'] != 'rejected');
+                }
+                return d['status'] != 'approved' && d['status'] != 'pending';
+              });
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasMissingDocs) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.contractUploadRequiredFirst,
+                      style: const TextStyle(fontSize: 10, color: ShadColors.warning, fontWeight: FontWeight.w500),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: SizedBox(
-                  height: 32,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _clientAction(c['id'], 'edit_requested'),
-                    icon: const Icon(Icons.edit, size: 14),
-                    label: Text(l10n.edit, style: const TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ShadColors.warning,
-                      side: const BorderSide(color: ShadColors.warning),
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ],
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 32,
+                        child: ElevatedButton.icon(
+                          onPressed: hasMissingDocs ? null : () => _clientAction(c['id'], 'approved'),
+                          icon: const Icon(Icons.check, size: 14),
+                          label: Text(l10n.approve, style: const TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ShadColors.success,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            disabledBackgroundColor: ShadColors.cardBorder,
+                            disabledForegroundColor: ShadColors.textDisabled,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            ]),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: SizedBox(
+                        height: 32,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _clientAction(c['id'], 'edit_requested'),
+                          icon: const Icon(Icons.edit, size: 14),
+                          label: Text(l10n.edit, style: const TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ShadColors.warning,
+                            side: const BorderSide(color: ShadColors.warning),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ],
+              );
+            }),
           ],
           if (isApproved) ...[
             const SizedBox(height: 10),

@@ -114,6 +114,15 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
     final progress = c['progress'] is num ? (c['progress'] as num).toDouble() : 0.0;
     final stageIndex = _computeStageIndex(c);
 
+    final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
+      if (d is! Map) return false;
+      final files = d['files'] as List<dynamic>?;
+      if (files != null && files.isNotEmpty) {
+        return !files.any((f) => f is Map && f['status'] != 'rejected');
+      }
+      return d['status'] != 'approved' && d['status'] != 'pending';
+    });
+
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.5,
@@ -357,11 +366,18 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             // Action buttons
             if (needsAction) ...[
               Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              if (hasMissingDocs) ...[
+                const SizedBox(height: 6),
+                Text(
+                  l10n.contractUploadRequiredFirst,
+                  style: const TextStyle(fontSize: 11, color: ShadColors.warning, fontWeight: FontWeight.w500),
+                ),
+              ],
               const SizedBox(height: 8),
               Row(children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () async {
+                    onPressed: hasMissingDocs ? null : () async {
                       await widget.onAction(c['id'], 'approved');
                       if (context.mounted) Navigator.pop(context);
                     },
@@ -372,6 +388,8 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      disabledBackgroundColor: ShadColors.cardBorder,
+                      disabledForegroundColor: ShadColors.textDisabled,
                     ),
                   ),
                 ),

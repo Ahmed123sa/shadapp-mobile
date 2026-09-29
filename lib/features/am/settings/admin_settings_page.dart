@@ -13,6 +13,7 @@ import '../../../providers/signature_provider.dart';
 import '../../../providers/system_settings_provider.dart';
 import '../../signature/render_signature.dart';
 import 'admin_settings_clauses.dart';
+import '../../../core/widgets/signature_pad_screen.dart';
 
 class AdminSettingsPage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test (e.g. embedded
@@ -51,6 +52,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   String? _avatarUrl;
   final _taxController = TextEditingController();
   bool _taxSaving = false;
+  bool _managersCanReviewFiles = false;
+  bool _savingManagersCanReviewFiles = false;
   List<Map<String, dynamic>> _clauses = [];
   bool _clausesLoading = true;
   bool _clauseSaving = false;
@@ -97,6 +100,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         final settingsData = await _systemSettingsProvider.fetchSettings();
         final settings = settingsData['settings'] as Map<String, dynamic>? ?? {};
         _taxController.text = (settings['corporate_tax_percentage']?['value'] ?? '15').toString();
+        final mcr = settings['managers_can_review_files']?['value'];
+        _managersCanReviewFiles = mcr == true || mcr == 1 || mcr == '1' || mcr == 'true';
       } catch (e, s) {
         AppLog.error('admin_settings._load(settings)', e, s);
       }
@@ -183,6 +188,69 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.settingsTaxSaveFailed}: $e')));
     }
     if (mounted) setState(() => _taxSaving = false);
+  }
+
+  Future<void> _toggleManagersCanReviewFiles(bool val) async {
+    setState(() => _savingManagersCanReviewFiles = true);
+    try {
+      await _systemSettingsProvider.updateSetting('managers_can_review_files', val ? '1' : '0');
+      setState(() => _managersCanReviewFiles = val);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                const SizedBox(width: 8),
+                Text(AppLocalizations.of(context)!.settingsSaved),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingManagersCanReviewFiles = false);
+    }
+  }
+
+  Future<void> _openFullscreenSignature() async {
+    final bytes = await SignaturePadScreen.show(context);
+    if (bytes == null) return;
+    setState(() => _saving = true);
+    try {
+      final dir = Directory.systemTemp;
+      final file = File('${dir.path}/sig_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+      await _signatureProvider.uploadSelfSignatureImage(file);
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                const SizedBox(width: 8),
+                Text(AppLocalizations.of(context)!.signatureSaved),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.signatureSaveFailed}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _pickAvatar() async {
@@ -454,6 +522,22 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 ]),
                 const SizedBox(height: 10),
 
+                // Fullscreen signature button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : _openFullscreenSignature,
+                    icon: const Icon(Icons.fullscreen, size: 18, color: ShadColors.gold),
+                    label: Text(l10n.signatureDrawSignature, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: ShadColors.gold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+
                 // Upload image button (always visible)
                 SizedBox(
                   width: double.infinity,
@@ -622,6 +706,23 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                         : Text(l10n.settingsSaveTax, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
                   ),
                 ),
+                const SizedBox(height: 16),
+                const Divider(color: ShadColors.cardBorder),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(l10n.settingManagersCanReviewFiles, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                      const SizedBox(height: 4),
+                      Text(l10n.settingManagersCanReviewFilesDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                    ]),
+                  ),
+                  Switch(
+                    value: _managersCanReviewFiles,
+                    onChanged: _savingManagersCanReviewFiles ? null : _toggleManagersCanReviewFiles,
+                    activeThumbColor: ShadColors.gold,
+                  ),
+                ]),
               ]),
             ),
           ],

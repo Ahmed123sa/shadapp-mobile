@@ -111,6 +111,40 @@ void main() {
     expect(find.text('Sign Now'), findsOneWidget);
   });
 
+  testWidgets('contract with missing required documents disables approve button and shows warning', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    stubCommon(
+      httpClient,
+      contractsJson: '{"contracts":[{"id":1,"title":"Villa Renovation Deal","status":"sent","value":1000,"currency":"SAR","required_documents":[{"id":10,"name":"Commercial Register","is_required":true,"files":[]}]}]}',
+    );
+
+    await pumpPage(tester, api);
+
+    expect(find.text('Villa Renovation Deal'), findsOneWidget);
+    expect(find.text('You must upload the required documents before approving the contract.'), findsOneWidget);
+  });
+
+  testWidgets('422 required_documents_missing shows the required documents dialog', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    stubCommon(httpClient);
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse('{"message":"لازم ترفع المستندات المطلوبة الأول","code":"required_documents_missing","missing_documents":[{"id":10,"name":"Commercial Register"}]}', 422),
+    );
+
+    await pumpPage(tester, api);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirm').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Required Documents'), findsOneWidget);
+  });
+
   testWidgets('opening a contract card loads its uploaded files', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

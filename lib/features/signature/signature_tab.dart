@@ -8,6 +8,7 @@ import '../../providers/client_provider.dart';
 import '../../providers/signature_provider.dart';
 import 'render_signature.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/signature_pad_screen.dart';
 
 class SignatureTab extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with mocked
@@ -105,6 +106,34 @@ class _SignatureTabState extends State<SignatureTab> {
           SnackBar(content: Text(AppLocalizations.of(context)!.signature_deleteFailed)),
         );
       }
+    }
+  }
+
+  Future<void> _openFullscreenSignature() async {
+    final bytes = await SignaturePadScreen.show(context);
+    if (bytes == null) return;
+    setState(() => _saving = true);
+    try {
+      final cid = _api.userId;
+      if (cid == null) throw Exception('User ID not found');
+      final dir = Directory.systemTemp;
+      final file = File('${dir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+      await _signatureProvider.uploadImage(cid, file);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
+        );
+        _loadExisting();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.signature_saveFailed}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -371,35 +400,54 @@ class _SignatureTabState extends State<SignatureTab> {
   }
 
   Widget _buildDrawArea() {
-    return Container(
-      width: double.infinity,
-      height: 220,
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: GestureDetector(
-          onPanStart: (_) => setState(() => _currentStroke = []),
-          onPanUpdate: (details) {
-            setState(() => _currentStroke.add(details.localPosition));
-          },
-          onPanEnd: (_) => setState(() {
-            _strokes.add(List.from(_currentStroke));
-            _currentStroke = [];
-          }),
-          child: RepaintBoundary(
-            key: _boundaryKey,
-            child: CustomPaint(
-              painter: _SignaturePainter(
-                  strokes: _strokes, currentStroke: _currentStroke),
-              size: Size.infinite,
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _saving ? null : _openFullscreenSignature,
+            icon: const Icon(Icons.fullscreen, size: 18, color: ShadColors.gold),
+            label: Text(l10n.signatureDrawSignature, style: const TextStyle(color: ShadColors.gold, fontSize: 13, fontFamily: 'Tajawal')),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: ShadColors.gold),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          height: 220,
+          decoration: BoxDecoration(
+            color: ShadColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: ShadColors.cardBorder),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: GestureDetector(
+              onPanStart: (_) => setState(() => _currentStroke = []),
+              onPanUpdate: (details) {
+                setState(() => _currentStroke.add(details.localPosition));
+              },
+              onPanEnd: (_) => setState(() {
+                _strokes.add(List.from(_currentStroke));
+                _currentStroke = [];
+              }),
+              child: RepaintBoundary(
+                key: _boundaryKey,
+                child: CustomPaint(
+                  painter: _SignaturePainter(
+                      strokes: _strokes, currentStroke: _currentStroke),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -112,6 +112,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           if (idx >= 0) _messages[idx] = msg;
         },
       )));
+      _reverbUnsubscribers.add(reverb.addMessageDeletedListener(chatOnMessageDeleted(
+        state: this,
+        setState: setState,
+        deleteMessage: (messageId) {
+          _messages.removeWhere((m) => m['id'] == messageId);
+        },
+      )));
       _reverbUnsubscribers.add(reverb.addPaymentScheduleChangedListener((_) {
         if (mounted) _checkWorkspace();
       }));

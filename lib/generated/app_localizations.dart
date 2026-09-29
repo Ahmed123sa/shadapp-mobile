@@ -10277,6 +10277,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening…'**
   String get meeting_opening;
+
+  /// No description provided for @contractDocsRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Required Documents'**
+  String get contractDocsRequiredTitle;
+
+  /// No description provided for @contractUploadRequiredFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'You must upload the required documents before approving the contract.'**
+  String get contractUploadRequiredFirst;
+
+  /// No description provided for @contractUploadRequiredFirstWithDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload the required documents first: {docs}'**
+  String contractUploadRequiredFirstWithDocs(String docs);
+
+  /// No description provided for @settingManagersCanReviewFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager Client Files Review'**
+  String get settingManagersCanReviewFiles;
+
+  /// No description provided for @settingManagersCanReviewFilesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow account managers to approve or reject regular files for their clients'**
+  String get settingManagersCanReviewFilesDesc;
+
+  /// No description provided for @onboardingWaitingEditContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract Edit Under Review'**
+  String get onboardingWaitingEditContract;
+
+  /// No description provided for @onboardingWaitingEditContractMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Our team is reviewing your edit request. An updated contract will be sent to you soon.'**
+  String get onboardingWaitingEditContractMsg;
+
+  /// No description provided for @signatureDrawSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw Signature'**
+  String get signatureDrawSignature;
 }
 
 class _AppLocalizationsDelegate

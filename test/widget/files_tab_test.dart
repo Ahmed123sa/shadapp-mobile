@@ -75,7 +75,9 @@ void main() {
     final api = buildTestApiClient(client: httpClient);
     api.role = 'account_manager';
     var getCalls = 0;
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async {
+    when(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/settings'))), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse('{"settings":{}}'));
+    when(() => httpClient.get(any(that: predicate<Uri>((u) => !u.path.endsWith('/settings'))), headers: any(named: 'headers'))).thenAnswer((_) async {
       getCalls++;
       if (getCalls == 1) {
         return jsonResponse('{"files":[],"definitions":[{"id":2,"name":"Passport","is_required":true}]}');

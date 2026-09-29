@@ -151,6 +151,19 @@ void Function(Map<String, dynamic> payload) chatOnMessageUpdated({
   };
 }
 
+void Function(Map<String, dynamic> payload) chatOnMessageDeleted({
+  required State state,
+  required void Function(void Function() fn) setState,
+  required void Function(int messageId) deleteMessage,
+}) {
+  return (payload) {
+    final messageId = payload['message_id'] as int?;
+    if (messageId != null && state.mounted) {
+      setState(() => deleteMessage(messageId));
+    }
+  };
+}
+
 // _send in both screens has the exact same control-flow shape; the one
 // real role difference is that chat_tab.dart can flag a message as
 // `requiresAction` via its AM-only "request client approval" toggle,

@@ -5330,4 +5330,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meeting_opening => 'Opening…';
+
+  @override
+  String get contractDocsRequiredTitle => 'Required Documents';
+
+  @override
+  String get contractUploadRequiredFirst =>
+      'You must upload the required documents before approving the contract.';
+
+  @override
+  String contractUploadRequiredFirstWithDocs(String docs) {
+    return 'Upload the required documents first: $docs';
+  }
+
+  @override
+  String get settingManagersCanReviewFiles => 'Manager Client Files Review';
+
+  @override
+  String get settingManagersCanReviewFilesDesc =>
+      'Allow account managers to approve or reject regular files for their clients';
+
+  @override
+  String get onboardingWaitingEditContract => 'Contract Edit Under Review';
+
+  @override
+  String get onboardingWaitingEditContractMsg =>
+      'Our team is reviewing your edit request. An updated contract will be sent to you soon.';
+
+  @override
+  String get signatureDrawSignature => 'Draw Signature';
 }

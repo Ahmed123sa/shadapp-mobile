@@ -31,6 +31,8 @@ class _FilesTabState extends State<FilesTab> {
   String? _error;
   String _filter = 'all';
 
+  bool _managersCanReviewFiles = false;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,14 @@ class _FilesTabState extends State<FilesTab> {
       _definitions = data['definitions'] as List<dynamic>? ?? [];
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)?.filesLoadFailed;
+    }
+    if (_api.role != 'super_admin') {
+      try {
+        final res = await _api.get('/settings');
+        final settings = res['settings'] as Map<String, dynamic>?;
+        final val = settings?['managers_can_review_files']?['value'];
+        _managersCanReviewFiles = val == true || val == 1 || val == '1' || val.toString().toLowerCase() == 'true';
+      } catch (_) {}
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -184,6 +194,7 @@ class _FilesTabState extends State<FilesTab> {
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
 
     final isSA = _api.role == 'super_admin';
+    final canReview = isSA || _managersCanReviewFiles;
     final filtered = _filteredFiles;
     final l10n = AppLocalizations.of(context)!;
 
@@ -289,7 +300,7 @@ class _FilesTabState extends State<FilesTab> {
                         ),
                       ],
                     ]),
-                    trailing: f['status'] == 'pending' && isSA
+                    trailing: f['status'] == 'pending' && canReview
                       ? Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             icon: const Icon(Icons.check, color: ShadColors.success),

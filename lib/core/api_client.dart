@@ -395,7 +395,7 @@ class ApiClient {
       // client-signature-plan.md) so a caller can react to the specific
       // reason instead of just showing the generic message. Absent on plain
       // Laravel validation-rule failures, which never set this field.
-      throw ValidationException(msg, code: data['code'] as String?);
+      throw ValidationException(msg, code: data['code'] as String?, data: data);
     }
     // A reverse proxy's own body-size cap (nginx's client_max_body_size,
     // commonly a 1MB default) rejects an oversized upload before it ever
@@ -436,7 +436,8 @@ class AuthException implements Exception {
 class ValidationException implements Exception {
   final String message;
   final String? code;
-  ValidationException(this.message, {this.code});
+  final Map<String, dynamic>? data;
+  ValidationException(this.message, {this.code, this.data});
   @override
   String toString() => message;
 }

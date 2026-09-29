@@ -78,6 +78,7 @@ class ReverbService {
   // screen's dispose().
   final List<void Function(Map<String, dynamic>)> _messageReceivedListeners = [];
   final List<void Function(Map<String, dynamic>)> _messageUpdatedListeners = [];
+  final List<void Function(Map<String, dynamic>)> _messageDeletedListeners = [];
   final List<void Function()> _contractStatusChangedListeners = [];
   final List<void Function(Map<String, dynamic>)> _paymentScheduleChangedListeners = [];
   final List<void Function(Map<String, dynamic>)> _notificationReceivedListeners = [];
@@ -97,6 +98,11 @@ class ReverbService {
   VoidCallback addMessageUpdatedListener(void Function(Map<String, dynamic>) listener) {
     _messageUpdatedListeners.add(listener);
     return () => _messageUpdatedListeners.remove(listener);
+  }
+
+  VoidCallback addMessageDeletedListener(void Function(Map<String, dynamic>) listener) {
+    _messageDeletedListeners.add(listener);
+    return () => _messageDeletedListeners.remove(listener);
   }
 
   VoidCallback addContractStatusChangedListener(void Function() listener) {
@@ -262,6 +268,11 @@ class ReverbService {
       for (final l in List.of(_messageUpdatedListeners)) {
         l(payload);
       }
+    } else if (event == 'message.deleted') {
+      final payload = jsonDecode(rawData as String) as Map<String, dynamic>;
+      for (final l in List.of(_messageDeletedListeners)) {
+        l(payload);
+      }
     } else if (event == 'contract.status_changed') {
       for (final l in List.of(_contractStatusChangedListeners)) {
         l();
@@ -414,6 +425,7 @@ class ReverbService {
     _channelRefs.clear();
     _messageReceivedListeners.clear();
     _messageUpdatedListeners.clear();
+    _messageDeletedListeners.clear();
     _contractStatusChangedListeners.clear();
     _paymentScheduleChangedListeners.clear();
     _notificationReceivedListeners.clear();
