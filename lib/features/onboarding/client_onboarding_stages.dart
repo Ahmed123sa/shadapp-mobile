@@ -291,10 +291,15 @@ Widget buildPaymentStage({
                     ),
                   ],
                 ),
-                if ((lastRejectedPayment['rejection_reason'] as String? ?? lastRejectedPayment['notes'] as String? ?? '').isNotEmpty) ...[
+                // payments-fixes-2-plan.md ت٢ — rejection_reason (why it
+                // was rejected) and notes (the manager's note from
+                // requesting it) are different things; falling back to
+                // notes whenever rejection_reason was empty mislabeled
+                // that note as a rejection reason.
+                if ((lastRejectedPayment['rejection_reason'] as String? ?? '').isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    '${AppLocalizations.of(context)!.onboarding_paymentRejectedReason}: ${lastRejectedPayment['rejection_reason'] ?? lastRejectedPayment['notes']}',
+                    '${AppLocalizations.of(context)!.onboarding_paymentRejectedReason}: ${lastRejectedPayment['rejection_reason']}',
                     style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
                   ),
                 ],

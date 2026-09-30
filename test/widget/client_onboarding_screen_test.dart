@@ -386,6 +386,22 @@ void main() {
       expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
     });
 
+    testWidgets('rejected payment without a reason does not show the request note as the reason', (tester) async {
+      // payments-fixes-2-plan.md ت٢
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01","client_type":"individual",'
+          '"workspace":{"id":5,"status":"inactive","contracts":[{"id":1,"status":"company_approved","value":5000,"currency":"SAR"}],'
+          '"payments":[{"id":1,"status":"rejected","amount":5000,"currency":"SAR","rejection_reason":null,"notes":"القسط الأول"}]}}}');
+
+      await pumpScreen(tester, api);
+
+      // The request note must not be shown as the rejection reason, but Stage 4 CTA still appears
+      expect(find.textContaining('القسط الأول'), findsNothing);
+      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    });
+
     testWidgets('scheduled payment without pending/approved stays in stage 4', (tester) async {
       final httpClient = MockHttpClient();
       final api = buildTestApiClient(client: httpClient);

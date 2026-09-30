@@ -87,6 +87,44 @@ void main() {
     expect(find.text('Failed to load payments'), findsOneWidget);
   });
 
+  // payments-fixes-2-plan.md ت٢
+  testWidgets('does not show "Rejection Reason" from the request note when rejected without one', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      return jsonResponse(
+        '{"payments":[{"id":1,"amount":500,"currency":"SAR","status":"rejected","rejection_reason":null,"notes":"القسط الأول","created_at":"2026-01-01T00:00:00Z"}],"tax_summary":null}',
+      );
+    });
+
+    await pumpTab(tester, api);
+
+    expect(find.text('Rejected'), findsOneWidget);
+    expect(find.textContaining('Rejection Reason:'), findsNothing);
+    expect(find.textContaining('Notes: القسط الأول'), findsOneWidget);
+  });
+
+  testWidgets('still shows the real rejection reason when the manager gave one', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      return jsonResponse(
+        '{"payments":[{"id":1,"amount":500,"currency":"SAR","status":"rejected","rejection_reason":"Unclear proof image","notes":"القسط الأول","created_at":"2026-01-01T00:00:00Z"}],"tax_summary":null}',
+      );
+    });
+
+    await pumpTab(tester, api);
+
+    expect(find.textContaining('Rejection Reason: Unclear proof image'), findsOneWidget);
+    expect(find.textContaining('Notes: القسط الأول'), findsOneWidget);
+  });
+
   testWidgets('super admin approving a pending payment posts action=approved and shows the active-workspace message', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

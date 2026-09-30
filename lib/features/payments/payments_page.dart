@@ -48,7 +48,17 @@ class _PaymentsPageState extends State<PaymentsPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    // payments-fixes-2-plan.md ت١ — the target payment used to be opened
+    // from inside _load() itself, which _startRefresh() below also calls
+    // every 30s. Combined with onTargetPaymentHandled never actually
+    // triggering a rebuild with initialPaymentId: null (see
+    // client_dashboard_screen.dart), that reopened the sheet indefinitely.
+    // Opening it once here, after the first load, keeps that responsibility
+    // out of _load() entirely.
+    _load().then((_) {
+      final id = widget.initialPaymentId;
+      if (mounted && id != null) _openTargetPayment(id);
+    });
     _startRefresh();
   }
 
@@ -60,18 +70,34 @@ class _PaymentsPageState extends State<PaymentsPage> {
     }
   }
 
-  void _openTargetPayment(int paymentId) {
-    final target = _payments.firstWhere(
+  // Opens the target payment's sheet if it's already loaded; otherwise
+  // reloads once and retries. Either way, onTargetPaymentHandled always
+  // fires so a payment that's genuinely gone (deleted, wrong id) can never
+  // leave a stale id behind for a later refresh to pick up again.
+  Future<void> _openTargetPayment(int paymentId) async {
+    dynamic target = _payments.firstWhere(
       (p) => p is Map && p['id'] == paymentId,
       orElse: () => null,
     );
-    if (target != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _submitScheduledPayment(target);
-        widget.onTargetPaymentHandled?.call();
-      });
+    if (target == null) {
+      await _load();
+      if (!mounted) return;
+      target = _payments.firstWhere(
+        (p) => p is Map && p['id'] == paymentId,
+        orElse: () => null,
+      );
     }
+    // Deferred to after this frame: onTargetPaymentHandled may run a
+    // setState() on an ancestor (see client_dashboard_screen.dart), and
+    // this method can be reached synchronously from didUpdateWidget while
+    // the tree is still mid-build. Calling it there directly can hit a
+    // "setState()/markNeedsBuild() called during build" reentrancy error.
+    final resolvedTarget = target;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onTargetPaymentHandled?.call();
+      if (resolvedTarget != null) _submitScheduledPayment(resolvedTarget);
+    });
   }
 
   void _startRefresh() {
@@ -164,9 +190,6 @@ class _PaymentsPageState extends State<PaymentsPage> {
     }
     if (mounted) {
       setState(() => _loading = false);
-      if (widget.initialPaymentId != null) {
-        _openTargetPayment(widget.initialPaymentId!);
-      }
     }
   }
 
@@ -378,7 +401,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
                   ]),
                 ],
-                if (isRejected && ((p['rejection_reason'] as String? ?? p['notes'] as String? ?? '').isNotEmpty)) ...[
+                // payments-fixes-2-plan.md ت٢ — rejection_reason (why the
+                // manager rejected it) and notes (the manager's own note
+                // from when they requested it) are different things; falling
+                // back to notes whenever rejection_reason was empty
+                // mislabeled that note as a rejection reason.
+                if (isRejected && (p['rejection_reason'] as String? ?? '').isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -388,8 +416,23 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       border: Border.all(color: ShadColors.error.withAlpha(50)),
                     ),
                     child: Text(
-                      '${l10n.paymentsRejectionReason}: ${p['rejection_reason'] ?? p['notes']}',
+                      '${l10n.paymentsRejectionReason}: ${p['rejection_reason']}',
                       style: const TextStyle(fontSize: 11, color: ShadColors.error, fontFamily: 'NotoSansArabic'),
+                    ),
+                  ),
+                ],
+                if ((p['notes'] as String? ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: ShadColors.card,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: ShadColors.cardBorder),
+                    ),
+                    child: Text(
+                      '${l10n.paymentDetail_notes}: ${p['notes']}',
+                      style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'NotoSansArabic'),
                     ),
                   ),
                 ],

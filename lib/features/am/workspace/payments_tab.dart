@@ -380,7 +380,12 @@ class _PaymentsTabState extends State<PaymentsTab> {
                           style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary)),
                       ]),
                     ],
-                    if (isRejected && ((p['rejection_reason'] as String? ?? p['notes'] as String? ?? '').isNotEmpty)) ...[
+                    // payments-fixes-2-plan.md ت٢ — rejection_reason (why the
+                    // payment was rejected) and notes (the manager's own note
+                    // from requesting it) are different things; falling back
+                    // to notes whenever rejection_reason was empty mislabeled
+                    // that note as a rejection reason.
+                    if (isRejected && (p['rejection_reason'] as String? ?? '').isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -390,8 +395,23 @@ class _PaymentsTabState extends State<PaymentsTab> {
                           border: Border.all(color: ShadColors.error.withAlpha(50)),
                         ),
                         child: Text(
-                          '${l10n.paymentsRejectionReason}: ${p['rejection_reason'] ?? p['notes']}',
+                          '${l10n.paymentsRejectionReason}: ${p['rejection_reason']}',
                           style: const TextStyle(fontSize: 11, color: ShadColors.error),
+                        ),
+                      ),
+                    ],
+                    if ((p['notes'] as String? ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: ShadColors.card,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: ShadColors.cardBorder),
+                        ),
+                        child: Text(
+                          '${l10n.paymentDetail_notes}: ${p['notes']}',
+                          style: TextStyle(fontSize: 11, color: ShadColors.textSecondary),
                         ),
                       ),
                     ],
