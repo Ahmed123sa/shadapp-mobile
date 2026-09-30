@@ -5318,6 +5318,24 @@ abstract class AppLocalizations {
   /// **'Please upload your payment proof to continue.'**
   String get onboarding_confirmPaymentMsg;
 
+  /// No description provided for @onboarding_paymentRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous payment was rejected'**
+  String get onboarding_paymentRejectedTitle;
+
+  /// No description provided for @onboarding_paymentRejectedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejection reason'**
+  String get onboarding_paymentRejectedReason;
+
+  /// No description provided for @onboarding_paymentRejectedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload a valid payment proof to complete account activation.'**
+  String get onboarding_paymentRejectedRetry;
+
   /// No description provided for @onboarding_remainingAmount.
   ///
   /// In en, this message translates to:

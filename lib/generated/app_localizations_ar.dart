@@ -2682,6 +2682,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_confirmPaymentMsg => 'يرجى رفع إثبات الدفع للمتابعة.';
 
   @override
+  String get onboarding_paymentRejectedTitle => 'تم رفض الدفعة السابقة';
+
+  @override
+  String get onboarding_paymentRejectedReason => 'سبب الرفض';
+
+  @override
+  String get onboarding_paymentRejectedRetry =>
+      'يرجى إعادة إرفاق إيصال دفع صحيح لإتمام تفعيل الحساب.';
+
+  @override
   String get onboarding_remainingAmount => 'المبلغ المتبقي';
 
   @override

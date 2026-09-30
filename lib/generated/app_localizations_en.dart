@@ -2692,6 +2692,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please upload your payment proof to continue.';
 
   @override
+  String get onboarding_paymentRejectedTitle => 'Previous payment was rejected';
+
+  @override
+  String get onboarding_paymentRejectedReason => 'Rejection reason';
+
+  @override
+  String get onboarding_paymentRejectedRetry =>
+      'Please upload a valid payment proof to complete account activation.';
+
+  @override
   String get onboarding_remainingAmount => 'Remaining Amount';
 
   @override

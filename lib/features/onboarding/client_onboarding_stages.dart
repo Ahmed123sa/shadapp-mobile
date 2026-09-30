@@ -228,6 +228,7 @@ Widget buildPaymentStage({
   if (isBusiness && taxSettings != null) {
     taxPercentage = num.tryParse(taxSettings['corporate_tax_percentage']?['value']?.toString() ?? '')?.toDouble() ?? 0;
   }
+  Map<String, dynamic>? lastRejectedPayment;
   if (ws != null) {
     final contracts = safeList(ws['contracts']);
     for (final c in contracts) {
@@ -241,8 +242,12 @@ Widget buildPaymentStage({
     }
     final payments = safeList(ws['payments']);
     for (final p in payments) {
-      if (p is Map && p['status'] == 'approved') {
-        paidAmount += double.tryParse((p['amount'] ?? '0').toString()) ?? 0.0;
+      if (p is Map) {
+        if (p['status'] == 'approved') {
+          paidAmount += double.tryParse((p['amount'] ?? '0').toString()) ?? 0.0;
+        } else if (p['status'] == 'rejected') {
+          lastRejectedPayment = p.cast<String, dynamic>();
+        }
       }
     }
   }
@@ -257,7 +262,52 @@ Widget buildPaymentStage({
     padding: const EdgeInsets.all(24),
     child: Column(
       children: [
-        const SizedBox(height: 24),
+        if (lastRejectedPayment != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ShadColors.error.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: ShadColors.error.withAlpha(80)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: ShadColors.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.onboarding_paymentRejectedTitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: ShadColors.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if ((lastRejectedPayment['rejection_reason'] as String? ?? lastRejectedPayment['notes'] as String? ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${AppLocalizations.of(context)!.onboarding_paymentRejectedReason}: ${lastRejectedPayment['rejection_reason'] ?? lastRejectedPayment['notes']}',
+                    style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  AppLocalizations.of(context)!.onboarding_paymentRejectedRetry,
+                  style: TextStyle(fontSize: 11, color: ShadColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
         Container(
           width: 80, height: 80,
           decoration: BoxDecoration(

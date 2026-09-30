@@ -83,8 +83,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (client == null || ws == null) return 0;
     final contractsList = safeList(ws['contracts']);
     final paymentsList = safeList(ws['payments']);
-    if (paymentsList.any((p) => p is Map && p['status'] == 'approved')) return 5;
-    if (paymentsList.isNotEmpty) return 5;
+    if (paymentsList.any((p) => p is Map && (p['status'] == 'approved' || p['status'] == 'pending'))) return 5;
     if (contractsList.any((c) => c is Map && c['status'] == 'completed')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'archived')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'company_approved')) return 4;

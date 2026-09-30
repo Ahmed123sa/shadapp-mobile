@@ -52,6 +52,28 @@ class _PaymentsPageState extends State<PaymentsPage> {
     _startRefresh();
   }
 
+  @override
+  void didUpdateWidget(PaymentsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialPaymentId != null && widget.initialPaymentId != oldWidget.initialPaymentId) {
+      _openTargetPayment(widget.initialPaymentId!);
+    }
+  }
+
+  void _openTargetPayment(int paymentId) {
+    final target = _payments.firstWhere(
+      (p) => p is Map && p['id'] == paymentId,
+      orElse: () => null,
+    );
+    if (target != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _submitScheduledPayment(target);
+        widget.onTargetPaymentHandled?.call();
+      });
+    }
+  }
+
   void _startRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _load());
@@ -143,17 +165,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
     if (mounted) {
       setState(() => _loading = false);
       if (widget.initialPaymentId != null) {
-        final target = _payments.firstWhere(
-          (p) => p['id'] == widget.initialPaymentId,
-          orElse: () => null,
-        );
-        if (target != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            _submitScheduledPayment(target);
-            widget.onTargetPaymentHandled?.call();
-          });
-        }
+        _openTargetPayment(widget.initialPaymentId!);
       }
     }
   }
@@ -366,7 +378,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary, fontFamily: 'NotoSansArabic')),
                   ]),
                 ],
-                if (isRejected && (p['notes'] as String? ?? '').isNotEmpty) ...[
+                if (isRejected && ((p['rejection_reason'] as String? ?? p['notes'] as String? ?? '').isNotEmpty)) ...[
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -376,7 +388,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                       border: Border.all(color: ShadColors.error.withAlpha(50)),
                     ),
                     child: Text(
-                      '${l10n.paymentsRejectionReason}: ${p['notes']}',
+                      '${l10n.paymentsRejectionReason}: ${p['rejection_reason'] ?? p['notes']}',
                       style: const TextStyle(fontSize: 11, color: ShadColors.error, fontFamily: 'NotoSansArabic'),
                     ),
                   ),

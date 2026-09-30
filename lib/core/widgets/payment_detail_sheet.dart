@@ -23,6 +23,7 @@ class PaymentDetailSheet extends StatelessWidget {
     final dueDate = payment['due_date']?.toString();
     final status = payment['status']?.toString() ?? 'scheduled';
     final notes = payment['notes']?.toString();
+    final rejectionReason = payment['rejection_reason']?.toString() ?? (status == 'rejected' ? notes : null);
 
     final statusInfo = _statusInfo(status, l10n);
 
@@ -73,7 +74,9 @@ class PaymentDetailSheet extends StatelessWidget {
           const SizedBox(height: 16),
           _row(l10n.paymentDetail_amount, '$amount $currency'),
           if (dueDate != null && dueDate.isNotEmpty) _row(l10n.paymentDetail_dueDate, _formatDate(dueDate)),
-          if (notes != null && notes.isNotEmpty) _row(l10n.paymentDetail_notes, notes),
+          if (notes != null && notes.isNotEmpty && (status != 'rejected' || payment['rejection_reason'] != null)) _row(l10n.paymentDetail_notes, notes),
+          if (status == 'rejected' && rejectionReason != null && rejectionReason.isNotEmpty)
+            _row(l10n.paymentsRejectionReason, rejectionReason),
           if (showPayButton && status == 'scheduled') ...[
             const SizedBox(height: 16),
             SizedBox(

@@ -371,6 +371,35 @@ void main() {
       expect(find.text('System ping'), findsNothing);
     });
 
+    testWidgets('rejected payment stays in stage 4 and displays rejection reason banner', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01","client_type":"individual",'
+          '"workspace":{"id":5,"status":"inactive","contracts":[{"id":1,"status":"company_approved","value":5000,"currency":"SAR"}],'
+          '"payments":[{"id":1,"status":"rejected","amount":5000,"currency":"SAR","rejection_reason":"صورة الإيصال غير مقروءة"}]}}}');
+
+      await pumpScreen(tester, api);
+
+      // Should show the rejection banner and the send payment CTA (Stage 4), NOT stage 5
+      expect(find.textContaining('صورة الإيصال غير مقروءة'), findsOneWidget);
+      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    });
+
+    testWidgets('scheduled payment without pending/approved stays in stage 4', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01","client_type":"individual",'
+          '"workspace":{"id":5,"status":"inactive","contracts":[{"id":1,"status":"company_approved","value":5000,"currency":"SAR"}],'
+          '"payments":[{"id":1,"status":"scheduled","amount":5000,"currency":"SAR"}]}}}');
+
+      await pumpScreen(tester, api);
+
+      // In stage 4
+      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    });
+
     testWidgets('disposing screen leaves workspace channel', (tester) async {
       final httpClient = MockHttpClient();
       final api = buildTestApiClient(client: httpClient);
