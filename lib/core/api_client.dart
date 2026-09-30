@@ -34,6 +34,23 @@ class ApiClient {
   String? role;
   String? userName;
   String? avatarUrl;
+  // subuser-review-plan.md م٦ — the specific permission a sub-user needs for
+  // an *action* (approve a contract, upload a payment proof, respond to an
+  // approval...) rather than just being able to see the tab it lives on.
+  // Refreshed on every dashboard load by
+  // ClientDashboardScreen._loadSubUserPermissions() (same source the tab
+  // gate `_isTabAllowedByPermission` already uses) and read here so every
+  // screen that already receives `api:` can gate its own action buttons
+  // without a new constructor param threaded through the whole tree.
+  // In-memory only (not persisted): starts empty on every cold start, same
+  // as `_subUserPermissions` in ClientDashboardScreen, and a primary client
+  // (role != 'sub_user') is never restricted by it.
+  Map<String, dynamic> subUserPermissions = {};
+
+  bool canDo(String key) {
+    if (role != 'sub_user') return true;
+    return subUserPermissions[key] == true;
+  }
 
   final FlutterSecureStorage _secureStorage;
   final http.Client _httpClient;

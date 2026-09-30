@@ -306,7 +306,9 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       const SizedBox(height: 4),
                       Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
                     ],
-                    if (docStatus != 'approved') ...[
+                    // subuser-review-plan.md م٦ — required-document uploads
+                    // map to can_upload_files, per the plan's action table.
+                    if (docStatus != 'approved' && _api.canDo('can_upload_files')) ...[
                       const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
@@ -371,7 +373,10 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             ],
 
             // Action buttons
-            if (needsAction) ...[
+            // subuser-review-plan.md م٦ — a sub-user without
+            // can_approve_contracts must not see the approve/edit-request
+            // buttons at all, only find out about them via a 403.
+            if (needsAction && _api.canDo('can_approve_contracts')) ...[
               Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
               if (hasMissingDocs) ...[
                 const SizedBox(height: 6),
@@ -418,6 +423,8 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                   ),
                 ),
               ]),
+            ] else if (needsAction) ...[
+              Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
             ],
 
             // Download PDF (shown whenever available)

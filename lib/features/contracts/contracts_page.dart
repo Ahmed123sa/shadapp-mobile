@@ -265,6 +265,11 @@ class _ContractsPageState extends State<ContractsPage> {
                 return d['status'] != 'approved' && d['status'] != 'pending';
               });
 
+              // subuser-review-plan.md م٦ — a sub-user without
+              // can_approve_contracts must not see the approve/edit-request
+              // buttons at all, only find out about them via a 403.
+              final canApprove = _api.canDo('can_approve_contracts');
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -275,44 +280,49 @@ class _ContractsPageState extends State<ContractsPage> {
                       style: const TextStyle(fontSize: 10, color: ShadColors.warning, fontWeight: FontWeight.w500),
                     ),
                   ],
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 32,
-                        child: ElevatedButton.icon(
-                          onPressed: hasMissingDocs ? null : () => _clientAction(c['id'], 'approved'),
-                          icon: const Icon(Icons.check, size: 14),
-                          label: Text(l10n.approve, style: const TextStyle(fontSize: 11)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ShadColors.success,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                            disabledBackgroundColor: ShadColors.cardBorder,
-                            disabledForegroundColor: ShadColors.textDisabled,
+                  if (canApprove) ...[
+                    const SizedBox(height: 10),
+                    Row(children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 32,
+                          child: ElevatedButton.icon(
+                            onPressed: hasMissingDocs ? null : () => _clientAction(c['id'], 'approved'),
+                            icon: const Icon(Icons.check, size: 14),
+                            label: Text(l10n.approve, style: const TextStyle(fontSize: 11)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ShadColors.success,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              disabledBackgroundColor: ShadColors.cardBorder,
+                              disabledForegroundColor: ShadColors.textDisabled,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: SizedBox(
-                        height: 32,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _clientAction(c['id'], 'edit_requested'),
-                          icon: const Icon(Icons.edit, size: 14),
-                          label: Text(l10n.edit, style: const TextStyle(fontSize: 11)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ShadColors.warning,
-                            side: const BorderSide(color: ShadColors.warning),
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: SizedBox(
+                          height: 32,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _clientAction(c['id'], 'edit_requested'),
+                            icon: const Icon(Icons.edit, size: 14),
+                            label: Text(l10n.edit, style: const TextStyle(fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ShadColors.warning,
+                              side: const BorderSide(color: ShadColors.warning),
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ]),
+                    ]),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
+                  ],
                 ],
               );
             }),

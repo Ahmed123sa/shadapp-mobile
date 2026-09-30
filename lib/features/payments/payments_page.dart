@@ -219,11 +219,15 @@ class _PaymentsPageState extends State<PaymentsPage> {
     final isFullyPaid = _totalPaid >= grandTotal && grandTotal > 0;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showRequestPaymentSheet,
-        backgroundColor: ShadColors.crimson,
-        child: const Icon(Icons.add, color: ShadColors.textOnCrimson),
-      ),
+      // subuser-review-plan.md م٦ — uploading/re-uploading a payment proof
+      // maps to can_upload_payment_proof, per the plan's action table.
+      floatingActionButton: _api.canDo('can_upload_payment_proof')
+          ? FloatingActionButton(
+              onPressed: _showRequestPaymentSheet,
+              backgroundColor: ShadColors.crimson,
+              child: const Icon(Icons.add, color: ShadColors.textOnCrimson),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -488,7 +492,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   ),
                 ));
               })(),
-            if (isRejected)
+            if (isRejected && _api.canDo('can_upload_payment_proof'))
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: SizedBox(
@@ -521,8 +525,11 @@ class _PaymentsPageState extends State<PaymentsPage> {
       isScrollControlled: true,
       builder: (_) => PaymentDetailSheet(
         payment: p is Map<String, dynamic> ? p : Map<String, dynamic>.from(p as Map),
-        showPayButton: isScheduled,
-        onPay: isScheduled
+        // subuser-review-plan.md م٦ — paying/uploading proof for a scheduled
+        // payment maps to can_upload_payment_proof, per the plan's action
+        // table.
+        showPayButton: isScheduled && _api.canDo('can_upload_payment_proof'),
+        onPay: isScheduled && _api.canDo('can_upload_payment_proof')
             ? () {
                 Navigator.pop(context);
                 _submitScheduledPayment(p);

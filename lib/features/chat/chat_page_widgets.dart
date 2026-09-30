@@ -60,7 +60,7 @@ List<Widget> buildChatMessageList({
     if (type == 'meeting' && metadata != null) {
       bubble = chatMeetingBubble(metadata, m);
     } else if (hasContract) {
-      bubble = _buildContractBubble(context, m, contract, isClient, onApprove, onGoToPayments);
+      bubble = _buildContractBubble(context, m, contract, isClient, api, onApprove, onGoToPayments);
     } else {
       bubble = _buildTextBubble(context, state, api, m, isClient, isPending, replyTo, isConsecutive, onRespondToMessage);
     }
@@ -147,6 +147,7 @@ Widget _buildContractBubble(
   Map<String, dynamic> m,
   Map<String, dynamic> contract,
   bool isClient,
+  ApiClient api,
   void Function(int contractId) onApprove,
   VoidCallback? onGoToPayments,
 ) {
@@ -173,8 +174,13 @@ Widget _buildContractBubble(
             builder: (_) => ClausesSheet(clauses: contract['clauses'] as List<dynamic>? ?? []),
           );
         },
+        // subuser-review-plan.md م٦ — approving a contract from its inline
+        // chat card maps to can_approve_contracts, same as the contracts tab.
+        // canApprove hides the button entirely (via ChatContractCard) rather
+        // than leaving it visible-but-disabled.
         onApprove: isClient && contract['status'] == 'sent' ? () => onApprove(contract['id']) : null,
         onGoToPayments: isClient && contract['status'] == 'company_approved' ? onGoToPayments : null,
+        canApprove: api.canDo('can_approve_contracts'),
       ),
     ],
   );
@@ -332,41 +338,50 @@ Widget _buildTextBubble(
                     ),
                     child: Text(AppLocalizations.of(context)!.needsYourApproval, style: const TextStyle(fontSize: 10, color: ShadColors.gold)),
                   ),
-                  IntrinsicHeight(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onRespondToMessage(m['id'], 'edit_requested'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                border: Border(top: BorderSide(color: ShadColors.chatBorder, width: 0.5)),
-                              ),
-                              child: Text(AppLocalizations.of(context)!.requestEdit, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: ShadColors.textDisabled)),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onRespondToMessage(m['id'], 'approved'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: ShadColors.chatBorder, width: 0.5),
-                                  left: BorderSide(color: ShadColors.chatBorder, width: 0.5),
+                  // subuser-review-plan.md م٦ — responding to an approval
+                  // request maps to can_respond_approvals, per the plan's
+                  // action table (same key as the approvals tab).
+                  if (api.canDo('can_respond_approvals'))
+                    IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => onRespondToMessage(m['id'], 'edit_requested'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  border: Border(top: BorderSide(color: ShadColors.chatBorder, width: 0.5)),
                                 ),
+                                child: Text(AppLocalizations.of(context)!.requestEdit, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: ShadColors.textDisabled)),
                               ),
-                              child: Text(AppLocalizations.of(context)!.approve, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: ShadColors.crimson)),
                             ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => onRespondToMessage(m['id'], 'approved'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    top: BorderSide(color: ShadColors.chatBorder, width: 0.5),
+                                    left: BorderSide(color: ShadColors.chatBorder, width: 0.5),
+                                  ),
+                                ),
+                                child: Text(AppLocalizations.of(context)!.approve, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: ShadColors.crimson)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Text(AppLocalizations.of(context)!.subuserActionNeedsOwner, style: const TextStyle(fontSize: 9.5, color: ShadColors.textDisabled)),
                     ),
-                  ),
                 ],
               ),
             ),

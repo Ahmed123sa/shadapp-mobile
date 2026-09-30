@@ -91,4 +91,35 @@ void main() {
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path == '/workspaces/5/files/9')), headers: any(named: 'headers'))).called(1);
   });
+
+  // subuser-review-plan.md م٦ — same gating as contracts_page.dart's embedded
+  // ContractDetailSheet, applied here since this modal shares the pattern.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides approve/edit buttons and shows owner-only message when can_approve_contracts is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      stubCommon(httpClient);
+
+      await pumpModal(tester, api);
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsNothing);
+      expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
+    });
+
+    testWidgets('shows approve/edit buttons when can_approve_contracts is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_approve_contracts': true};
+      stubCommon(httpClient);
+
+      await pumpModal(tester, api);
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsOneWidget);
+    });
+  });
 }

@@ -484,4 +484,60 @@ void main() {
     verifyNever(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/enter'))),
         headers: any(named: 'headers'), body: any(named: 'body')));
   });
+
+  // subuser-review-plan.md م٦ — responding to an approval request (both the
+  // pending-message flow and the contract-card flow) must respect the
+  // sub-user's specific permission, not just chat-tab visibility.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides the pending-message Approve/Request Edit buttons and shows an owner-only message when can_respond_approvals is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      final pendingMsg = msg(4, senderType: 'App\\Models\\User', senderId: 99, senderName: 'AM Manager',
+          message: 'Please approve this', requiresAction: true);
+      stubDefaultGets(httpClient, messages: [pendingMsg]);
+
+      await pumpPage(tester, api);
+
+      expect(find.text('Approve'), findsNothing);
+      expect(find.text('Request Edit'), findsNothing);
+      expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
+    });
+
+    testWidgets('shows the pending-message Approve/Request Edit buttons when can_respond_approvals is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_respond_approvals': true};
+      final pendingMsg = msg(4, senderType: 'App\\Models\\User', senderId: 99, senderName: 'AM Manager',
+          message: 'Please approve this', requiresAction: true);
+      stubDefaultGets(httpClient, messages: [pendingMsg]);
+
+      await pumpPage(tester, api);
+
+      expect(find.text('Approve'), findsOneWidget);
+      expect(find.text('Request Edit'), findsOneWidget);
+    });
+
+    testWidgets('hides the contract-card Approve button when can_approve_contracts is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.userId = 10;
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      final contractMsg = msg(3, senderType: 'App\\Models\\Client', senderId: 10, senderName: 'Ali Client',
+          contract: {'id': 7, 'status': 'sent', 'title': 'Service Agreement', 'clauses': []});
+      stubDefaultGets(httpClient, messages: [contractMsg]);
+
+      await pumpPage(tester, api);
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
+    });
+  });
 }

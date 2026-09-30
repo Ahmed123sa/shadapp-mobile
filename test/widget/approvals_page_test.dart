@@ -122,4 +122,51 @@ void main() {
     expect(find.text('No workspace selected'), findsOneWidget);
     verifyNever(() => httpClient.get(any(), headers: any(named: 'headers')));
   });
+
+  // subuser-review-plan.md م٦ — responding to an approval request maps to
+  // can_respond_approvals.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides the Approve/Request Edit buttons and shows an owner-only message when can_respond_approvals is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"approvals":[{"id":1,"title":"Q1 report","status":"pending"}]}'),
+      );
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      final provider = ApprovalProvider(repository: ApprovalRepository(api: api));
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ApprovalsPage(workspaceId: 5, approvalProvider: provider, api: api)),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsNothing);
+      expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
+    });
+
+    testWidgets('shows the Approve/Request Edit buttons when can_respond_approvals is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"approvals":[{"id":1,"title":"Q1 report","status":"pending"}]}'),
+      );
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_respond_approvals': true};
+      final provider = ApprovalProvider(repository: ApprovalRepository(api: api));
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ApprovalsPage(workspaceId: 5, approvalProvider: provider, api: api)),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsOneWidget);
+    });
+  });
 }

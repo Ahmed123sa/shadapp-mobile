@@ -1025,6 +1025,7 @@
   "attachmentSendFailed": "فشل إرسال المرفق",
   "editRequestedToast": "تم طلب التعديل",
   "actionFailed": "فشل تنفيذ الإجراء",
+  "subuserActionNeedsOwner": "الموافقة على الإجراء ده من صاحب الحساب أو مستخدم عنده الصلاحية",
   "editRequestTitle": "طلب تعديل",
   "editRequestPrompt": "اذكر التعديلات المطلوبة:",
   "editRequestHint": "مثال: عدّل ألوان التصميم...",

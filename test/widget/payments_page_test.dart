@@ -460,4 +460,84 @@ void main() {
     expect(find.text('Send Proof'), findsNothing);
     expect(idNotifier.value, isNull);
   });
+
+  // subuser-review-plan.md م٦ — uploading/re-uploading a payment proof maps
+  // to can_upload_payment_proof.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides the request-payment FAB when can_upload_payment_proof is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+        return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+      });
+
+      await pumpPage(tester, api);
+
+      expect(find.byType(FloatingActionButton), findsNothing);
+    });
+
+    testWidgets('shows the request-payment FAB when can_upload_payment_proof is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_upload_payment_proof': true};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+        return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+      });
+
+      await pumpPage(tester, api);
+
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
+
+    testWidgets('hides the re-upload button on a rejected payment when can_upload_payment_proof is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+        return jsonResponse(
+          '{"payments":[{"id":1,"amount":500,"currency":"SAR","status":"rejected","method_type":"bank_transfer","created_at":"2026-01-01T00:00:00Z"}],'
+          '"available_methods":["bank_transfer"],"tax_summary":null}',
+        );
+      });
+
+      await pumpPage(tester, api);
+
+      expect(find.text('Re-upload Payment Proof'), findsNothing);
+    });
+
+    testWidgets('hides the Pay Now button on a scheduled payment when can_upload_payment_proof is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments[0] as Uri;
+        if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+        return jsonResponse(
+          '{"payments":[{"id":9,"amount":300,"currency":"SAR","status":"scheduled","requested_by_manager":true,'
+          '"installment_label":"Installment 2"}],"available_methods":["bank_transfer"],"tax_summary":null}',
+        );
+      });
+
+      await pumpPage(tester, api);
+      await tester.tap(find.text('Installment 2').first);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ElevatedButton, 'Pay Now'), findsNothing);
+    });
+  });
 }

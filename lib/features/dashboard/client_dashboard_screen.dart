@@ -364,6 +364,11 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       final su = data['sub_user'] as Map<String, dynamic>?;
       if (su != null) {
         _subUserPermissions = Map<String, dynamic>.from(su['permissions'] as Map? ?? {});
+        // subuser-review-plan.md م٦ — mirrored onto the ApiClient singleton so
+        // every embedded tab (ContractsPage, PaymentsPage, ChatPage, ...) can
+        // gate its own action buttons via `_api.canDo(key)` without needing a
+        // new prop threaded through the whole tree.
+        _api.subUserPermissions = _subUserPermissions;
       }
     } catch (e, s) {
       // Permissions stay at their (restrictive) defaults, which is the safe

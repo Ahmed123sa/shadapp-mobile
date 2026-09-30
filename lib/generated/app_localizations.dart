@@ -5864,6 +5864,12 @@ abstract class AppLocalizations {
   /// **'Failed to execute action'**
   String get actionFailed;
 
+  /// No description provided for @subuserActionNeedsOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'This action needs approval from the account owner or a user with permission'**
+  String get subuserActionNeedsOwner;
+
   /// No description provided for @editRequestTitle.
   ///
   /// In en, this message translates to:

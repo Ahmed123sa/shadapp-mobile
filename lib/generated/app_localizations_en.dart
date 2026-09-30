@@ -2990,6 +2990,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionFailed => 'Failed to execute action';
 
   @override
+  String get subuserActionNeedsOwner =>
+      'This action needs approval from the account owner or a user with permission';
+
+  @override
   String get editRequestTitle => 'Edit Request';
 
   @override

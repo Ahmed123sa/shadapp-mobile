@@ -290,7 +290,10 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                         ]),
                       ),
                     ],
-                    if (!isCompleted && status == 'pending')
+                    // subuser-review-plan.md م٦ — responding to an approval
+                    // request maps to can_respond_approvals, per the plan's
+                    // action table.
+                    if (!isCompleted && status == 'pending' && _api.canDo('can_respond_approvals'))
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Row(children: [
@@ -320,6 +323,11 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                             ),
                           ),
                         ]),
+                      )
+                    else if (!isCompleted && status == 'pending')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
                       ),
                   ]),
                 )),

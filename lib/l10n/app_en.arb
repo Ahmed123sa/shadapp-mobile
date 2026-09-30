@@ -990,6 +990,7 @@
   "attachmentSendFailed": "Failed to send attachment",
   "editRequestedToast": "Edit requested",
   "actionFailed": "Failed to execute action",
+  "subuserActionNeedsOwner": "This action needs approval from the account owner or a user with permission",
   "editRequestTitle": "Edit Request",
   "editRequestPrompt": "Mention the required edits:",
   "editRequestHint": "Example: Edit the design colors...",

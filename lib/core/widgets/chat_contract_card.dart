@@ -12,6 +12,14 @@ class ChatContractCard extends StatefulWidget {
   final VoidCallback onViewClauses;
   final VoidCallback? onApprove;
   final VoidCallback? onGoToPayments;
+  // subuser-review-plan.md م٦ — whether the current user is allowed to
+  // approve a contract at all. Defaults to true so every existing call site
+  // (the AM-side chat tab, which never passes onApprove in the first place)
+  // is unaffected. When false, the approve button is hidden entirely rather
+  // than shown-but-disabled, matching the pattern used everywhere else in
+  // م٦ (a sub-user should never see an action it can't take, only find out
+  // via a 403 if it tries some other way).
+  final bool canApprove;
 
   const ChatContractCard({
     super.key,
@@ -21,6 +29,7 @@ class ChatContractCard extends StatefulWidget {
     required this.onViewClauses,
     this.onApprove,
     this.onGoToPayments,
+    this.canApprove = true,
   });
 
   @override
@@ -48,7 +57,8 @@ class _ChatContractCardState extends State<ChatContractCard> {
     final c = widget.contract;
     final status = c['status'] as String? ?? '';
     final clauses = c['clauses'] as List<dynamic>? ?? [];
-    final showApprove = widget.isClient && status == 'sent';
+    final showApprove = widget.isClient && status == 'sent' && widget.canApprove;
+    final showNeedsOwner = widget.isClient && status == 'sent' && !widget.canApprove;
     final showPayment = widget.isClient && (status == 'company_approved' || status == 'completed');
     final isGoldBorder = status == 'company_approved';
 
@@ -133,6 +143,11 @@ class _ChatContractCardState extends State<ChatContractCard> {
                   child: Text(l10n.approve),
                 ),
             ]),
+            if (showNeedsOwner)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
+              ),
           ],
         ),
       ),

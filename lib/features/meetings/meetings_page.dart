@@ -163,9 +163,12 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 Builder(
                   builder: (ctx) {
                     final joinStatus = getMeetingJoinStatus(m.scheduledAt!, AppLocalizations.of(ctx)!);
+                    // subuser-review-plan.md م٦ — joining a meeting maps to
+                    // can_join_meetings, per the plan's action table.
+                    final canJoin = joinStatus.canJoin && _api.canDo('can_join_meetings');
                     return SizedBox(
                       width: double.infinity,
-                      child: joinStatus.canJoin
+                      child: canJoin
                           ? OutlinedButton.icon(
                               onPressed: () async {
                                 final uri = Uri.tryParse(m.link!);
@@ -181,22 +184,33 @@ class _MeetingsPageState extends State<MeetingsPage> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(vertical: 8)),
                             )
-                          : Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: ShadColors.meetingBlueBg,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: ShadColors.meetingBlueBorder.withAlpha(80)),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.schedule, size: 14, color: ShadColors.meetingBlue),
-                                  const SizedBox(width: 6),
-                                  Text(joinStatus.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
-                                ],
-                              ),
-                            ),
+                          : joinStatus.canJoin
+                              // Time-wise this meeting could be joined, but
+                              // the sub-user lacks can_join_meetings.
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    AppLocalizations.of(ctx)!.subuserActionNeedsOwner,
+                                    style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              : Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: ShadColors.meetingBlueBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: ShadColors.meetingBlueBorder.withAlpha(80)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.schedule, size: 14, color: ShadColors.meetingBlue),
+                                      const SizedBox(width: 6),
+                                      Text(joinStatus.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
+                                    ],
+                                  ),
+                                ),
                     );
                   },
                 ),

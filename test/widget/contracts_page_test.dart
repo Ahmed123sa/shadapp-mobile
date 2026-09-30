@@ -159,4 +159,56 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/workspaces/5/files')), headers: any(named: 'headers'))).called(1);
     expect(find.text('passport.pdf'), findsOneWidget);
   });
+
+  // subuser-review-plan.md م٦ — a sub-user without can_approve_contracts
+  // must not see the approve/edit-request buttons at all.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides approve/edit buttons and shows owner-only message when can_approve_contracts is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      stubCommon(httpClient);
+
+      await pumpPage(tester, api);
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsNothing);
+      expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
+    });
+
+    testWidgets('shows approve/edit buttons when can_approve_contracts is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_approve_contracts': true};
+      stubCommon(httpClient);
+
+      await pumpPage(tester, api);
+
+      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsOneWidget);
+    });
+
+    testWidgets('hides the document upload button in the contract detail sheet when can_upload_files is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_approve_contracts': true};
+      stubCommon(
+        httpClient,
+        contractsJson: '{"contracts":[{"id":1,"title":"Villa Renovation Deal","status":"sent","value":1000,"currency":"SAR","required_documents":[{"id":10,"name":"Commercial Register","is_required":true,"files":[]}]}]}',
+      );
+
+      await pumpPage(tester, api);
+      await tester.tap(find.text('Villa Renovation Deal'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Commercial Register'), findsOneWidget);
+      expect(find.byIcon(Icons.upload_file), findsNothing);
+    });
+  });
 }

@@ -2979,6 +2979,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get actionFailed => 'فشل تنفيذ الإجراء';
 
   @override
+  String get subuserActionNeedsOwner =>
+      'الموافقة على الإجراء ده من صاحب الحساب أو مستخدم عنده الصلاحية';
+
+  @override
   String get editRequestTitle => 'طلب تعديل';
 
   @override

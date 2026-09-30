@@ -105,4 +105,44 @@ void main() {
     verifyNever(() => httpClient.get(any(), headers: any(named: 'headers')));
     expect(find.text('No meetings'), findsOneWidget);
   });
+
+  // subuser-review-plan.md م٦ — joining a meeting maps to can_join_meetings.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides the join button and shows an owner-only message when the meeting is joinable but can_join_meetings is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final joinable = DateTime.now().add(const Duration(minutes: 5)).toIso8601String();
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse(
+          '{"meetings":[{"id":1,"title":"Kickoff","status":"scheduled","scheduled_at":"$joinable","link":"https://zoom.us/j/1"}]}',
+        ),
+      );
+      final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      final provider = MeetingProvider(repository: MeetingRepository(api: api));
+
+      await pumpPage(tester, provider, api: api);
+
+      expect(find.byIcon(Icons.videocam), findsNothing);
+      expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
+    });
+
+    testWidgets('shows the join button when the meeting is joinable and can_join_meetings is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final joinable = DateTime.now().add(const Duration(minutes: 5)).toIso8601String();
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse(
+          '{"meetings":[{"id":1,"title":"Kickoff","status":"scheduled","scheduled_at":"$joinable","link":"https://zoom.us/j/1"}]}',
+        ),
+      );
+      final api = buildTestApiClient(client: httpClient)..workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_join_meetings': true};
+      final provider = MeetingProvider(repository: MeetingRepository(api: api));
+
+      await pumpPage(tester, provider, api: api);
+
+      expect(find.byIcon(Icons.videocam), findsOneWidget);
+    });
+  });
 }

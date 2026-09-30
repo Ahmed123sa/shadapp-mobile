@@ -40,6 +40,41 @@ void main() {
     expect(find.text('receipt.png'), findsOneWidget);
   });
 
+  // subuser-review-plan.md م٦ — uploading a file maps to can_upload_files.
+  group('sub-user action gating (م٦)', () {
+    testWidgets('hides the upload button when can_upload_files is missing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"files":[],"definitions":[],"paymentFiles":[]}'),
+      );
+      final provider = FileProvider(repository: FileRepository(api: api));
+
+      await pumpPage(tester, provider, api);
+
+      expect(find.text('Upload file'), findsNothing);
+    });
+
+    testWidgets('shows the upload button when can_upload_files is granted', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      api.role = 'sub_user';
+      api.subUserPermissions = {'can_upload_files': true};
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"files":[],"definitions":[],"paymentFiles":[]}'),
+      );
+      final provider = FileProvider(repository: FileRepository(api: api));
+
+      await pumpPage(tester, provider, api);
+
+      expect(find.text('Upload file'), findsOneWidget);
+    });
+  });
+
   testWidgets('shows the empty state when there are no files', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
