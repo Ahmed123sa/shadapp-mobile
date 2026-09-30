@@ -37,6 +37,18 @@ class _SubUsersPageState extends State<SubUsersPage> {
   DateTime? _newDob;
   bool get _isSubUser => _api.role == 'sub_user';
 
+  // subuser-review-plan.md م٤ — the owning client edits a sub-user's own
+  // name/email/phone/DOB, and sets a new password for them (sub-users can no
+  // longer do either themselves). Mirrors ClientSubUsers.tsx on the web.
+  int? _editingId;
+  final _editNameController = TextEditingController();
+  final _editEmailController = TextEditingController();
+  final _editPhoneController = TextEditingController();
+  DateTime? _editDob;
+  int? _passwordTargetId;
+  final _newPasswordController = TextEditingController();
+  int? _passwordSuccessId;
+
   @override
   void initState() {
     super.initState();
@@ -130,6 +142,60 @@ class _SubUsersPageState extends State<SubUsersPage> {
     }
   }
 
+  void _startEdit(dynamic user) {
+    setState(() {
+      _editingId = user['id'] as int;
+      _editNameController.text = user['name'] as String? ?? '';
+      _editEmailController.text = user['email'] as String? ?? '';
+      _editPhoneController.text = user['phone'] as String? ?? '';
+      final dob = user['date_of_birth'];
+      _editDob = dob != null ? DateTime.tryParse(dob.toString()) : null;
+    });
+  }
+
+  Future<void> _saveEdit(int id) async {
+    final l10n = AppLocalizations.of(context)!;
+    final body = <String, dynamic>{
+      'name': _editNameController.text.trim(),
+      'email': _editEmailController.text.trim(),
+      'phone': _editPhoneController.text.trim(),
+    };
+    if (_editDob != null) body['date_of_birth'] = _editDob!.toIso8601String().substring(0, 10);
+    try {
+      final data = await _subUserProvider.updateProfile(id, body);
+      final idx = _subUsers.indexWhere((u) => u['id'] == id);
+      if (idx != -1) {
+        setState(() {
+          _subUsers[idx] = {..._subUsers[idx] as Map, ...(data['sub_user'] as Map? ?? {})};
+          _editingId = null;
+        });
+      } else {
+        setState(() => _editingId = null);
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+    }
+  }
+
+  Future<void> _savePassword(int id) async {
+    final l10n = AppLocalizations.of(context)!;
+    final password = _newPasswordController.text.trim();
+    if (password.isEmpty) return;
+    try {
+      await _subUserProvider.setPassword(id, password);
+      setState(() {
+        _passwordTargetId = null;
+        _newPasswordController.clear();
+        _passwordSuccessId = id;
+      });
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted && _passwordSuccessId == id) setState(() => _passwordSuccessId = null);
+      });
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_passwordChangeFailed)));
+    }
+  }
+
   Map<String, dynamic> _getPermissions(dynamic user) {
     try {
       return Map<String, dynamic>.from(user['permissions'] as Map);
@@ -169,6 +235,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _editNameController.dispose();
+    _editEmailController.dispose();
+    _editPhoneController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
   }
 
@@ -246,42 +316,133 @@ class _SubUsersPageState extends State<SubUsersPage> {
           EmptyState(icon: Icons.people_outline, title: l10n.subusers_noUsers)
         else
           ..._subUsers.map((u) {
-            final isExpanded = _expandedId == u['id'];
+            final id = u['id'] as int;
+            final isExpanded = _expandedId == id;
+            final isEditing = _editingId == id;
             final permissions = _getPermissions(u);
             final activeCount = permissions.values.where((v) => v == true).length;
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: Column(
                 children: [
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: ShadColors.black,
-                      child: Text(_initials(u['name'] as String? ?? '?'),
-                          style: const TextStyle(color: ShadColors.gold, fontWeight: FontWeight.bold)),
-                    ),
-                    title: Text(u['name'] ?? '', style: ShadTypography.cardTitle),
-                    subtitle: Text(
-                      '${u['email'] ?? ''} · ${l10n.subusers_permissionsCount(activeCount)}/11',
-                      style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: ShadColors.textSecondary,
-                          ),
-                          onPressed: () => setState(() => _expandedId = isExpanded ? null : u['id']),
+                  if (isEditing) ...[
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(children: [
+                        TextField(
+                          controller: _editNameController,
+                          decoration: InputDecoration(labelText: l10n.subusers_name),
                         ),
-                        if (!_isSubUser)
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, color: ShadColors.error, size: 20),
-                            onPressed: () => _delete(u['id']),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _editEmailController,
+                          decoration: InputDecoration(labelText: l10n.subusers_email),
+                          keyboardType: TextInputType.emailAddress,
+                          textDirection: TextDirection.ltr,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _editPhoneController,
+                          decoration: InputDecoration(labelText: l10n.subusers_phone),
+                          keyboardType: TextInputType.phone,
+                          textDirection: TextDirection.ltr,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _saveEdit(id),
+                              child: Text(l10n.subusers_save),
+                            ),
                           ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => setState(() => _editingId = null),
+                              child: Text(l10n.subusers_cancel),
+                            ),
+                          ),
+                        ]),
+                      ]),
                     ),
-                  ),
+                  ] else
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: ShadColors.black,
+                        child: Text(_initials(u['name'] as String? ?? '?'),
+                            style: const TextStyle(color: ShadColors.gold, fontWeight: FontWeight.bold)),
+                      ),
+                      title: Text(u['name'] ?? '', style: ShadTypography.cardTitle),
+                      subtitle: Text(
+                        '${u['email'] ?? ''} · ${l10n.subusers_permissionsCount(activeCount)}/11',
+                        style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!_isSubUser)
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: ShadColors.textSecondary, size: 20),
+                              tooltip: l10n.subusers_edit,
+                              onPressed: () => _startEdit(u),
+                            ),
+                          if (!_isSubUser)
+                            IconButton(
+                              icon: const Icon(Icons.lock_reset, color: ShadColors.textSecondary, size: 20),
+                              tooltip: l10n.subusers_setPassword,
+                              onPressed: () => setState(() {
+                                _passwordTargetId = id;
+                                _newPasswordController.clear();
+                              }),
+                            ),
+                          IconButton(
+                            icon: Icon(
+                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                              color: ShadColors.textSecondary,
+                            ),
+                            onPressed: () => setState(() => _expandedId = isExpanded ? null : id),
+                          ),
+                          if (!_isSubUser)
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: ShadColors.error, size: 20),
+                              onPressed: () => _delete(id),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (_passwordSuccessId == id)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Text(l10n.subusers_passwordChanged, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
+                    ),
+                  if (_passwordTargetId == id) ...[
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(children: [
+                        PasswordField(controller: _newPasswordController, hintText: l10n.subusers_newPasswordHint, showRequirements: false),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _savePassword(id),
+                              child: Text(l10n.subusers_save),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => setState(() {
+                                _passwordTargetId = null;
+                                _newPasswordController.clear();
+                              }),
+                              child: Text(l10n.subusers_cancel),
+                            ),
+                          ),
+                        ]),
+                      ]),
+                    ),
+                  ],
                   if (isExpanded && !_isSubUser) ...[
                     const Divider(height: 1),
                     Padding(

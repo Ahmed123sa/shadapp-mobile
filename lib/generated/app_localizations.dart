@@ -2276,6 +2276,12 @@ abstract class AppLocalizations {
   /// **'Phone'**
   String get settings_phone;
 
+  /// No description provided for @settings_contactOwnerForEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'To change your email or password, contact the account owner'**
+  String get settings_contactOwnerForEmail;
+
   /// No description provided for @settings_dateOfBirth.
   ///
   /// In en, this message translates to:
@@ -2605,6 +2611,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sub-users'**
   String get subusers_noUsers;
+
+  /// No description provided for @subusers_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get subusers_edit;
+
+  /// No description provided for @subusers_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get subusers_phone;
+
+  /// No description provided for @subusers_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get subusers_save;
+
+  /// No description provided for @subusers_setPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Set new password'**
+  String get subusers_setPassword;
+
+  /// No description provided for @subusers_newPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get subusers_newPasswordHint;
+
+  /// No description provided for @subusers_passwordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed, and the user was signed out of all devices'**
+  String get subusers_passwordChanged;
+
+  /// No description provided for @subusers_passwordChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change the password'**
+  String get subusers_passwordChangeFailed;
 
   /// No description provided for @subusers_permissionsCount.
   ///

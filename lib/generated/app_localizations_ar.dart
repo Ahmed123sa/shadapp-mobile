@@ -1130,6 +1130,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_phone => 'رقم الهاتف';
 
   @override
+  String get settings_contactOwnerForEmail =>
+      'لتغيير الإيميل أو الباسورد تواصل مع صاحب الحساب';
+
+  @override
   String get settings_dateOfBirth => 'تاريخ الميلاد';
 
   @override
@@ -1295,6 +1299,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get subusers_noUsers => 'لا يوجد مستخدمون فرعيون';
+
+  @override
+  String get subusers_edit => 'تعديل';
+
+  @override
+  String get subusers_phone => 'رقم الهاتف';
+
+  @override
+  String get subusers_save => 'حفظ';
+
+  @override
+  String get subusers_setPassword => 'تعيين كلمة مرور جديدة';
+
+  @override
+  String get subusers_newPasswordHint => 'كلمة المرور الجديدة';
+
+  @override
+  String get subusers_passwordChanged =>
+      'تم تغيير كلمة المرور، وتم تسجيل خروج المستخدم من كل الأجهزة';
+
+  @override
+  String get subusers_passwordChangeFailed => 'فشل تغيير كلمة المرور';
 
   @override
   String subusers_permissionsCount(Object count) {

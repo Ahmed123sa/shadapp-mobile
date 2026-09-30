@@ -37,4 +37,15 @@ class SubUserRepository {
   /// to confirm what the server actually persisted.
   Future<Map<String, dynamic>> updatePermissions(int id, Map<String, dynamic> permissions) =>
       _api.patch('/sub-users/$id/permissions', {'permissions': permissions});
+
+  /// subuser-review-plan.md م٤ — the client (never the sub-user themself) can
+  /// edit the sub-user's own name/email/phone/DOB here.
+  Future<Map<String, dynamic>> updateProfile(int id, Map<String, dynamic> body) =>
+      _api.put('/sub-users/$id/profile', body);
+
+  /// subuser-review-plan.md م٤ — sub-users can no longer change their own
+  /// password (SubUserPolicy::changePassword only allows the owning
+  /// client), so the client sets it here instead.
+  Future<void> setPassword(int id, String password) =>
+      _api.patch('/sub-users/$id/password', {'password': password});
 }

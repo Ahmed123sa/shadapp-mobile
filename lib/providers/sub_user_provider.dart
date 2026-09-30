@@ -19,4 +19,9 @@ class SubUserProvider {
 
   Future<Map<String, dynamic>> updatePermissions(int id, Map<String, dynamic> permissions) =>
       _repo.updatePermissions(id, permissions);
+
+  Future<Map<String, dynamic>> updateProfile(int id, Map<String, dynamic> body) =>
+      _repo.updateProfile(id, body);
+
+  Future<void> setPassword(int id, String password) => _repo.setPassword(id, password);
 }

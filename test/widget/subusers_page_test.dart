@@ -162,4 +162,66 @@ void main() {
     verify(() => httpClient.patch(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users/1/permissions'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  // subuser-review-plan.md م٤ — the owning client can edit a sub-user's own
+  // name/email/phone/DOB here (PUT /sub-users/:id/profile).
+  testWidgets('editing a sub-user PUTs to /sub-users/:id/profile and updates the row', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'client';
+    api.userId = 9;
+    stubGets(httpClient, '{"sub_users":[{"id":1,"name":"Sub One","email":"sub1@x.com","permissions":{}}]}');
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{"sub_user":{"name":"Sub One Updated"}}');
+    });
+    final provider = SubUserProvider(repository: SubUserRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'Sub One Updated');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!['name'], 'Sub One Updated');
+    verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users/1/profile'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+    expect(find.text('Sub One Updated'), findsOneWidget);
+  });
+
+  // subuser-review-plan.md م٤ — sub-users can no longer change their own
+  // password, so the client sets a new one here (PATCH /sub-users/:id/password).
+  testWidgets('setting a new password PATCHes /sub-users/:id/password and shows a success message', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'client';
+    api.userId = 9;
+    stubGets(httpClient, '{"sub_users":[{"id":1,"name":"Sub One","email":"sub1@x.com","permissions":{}}]}');
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.patch(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+    final provider = SubUserProvider(repository: SubUserRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+    await tester.tap(find.byIcon(Icons.lock_reset));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField), 'NewPass123');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!['password'], 'NewPass123');
+    verify(() => httpClient.patch(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users/1/password'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+    expect(find.text('Password changed, and the user was signed out of all devices'), findsOneWidget);
+
+    // Flush the 4s Future.delayed that clears the success message, so no
+    // timer is left pending when the widget tree is disposed at test end.
+    await tester.pump(const Duration(seconds: 5));
+  });
 }

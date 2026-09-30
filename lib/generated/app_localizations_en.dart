@@ -1132,6 +1132,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_phone => 'Phone';
 
   @override
+  String get settings_contactOwnerForEmail =>
+      'To change your email or password, contact the account owner';
+
+  @override
   String get settings_dateOfBirth => 'Date of Birth';
 
   @override
@@ -1298,6 +1302,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subusers_noUsers => 'No sub-users';
+
+  @override
+  String get subusers_edit => 'Edit';
+
+  @override
+  String get subusers_phone => 'Phone';
+
+  @override
+  String get subusers_save => 'Save';
+
+  @override
+  String get subusers_setPassword => 'Set new password';
+
+  @override
+  String get subusers_newPasswordHint => 'New password';
+
+  @override
+  String get subusers_passwordChanged =>
+      'Password changed, and the user was signed out of all devices';
+
+  @override
+  String get subusers_passwordChangeFailed => 'Failed to change the password';
 
   @override
   String subusers_permissionsCount(Object count) {

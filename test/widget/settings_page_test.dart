@@ -6,11 +6,20 @@ import 'package:shadapp_client/data/settings_repository.dart';
 import 'package:shadapp_client/features/settings/settings_page.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'package:shadapp_client/providers/settings_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/mock_http_client.dart';
 
 void main() {
   setUpAll(() {
     registerFallbackValue(Uri.parse('http://localhost'));
+  });
+
+  // The sub_user save path calls ApiClient.setUserData(), which reads
+  // SharedPreferences.getInstance() — without a mock, that platform channel
+  // call never resolves in the test environment and pumpAndSettle() times
+  // out waiting for it (same fix used in login_page_test.dart).
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
   Future<void> pumpPage(WidgetTester tester, SettingsProvider provider, dynamic api) async {
@@ -81,6 +90,43 @@ void main() {
 
     expect(sentBody!['contact_person'], 'Sara Updated');
     verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/profile'))),
+        headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+  });
+
+  // subuser-review-plan.md م٤ — email is the sub-user's login; only the
+  // owning client can change it (SubUserController::updateProfile 403s a
+  // sub-user who tries). The field must be disabled and never sent, even
+  // though the value is still loaded and shown for reference.
+  testWidgets('sub_user role: email field is disabled and never sent when saving the profile', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'sub_user';
+    api.subUserId = 3;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"sub_user":{"id":3,"name":"Employee","email":"sub@acme.com","phone":"0500000000"}}'),
+    );
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+    final provider = SettingsProvider(repository: SettingsRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+    expect(fields[1].enabled, isFalse);
+
+    final saveButton = find.widgetWithText(ElevatedButton, 'Save');
+    await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(sentBody, isNotNull);
+    expect(sentBody!.containsKey('email'), isFalse);
+    expect(sentBody!['phone'], '0500000000');
+    verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users/3/profile'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 }

@@ -125,9 +125,15 @@ class _SettingsPageState extends State<SettingsPage> {
       if (_isSubUser) {
         final sid = _api.subUserId;
         if (sid == null) return;
+        // subuser-review-plan.md م٤ — email is the sub-user's login; only the
+        // owning client can change it (SubUserController::updateProfile
+        // 403s a sub-user who tries). It used to be sent here unconditionally,
+        // which meant an unchanged value would round-trip harmlessly today
+        // but any edit to the (still-editable) field below would 403 the
+        // whole save. The field itself is now read-only, and 'email' is
+        // dropped from this payload entirely.
         final body = <String, dynamic>{
           'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
           'phone': _phoneController.text.trim(),
         };
         if (_dateOfBirth != null) body['date_of_birth'] = _dateOfBirth!.toIso8601String().substring(0, 10);
@@ -196,6 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
           if (_isSubUser) ...[
             TextField(
               controller: _emailController,
+              enabled: false,
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(
@@ -203,7 +210,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 hintText: 'email@example.com',
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                l10n.settings_contactOwnerForEmail,
+                style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled),
+              ),
+            ),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
