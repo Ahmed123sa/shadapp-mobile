@@ -82,6 +82,32 @@ void main() {
     expect(find.text('Sara Ali'), findsNothing);
   });
 
+  testWidgets('returning from the manage screen reloads the list', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    var calls = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async {
+      calls++;
+      return jsonResponse(calls == 1
+          ? '{"managers":[{"id":1,"name":"Sara Ali","email":"sara@x.com"}]}'
+          : '{"managers":[{"id":1,"name":"Sara Ali","email":"sara@x.com"},{"id":2,"name":"New Manager","email":"new@x.com"}]}');
+    });
+    final provider = ManagerProvider(repository: ManagerRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+    expect(find.text('New Manager'), findsNothing);
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    expect(find.text('MANAGERS_PAGE'), findsOneWidget);
+
+    // Back from the manage screen.
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Manager'), findsOneWidget);
+  });
+
   testWidgets('tapping a manager card navigates to its detail route', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

@@ -82,7 +82,14 @@ class _SaTeamPageState extends State<SaTeamPage> {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => context.push('/am/managers'),
+                    // The manage screen is where managers get created/edited/
+                    // deactivated. This tab stays mounted underneath it, so
+                    // without reloading on return the list showed stale data
+                    // until a manual pull-to-refresh.
+                    onTap: () async {
+                      await context.push('/am/managers');
+                      if (mounted) _load();
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: ShadColors.gold.withAlpha(20), borderRadius: BorderRadius.circular(8)),
