@@ -57,6 +57,37 @@ class ApiClient {
 
   bool get isAssistant => role == 'manager_assistant';
 
+  // STAFF_TEAMS_PLAN.md ف١: the super admin can let a specific account manager
+  // company-approve contracts. Persisted so the button is right on a cold start;
+  // refreshed from /auth/me on every dashboard load. The backend
+  // (ContractPolicy::companyApprove) is the real gate.
+  bool canApproveContracts = false;
+
+  /// Whether this user may company-approve a contract: always the super
+  /// admin, or an account manager the super admin granted the permission to.
+  bool get canCompanyApprove =>
+      role == 'super_admin' || (role == 'account_manager' && canApproveContracts);
+
+  Future<void> setCanApproveContracts(bool value) async {
+    canApproveContracts = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('can_approve_contracts', value);
+  }
+
+  /// Re-reads the manager's contract-approval permission. No-op for everyone
+  /// else; on failure keeps what is stored (the API still enforces).
+  Future<void> refreshContractApproval() async {
+    if (role != 'account_manager') return;
+    try {
+      final res = await get('/auth/me');
+      final user = res['user'] as Map<String, dynamic>?;
+      final flag = user?['can_approve_contracts'];
+      if (flag is bool) await setCanApproveContracts(flag);
+    } catch (e, s) {
+      AppLog.error('api_client.refreshContractApproval', e, s);
+    }
+  }
+
   // Company staff members (STAFF_TEAMS_PLAN.md): employees assigned to
   // specific clients. They chat, send approval requests and join meetings —
   // nothing else. The backend (restrict.roles) is the real gate.
@@ -141,6 +172,7 @@ class ApiClient {
     workspaceId = prefs.getInt('workspace_id');
     userName = prefs.getString('user_name');
     avatarUrl = prefs.getString('avatar_url');
+    canApproveContracts = prefs.getBool('can_approve_contracts') ?? false;
     final rawPerms = prefs.getString('assistant_permissions');
     if (rawPerms != null) {
       try {
@@ -171,6 +203,7 @@ class ApiClient {
     userName = null;
     avatarUrl = null;
     assistantPermissions = {};
+    canApproveContracts = false;
     await _secureStorage.delete(key: 'token');
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('role');
@@ -180,6 +213,7 @@ class ApiClient {
     await prefs.remove('user_name');
     await prefs.remove('avatar_url');
     await prefs.remove('assistant_permissions');
+    await prefs.remove('can_approve_contracts');
   }
 
   Future<void> setRole(String value) async {

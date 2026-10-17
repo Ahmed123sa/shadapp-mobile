@@ -376,7 +376,9 @@ class _ContractsTabState extends State<ContractsTab> {
     final Map<String, List<String>> actionsForStatus = {
       'draft': ['send'],
       'edit_requested': ['send'],
-      if (isSA) 'client_approved': ['company-approve'],
+      // The super admin always can; an account manager only when the super
+      // admin granted can_approve_contracts (STAFF_TEAMS_PLAN.md ف١).
+      if (_api.canCompanyApprove) 'client_approved': ['company-approve'],
       if (isSA) 'company_approved': [],
       if (!isSA) 'company_approved': ['archive'],
     };
@@ -398,8 +400,8 @@ class _ContractsTabState extends State<ContractsTab> {
               final rawActions = actionsForStatus[c['status']] ?? [];
               final actions = rawActions.where((a) {
                 if (isSA) return a == 'company-approve' || a == 'complete';
-                if (!canManage) return false;
-                return a != 'company-approve';
+                if (a == 'company-approve') return _api.canCompanyApprove;
+                return canManage;
               }).toList();
               final editable = c['status'] == 'draft' || c['status'] == 'edit_requested';
               return GestureDetector(

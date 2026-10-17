@@ -147,6 +147,7 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     await _api.refreshAssistantPermissions();
+    await _api.refreshContractApproval();
     try {
       if (_isSA) {
         _allManagers = await _childManagerProvider.fetchAllManagersRaw();

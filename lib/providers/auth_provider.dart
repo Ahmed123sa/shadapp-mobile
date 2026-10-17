@@ -156,6 +156,9 @@ class AuthProvider extends ChangeNotifier {
         if (role == 'manager_assistant') {
           await _api.setAssistantPermissions(user['assistant_permissions'] as Map<String, dynamic>?);
         }
+        if (role == 'account_manager') {
+          await _api.setCanApproveContracts(user['can_approve_contracts'] == true);
+        }
         _role = role;
         _userName = user['name'] as String?;
       }

@@ -129,4 +129,41 @@ void main() {
           body: any(named: 'body'),
         )).called(1);
   });
+
+  const clientApproved =
+      '{"contracts":[{"id":1,"title":"Renovation Deal","status":"client_approved","value":500,"currency":"SAR"}]}';
+
+  testWidgets('a manager without the approval permission gets no Company Approve button', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    stubCommon(httpClient, contractsJson: clientApproved);
+
+    await pumpTab(tester, api);
+
+    expect(find.text('Renovation Deal'), findsOneWidget);
+    expect(find.text('Company Approve'), findsNothing);
+  });
+
+  testWidgets('a manager the super admin granted the permission to can company-approve', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    api.canApproveContracts = true;
+    stubCommon(httpClient, contractsJson: clientApproved);
+
+    await pumpTab(tester, api);
+
+    await tester.tap(find.text('Company Approve'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Jane Doe');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Confirm'));
+    await tester.pumpAndSettle();
+
+    verify(() => httpClient.post(
+          any(that: predicate<Uri>((u) => u.path == '/contracts/1/company-approve')),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        )).called(1);
+  });
 }

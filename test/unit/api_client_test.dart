@@ -149,6 +149,66 @@ void main() {
     });
   });
 
+  group('contract approval permission', () {
+    test('the super admin always may company-approve; a manager only when granted', () {
+      final api = buildClient();
+      api.role = 'super_admin';
+      expect(api.canCompanyApprove, true);
+      api.role = 'account_manager';
+      expect(api.canCompanyApprove, false);
+      api.canApproveContracts = true;
+      expect(api.canCompanyApprove, true);
+    });
+
+    test('nobody else may, even with the flag set', () {
+      final api = buildClient();
+      api.canApproveContracts = true;
+      for (final role in ['manager_assistant', 'staff_member', 'client', 'sub_user']) {
+        api.role = role;
+        expect(api.canCompanyApprove, false, reason: role);
+      }
+    });
+
+    test('setCanApproveContracts persists, init() reads it back and clearToken forgets it', () async {
+      SharedPreferences.setMockInitialValues({'role': 'account_manager'});
+      final api = buildClient();
+      await api.setCanApproveContracts(true);
+
+      final fresh = buildClient();
+      await fresh.init();
+      expect(fresh.canApproveContracts, true);
+
+      await fresh.clearToken();
+      expect(fresh.canApproveContracts, false);
+    });
+
+    test('refreshContractApproval copies the flag from /auth/me for a manager', () async {
+      final api = buildClient();
+      api.role = 'account_manager';
+      when(() => client.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => http.Response('{"user":{"id":5,"can_approve_contracts":true}}', 200),
+      );
+      await api.refreshContractApproval();
+      expect(api.canCompanyApprove, true);
+    });
+
+    test('refreshContractApproval keeps the old value when the request fails', () async {
+      final api = buildClient();
+      api.role = 'account_manager';
+      api.canApproveContracts = true;
+      when(() => client.get(any(), headers: any(named: 'headers'))).thenThrow(Exception('offline'));
+      await api.refreshContractApproval();
+      expect(api.canCompanyApprove, true);
+    });
+
+    test('refreshContractApproval does not call the API for other roles', () async {
+      final api = buildClient();
+      api.role = 'super_admin';
+      await api.refreshContractApproval();
+      verifyNever(() => client.get(any(), headers: any(named: 'headers')));
+    });
+  });
+
   group('get()', () {
     test('sends Accept and Authorization headers built from the stored token', () async {
       final api = buildClient(token: 'abc123');
