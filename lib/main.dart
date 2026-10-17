@@ -91,7 +91,7 @@ void main() async {
     initialLocation = '/login';
   } else {
     final role = await api.getRole();
-    initialLocation = (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
+    initialLocation = homeLocationForRole(role);
   }
   router = createRouter(api, initialLocation: initialLocation);
   // Only fires on a server-forced 401 (see api_client.dart's onSessionExpired

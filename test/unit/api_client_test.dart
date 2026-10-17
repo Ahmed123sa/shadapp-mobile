@@ -82,6 +82,18 @@ void main() {
       expect(api.canDo('can_manage_meetings'), false);
     });
 
+    test('a company staff member may only view clients and chat', () {
+      final api = buildClient();
+      api.role = 'staff_member';
+      expect(api.isStaffMember, true);
+      expect(api.isAssistant, false);
+      expect(api.canDo('can_view_clients'), true);
+      expect(api.canDo('can_chat'), true);
+      for (final key in ['can_edit_clients', 'can_manage_contracts', 'can_manage_meetings', 'can_view_files', 'can_review_files', 'can_manage_approvals']) {
+        expect(api.canDo(key), false, reason: key);
+      }
+    });
+
     test('an assistant with no stored permissions can do nothing but view clients', () {
       final api = buildClient();
       api.role = 'manager_assistant';

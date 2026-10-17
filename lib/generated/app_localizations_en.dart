@@ -5424,4 +5424,132 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signatureDrawSignature => 'Draw Signature';
+
+  @override
+  String get workspaceTabTeam => 'Team';
+
+  @override
+  String get staffRoleLabel => 'Staff member';
+
+  @override
+  String get staffNavTitle => 'Company staff';
+
+  @override
+  String get staffManageButton => 'Staff';
+
+  @override
+  String get staffMyClientsTitle => 'My clients';
+
+  @override
+  String get staffMyClientsEmpty => 'No clients are assigned to you yet.';
+
+  @override
+  String get staffSearchHint => 'Search clients';
+
+  @override
+  String get staffEmpty => 'No staff members yet.';
+
+  @override
+  String get staffAdd => 'Add staff member';
+
+  @override
+  String get staffEditAction => 'Edit';
+
+  @override
+  String get staffFieldName => 'Name';
+
+  @override
+  String get staffFieldEmail => 'Email';
+
+  @override
+  String get staffFieldPhone => 'Phone';
+
+  @override
+  String get staffFieldDob => 'Date of birth';
+
+  @override
+  String get staffFieldPassword => 'Password';
+
+  @override
+  String get staffSendEmail => 'Email the login details';
+
+  @override
+  String get staffSaveAction => 'Save';
+
+  @override
+  String get staffChangePassword => 'Change password';
+
+  @override
+  String get staffArchiveAction => 'Archive';
+
+  @override
+  String get staffUnarchiveAction => 'Unarchive';
+
+  @override
+  String get staffArchiveConfirm =>
+      'Archive this staff member? They will be signed out and lose access immediately.';
+
+  @override
+  String get staffUnarchiveConfirm =>
+      'Restore this staff member? They will be able to log in again.';
+
+  @override
+  String get staffShowArchived => 'Show archived';
+
+  @override
+  String get staffClientsLabel => 'Clients';
+
+  @override
+  String get staffNoClients => 'Not assigned to any client yet.';
+
+  @override
+  String get staffLoadFailed => 'Could not load the staff list.';
+
+  @override
+  String get staffSaveFailed => 'Could not save the changes.';
+
+  @override
+  String get staffCreatedMsg => 'Staff member added.';
+
+  @override
+  String get staffUpdatedMsg => 'Staff member updated.';
+
+  @override
+  String get staffArchivedMsg => 'Staff member archived.';
+
+  @override
+  String get staffUnarchivedMsg => 'Staff member restored.';
+
+  @override
+  String get staffPasswordChangedMsg =>
+      'Password changed. The staff member was signed out.';
+
+  @override
+  String get staffArchivedBadge => 'Archived';
+
+  @override
+  String get teamTabHint =>
+      'Choose which company staff members work on this client. They can chat, send approval requests and join meetings for this client only.';
+
+  @override
+  String get teamTabEmpty =>
+      'There are no active staff members yet. The super admin adds them from the Staff screen.';
+
+  @override
+  String get teamTabAssign => 'Assign';
+
+  @override
+  String get teamTabUnassign => 'Remove';
+
+  @override
+  String get teamTabLoadFailed => 'Could not load the team.';
+
+  @override
+  String get teamTabSaveFailed => 'Could not update the team.';
+
+  @override
+  String get teamTabAssignedLabel => 'Assigned';
+
+  @override
+  String get staffClientsLoadFailed => 'Could not load your clients.';
 }

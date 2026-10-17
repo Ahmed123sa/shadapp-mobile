@@ -25,6 +25,10 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _loading = true;
   bool _saving = false;
   String? _avatarUrl;
+  // Company staff also keep a birth date here (STAFF_TEAMS_PLAN.md); everyone
+  // else's profile screen is unchanged.
+  String? _dob;
+  bool get _isStaff => _api.role == 'staff_member';
 
   @override
   void initState() {
@@ -44,6 +48,8 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = data['user'] as Map<String, dynamic>? ?? {};
       _nameController.text = (user['name'] as String? ?? '');
       _avatarUrl = user['avatar_url'] as String?;
+      final dob = user['date_of_birth'] as String?;
+      _dob = (dob == null || dob.isEmpty) ? null : dob.substring(0, dob.length < 10 ? dob.length : 10);
     } catch (e, s) {
       AppLog.error('profile_page._load', e, s);
     }
@@ -63,10 +69,28 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _pickDob() async {
+    final initial = DateTime.tryParse(_dob ?? '') ?? DateTime(1990, 1, 1);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+    );
+    if (picked == null) return;
+    final mm = picked.month.toString().padLeft(2, '0');
+    final dd = picked.day.toString().padLeft(2, '0');
+    setState(() => _dob = '${picked.year}-$mm-$dd');
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _authProvider.updateProfile(name: _nameController.text.trim());
+      if (_isStaff) {
+        await _authProvider.updateProfileRaw({'name': _nameController.text.trim(), 'date_of_birth': _dob});
+      } else {
+        await _authProvider.updateProfile(name: _nameController.text.trim());
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_saved)])));
         Navigator.pop(context, true);
@@ -118,6 +142,17 @@ class _ProfilePageState extends State<ProfilePage> {
               hintText: l10n.profile_displayNameHint,
             ),
           ),
+          if (_isStaff) ...[
+            const SizedBox(height: 16),
+            ListTile(
+              key: const ValueKey('profile-dob'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.cake_outlined),
+              title: Text(l10n.staffFieldDob),
+              subtitle: Text(_dob ?? '—'),
+              onTap: _pickDob,
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,

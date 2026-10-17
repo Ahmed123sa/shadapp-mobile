@@ -63,7 +63,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   String? _resolveRoute(String? role, String? workspaceId, String? clientId, String? type) {
-    final isAdmin = role == 'account_manager' || role == 'super_admin' || role == 'manager_assistant';
+    final isStaffMember = role == 'staff_member';
+    final isAdmin = role == 'account_manager' || role == 'super_admin' || role == 'manager_assistant' || isStaffMember;
     if (isAdmin && workspaceId != null && workspaceId.isNotEmpty) {
       // plans/notifications-badges-toasts-plan.md ن14 — this used to have
       // its own private _tabIndexForType(), which mapped 'workspace_*' types
@@ -72,9 +73,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
       // falling through to chat. Now both branches share the one mapping.
       return '/am/workspace/$workspaceId?tab=${fcmTabIndex(type)}';
     }
-    if (isAdmin && clientId != null && clientId.isNotEmpty) {
+    // Staff have no client detail screen — only the workspace above.
+    if (isAdmin && !isStaffMember && clientId != null && clientId.isNotEmpty) {
       return '/am/clients/$clientId';
     }
+    if (isStaffMember) return '/staff/dashboard';
     if (isAdmin) return '/am/dashboard';
     return '/dashboard?tab=${fcmTabIndex(type, isClient: true)}';
   }

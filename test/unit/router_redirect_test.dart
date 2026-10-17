@@ -123,4 +123,62 @@ void main() {
       expect(await resolveAuthRedirect(api, '/am/clients/create'), null);
     });
   });
+
+  group('company staff member', () {
+    test('lands on the staff dashboard from a public route', () async {
+      final api = buildClient(token: 't', role: 'staff_member');
+      expect(await resolveAuthRedirect(api, '/login'), '/staff/dashboard');
+    });
+
+    test('can open their dashboard, a client workspace, notifications and profile', () async {
+      final api = buildClient(token: 't', role: 'staff_member');
+      for (final path in ['/staff/dashboard', '/am/workspace/7', '/notifications', '/profile']) {
+        expect(await resolveAuthRedirect(api, path), null, reason: path);
+      }
+    });
+
+    test('is bounced from every other staff screen', () async {
+      final api = buildClient(token: 't', role: 'staff_member');
+      for (final path in [
+        '/am/dashboard',
+        '/am/reports',
+        '/am/audit-logs',
+        '/am/managers',
+        '/am/clients/create',
+        '/am/clients/5',
+        '/am/settings',
+        '/am/staff',
+        '/dashboard',
+        '/settings',
+        '/signature',
+      ]) {
+        expect(await resolveAuthRedirect(api, path), '/staff/dashboard', reason: path);
+      }
+    });
+
+    test('their dashboard is closed to everyone else', () async {
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'client'), '/staff/dashboard'), '/dashboard');
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'account_manager'), '/staff/dashboard'), '/am/dashboard');
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'manager_assistant'), '/staff/dashboard'), '/am/dashboard');
+    });
+
+    test('the staff management screen is the super admin\'s alone', () async {
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'super_admin'), '/am/staff'), null);
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'account_manager'), '/am/staff'), '/am/dashboard');
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'manager_assistant'), '/am/staff'), '/am/dashboard');
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'client'), '/am/staff'), '/dashboard');
+    });
+  });
+
+  group('homeLocationForRole', () {
+    test('maps every role to its home', () {
+      expect(homeLocationForRole('client'), '/dashboard');
+      expect(homeLocationForRole('sub_user'), '/dashboard');
+      expect(homeLocationForRole('staff_member'), '/staff/dashboard');
+      expect(homeLocationForRole('super_admin'), '/am/dashboard');
+      expect(homeLocationForRole('account_manager'), '/am/dashboard');
+      expect(homeLocationForRole('manager_assistant'), '/am/dashboard');
+      expect(homeLocationForRole(null), '/am/dashboard');
+    });
+  });
 }

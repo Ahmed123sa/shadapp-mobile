@@ -8,6 +8,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
+import '../../core/router.dart' show homeLocationForRole;
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 
@@ -193,8 +194,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       );
 
       if (!mounted) return;
-      final isClient = _authProvider.role == 'client' || _authProvider.role == 'sub_user';
-      context.go(isClient ? '/dashboard' : '/am/dashboard');
+      context.go(homeLocationForRole(_authProvider.role));
     } on ValidationException {
       // The only case that genuinely means the email/password were rejected.
       _error.value = l10n.invalidCredentialsMessage;

@@ -57,7 +57,15 @@ class ApiClient {
 
   bool get isAssistant => role == 'manager_assistant';
 
+  // Company staff members (STAFF_TEAMS_PLAN.md): employees assigned to
+  // specific clients. They chat, send approval requests and join meetings —
+  // nothing else. The backend (restrict.roles) is the real gate.
+  bool get isStaffMember => role == 'staff_member';
+
   bool canDo(String key) {
+    if (isStaffMember) {
+      return key == 'can_view_clients' || key == 'can_chat';
+    }
     if (isAssistant) {
       if (key == 'can_view_clients') return true;
       return assistantPermissions[key] == true;

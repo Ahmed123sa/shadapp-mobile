@@ -81,6 +81,22 @@ class _SaTeamPageState extends State<SaTeamPage> {
                     child: Text('${_managers.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
                   ),
                   const Spacer(),
+                  // Company staff (STAFF_TEAMS_PLAN.md) — a separate list from
+                  // the account managers below.
+                  GestureDetector(
+                    key: const ValueKey('sa-team-staff-button'),
+                    onTap: () => context.push('/am/staff'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      margin: const EdgeInsetsDirectional.only(end: 8),
+                      decoration: BoxDecoration(color: ShadColors.gold.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+                      child: Row(children: [
+                        const Icon(Icons.badge_outlined, size: 12, color: ShadColors.gold),
+                        const SizedBox(width: 4),
+                        Text(l10n.staffManageButton, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
+                      ]),
+                    ),
+                  ),
                   GestureDetector(
                     // The manage screen is where managers get created/edited/
                     // deactivated. This tab stays mounted underneath it, so

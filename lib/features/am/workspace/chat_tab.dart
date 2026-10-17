@@ -536,8 +536,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             Text(clientOnline ? l10n.chatOnline : l10n.chatOffline,
               style: TextStyle(fontSize: 10, color: clientOnline ? ShadColors.online : ShadColors.textDisabled)),
           ])),
-          chatHeaderIconBtn(Icons.copy_outlined, _openContracts),
-          const SizedBox(width: 6),
+          // Staff may not read contracts (the backend refuses), so no button.
+          if (!_api.isStaffMember) ...[
+            chatHeaderIconBtn(Icons.copy_outlined, _openContracts),
+            const SizedBox(width: 6),
+          ],
           chatHeaderIconBtn(Icons.videocam_outlined, _openLatestZoomLink),
         ]),
       ),

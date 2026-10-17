@@ -80,4 +80,59 @@ void main() {
     verify(() => httpClient.put(any(that: predicate<Uri>((u) => u.path.endsWith('/auth/me'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
+
+  testWidgets('a company staff member sees their birth date and saves it with the name', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'staff_member';
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"user":{"name":"Nour","avatar_url":null,"date_of_birth":"1990-05-06T00:00:00.000000Z"}}'),
+    );
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+    final provider = AuthProvider(api: api);
+
+    final navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(MaterialApp(
+      navigatorKey: navigatorKey,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ProfilePage(authProvider: provider, api: api),
+          )),
+          child: const Text('open'),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1990-05-06'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(sentBody, {'name': 'Nour', 'date_of_birth': '1990-05-06'});
+  });
+
+  testWidgets('other roles do not get the birth date row', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'account_manager';
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"user":{"name":"Ahmed","avatar_url":null}}'),
+    );
+    final provider = AuthProvider(api: api);
+
+    await pumpPage(tester, provider, api);
+
+    expect(find.byKey(const ValueKey('profile-dob')), findsNothing);
+  });
 }

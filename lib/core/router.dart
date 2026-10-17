@@ -17,6 +17,8 @@ import '../features/notifications/notifications_page.dart';
 import '../features/am/reports/audit_log_page.dart';
 import '../features/profile/profile_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/staff/staff_dashboard_page.dart';
+import '../features/am/staff/staff_page.dart';
 
 const _publicLocations = ['/login', '/forgot-password'];
 
@@ -25,6 +27,19 @@ const _publicLocations = ['/login', '/forgot-password'];
 /// `/notifications`, `/signature`, plus the public routes above) is shared
 /// between client/sub_user and staff, so it's deliberately not gated here.
 bool _isStaffOnly(String location) => location.startsWith('/am/');
+
+// Company staff members (STAFF_TEAMS_PLAN.md) see only their own client list,
+// a client's workspace, notifications and their profile. Anything else — every
+// other /am/* screen included — sends them back to their client list.
+const _staffAllowedPrefixes = ['/staff', '/am/workspace', '/notifications', '/profile'];
+bool _isStaffAllowed(String location) => _staffAllowedPrefixes.any(location.startsWith);
+
+/// Where a role lands after login / when it opens a screen it may not see.
+String homeLocationForRole(String? role) {
+  if (role == 'client' || role == 'sub_user') return '/dashboard';
+  if (role == 'staff_member') return '/staff/dashboard';
+  return '/am/dashboard';
+}
 
 const _assistantBlockedPrefixes = ['/am/reports', '/am/audit', '/am/managers', '/am/clients/create'];
 bool _isAssistantBlocked(String location) => _assistantBlockedPrefixes.any(location.startsWith);
@@ -58,10 +73,21 @@ Future<String?> resolveAuthRedirect(ApiClient api, String location) async {
 
   final role = await api.getRole();
   if (goingToPublic) {
-    return (role == 'client' || role == 'sub_user') ? '/dashboard' : '/am/dashboard';
+    return homeLocationForRole(role);
   }
   if (_isStaffOnly(location) && (role == 'client' || role == 'sub_user')) {
     return '/dashboard';
+  }
+  // The staff-member home is theirs alone.
+  if (location.startsWith('/staff') && role != 'staff_member') {
+    return homeLocationForRole(role);
+  }
+  if (role == 'staff_member' && !_isStaffAllowed(location)) {
+    return '/staff/dashboard';
+  }
+  // Managing company staff is the super admin's alone.
+  if (location.startsWith('/am/staff') && role != 'super_admin') {
+    return homeLocationForRole(role);
   }
   // Manager assistants have no finance/reports/audit/managers screens.
   if (role == 'manager_assistant' && _isAssistantBlocked(location)) {
@@ -102,6 +128,8 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
       }),
       GoRoute(path: '/am/reports', builder: (_, __) => const ReportsPage()),
       GoRoute(path: '/am/audit-logs', builder: (_, __) => const AuditLogPage()),
+      GoRoute(path: '/staff/dashboard', builder: (_, __) => const StaffDashboardPage()),
+      GoRoute(path: '/am/staff', builder: (_, __) => const StaffPage()),
       GoRoute(path: '/am/settings', builder: (_, __) => const AdminSettingsPage()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),

@@ -113,5 +113,17 @@ void main() {
       );
       expect(target, '/am/workspace/7?tab=5');
     });
+
+    test('staff member with a workspace_id opens that workspace on a tab they can see', () async {
+      final api = buildClient('staff_member');
+      expect(await notificationTarget({'type': 'chat', 'workspace_id': '9'}, api: api), '/am/workspace/9?tab=0');
+      expect(await notificationTarget({'type': 'approval_responded', 'workspace_id': '9'}, api: api), '/am/workspace/9?tab=4');
+      expect(await notificationTarget({'type': 'meeting_reminder', 'workspace_id': '9'}, api: api), '/am/workspace/9?tab=5');
+    });
+
+    test('staff member without a workspace_id falls back to their own dashboard', () async {
+      final api = buildClient('staff_member');
+      expect(await notificationTarget({'type': 'staff_assigned'}, api: api), '/staff/dashboard');
+    });
   });
 }

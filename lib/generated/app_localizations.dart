@@ -10445,6 +10445,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Draw Signature'**
   String get signatureDrawSignature;
+
+  /// No description provided for @workspaceTabTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get workspaceTabTeam;
+
+  /// No description provided for @staffRoleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff member'**
+  String get staffRoleLabel;
+
+  /// No description provided for @staffNavTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Company staff'**
+  String get staffNavTitle;
+
+  /// No description provided for @staffManageButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get staffManageButton;
+
+  /// No description provided for @staffMyClientsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My clients'**
+  String get staffMyClientsTitle;
+
+  /// No description provided for @staffMyClientsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No clients are assigned to you yet.'**
+  String get staffMyClientsEmpty;
+
+  /// No description provided for @staffSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search clients'**
+  String get staffSearchHint;
+
+  /// No description provided for @staffEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No staff members yet.'**
+  String get staffEmpty;
+
+  /// No description provided for @staffAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add staff member'**
+  String get staffAdd;
+
+  /// No description provided for @staffEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get staffEditAction;
+
+  /// No description provided for @staffFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get staffFieldName;
+
+  /// No description provided for @staffFieldEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get staffFieldEmail;
+
+  /// No description provided for @staffFieldPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get staffFieldPhone;
+
+  /// No description provided for @staffFieldDob.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth'**
+  String get staffFieldDob;
+
+  /// No description provided for @staffFieldPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get staffFieldPassword;
+
+  /// No description provided for @staffSendEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email the login details'**
+  String get staffSendEmail;
+
+  /// No description provided for @staffSaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get staffSaveAction;
+
+  /// No description provided for @staffChangePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get staffChangePassword;
+
+  /// No description provided for @staffArchiveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get staffArchiveAction;
+
+  /// No description provided for @staffUnarchiveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get staffUnarchiveAction;
+
+  /// No description provided for @staffArchiveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this staff member? They will be signed out and lose access immediately.'**
+  String get staffArchiveConfirm;
+
+  /// No description provided for @staffUnarchiveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this staff member? They will be able to log in again.'**
+  String get staffUnarchiveConfirm;
+
+  /// No description provided for @staffShowArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Show archived'**
+  String get staffShowArchived;
+
+  /// No description provided for @staffClientsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clients'**
+  String get staffClientsLabel;
+
+  /// No description provided for @staffNoClients.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned to any client yet.'**
+  String get staffNoClients;
+
+  /// No description provided for @staffLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the staff list.'**
+  String get staffLoadFailed;
+
+  /// No description provided for @staffSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the changes.'**
+  String get staffSaveFailed;
+
+  /// No description provided for @staffCreatedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff member added.'**
+  String get staffCreatedMsg;
+
+  /// No description provided for @staffUpdatedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff member updated.'**
+  String get staffUpdatedMsg;
+
+  /// No description provided for @staffArchivedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff member archived.'**
+  String get staffArchivedMsg;
+
+  /// No description provided for @staffUnarchivedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff member restored.'**
+  String get staffUnarchivedMsg;
+
+  /// No description provided for @staffPasswordChangedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed. The staff member was signed out.'**
+  String get staffPasswordChangedMsg;
+
+  /// No description provided for @staffArchivedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get staffArchivedBadge;
+
+  /// No description provided for @teamTabHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which company staff members work on this client. They can chat, send approval requests and join meetings for this client only.'**
+  String get teamTabHint;
+
+  /// No description provided for @teamTabEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no active staff members yet. The super admin adds them from the Staff screen.'**
+  String get teamTabEmpty;
+
+  /// No description provided for @teamTabAssign.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign'**
+  String get teamTabAssign;
+
+  /// No description provided for @teamTabUnassign.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get teamTabUnassign;
+
+  /// No description provided for @teamTabLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the team.'**
+  String get teamTabLoadFailed;
+
+  /// No description provided for @teamTabSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the team.'**
+  String get teamTabSaveFailed;
+
+  /// No description provided for @teamTabAssignedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned'**
+  String get teamTabAssignedLabel;
+
+  /// No description provided for @staffClientsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your clients.'**
+  String get staffClientsLoadFailed;
 }
 
 class _AppLocalizationsDelegate

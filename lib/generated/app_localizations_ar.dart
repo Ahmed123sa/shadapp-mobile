@@ -5399,4 +5399,132 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get signatureDrawSignature => 'رسم التوقيع';
+
+  @override
+  String get workspaceTabTeam => 'الفريق';
+
+  @override
+  String get staffRoleLabel => 'موظف';
+
+  @override
+  String get staffNavTitle => 'موظفو الشركة';
+
+  @override
+  String get staffManageButton => 'الموظفون';
+
+  @override
+  String get staffMyClientsTitle => 'عملائي';
+
+  @override
+  String get staffMyClientsEmpty => 'لم يتم تعيين أي عميل لك بعد.';
+
+  @override
+  String get staffSearchHint => 'بحث عن عميل';
+
+  @override
+  String get staffEmpty => 'لا يوجد موظفون بعد.';
+
+  @override
+  String get staffAdd => 'إضافة موظف';
+
+  @override
+  String get staffEditAction => 'تعديل';
+
+  @override
+  String get staffFieldName => 'الاسم';
+
+  @override
+  String get staffFieldEmail => 'البريد الإلكتروني';
+
+  @override
+  String get staffFieldPhone => 'الهاتف';
+
+  @override
+  String get staffFieldDob => 'تاريخ الميلاد';
+
+  @override
+  String get staffFieldPassword => 'كلمة المرور';
+
+  @override
+  String get staffSendEmail => 'إرسال بيانات الدخول بالإيميل';
+
+  @override
+  String get staffSaveAction => 'حفظ';
+
+  @override
+  String get staffChangePassword => 'تغيير كلمة المرور';
+
+  @override
+  String get staffArchiveAction => 'أرشفة';
+
+  @override
+  String get staffUnarchiveAction => 'فك الأرشفة';
+
+  @override
+  String get staffArchiveConfirm =>
+      'أرشفة هذا الموظف؟ سيتم تسجيل خروجه وسحب صلاحياته فورًا.';
+
+  @override
+  String get staffUnarchiveConfirm =>
+      'استعادة هذا الموظف؟ سيتمكن من تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get staffShowArchived => 'عرض المؤرشفين';
+
+  @override
+  String get staffClientsLabel => 'العملاء';
+
+  @override
+  String get staffNoClients => 'غير مرتبط بأي عميل حتى الآن.';
+
+  @override
+  String get staffLoadFailed => 'تعذّر تحميل قائمة الموظفين.';
+
+  @override
+  String get staffSaveFailed => 'تعذّر حفظ التغييرات.';
+
+  @override
+  String get staffCreatedMsg => 'تمت إضافة الموظف.';
+
+  @override
+  String get staffUpdatedMsg => 'تم تحديث بيانات الموظف.';
+
+  @override
+  String get staffArchivedMsg => 'تمت أرشفة الموظف.';
+
+  @override
+  String get staffUnarchivedMsg => 'تمت استعادة الموظف.';
+
+  @override
+  String get staffPasswordChangedMsg =>
+      'تم تغيير كلمة المرور وتسجيل خروج الموظف.';
+
+  @override
+  String get staffArchivedBadge => 'مؤرشف';
+
+  @override
+  String get teamTabHint =>
+      'اختر موظفي الشركة الذين يعملون على هذا العميل. يمكنهم المحادثة وإرسال طلبات الموافقة وحضور الاجتماعات لهذا العميل فقط.';
+
+  @override
+  String get teamTabEmpty =>
+      'لا يوجد موظفون نشطون بعد. يضيفهم السوبر أدمن من شاشة الموظفين.';
+
+  @override
+  String get teamTabAssign => 'تعيين';
+
+  @override
+  String get teamTabUnassign => 'إزالة';
+
+  @override
+  String get teamTabLoadFailed => 'تعذّر تحميل الفريق.';
+
+  @override
+  String get teamTabSaveFailed => 'تعذّر تحديث الفريق.';
+
+  @override
+  String get teamTabAssignedLabel => 'معيَّن';
+
+  @override
+  String get staffClientsLoadFailed => 'تعذّر تحميل عملائك.';
 }

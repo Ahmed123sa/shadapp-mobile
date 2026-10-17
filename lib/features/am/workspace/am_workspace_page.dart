@@ -26,6 +26,7 @@ import 'payments_tab.dart';
 import 'approvals_tab.dart';
 import 'meetings_tab.dart';
 import 'client_profile_tab.dart';
+import 'team_tab.dart';
 
 class AmWorkspacePage extends StatefulWidget {
   final int? workspaceId;
@@ -71,21 +72,32 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   late final TabController _tabController;
 
   bool get _isAssistant => _api.role == 'manager_assistant';
+  // Company staff (STAFF_TEAMS_PLAN.md): chat, approval requests and meetings.
+  bool get _isStaff => _api.role == 'staff_member';
+  // Only the super admin and the client's account manager assign staff.
+  bool get _canManageTeam => _api.role == 'super_admin' || _api.role == 'account_manager';
   // 0 chat, 1 files, 2 contracts, 3 payments, 4 approvals, 5 meetings,
-  // 6 log (calendar), 7 client profile.
+  // 6 log (calendar), 7 client profile, 8 team (staff assignment).
+  static const _tabCount = 9;
+  bool _isTabVisible(int i) {
+    if (_isStaff) return i == 0 || i == 4 || i == 5;
+    if (i == 8) return _canManageTeam;
+    return !(_isAssistant && i == 3);
+  }
+
   List<int> get _visibleTabs => [
-        for (var i = 0; i < 8; i++)
-          if (!(_isAssistant && i == 3)) i,
+        for (var i = 0; i < _tabCount; i++)
+          if (_isTabVisible(i)) i,
       ];
 
   @override
   void initState() {
     super.initState();
-    // Assistants never see money, so the Payments tab is left out for them.
-    // initialTabIndex still counts the full 8-tab layout (deep links and
-    // notification routing use it), so map it onto the visible list.
-    final fullIndex = widget.initialTabIndex.clamp(0, 7);
-    final visibleIndex = _isAssistant ? _visibleTabs.indexOf(fullIndex) : fullIndex;
+    // Assistants never see money and staff only see three tabs, so some tabs
+    // are left out. initialTabIndex still counts the full 9-tab layout (deep
+    // links and notification routing use it), so map it onto the visible list.
+    final fullIndex = widget.initialTabIndex.clamp(0, _tabCount - 1);
+    final visibleIndex = _visibleTabs.indexOf(fullIndex);
     _tabController = TabController(
       length: _visibleTabs.length,
       vsync: this,
@@ -189,7 +201,10 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
           color: ShadColors.surfaceDarker,
           child: TabBar(
             controller: _tabController,
-            isScrollable: false,
+            // Nine tabs (account manager / super admin) no longer fit on one
+            // line; the shorter sets keep the evenly-spread layout.
+            isScrollable: _visibleTabs.length > 8,
+            tabAlignment: _visibleTabs.length > 8 ? TabAlignment.start : null,
             indicatorColor: ShadColors.gold,
             indicatorWeight: 2.5,
             labelColor: ShadColors.textPrimary,
@@ -207,6 +222,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
                   l10n.workspaceTabMeetings,
                   l10n.workspaceTabLog,
                   l10n.workspaceTabClientProfile,
+                  l10n.workspaceTabTeam,
                 ][i]),
             ],
           ),
@@ -215,42 +231,55 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         Expanded(
           child: IndexedStack(
             index: _tabController.index,
-            children: [
-              ChatTab(
-                wsStatus: _wsStatus,
-                workspaceId: widget.workspaceId,
-                reverb: widget.reverb,
-                api: _api,
-                chatProvider: _childChatProvider,
-                contractProvider: _childContractProvider,
-                meetingProvider: _childMeetingProvider,
-              ),
-              FilesTab(workspaceId: widget.workspaceId, fileProvider: _childFileProvider, api: _api),
-              ContractsTab(workspaceId: widget.workspaceId, api: _api, contractProvider: _childContractProvider),
-              if (!_isAssistant)
-                PaymentsTab(
-                  onWorkspaceUpdate: _fetchWorkspace,
-                  workspaceId: widget.workspaceId,
-                  paymentProvider: _childPaymentProvider,
-                  contractProvider: _childContractProvider,
-                  api: _api,
-                ),
-              ApprovalsTab(workspaceId: widget.workspaceId, approvalProvider: _childApprovalProvider, api: _api),
-              MeetingsTab(workspaceId: widget.workspaceId, meetingProvider: _childMeetingProvider, contractProvider: _childContractProvider),
-              CalendarTab(
-                workspaceId: widget.workspaceId,
-                meetingProvider: _childMeetingProvider,
-                contractProvider: _childContractProvider,
-                paymentProvider: _childPaymentProvider,
-                approvalProvider: _childApprovalProvider,
-                api: _api,
-              ),
-              ClientProfileTab(workspaceId: widget.workspaceId, clientProvider: _childClientProvider, contractProvider: _childContractProvider, api: _api),
-            ],
+            children: [for (final i in _visibleTabs) _tabChild(i)],
           ),
         ),
       ]),
     );
   }
 
+  /// The widget for a tab of the full 9-tab layout (see [_isTabVisible]).
+  Widget _tabChild(int i) {
+    switch (i) {
+      case 0:
+        return ChatTab(
+          wsStatus: _wsStatus,
+          workspaceId: widget.workspaceId,
+          reverb: widget.reverb,
+          api: _api,
+          chatProvider: _childChatProvider,
+          contractProvider: _childContractProvider,
+          meetingProvider: _childMeetingProvider,
+        );
+      case 1:
+        return FilesTab(workspaceId: widget.workspaceId, fileProvider: _childFileProvider, api: _api);
+      case 2:
+        return ContractsTab(workspaceId: widget.workspaceId, api: _api, contractProvider: _childContractProvider);
+      case 3:
+        return PaymentsTab(
+          onWorkspaceUpdate: _fetchWorkspace,
+          workspaceId: widget.workspaceId,
+          paymentProvider: _childPaymentProvider,
+          contractProvider: _childContractProvider,
+          api: _api,
+        );
+      case 4:
+        return ApprovalsTab(workspaceId: widget.workspaceId, approvalProvider: _childApprovalProvider, api: _api);
+      case 5:
+        return MeetingsTab(workspaceId: widget.workspaceId, meetingProvider: _childMeetingProvider, contractProvider: _childContractProvider);
+      case 6:
+        return CalendarTab(
+          workspaceId: widget.workspaceId,
+          meetingProvider: _childMeetingProvider,
+          contractProvider: _childContractProvider,
+          paymentProvider: _childPaymentProvider,
+          approvalProvider: _childApprovalProvider,
+          api: _api,
+        );
+      case 7:
+        return ClientProfileTab(workspaceId: widget.workspaceId, clientProvider: _childClientProvider, contractProvider: _childContractProvider, api: _api);
+      default:
+        return TeamTab(workspaceId: widget.workspaceId, api: _api);
+    }
+  }
 }
