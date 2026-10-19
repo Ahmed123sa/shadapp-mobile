@@ -47,6 +47,7 @@ void showRequestPaymentSheet({
     'instapay': l10n.payments_methodInstapay,
     'vodafone_cash': l10n.payments_methodVodafoneCash,
     'mobile_wallet': l10n.payments_methodMobileWallet,
+    'cheque': l10n.payments_methodCheque,
   };
 
   final contractCur = getContractCurrency?.call() ?? 'SAR';
@@ -357,6 +358,7 @@ void showScheduledPaymentSheet({
     'instapay': l10n.payments_methodInstapay,
     'vodafone_cash': l10n.payments_methodVodafoneCash,
     'mobile_wallet': l10n.payments_methodMobileWallet,
+    'cheque': l10n.payments_methodCheque,
   };
 
   final available = getAvailableMethods().isNotEmpty ? getAvailableMethods() : methodLabels.keys.toList();

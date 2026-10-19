@@ -3189,6 +3189,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payments_methodMobileWallet => 'Mobile wallet';
 
   @override
+  String get payments_methodCheque => 'Cheque';
+
+  @override
   String payments_remainingSummary(
       Object currency, Object remaining, Object total) {
     return 'of $total $currency — $remaining remaining';
@@ -4787,6 +4790,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsMethodMobileWallet => 'Mobile Wallet';
+
+  @override
+  String get paymentsMethodCheque => 'Cheque';
 
   @override
   String get paymentsMethodSwift => 'SWIFT Transfer';

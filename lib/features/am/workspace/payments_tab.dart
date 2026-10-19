@@ -341,7 +341,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
           final statusColor = isApproved ? ShadColors.success : isPending ? ShadColors.gold : isOverdue ? ShadColors.error : isRejected ? ShadColors.error : isScheduled ? ShadColors.gold : ShadColors.textDisabled;
           final statusText = isApproved ? l10n.paymentsStatusApproved : isPending ? l10n.paymentsStatusPending : isOverdue ? l10n.paymentsStatusOverdue : isRejected ? l10n.paymentsStatusRejected : isScheduled ? l10n.paymentsStatusScheduled : p['status'] ?? '';
 
-          final methodLabels = {'bank_transfer': l10n.paymentsMethodBankTransfer, 'swift': l10n.paymentsMethodSwift, 'corporate_account': l10n.paymentsMethodCorporateAccount, 'instapay': l10n.paymentsMethodInstapay, 'vodafone_cash': l10n.paymentsMethodVodafoneCash, 'mobile_wallet': l10n.paymentsMethodMobileWallet};
+          final methodLabels = {'bank_transfer': l10n.paymentsMethodBankTransfer, 'swift': l10n.paymentsMethodSwift, 'corporate_account': l10n.paymentsMethodCorporateAccount, 'instapay': l10n.paymentsMethodInstapay, 'vodafone_cash': l10n.paymentsMethodVodafoneCash, 'mobile_wallet': l10n.paymentsMethodMobileWallet, 'cheque': l10n.paymentsMethodCheque};
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),

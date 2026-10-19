@@ -363,6 +363,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
       'instapay': l10n.payments_methodInstapay,
       'vodafone_cash': l10n.payments_methodVodafoneCash,
       'mobile_wallet': l10n.payments_methodMobileWallet,
+      'cheque': l10n.payments_methodCheque,
     };
 
     return InkWell(

@@ -39,6 +39,7 @@ void showOnboardingPaymentSheet({
     'instapay': AppLocalizations.of(context)!.payments_methodInstapay,
     'vodafone_cash': AppLocalizations.of(context)!.payments_methodVodafoneCash,
     'mobile_wallet': AppLocalizations.of(context)!.payments_methodMobileWallet,
+    'cheque': AppLocalizations.of(context)!.payments_methodCheque,
   };
 
   final amountCtrl = TextEditingController(text: suggestedAmount > 0 ? suggestedAmount.toStringAsFixed(0) : '');

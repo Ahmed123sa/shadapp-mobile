@@ -3177,6 +3177,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get payments_methodMobileWallet => 'محفظة موبايل';
 
   @override
+  String get payments_methodCheque => 'شيك';
+
+  @override
   String payments_remainingSummary(
       Object currency, Object remaining, Object total) {
     return 'من أصل $total $currency — متبقي $remaining';
@@ -4762,6 +4765,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentsMethodMobileWallet => 'محفظة موبايل';
+
+  @override
+  String get paymentsMethodCheque => 'شيك';
 
   @override
   String get paymentsMethodSwift => 'تحويل SWIFT';

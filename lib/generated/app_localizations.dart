@@ -6224,6 +6224,12 @@ abstract class AppLocalizations {
   /// **'Mobile wallet'**
   String get payments_methodMobileWallet;
 
+  /// No description provided for @payments_methodCheque.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheque'**
+  String get payments_methodCheque;
+
   /// No description provided for @payments_remainingSummary.
   ///
   /// In en, this message translates to:
@@ -9226,6 +9232,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mobile Wallet'**
   String get paymentsMethodMobileWallet;
+
+  /// No description provided for @paymentsMethodCheque.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheque'**
+  String get paymentsMethodCheque;
 
   /// No description provided for @paymentsMethodSwift.
   ///
