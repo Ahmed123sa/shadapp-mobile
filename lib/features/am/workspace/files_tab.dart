@@ -195,6 +195,12 @@ class _FilesTabState extends State<FilesTab> {
 
     final isSA = _api.role == 'super_admin';
     final canReview = isSA || (_managersCanReviewFiles && _api.canDo('can_review_files'));
+    // A manager allowed to approve contracts may also review the documents
+    // attached to those contracts, whatever the global setting says
+    // (mirrors FileController::review on the backend).
+    bool canReviewFile(Map f) =>
+        canReview ||
+        (!isSA && _api.canCompanyApprove && (f['contract_id'] != null || f['contract_required_document_id'] != null));
     final filtered = _filteredFiles;
     final l10n = AppLocalizations.of(context)!;
 
@@ -300,7 +306,7 @@ class _FilesTabState extends State<FilesTab> {
                         ),
                       ],
                     ]),
-                    trailing: f['status'] == 'pending' && canReview
+                    trailing: f['status'] == 'pending' && canReviewFile(f)
                       ? Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             icon: const Icon(Icons.check, color: ShadColors.success),
