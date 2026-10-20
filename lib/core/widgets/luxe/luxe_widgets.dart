@@ -726,3 +726,65 @@ class LuxeHint extends StatelessWidget {
         ],
       );
 }
+
+
+// ── Mockup form look (`.f2 .in` underline fields, `.btn` pills, `.sw2` switch) ──
+/// Wrap a form/page so stock TextFields, Elevated/Outlined buttons and
+/// Switches pick up the Luxe look without changing their widget types.
+class LuxeFormTheme extends StatelessWidget {
+  final Widget child;
+  const LuxeFormTheme({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context);
+    const underline = UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2));
+    return Theme(
+      data: base.copyWith(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: false,
+          isDense: true,
+          contentPadding: const EdgeInsets.fromLTRB(0, 6, 0, 9),
+          border: underline,
+          enabledBorder: underline,
+          focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.crimsonInk)),
+          errorBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.danger)),
+          labelStyle: Lx.text(context, size: 12, color: Lx.muted),
+          floatingLabelStyle: Lx.text(context, size: 12, color: Lx.muted),
+          hintStyle: Lx.text(context, size: 15, color: Lx.faint),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(cursorColor: Lx.crimsonInk),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Lx.crimson,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: Lx.crimson.withAlpha(96),
+            disabledForegroundColor: Colors.white70,
+            elevation: 0,
+            minimumSize: const Size(0, 44),
+            shape: const StadiumBorder(),
+            textStyle: Lx.text(context, size: 13, weight: FontWeight.w500),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Lx.ink2,
+            side: const BorderSide(color: Lx.line2),
+            minimumSize: const Size(0, 44),
+            shape: const StadiumBorder(),
+            textStyle: Lx.text(context, size: 13),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: Lx.ink2, textStyle: Lx.text(context, size: 13)),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.white : const Color(0xFF777777)),
+          trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Lx.crimson : const Color(0xFF2A2A2A)),
+          trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+        ),
+      ),
+      child: child,
+    );
+  }
+}

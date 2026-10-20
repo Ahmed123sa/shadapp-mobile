@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../data/approval_repository.dart';
@@ -567,9 +568,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
                   index: _selectedIndex,
                   children: [
                     ...pages,
-                    MeetingsPage(meetingProvider: _childMeetingProvider, api: _api),
-                    SignatureTab(clientProvider: _childClientProvider, signatureProvider: _childSignatureProvider, api: _api),
-                    SubUsersPage(subUserProvider: _childSubUserProvider, api: _api),
+                    _morePage(company, allowedBottomTabs, MeetingsPage(meetingProvider: _childMeetingProvider, api: _api)),
+                    _morePage(company, allowedBottomTabs, SignatureTab(clientProvider: _childClientProvider, signatureProvider: _childSignatureProvider, api: _api)),
+                    _morePage(company, allowedBottomTabs, SubUsersPage(subUserProvider: _childSubUserProvider, api: _api)),
                   ],
                 ),
               ),
@@ -618,6 +619,25 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       case 4: return _badgeFiles;
       default: return 0;
     }
+  }
+
+  /// Mockup `.back`: "‹ Company" row above the pages opened from More.
+  Widget _morePage(String company, List<int> tabs, Widget page) {
+    return Column(children: [
+      InkWell(
+        key: const ValueKey('more-back'),
+        onTap: () => setState(() => _selectedIndex = tabs.isNotEmpty ? tabs.first : 0),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 4),
+          child: Row(children: [
+            const LxIcon('back', size: 16, color: Lx.muted),
+            const SizedBox(width: 6),
+            Text(company, style: Lx.text(context, size: 13, color: Lx.muted)),
+          ]),
+        ),
+      ),
+      Expanded(child: page),
+    ]);
   }
 
   /// The mockup's "More" sheet: who you are, the extra pages, language, logout.

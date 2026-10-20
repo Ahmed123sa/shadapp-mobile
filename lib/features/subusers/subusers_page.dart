@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/widgets/loading_state.dart';
-import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/password_field.dart';
 import '../../providers/sub_user_provider.dart';
 
@@ -242,62 +242,85 @@ class _SubUsersPageState extends State<SubUsersPage> {
     super.dispose();
   }
 
+  Widget _fieldDob({required DateTime? value, required ValueChanged<DateTime> onPick}) {
+    final l10n = AppLocalizations.of(context)!;
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? DateTime(1990),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          locale: Localizations.localeOf(context),
+        );
+        if (picked != null) onPick(picked);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l10n.subusers_dateOfBirth, style: Lx.text(context, size: 12, color: Lx.muted)),
+            const SizedBox(height: 4),
+            Text(
+              value != null ? '${value.day}/${value.month}/${value.year}' : l10n.subusers_notSet,
+              style: Lx.text(context, size: 15, color: value != null ? Lx.ink : Lx.faint),
+            ),
+          ]),
+          const Icon(Icons.calendar_today, size: 17, color: Lx.faint),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
     final l10n = AppLocalizations.of(context)!;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${l10n.subusers_title} (${_subUsers.length})', style: ShadTypography.sectionHeader),
+    return LuxeFormTheme(
+      child: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+        children: [
+          LuxePageTitle(l10n.dashboard_team),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: Text('${l10n.subusers_title} (${_subUsers.length})', style: Lx.text(context, size: 13.5, color: Lx.muted)),
+          ),
           if (!_isSubUser)
-            TextButton.icon(
-              onPressed: () => setState(() => _showForm = !_showForm),
-              icon: Icon(_showForm ? Icons.close : Icons.person_add, size: 18),
-              label: Text(_showForm ? l10n.cancel : '+ ${l10n.subusers_add}'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: SizedBox(
+                width: double.infinity,
+                child: LuxeButton(
+                  key: const ValueKey('subusers-add'),
+                  label: _showForm ? l10n.cancel : '+ ${l10n.subusers_add}',
+                  lxIcon: _showForm ? null : 'plus',
+                  kind: LuxeButtonKind.primary,
+                  size: LuxeButtonSize.lg,
+                  onPressed: () => setState(() => _showForm = !_showForm),
+                ),
+              ),
             ),
-        ]),
-        if (_showForm) ...[
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+          if (_showForm)
+            LuxeCard(
               child: Column(children: [
                 TextField(
                   controller: _nameController,
+                  style: Lx.text(context, size: 15),
                   decoration: InputDecoration(labelText: l10n.subusers_name, hintText: l10n.subusers_username),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 TextField(
                   controller: _emailController,
+                  style: Lx.text(context, size: 15),
                   decoration: InputDecoration(labelText: l10n.subusers_email, hintText: l10n.subusers_emailHint),
                   keyboardType: TextInputType.emailAddress,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 PasswordField(controller: _passwordController, showRequirements: false),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.subusers_dateOfBirth, style: const TextStyle(fontSize: 13)),
-                  subtitle: Text(
-                    _newDob != null ? '${_newDob!.day}/${_newDob!.month}/${_newDob!.year}' : l10n.subusers_notSet,
-                    style: TextStyle(fontSize: 12, color: _newDob != null ? ShadColors.textPrimary : ShadColors.textDisabled),
-                  ),
-                  trailing: const Icon(Icons.calendar_today, size: 18),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _newDob ?? DateTime(1990),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                      locale: Localizations.localeOf(context),
-                    );
-                    if (picked != null) setState(() => _newDob = picked);
-                  },
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
+                _fieldDob(value: _newDob, onPick: (d) => setState(() => _newDob = d)),
+                const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -309,164 +332,156 @@ class _SubUsersPageState extends State<SubUsersPage> {
                 ),
               ]),
             ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        if (_subUsers.isEmpty)
-          EmptyState(icon: Icons.people_outline, title: l10n.subusers_noUsers)
-        else
-          ..._subUsers.map((u) {
-            final id = u['id'] as int;
-            final isExpanded = _expandedId == id;
-            final isEditing = _editingId == id;
-            final permissions = _getPermissions(u);
-            final activeCount = permissions.values.where((v) => v == true).length;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                children: [
-                  if (isEditing) ...[
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(children: [
-                        TextField(
-                          controller: _editNameController,
-                          decoration: InputDecoration(labelText: l10n.subusers_name),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _editEmailController,
-                          decoration: InputDecoration(labelText: l10n.subusers_email),
-                          keyboardType: TextInputType.emailAddress,
+          if (_subUsers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: Text(l10n.subusers_noUsers, style: Lx.text(context, size: 14, color: Lx.muted))),
+            )
+          else
+            ..._subUsers.map((u) {
+              final id = u['id'] as int;
+              final isEditing = _editingId == id;
+              final permissions = _getPermissions(u);
+              final activeKeys = _permissionKeys.where((k) => permissions[k] == true).toList();
+              return LuxeCard(
+                key: ValueKey('subuser-card-$id'),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    LuxeAvatar(initial: _initials(u['name'] as String? ?? '?').substring(0, 1)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(u['name'] ?? '', style: Lx.display(context, size: 16)),
+                        Directionality(
                           textDirection: TextDirection.ltr,
+                          child: Text('${u['email'] ?? ''}', style: Lx.text(context, size: 12.5, color: Lx.muted)),
                         ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _editPhoneController,
-                          decoration: InputDecoration(labelText: l10n.subusers_phone),
-                          keyboardType: TextInputType.phone,
-                          textDirection: TextDirection.ltr,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _saveEdit(id),
-                              child: Text(l10n.subusers_save),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => setState(() => _editingId = null),
-                              child: Text(l10n.subusers_cancel),
-                            ),
-                          ),
-                        ]),
                       ]),
                     ),
-                  ] else
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: ShadColors.black,
-                        child: Text(_initials(u['name'] as String? ?? '?'),
-                            style: const TextStyle(color: ShadColors.gold, fontWeight: FontWeight.bold)),
-                      ),
-                      title: Text(u['name'] ?? '', style: ShadTypography.cardTitle),
-                      subtitle: Text(
-                        '${u['email'] ?? ''} · ${l10n.subusers_permissionsCount(activeCount)}/11',
-                        style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!_isSubUser)
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: ShadColors.textSecondary, size: 20),
-                              tooltip: l10n.subusers_edit,
-                              onPressed: () => _startEdit(u),
-                            ),
-                          if (!_isSubUser)
-                            IconButton(
-                              icon: const Icon(Icons.lock_reset, color: ShadColors.textSecondary, size: 20),
-                              tooltip: l10n.subusers_setPassword,
-                              onPressed: () => setState(() {
-                                _passwordTargetId = id;
-                                _newPasswordController.clear();
-                              }),
-                            ),
-                          IconButton(
-                            icon: Icon(
-                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                              color: ShadColors.textSecondary,
-                            ),
-                            onPressed: () => setState(() => _expandedId = isExpanded ? null : id),
+                  ]),
+                  if (activeKeys.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Wrap(spacing: 5, runSpacing: 5, children: [
+                        for (final k in activeKeys)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line)),
+                            child: Text(_permissionLabel(k), style: Lx.text(context, size: 10.5, color: Lx.ink2)),
                           ),
-                          if (!_isSubUser)
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: ShadColors.error, size: 20),
-                              onPressed: () => _delete(id),
-                            ),
-                        ],
+                      ]),
+                    ),
+                  if (isEditing) ...[
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _editNameController,
+                      style: Lx.text(context, size: 15),
+                      decoration: InputDecoration(labelText: l10n.subusers_name),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _editEmailController,
+                      style: Lx.text(context, size: 15),
+                      decoration: InputDecoration(labelText: l10n.subusers_email),
+                      keyboardType: TextInputType.emailAddress,
+                      textDirection: TextDirection.ltr,
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _editPhoneController,
+                      style: Lx.text(context, size: 15),
+                      decoration: InputDecoration(labelText: l10n.subusers_phone),
+                      keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                    ),
+                    if (!_isSubUser)
+                      for (final key in _permissionKeys)
+                        LuxeSwitchRow(
+                          label: _permissionLabel(key),
+                          value: permissions[key] == true,
+                          onChanged: (v) => _togglePermission(u['id'], key, permissions[key] == true),
+                        ),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(
+                        child: ElevatedButton(onPressed: () => _saveEdit(id), child: Text(l10n.subusers_save)),
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(onPressed: () => setState(() => _editingId = null), child: Text(l10n.subusers_cancel)),
+                      ),
+                    ]),
+                  ] else if (!_isSubUser)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Row(children: [
+                        Expanded(
+                          child: LuxeButton(
+                            key: ValueKey('subuser-edit-$id'),
+                            label: l10n.subusers_edit,
+                            size: LuxeButtonSize.sm,
+                            onPressed: () => _startEdit(u),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: LuxeButton(
+                            key: ValueKey('subuser-password-$id'),
+                            label: l10n.subusers_setPassword,
+                            kind: LuxeButtonKind.quiet,
+                            size: LuxeButtonSize.sm,
+                            onPressed: () => setState(() {
+                              _passwordTargetId = id;
+                              _newPasswordController.clear();
+                            }),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: LuxeButton(
+                            key: ValueKey('subuser-delete-$id'),
+                            label: AppLocalizations.of(context)!.delete,
+                            kind: LuxeButtonKind.danger,
+                            size: LuxeButtonSize.sm,
+                            onPressed: () => _delete(id),
+                          ),
+                        ),
+                      ]),
                     ),
                   if (_passwordSuccessId == id)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Text(l10n.subusers_passwordChanged, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
-                    ),
-                  if (_passwordTargetId == id) ...[
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(children: [
-                        PasswordField(controller: _newPasswordController, hintText: l10n.subusers_newPasswordHint, showRequirements: false),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _savePassword(id),
-                              child: Text(l10n.subusers_save),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => setState(() {
-                                _passwordTargetId = null;
-                                _newPasswordController.clear();
-                              }),
-                              child: Text(l10n.subusers_cancel),
-                            ),
-                          ),
-                        ]),
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(children: [
+                        const LuxeStatusDot(status: LxStatus.ok),
+                        const SizedBox(width: 7),
+                        Expanded(child: Text(l10n.subusers_passwordChanged, style: Lx.text(context, size: 12, color: Lx.ok))),
                       ]),
                     ),
-                  ],
-                  if (isExpanded && !_isSubUser) ...[
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Column(
-                        children: _permissionKeys.map((key) {
-                          final val = permissions[key] == true;
-                          return SwitchListTile(
-                            title: Text(_permissionLabel(key), style: const TextStyle(fontSize: 13)),
-                            value: val,
-                            onChanged: (v) => _togglePermission(u['id'], key, val),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            activeThumbColor: ShadColors.crimson,
-                          );
-                        }).toList(),
+                  if (_passwordTargetId == id) ...[
+                    const SizedBox(height: 14),
+                    PasswordField(controller: _newPasswordController, hintText: l10n.subusers_newPasswordHint, showRequirements: false),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(
+                        child: ElevatedButton(onPressed: () => _savePassword(id), child: Text(l10n.subusers_save)),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setState(() {
+                            _passwordTargetId = null;
+                            _newPasswordController.clear();
+                          }),
+                          child: Text(l10n.subusers_cancel),
+                        ),
+                      ),
+                    ]),
                   ],
-                ],
-              ),
-            );
-          }),
-      ],
+                ]),
+              );
+            }),
+        ],
+      ),
     );
   }
 }

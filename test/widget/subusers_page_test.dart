@@ -131,7 +131,7 @@ void main() {
     await pumpPage(tester, provider, api);
     expect(find.text('Sub One'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.tap(find.byKey(const ValueKey('subuser-delete-1')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/sub-users/1'))),
@@ -153,7 +153,7 @@ void main() {
     final provider = SubUserProvider(repository: SubUserRepository(api: api));
 
     await pumpPage(tester, provider, api);
-    await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+    await tester.tap(find.byKey(const ValueKey('subuser-edit-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(SwitchListTile, 'Chat'));
     await tester.pumpAndSettle();
@@ -179,10 +179,17 @@ void main() {
     final provider = SubUserProvider(repository: SubUserRepository(api: api));
 
     await pumpPage(tester, provider, api);
-    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.tap(find.byKey(const ValueKey('subuser-edit-1')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).at(0), 'Sub One Updated');
+    // The edit panel now also holds the permission switches, so Save sits
+    // below the (small) test viewport — scroll it into view first.
+    tester.view.physicalSize = const Size(800, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -208,7 +215,7 @@ void main() {
     final provider = SubUserProvider(repository: SubUserRepository(api: api));
 
     await pumpPage(tester, provider, api);
-    await tester.tap(find.byIcon(Icons.lock_reset));
+    await tester.tap(find.byKey(const ValueKey('subuser-password-1')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField), 'NewPass123');

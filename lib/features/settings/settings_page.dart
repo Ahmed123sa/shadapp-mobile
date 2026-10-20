@@ -4,7 +4,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/client_type_badge.dart';
 import '../../providers/settings_provider.dart';
 
@@ -161,97 +163,115 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return const Scaffold(backgroundColor: Lx.page, body: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
+    }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settings_title),),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Center(
-            child: CircleAvatar(
-              radius: 52,
-              backgroundColor: ShadColors.cardBorder,
-              backgroundImage: _avatarUrl != null
-                  ? NetworkImage(_api.resolveFileUrl(_avatarUrl!))
-                  : null,
-              child: _avatarUrl == null
-                  ? const Icon(Icons.person, size: 52, color: ShadColors.textDisabled)
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton.icon(
-              onPressed: _pickAvatar,
-              icon: const Icon(Icons.camera_alt, size: 16),
-              label: Text(l10n.settings_changePicture),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (!_isSubUser) Center(child: ClientTypeBadge(clientType: _clientType)),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: l10n.settings_displayName,
-              hintText: l10n.settings_displayNameHint,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_isSubUser) ...[
+      backgroundColor: Lx.page,
+      appBar: AppBar(
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: Text(l10n.settings_title, style: Lx.display(context, size: 26)),
+      ),
+      body: LuxeFormTheme(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            Row(children: [
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: const Color(0xFF262626),
+                backgroundImage: _avatarUrl != null ? NetworkImage(_api.resolveFileUrl(_avatarUrl!)) : null,
+                child: _avatarUrl == null ? const Icon(Icons.person, size: 30, color: Lx.faint) : null,
+              ),
+              const SizedBox(width: 16),
+              OutlinedButton.icon(
+                onPressed: _pickAvatar,
+                icon: const Icon(Icons.camera_alt, size: 16),
+                label: Text(l10n.settings_changePicture),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 14)),
+              ),
+            ]),
+            const SizedBox(height: 14),
+            if (!_isSubUser) Align(alignment: AlignmentDirectional.centerStart, child: ClientTypeBadge(clientType: _clientType)),
+            const SizedBox(height: 20),
             TextField(
-              controller: _emailController,
-              enabled: false,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
+              controller: _nameController,
+              style: Lx.text(context, size: 15),
               decoration: InputDecoration(
-                labelText: l10n.settings_email,
-                hintText: 'email@example.com',
+                labelText: l10n.settings_displayName,
+                hintText: l10n.settings_displayNameHint,
               ),
             ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                l10n.settings_contactOwnerForEmail,
-                style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled),
+            const SizedBox(height: 18),
+            if (_isSubUser) ...[
+              TextField(
+                controller: _emailController,
+                enabled: false,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                style: Lx.text(context, size: 15, color: Lx.muted),
+                decoration: InputDecoration(
+                  labelText: l10n.settings_email,
+                  hintText: 'email@example.com',
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 18),
+                child: Row(children: [
+                  const LxIcon('lock', size: 14, color: Lx.faint),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l10n.settings_contactOwnerForEmail, style: Lx.text(context, size: 12.5, color: Lx.faint))),
+                ]),
+              ),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                textDirection: TextDirection.ltr,
+                style: Lx.text(context, size: 15),
+                decoration: InputDecoration(
+                  labelText: l10n.settings_phone,
+                  hintText: '+966...',
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+            InkWell(
+              onTap: _pickDateOfBirth,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(l10n.settings_dateOfBirth, style: Lx.text(context, size: 12, color: Lx.muted)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _dateOfBirth != null
+                          ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
+                          : l10n.settings_notSet,
+                      style: Lx.text(context, size: 15, color: _dateOfBirth != null ? Lx.ink : Lx.faint),
+                    ),
+                  ]),
+                  const Icon(Icons.calendar_today, size: 17, color: Lx.faint),
+                ]),
               ),
             ),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              textDirection: TextDirection.ltr,
-              decoration: InputDecoration(
-                labelText: l10n.settings_phone,
-                hintText: '+966...',
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                style: ElevatedButton.styleFrom(minimumSize: const Size(0, 48)),
+                child: _saving
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                    : Text(l10n.settings_save),
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.settings_dateOfBirth, style: const TextStyle(fontSize: 14)),
-            subtitle: Text(
-              _dateOfBirth != null
-                  ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'
-                  : l10n.settings_notSet,
-              style: TextStyle(fontSize: 13, color: _dateOfBirth != null ? ShadColors.textPrimary : ShadColors.textDisabled),
-            ),
-            trailing: const Icon(Icons.calendar_today, size: 20),
-            onTap: _pickDateOfBirth,
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text(l10n.settings_save),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
