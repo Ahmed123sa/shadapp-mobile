@@ -1930,5 +1930,8 @@
   "approvalsEyebrow": "الوارد",
   "amNewClient": "عميل جديد",
   "clientsEyebrowSa": "الدليل",
-  "clientsEyebrowAm": "عملاءك"
+  "clientsEyebrowAm": "عملاءك",
+  "contractStepClientApproved": "العميل وافق",
+  "contractKindMain": "أساسي",
+  "contractKindAdditional": "إضافي"
 }

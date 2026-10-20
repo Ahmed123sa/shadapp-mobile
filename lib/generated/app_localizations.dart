@@ -11423,6 +11423,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your book'**
   String get clientsEyebrowAm;
+
+  /// No description provided for @contractStepClientApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Client approved'**
+  String get contractStepClientApproved;
+
+  /// No description provided for @contractKindMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get contractKindMain;
+
+  /// No description provided for @contractKindAdditional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional'**
+  String get contractKindAdditional;
 }
 
 class _AppLocalizationsDelegate

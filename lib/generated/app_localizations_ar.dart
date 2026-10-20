@@ -5920,4 +5920,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get clientsEyebrowAm => 'عملاءك';
+
+  @override
+  String get contractStepClientApproved => 'العميل وافق';
+
+  @override
+  String get contractKindMain => 'أساسي';
+
+  @override
+  String get contractKindAdditional => 'إضافي';
 }

@@ -84,7 +84,7 @@ void main() {
         )).called(1);
   });
 
-  testWidgets('deleting a draft contract via the popup menu calls the delete endpoint', (tester) async {
+  testWidgets('deleting a draft contract via its Delete button calls the delete endpoint', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
     api.role = 'account_manager';
@@ -92,9 +92,8 @@ void main() {
 
     await pumpTab(tester, api);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    // Mockup cards have no ⋮ menu: a draft shows its own Delete button.
+    await tester.tap(find.byKey(const ValueKey('contract-delete-1')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
     await tester.pumpAndSettle();

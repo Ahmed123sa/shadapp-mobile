@@ -5949,4 +5949,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clientsEyebrowAm => 'Your book';
+
+  @override
+  String get contractStepClientApproved => 'Client approved';
+
+  @override
+  String get contractKindMain => 'Main';
+
+  @override
+  String get contractKindAdditional => 'Additional';
 }
