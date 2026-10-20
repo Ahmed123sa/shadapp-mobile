@@ -93,4 +93,70 @@ void main() {
 
     expect(find.text('Could not load the team.'), findsOneWidget);
   });
+
+  group('as an account manager', () {
+    setUp(() => api.role = 'account_manager');
+
+    List<Map<String, dynamic>> mgrRows() => [
+          {'id': 30, 'name': 'Nour Staff', 'email': 'n@e.com', 'assigned': true, 'in_my_team': true, 'permissions': {'can_send_chat': false}},
+          {'id': 31, 'name': 'Omar Staff', 'email': 'o@e.com', 'assigned': false, 'in_my_team': true, 'permissions': null},
+          {'id': 32, 'name': 'Old Staff', 'email': 'old@e.com', 'assigned': true, 'in_my_team': false, 'permissions': null},
+        ];
+
+    testWidgets('shows chips, the Team page link and the not-in-my-team row apart', (tester) async {
+      when(() => repo.forWorkspace(22)).thenAnswer((_) async => mgrRows());
+      await pumpTab(tester);
+
+      expect(find.byKey(const ValueKey('team-open-page')), findsOneWidget);
+      expect(find.byKey(const ValueKey('permission-chips')), findsOneWidget);
+      expect(find.byKey(const ValueKey('team-outsider-32')), findsOneWidget);
+      expect(find.byKey(const ValueKey('team-add-mine-32')), findsOneWidget);
+      expect(find.byKey(const ValueKey('team-edit-30')), findsNothing); // only the super admin edits here
+    });
+
+    testWidgets('adding the outsider to my team calls addToTeam', (tester) async {
+      when(() => repo.forWorkspace(22)).thenAnswer((_) async => mgrRows());
+      when(() => repo.addToTeam(32)).thenAnswer((_) async {});
+      await pumpTab(tester);
+
+      await tester.tap(find.byKey(const ValueKey('team-add-mine-32')));
+      await tester.pumpAndSettle();
+
+      verify(() => repo.addToTeam(32)).called(1);
+      expect(find.byKey(const ValueKey('team-outsider-32')), findsNothing); // now an ordinary row
+    });
+
+    testWidgets('unassigning the outsider removes the row', (tester) async {
+      when(() => repo.forWorkspace(22)).thenAnswer((_) async => mgrRows());
+      when(() => repo.unassign(22, 32)).thenAnswer((_) async {});
+      await pumpTab(tester);
+
+      await tester.tap(find.byKey(const ValueKey('team-toggle-32')));
+      await tester.pumpAndSettle();
+
+      verify(() => repo.unassign(22, 32)).called(1);
+      expect(find.text('Old Staff'), findsNothing);
+    });
+  });
+
+  testWidgets('the super admin can edit an assignment\'s permissions', (tester) async {
+    api.role = 'super_admin';
+    when(() => repo.forWorkspace(22)).thenAnswer((_) async => [
+          {'id': 30, 'name': 'Nour Staff', 'email': 'n@e.com', 'assigned': true, 'permissions': null},
+        ]);
+    when(() => repo.assign(22, 30, permissions: any(named: 'permissions'))).thenAnswer((_) async {});
+    await pumpTab(tester);
+
+    await tester.tap(find.byKey(const ValueKey('team-edit-30')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('mt-sw-can_send_chat')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('mt-save')));
+    await tester.tap(find.byKey(const ValueKey('mt-save')));
+    await tester.pumpAndSettle();
+
+    final captured = verify(() => repo.assign(22, 30, permissions: captureAny(named: 'permissions'))).captured.single as Map<String, bool>;
+    expect(captured['can_send_chat'], isFalse);
+    expect(captured['can_view_chat'], isTrue);
+  });
 }

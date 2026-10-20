@@ -47,6 +47,23 @@ void main() {
     expect(find.text('Clients: 2'), findsOneWidget);
   });
 
+  testWidgets('shows which managers\' teams a member is in', (tester) async {
+    when(() => repo.fetchAll(includeArchived: false)).thenAnswer((_) async => [
+          {
+            ...nour(),
+            'teams': [
+              {'manager_id': 8, 'name': 'Taha'},
+              {'manager_id': 9, 'name': 'Maryam'},
+            ],
+          },
+        ]);
+
+    await pumpPage(tester);
+
+    expect(find.byKey(const ValueKey('staff-teams-30')), findsOneWidget);
+    expect(find.text('In team: Taha، Maryam'), findsOneWidget);
+  });
+
   testWidgets('shows the empty state', (tester) async {
     when(() => repo.fetchAll(includeArchived: false)).thenAnswer((_) async => []);
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
@@ -381,6 +382,20 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // The account manager's own team of company staff (PLAN_2 ف٦).
+          if (_api.role == 'account_manager') ...[
+            Card(
+              child: ListTile(
+                key: const ValueKey('am-my-team-entry'),
+                leading: const Icon(Icons.groups_outlined, color: ShadColors.gold),
+                title: Text(l10n.mtTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/am/my-team'),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           // ═══════════════════════════════════════
           // Section 1: Profile
           // ═══════════════════════════════════════

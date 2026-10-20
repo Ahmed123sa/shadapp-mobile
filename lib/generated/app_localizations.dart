@@ -10703,6 +10703,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load your clients.'**
   String get staffClientsLoadFailed;
+
+  /// No description provided for @mtTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get mtTitle;
+
+  /// No description provided for @mtSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Company staff who work on your clients.'**
+  String get mtSubtitle;
+
+  /// No description provided for @mtAddFromCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Add from company staff'**
+  String get mtAddFromCompany;
+
+  /// No description provided for @mtHideCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide company staff'**
+  String get mtHideCompany;
+
+  /// No description provided for @mtCompanyStaffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Company staff'**
+  String get mtCompanyStaffTitle;
+
+  /// No description provided for @mtNotInAnyTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in any team'**
+  String get mtNotInAnyTeam;
+
+  /// No description provided for @mtInTeams.
+  ///
+  /// In en, this message translates to:
+  /// **'In team: {names}'**
+  String mtInTeams(Object names);
+
+  /// No description provided for @mtAddN.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {n} to my team'**
+  String mtAddN(int n);
+
+  /// No description provided for @mtMyTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'My team'**
+  String get mtMyTeam;
+
+  /// No description provided for @mtLinkClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a client'**
+  String get mtLinkClient;
+
+  /// No description provided for @mtRemoveFromTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from team'**
+  String get mtRemoveFromTeam;
+
+  /// No description provided for @mtNoClientsLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not linked to any of your clients yet.'**
+  String get mtNoClientsLinked;
+
+  /// No description provided for @mtEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get mtEdit;
+
+  /// No description provided for @mtUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get mtUnlink;
+
+  /// No description provided for @mtPickClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get mtPickClient;
+
+  /// No description provided for @mtPickClientHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a client'**
+  String get mtPickClientHint;
+
+  /// No description provided for @mtPermOnClient.
+  ///
+  /// In en, this message translates to:
+  /// **'What they can do on this client'**
+  String get mtPermOnClient;
+
+  /// No description provided for @mtPermChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get mtPermChat;
+
+  /// No description provided for @mtPermApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get mtPermApprovals;
+
+  /// No description provided for @mtPermMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings'**
+  String get mtPermMeetings;
+
+  /// No description provided for @mtSeeChat.
+  ///
+  /// In en, this message translates to:
+  /// **'See chat'**
+  String get mtSeeChat;
+
+  /// No description provided for @mtSendChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Send messages'**
+  String get mtSendChat;
+
+  /// No description provided for @mtSeeApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'See approvals'**
+  String get mtSeeApprovals;
+
+  /// No description provided for @mtRequestApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Request approvals'**
+  String get mtRequestApprovals;
+
+  /// No description provided for @mtSeeMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'See meetings'**
+  String get mtSeeMeetings;
+
+  /// No description provided for @mtJoinMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meetings'**
+  String get mtJoinMeetings;
+
+  /// No description provided for @mtDepNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning a \"see\" switch off also turns its action off.'**
+  String get mtDepNote;
+
+  /// No description provided for @mtSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get mtSave;
+
+  /// No description provided for @mtCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get mtCancel;
+
+  /// No description provided for @mtView.
+  ///
+  /// In en, this message translates to:
+  /// **'view'**
+  String get mtView;
+
+  /// No description provided for @mtSend.
+  ///
+  /// In en, this message translates to:
+  /// **'send'**
+  String get mtSend;
+
+  /// No description provided for @mtRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'request'**
+  String get mtRequest;
+
+  /// No description provided for @mtJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'join'**
+  String get mtJoin;
+
+  /// No description provided for @mtNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No access'**
+  String get mtNone;
+
+  /// No description provided for @mtRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from your team?'**
+  String get mtRemoveTitle;
+
+  /// No description provided for @mtRemoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They will be unassigned from {count} of your clients: {names}. Other managers\' teams are not affected.'**
+  String mtRemoveBody(int count, Object names);
+
+  /// No description provided for @mtRemoveBodyNone.
+  ///
+  /// In en, this message translates to:
+  /// **'They are not assigned to any of your clients.'**
+  String get mtRemoveBodyNone;
+
+  /// No description provided for @mtRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get mtRemoveConfirm;
+
+  /// No description provided for @mtLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the team.'**
+  String get mtLoadFailed;
+
+  /// No description provided for @mtSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the changes.'**
+  String get mtSaveFailed;
+
+  /// No description provided for @mtNoClientsToLink.
+  ///
+  /// In en, this message translates to:
+  /// **'All your clients are already linked.'**
+  String get mtNoClientsToLink;
+
+  /// No description provided for @mtEmptyTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Your team is empty. Add people from company staff.'**
+  String get mtEmptyTeam;
+
+  /// No description provided for @mtNotMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in your team'**
+  String get mtNotMine;
+
+  /// No description provided for @mtNotMineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned before this client moved to you.'**
+  String get mtNotMineHint;
+
+  /// No description provided for @mtAddMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to my team'**
+  String get mtAddMine;
+
+  /// No description provided for @mtOpenTeamPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Team page'**
+  String get mtOpenTeamPage;
+
+  /// No description provided for @mtEditPerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit permissions'**
+  String get mtEditPerms;
+
+  /// No description provided for @mtNoOtherStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no other company staff to add.'**
+  String get mtNoOtherStaff;
+
+  /// No description provided for @teamTabHintManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Your team members. Assign or unassign here — permissions are set from the Team page.'**
+  String get teamTabHintManager;
+
+  /// No description provided for @teamTabEmptyManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody in your team yet. Add people from the Team page.'**
+  String get teamTabEmptyManager;
+
+  /// No description provided for @chatStaffReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'You can read this chat but not write in it.'**
+  String get chatStaffReadOnly;
 }
 
 class _AppLocalizationsDelegate

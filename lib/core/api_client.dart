@@ -93,6 +93,18 @@ class ApiClient {
   // nothing else. The backend (restrict.roles) is the real gate.
   bool get isStaffMember => role == 'staff_member';
 
+  /// What this staff member may do on the workspace they have open
+  /// (`my_staff_permissions` from `GET /workspaces/{id}`, PLAN_2 ق٣). Null =
+  /// not loaded / not staff = nothing is hidden (the server still enforces).
+  /// Set by the workspace screen; deliberately not persisted.
+  Map<String, bool>? staffPermissions;
+
+  /// True when [key] (e.g. `can_send_chat`) is allowed on the open workspace.
+  bool staffCan(String key) {
+    if (!isStaffMember) return true;
+    return staffPermissions == null || staffPermissions![key] == true;
+  }
+
   bool canDo(String key) {
     if (isStaffMember) {
       return key == 'can_view_clients' || key == 'can_chat';

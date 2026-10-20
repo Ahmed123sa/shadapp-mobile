@@ -5558,4 +5558,168 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get staffClientsLoadFailed => 'Could not load your clients.';
+
+  @override
+  String get mtTitle => 'Team';
+
+  @override
+  String get mtSubtitle => 'Company staff who work on your clients.';
+
+  @override
+  String get mtAddFromCompany => 'Add from company staff';
+
+  @override
+  String get mtHideCompany => 'Hide company staff';
+
+  @override
+  String get mtCompanyStaffTitle => 'Company staff';
+
+  @override
+  String get mtNotInAnyTeam => 'Not in any team';
+
+  @override
+  String mtInTeams(Object names) {
+    return 'In team: $names';
+  }
+
+  @override
+  String mtAddN(int n) {
+    return 'Add $n to my team';
+  }
+
+  @override
+  String get mtMyTeam => 'My team';
+
+  @override
+  String get mtLinkClient => 'Link to a client';
+
+  @override
+  String get mtRemoveFromTeam => 'Remove from team';
+
+  @override
+  String get mtNoClientsLinked => 'Not linked to any of your clients yet.';
+
+  @override
+  String get mtEdit => 'Edit';
+
+  @override
+  String get mtUnlink => 'Unlink';
+
+  @override
+  String get mtPickClient => 'Client';
+
+  @override
+  String get mtPickClientHint => 'Choose a client';
+
+  @override
+  String get mtPermOnClient => 'What they can do on this client';
+
+  @override
+  String get mtPermChat => 'Chat';
+
+  @override
+  String get mtPermApprovals => 'Approvals';
+
+  @override
+  String get mtPermMeetings => 'Meetings';
+
+  @override
+  String get mtSeeChat => 'See chat';
+
+  @override
+  String get mtSendChat => 'Send messages';
+
+  @override
+  String get mtSeeApprovals => 'See approvals';
+
+  @override
+  String get mtRequestApprovals => 'Request approvals';
+
+  @override
+  String get mtSeeMeetings => 'See meetings';
+
+  @override
+  String get mtJoinMeetings => 'Join meetings';
+
+  @override
+  String get mtDepNote =>
+      'Turning a \"see\" switch off also turns its action off.';
+
+  @override
+  String get mtSave => 'Save';
+
+  @override
+  String get mtCancel => 'Cancel';
+
+  @override
+  String get mtView => 'view';
+
+  @override
+  String get mtSend => 'send';
+
+  @override
+  String get mtRequest => 'request';
+
+  @override
+  String get mtJoin => 'join';
+
+  @override
+  String get mtNone => 'No access';
+
+  @override
+  String get mtRemoveTitle => 'Remove from your team?';
+
+  @override
+  String mtRemoveBody(int count, Object names) {
+    return 'They will be unassigned from $count of your clients: $names. Other managers\' teams are not affected.';
+  }
+
+  @override
+  String get mtRemoveBodyNone =>
+      'They are not assigned to any of your clients.';
+
+  @override
+  String get mtRemoveConfirm => 'Remove';
+
+  @override
+  String get mtLoadFailed => 'Could not load the team.';
+
+  @override
+  String get mtSaveFailed => 'Could not save the changes.';
+
+  @override
+  String get mtNoClientsToLink => 'All your clients are already linked.';
+
+  @override
+  String get mtEmptyTeam =>
+      'Your team is empty. Add people from company staff.';
+
+  @override
+  String get mtNotMine => 'Not in your team';
+
+  @override
+  String get mtNotMineHint => 'Assigned before this client moved to you.';
+
+  @override
+  String get mtAddMine => 'Add to my team';
+
+  @override
+  String get mtOpenTeamPage => 'Open Team page';
+
+  @override
+  String get mtEditPerms => 'Edit permissions';
+
+  @override
+  String get mtNoOtherStaff => 'There are no other company staff to add.';
+
+  @override
+  String get teamTabHintManager =>
+      'Your team members. Assign or unassign here — permissions are set from the Team page.';
+
+  @override
+  String get teamTabEmptyManager =>
+      'Nobody in your team yet. Add people from the Team page.';
+
+  @override
+  String get chatStaffReadOnly => 'You can read this chat but not write in it.';
 }

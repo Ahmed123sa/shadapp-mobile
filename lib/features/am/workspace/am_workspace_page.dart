@@ -5,6 +5,7 @@ import '../../../core/app_log.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/reverb_service.dart';
+import '../../../data/staff_permissions.dart';
 import '../../../data/approval_repository.dart';
 import '../../../data/chat_repository.dart';
 import '../../../data/client_repository.dart';
@@ -69,7 +70,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   String? _wsName;
   String? _clientAvatar;
   String? _clientType;
-  late final TabController _tabController;
+  late TabController _tabController;
 
   bool get _isAssistant => _api.role == 'manager_assistant';
   // Company staff (STAFF_TEAMS_PLAN.md): chat, approval requests and meetings.
@@ -80,7 +81,13 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   // 6 log (calendar), 7 client profile, 8 team (staff assignment).
   static const _tabCount = 9;
   bool _isTabVisible(int i) {
-    if (_isStaff) return i == 0 || i == 4 || i == 5;
+    // Staff only see the tabs they may view on THIS client (PLAN_2 ق٣).
+    if (_isStaff) {
+      if (i == 0) return _api.staffCan('can_view_chat');
+      if (i == 4) return _api.staffCan('can_view_approvals');
+      if (i == 5) return _api.staffCan('can_view_meetings');
+      return false;
+    }
     if (i == 8) return _canManageTeam;
     return !(_isAssistant && i == 3);
   }
@@ -96,15 +103,20 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
     // Assistants never see money and staff only see three tabs, so some tabs
     // are left out. initialTabIndex still counts the full 9-tab layout (deep
     // links and notification routing use it), so map it onto the visible list.
-    final fullIndex = widget.initialTabIndex.clamp(0, _tabCount - 1);
-    final visibleIndex = _visibleTabs.indexOf(fullIndex);
-    _tabController = TabController(
-      length: _visibleTabs.length,
-      vsync: this,
-      initialIndex: visibleIndex < 0 ? 0 : visibleIndex,
-    );
-    _tabController.addListener(_onTabChanged);
+    // A previous workspace's staff permissions must not leak into this one.
+    _api.staffPermissions = null;
+    _tabController = _newController(widget.initialTabIndex.clamp(0, _tabCount - 1));
     _fetchWorkspace();
+  }
+
+  /// A controller for the tabs visible right now; [fullIndex] is the tab of the
+  /// full 9-tab layout to start on (falls back to the first visible one).
+  TabController _newController(int fullIndex) {
+    final visible = _visibleTabs;
+    final visibleIndex = visible.indexOf(fullIndex);
+    final c = TabController(length: visible.length, vsync: this, initialIndex: visibleIndex < 0 ? 0 : visibleIndex);
+    c.addListener(_onTabChanged);
+    return c;
   }
 
   void _onTabChanged() {
@@ -133,6 +145,21 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         _clientAvatar = client?['avatar_url'] as String?;
         _clientType = client?['client_type'] as String?;
       });
+      // A staff member's tabs depend on what they may view on THIS client, so
+      // the tab set can change once the workspace has loaded.
+      if (_isStaff) {
+        final current = _visibleTabs.isEmpty ? null : _visibleTabs[_tabController.index.clamp(0, _visibleTabs.length - 1)];
+        final before = _visibleTabs.join(',');
+        _api.staffPermissions = normalizeStaffPermissions(ws?['my_staff_permissions']);
+        if (_visibleTabs.join(',') != before) {
+          final old = _tabController;
+          old.removeListener(_onTabChanged);
+          setState(() => _tabController = _newController(current ?? 0));
+          old.dispose();
+        } else {
+          setState(() {});
+        }
+      }
     } catch (e, s) {
       AppLog.error('am_workspace_page._loadWorkspace', e, s);
     }
@@ -142,8 +169,10 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   Widget build(BuildContext context) {
     final isActive = _wsStatus == 'active';
     final l10n = AppLocalizations.of(context)!;
+    // SafeArea(top: false): keeps the chat composer (and every tab's bottom
+    // controls) above the Android gesture bar / iOS home indicator.
     return Scaffold(
-      body: Column(children: [
+      body: SafeArea(top: false, child: Column(children: [
         // ── Compact Header ──
         Container(
           color: ShadColors.surfaceDarker,
@@ -197,6 +226,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
           ]),
         ),
         // ── Tab Bar ──
+        if (_visibleTabs.isNotEmpty)
         Container(
           color: ShadColors.surfaceDarker,
           child: TabBar(
@@ -229,12 +259,15 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
         ),
         // ── Tab Content ──
         Expanded(
-          child: IndexedStack(
-            index: _tabController.index,
-            children: [for (final i in _visibleTabs) _tabChild(i)],
-          ),
+          child: _visibleTabs.isEmpty
+              // A staff member with nothing viewable on this client.
+              ? Center(child: Text(l10n.mtNone, key: const ValueKey('workspace-no-access'), style: const TextStyle(color: ShadColors.textSecondary)))
+              : IndexedStack(
+                  index: _tabController.index,
+                  children: [for (final i in _visibleTabs) _tabChild(i)],
+                ),
         ),
-      ]),
+      ])),
     );
   }
 
@@ -266,7 +299,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
       case 4:
         return ApprovalsTab(workspaceId: widget.workspaceId, approvalProvider: _childApprovalProvider, api: _api);
       case 5:
-        return MeetingsTab(workspaceId: widget.workspaceId, meetingProvider: _childMeetingProvider, contractProvider: _childContractProvider);
+        return MeetingsTab(workspaceId: widget.workspaceId, meetingProvider: _childMeetingProvider, contractProvider: _childContractProvider, api: _api);
       case 6:
         return CalendarTab(
           workspaceId: widget.workspaceId,
@@ -279,7 +312,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
       case 7:
         return ClientProfileTab(workspaceId: widget.workspaceId, clientProvider: _childClientProvider, contractProvider: _childContractProvider, api: _api);
       default:
-        return TeamTab(workspaceId: widget.workspaceId, api: _api);
+        return TeamTab(workspaceId: widget.workspaceId, api: _api, clientName: _wsName);
     }
   }
 }

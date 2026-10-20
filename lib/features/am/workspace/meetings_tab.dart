@@ -16,14 +16,17 @@ class MeetingsTab extends StatefulWidget {
   final int? workspaceId;
   final MeetingProvider? meetingProvider;
   final ContractProvider? contractProvider;
-  const MeetingsTab({super.key, this.workspaceId, this.meetingProvider, this.contractProvider});
+  // Optional so a test can inject an ApiClient (e.g. a staff member with limited
+  // permissions); defaults to the real singleton.
+  final ApiClient? api;
+  const MeetingsTab({super.key, this.workspaceId, this.meetingProvider, this.contractProvider, this.api});
 
   @override
   State<MeetingsTab> createState() => _MeetingsTabState();
 }
 
 class _MeetingsTabState extends State<MeetingsTab> {
-  final _api = ApiClient();
+  late final ApiClient _api = widget.api ?? ApiClient();
   late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   List<dynamic> _meetings = [];
@@ -275,7 +278,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
               ),
             ]),
           ],
-          if (m['status'] == 'scheduled' && m['link'] != null) ...[
+          if (m['status'] == 'scheduled' && m['link'] != null && _api.staffCan('can_join_meetings')) ...[
             const SizedBox(height: 12),
             Builder(
               builder: (ctx) {

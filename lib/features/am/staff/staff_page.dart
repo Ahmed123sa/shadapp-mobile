@@ -210,6 +210,12 @@ class _StaffPageState extends State<StaffPage> {
                 ]),
                 Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
                 Text('${l10n.staffClientsLabel}: $count', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                if (safeList(m['teams']).isNotEmpty)
+                  Text(
+                    l10n.mtInTeams(safeList(m['teams']).map((t) => t is Map ? '${t['name']}' : '').where((n) => n.isNotEmpty).join('، ')),
+                    key: ValueKey('staff-teams-${m['id']}'),
+                    style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary),
+                  ),
               ]),
             ),
           ]),

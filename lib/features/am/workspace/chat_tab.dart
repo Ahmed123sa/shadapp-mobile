@@ -672,6 +672,18 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                   ),
                 ]),
               ),
+            // Staff without "send" on this client can read but not write (PLAN_2 ق٣).
+            if (!_api.staffCan('can_send_chat'))
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(13, 6, 13, 12),
+                child: Text(
+                  l10n.chatStaffReadOnly,
+                  key: const ValueKey('chat-read-only'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary),
+                ),
+              )
+            else
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(13, 0, 13, 9),
               child: Row(children: [

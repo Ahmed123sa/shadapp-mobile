@@ -19,6 +19,7 @@ import '../features/profile/profile_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/staff/staff_dashboard_page.dart';
 import '../features/am/staff/staff_page.dart';
+import '../features/am/staff/my_team_page.dart';
 
 const _publicLocations = ['/login', '/forgot-password'];
 
@@ -89,6 +90,10 @@ Future<String?> resolveAuthRedirect(ApiClient api, String location) async {
   if (location.startsWith('/am/staff') && role != 'super_admin') {
     return homeLocationForRole(role);
   }
+  // The manager's own team of company staff is the account manager's alone.
+  if (location.startsWith('/am/my-team') && role != 'account_manager') {
+    return homeLocationForRole(role);
+  }
   // Manager assistants have no finance/reports/audit/managers screens.
   if (role == 'manager_assistant' && _isAssistantBlocked(location)) {
     return '/am/dashboard';
@@ -130,6 +135,7 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
       GoRoute(path: '/am/audit-logs', builder: (_, __) => const AuditLogPage()),
       GoRoute(path: '/staff/dashboard', builder: (_, __) => const StaffDashboardPage()),
       GoRoute(path: '/am/staff', builder: (_, __) => const StaffPage()),
+      GoRoute(path: '/am/my-team', builder: (_, __) => const MyTeamPage()),
       GoRoute(path: '/am/settings', builder: (_, __) => const AdminSettingsPage()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),

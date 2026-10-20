@@ -140,7 +140,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
     final isSA = _api.role == 'super_admin';
     // SA is read-only; an assistant needs can_manage_approvals to write.
     // Company staff may send approval requests too (to the client).
-    final canWrite = !isSA && (_api.canDo('can_manage_approvals') || _api.isStaffMember);
+    final canWrite = !isSA && (_api.canDo('can_manage_approvals') || (_api.isStaffMember && _api.staffCan('can_request_approvals')));
     final l10n = AppLocalizations.of(context)!;
 
     return RefreshIndicator(

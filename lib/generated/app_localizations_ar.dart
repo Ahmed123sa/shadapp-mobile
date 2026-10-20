@@ -5533,4 +5533,165 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get staffClientsLoadFailed => 'تعذّر تحميل عملائك.';
+
+  @override
+  String get mtTitle => 'الفريق';
+
+  @override
+  String get mtSubtitle => 'موظفو الشركة الذين يعملون على عملائك.';
+
+  @override
+  String get mtAddFromCompany => 'إضافة من موظفي الشركة';
+
+  @override
+  String get mtHideCompany => 'إخفاء موظفي الشركة';
+
+  @override
+  String get mtCompanyStaffTitle => 'موظفو الشركة';
+
+  @override
+  String get mtNotInAnyTeam => 'ليس في أي فريق';
+
+  @override
+  String mtInTeams(Object names) {
+    return 'في فريق: $names';
+  }
+
+  @override
+  String mtAddN(int n) {
+    return 'إضافة $n لفريقي';
+  }
+
+  @override
+  String get mtMyTeam => 'فريقي';
+
+  @override
+  String get mtLinkClient => 'ربط بعميل';
+
+  @override
+  String get mtRemoveFromTeam => 'إزالة من الفريق';
+
+  @override
+  String get mtNoClientsLinked => 'غير مربوط بأي عميل من عملائك بعد.';
+
+  @override
+  String get mtEdit => 'تعديل';
+
+  @override
+  String get mtUnlink => 'إلغاء الربط';
+
+  @override
+  String get mtPickClient => 'العميل';
+
+  @override
+  String get mtPickClientHint => 'اختر عميلاً';
+
+  @override
+  String get mtPermOnClient => 'ما يمكنه فعله مع هذا العميل';
+
+  @override
+  String get mtPermChat => 'المحادثة';
+
+  @override
+  String get mtPermApprovals => 'الموافقات';
+
+  @override
+  String get mtPermMeetings => 'الاجتماعات';
+
+  @override
+  String get mtSeeChat => 'رؤية المحادثة';
+
+  @override
+  String get mtSendChat => 'إرسال الرسائل';
+
+  @override
+  String get mtSeeApprovals => 'رؤية الموافقات';
+
+  @override
+  String get mtRequestApprovals => 'طلب موافقات';
+
+  @override
+  String get mtSeeMeetings => 'رؤية الاجتماعات';
+
+  @override
+  String get mtJoinMeetings => 'حضور الاجتماعات';
+
+  @override
+  String get mtDepNote => 'إيقاف \"الرؤية\" يوقف الإجراء التابع لها تلقائيًا.';
+
+  @override
+  String get mtSave => 'حفظ';
+
+  @override
+  String get mtCancel => 'إلغاء';
+
+  @override
+  String get mtView => 'عرض';
+
+  @override
+  String get mtSend => 'إرسال';
+
+  @override
+  String get mtRequest => 'طلب';
+
+  @override
+  String get mtJoin => 'انضمام';
+
+  @override
+  String get mtNone => 'بلا صلاحيات';
+
+  @override
+  String get mtRemoveTitle => 'إزالة من فريقك؟';
+
+  @override
+  String mtRemoveBody(int count, Object names) {
+    return 'سيُلغى تعيينه من $count من عملائك: $names. فرق المديرين الآخرين لا تتأثر.';
+  }
+
+  @override
+  String get mtRemoveBodyNone => 'غير معيَّن على أي من عملائك.';
+
+  @override
+  String get mtRemoveConfirm => 'إزالة';
+
+  @override
+  String get mtLoadFailed => 'تعذّر تحميل الفريق.';
+
+  @override
+  String get mtSaveFailed => 'تعذّر حفظ التغييرات.';
+
+  @override
+  String get mtNoClientsToLink => 'كل عملائك مربوطون بالفعل.';
+
+  @override
+  String get mtEmptyTeam => 'فريقك فارغ. أضف أشخاصًا من موظفي الشركة.';
+
+  @override
+  String get mtNotMine => 'ليس في فريقك';
+
+  @override
+  String get mtNotMineHint => 'تم تعيينه قبل انتقال هذا العميل إليك.';
+
+  @override
+  String get mtAddMine => 'إضافة لفريقي';
+
+  @override
+  String get mtOpenTeamPage => 'افتح صفحة الفريق';
+
+  @override
+  String get mtEditPerms => 'تعديل الصلاحيات';
+
+  @override
+  String get mtNoOtherStaff => 'لا يوجد موظفو شركة آخرون للإضافة.';
+
+  @override
+  String get teamTabHintManager =>
+      'أعضاء فريقك. عيّن أو ألغِ التعيين من هنا — الصلاحيات تُحدَّد من صفحة الفريق.';
+
+  @override
+  String get teamTabEmptyManager =>
+      'لا أحد في فريقك بعد. أضف أشخاصًا من صفحة الفريق.';
+
+  @override
+  String get chatStaffReadOnly => 'يمكنك قراءة هذه المحادثة دون الكتابة فيها.';
 }

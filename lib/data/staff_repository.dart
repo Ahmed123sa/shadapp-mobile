@@ -56,7 +56,38 @@ class StaffRepository {
     return safeList(res['staff']).whereType<Map<String, dynamic>>().toList();
   }
 
-  Future<void> assign(int workspaceId, int memberId) => _api.put('/workspaces/$workspaceId/staff/$memberId', {});
+  /// Assigns (or, when already assigned, updates) a member on a client. Without
+  /// [permissions] a new assignment gets the defaults (everything on).
+  Future<void> assign(int workspaceId, int memberId, {Map<String, bool>? permissions}) =>
+      _api.put('/workspaces/$workspaceId/staff/$memberId', permissions == null ? {} : {'permissions': permissions});
 
   Future<void> unassign(int workspaceId, int memberId) => _api.delete('/workspaces/$workspaceId/staff/$memberId');
+
+  // ── The manager's own team (PLAN_2_MANAGER_TEAMS.md) ──
+
+  /// `GET /my-team` → `{team: [...], others: [...]}`.
+  Future<Map<String, dynamic>> myTeam() => _api.get('/my-team');
+
+  Future<void> addToTeam(int memberId) => _api.post('/my-team/$memberId');
+
+  /// `{count, clients: [names]}` — who loses what if [memberId] leaves the team.
+  Future<Map<String, dynamic>> removalImpact(int memberId) => _api.get('/my-team/$memberId/removal-impact');
+
+  Future<void> removeFromTeam(int memberId) => _api.delete('/my-team/$memberId');
+
+  /// The manager's clients that have a workspace, as `{workspace_id, name}` —
+  /// what the "link to a client" sheet offers.
+  Future<List<Map<String, dynamic>>> workspaceChoices() async {
+    final res = await _api.get('/clients?per_page=100');
+    final raw = res['clients'];
+    final rows = raw is Map ? raw['data'] : raw;
+    return safeList(rows)
+        .whereType<Map<String, dynamic>>()
+        .where((c) => c['workspace'] is Map && (c['workspace'] as Map)['id'] != null)
+        .map((c) => <String, dynamic>{
+              'workspace_id': (c['workspace'] as Map)['id'] as int,
+              'name': (c['company_name'] ?? c['contact_person'] ?? '#${c['id']}').toString(),
+            })
+        .toList();
+  }
 }
