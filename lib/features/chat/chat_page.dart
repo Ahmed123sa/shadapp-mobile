@@ -7,8 +7,10 @@ import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/reverb_service.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/payment_banner.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/helpers/meeting_helpers.dart';
@@ -405,199 +407,163 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.lock_outline, size: 64, color: ShadColors.textDisabled),
+            const LxIcon('lock', size: 44, color: Lx.faint),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.noMessagesYet, style: ShadTypography.cardTitle),
+            Text(AppLocalizations.of(context)!.noMessagesYet, style: Lx.display(context, size: 20)),
             const SizedBox(height: 8),
             Text(AppLocalizations.of(context)!.chatUnavailable,
-                style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+                textAlign: TextAlign.center,
+                style: Lx.text(context, size: 13, color: Lx.muted)),
           ]),
         ),
       );
     }
 
-    final amName = _workspaceData?['manager']?['name'] as String? ?? AppLocalizations.of(context)!.accountManager;
+    final l10n = AppLocalizations.of(context)!;
+    final amName = _workspaceData?['manager']?['name'] as String? ?? l10n.accountManager;
     final amOnline = chatIsOnline(_workspaceData?['manager']);
-    final amAvatarUrl = _workspaceData?['manager']?['avatar_url'] as String?;
+
+    Widget headerBtn(String key, IconData icon, VoidCallback onTap) => InkResponse(
+          key: ValueKey(key),
+          onTap: onTap,
+          radius: 20,
+          child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 18, color: Lx.muted)),
+        );
 
     return Column(children: [
-      // Chat Header
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: const BoxDecoration(
-          color: ShadColors.chatHeaderBg,
-          border: Border(bottom: BorderSide(color: ShadColors.cardBorder)),
-        ),
+      // Slim header (the mockup has none; kept so the contracts list and the
+      // latest meeting link stay reachable).
+      Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 10, 6),
         child: Row(children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: ShadColors.crimsonSoft,
-                backgroundImage: amAvatarUrl != null ? NetworkImage(_api.resolveFileUrl(amAvatarUrl)) : null,
-                child: amAvatarUrl == null ? Text(chatInitials(amName),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)) : null,
-              ),
-              Positioned(
-                bottom: 0, right: 0,
-                child: Container(
-                  width: 9, height: 9,
-                  decoration: BoxDecoration(
-                    color: amOnline ? ShadColors.online : ShadColors.textDisabled,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ShadColors.chatHeaderBg, width: 1.5),
-                  ),
-                ),
-              ),
-            ],
+          LuxeStatusDot(status: amOnline ? LxStatus.ok : LxStatus.off),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: amName, style: Lx.text(context, size: 13, weight: FontWeight.w500)),
+                TextSpan(text: '  ${amOnline ? l10n.online : l10n.offline}', style: Lx.text(context, size: 11, color: Lx.faint)),
+              ]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(amName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-            const SizedBox(height: 1),
-            Text(amOnline ? AppLocalizations.of(context)!.online : AppLocalizations.of(context)!.offline,
-              style: TextStyle(fontSize: 10, color: amOnline ? ShadColors.online : ShadColors.textDisabled)),
-          ])),
-          chatHeaderIconBtn(Icons.copy_outlined, _openContracts),
-          const SizedBox(width: 6),
-          chatHeaderIconBtn(Icons.videocam_outlined, _openLatestZoomLink),
+          headerBtn('chat-contracts', Icons.copy_outlined, _openContracts),
+          headerBtn('chat-zoom', Icons.videocam_outlined, _openLatestZoomLink),
         ]),
       ),
-      // Upcoming Meeting Banner
-      if (_nextMeeting != null) chatUpcomingMeetingBanner(
-        meeting: _nextMeeting!,
-        fallbackTitle: AppLocalizations.of(context)!.upcomingMeeting,
-        inMinutesLabel: AppLocalizations.of(context)!.inMinutes,
-        inHoursLabel: AppLocalizations.of(context)!.inHours,
-        inDaysLabel: AppLocalizations.of(context)!.inDays,
-        joinLabel: AppLocalizations.of(context)!.join,
-      ),
-      // Upcoming Payment Banner
-      if (_nextPayment != null)
-        PaymentBanner(
-          payment: _nextPayment!,
-          onTap: () => _onPaymentBannerTap(_nextPayment!),
-        ),
       // Messages
       Expanded(
         child: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _messages.isEmpty
-              ? Center(child: Text(AppLocalizations.of(context)!.noMessagesYet, style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)))
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(14),
-                  itemCount: _buildMessageList().length,
-                  itemBuilder: (_, i) => _buildMessageList()[i],
-                ),
+          ? const Center(child: CircularProgressIndicator(color: Lx.crimsonInk))
+          : ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+              itemCount: _messages.isEmpty ? 1 : _buildMessageList().length,
+              itemBuilder: (_, i) {
+                if (_messages.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 60),
+                    child: Center(child: Text(l10n.noMessagesYet, style: Lx.text(context, size: 14, color: Lx.muted))),
+                  );
+                }
+                return _buildMessageList()[i];
+              },
+            ),
+      ),
+      // Banners sit above the composer so the stream keeps the room.
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(children: [
+          if (_nextMeeting != null)
+            LxMeetingBanner(meeting: _nextMeeting!, canJoin: _api.canDo('can_join_meetings')),
+          if (_nextPayment != null && _api.canDo('can_view_payments'))
+            LxPaymentBanner(payment: _nextPayment!, onTap: () => _onPaymentBannerTap(_nextPayment!)),
+        ]),
       ),
       // Reply Preview
       if (_replyTo != null)
         Container(
-          padding: const EdgeInsetsDirectional.fromSTEB(14, 7, 14, 7),
-          decoration: const BoxDecoration(
-            color: ShadColors.chatHeaderBg,
-            border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-          ),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 7, 16, 7),
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
           child: Row(children: [
-            Container(width: 2.5, height: 26, decoration: BoxDecoration(
-              color: ShadColors.crimson, borderRadius: BorderRadius.circular(2),
-            )),
+            Container(width: 2.5, height: 28, decoration: BoxDecoration(color: Lx.crimsonInk, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 8),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_replyTo!['sender']?['name'] ?? 'Message', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.crimson)),
-              Text(_replyTo!['message'] ?? '', style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(_replyTo!['sender']?['name'] ?? 'Message', style: Lx.text(context, size: 10.5, color: Lx.crimsonInk, weight: FontWeight.w500)),
+              Text(_replyTo!['message'] ?? '', style: Lx.text(context, size: 11, color: Lx.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
             ])),
             GestureDetector(
               onTap: () => setState(() => _replyTo = null),
-              child: const Text('✕', style: TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
+              child: const Icon(Icons.close, size: 16, color: Lx.faint),
             ),
           ]),
         ),
-      // Input Bar
+      // Composer — mockup `.composer`: clip + underlined field + crimson send.
       Container(
-        padding: const EdgeInsetsDirectional.fromSTEB(13, 9, 13, 9),
-        decoration: const BoxDecoration(
-          color: ShadColors.chatHeaderBg,
-          border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-        ),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 8),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           if (_editingMessage != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(bottom: 6),
-              decoration: BoxDecoration(
-                color: ShadColors.gold.withAlpha(20),
-                borderRadius: BorderRadius.circular(8),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
               child: Row(children: [
-                const Icon(Icons.edit, size: 14, color: ShadColors.gold),
+                const Icon(Icons.edit, size: 14, color: Lx.crimsonInk),
                 const SizedBox(width: 6),
-                Text(AppLocalizations.of(context)!.editMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
+                Text(l10n.editMessage, style: Lx.text(context, size: 12, color: Lx.crimsonInk)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => setState(() { _editingMessage = null; _controller.clear(); }),
-                  child: const Icon(Icons.close, size: 16, color: ShadColors.textSecondary),
+                  child: const Icon(Icons.close, size: 16, color: Lx.faint),
                 ),
               ]),
             ),
           Row(children: [
-            Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(
-                color: ShadColors.overlayFaint,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: ShadColors.cardBorder, width: 0.5),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.attach_file, size: 14),
-                onPressed: _editingMessage != null ? null : _sendWithAttachment,
-                color: ShadColors.textSecondary,
-                padding: EdgeInsets.zero,
-              ),
-            ),
-            const SizedBox(width: 7),
             Expanded(
-              child: TextField(
-                controller: _controller,
-                style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: _editingMessage != null ? AppLocalizations.of(context)!.editYourMessage : AppLocalizations.of(context)!.typeMessage,
-                  hintStyle: const TextStyle(fontSize: 12, color: ShadColors.textDim),
-                  filled: true,
-                  fillColor: ShadColors.chatInputFill,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
+              child: Container(
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                child: Row(children: [
+                  InkResponse(
+                    key: const ValueKey('chat-attach'),
+                    radius: 18,
+                    onTap: _editingMessage != null ? null : _sendWithAttachment,
+                    child: const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: LxIcon('clip', size: 18, color: Lx.faint)),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      style: Lx.text(context, size: 14),
+                      cursorColor: Lx.crimsonInk,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        hintText: _editingMessage != null ? l10n.editYourMessage : l10n.typeMessage,
+                        hintStyle: Lx.text(context, size: 14, color: Lx.faint),
+                      ),
+                      onSubmitted: (_) => _editingMessage != null ? _saveEdit() : _send(),
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: ShadColors.gold, width: 1),
-                  ),
-                ),
-                onSubmitted: (_) => _editingMessage != null ? _saveEdit() : _send(),
+                ]),
               ),
             ),
-            const SizedBox(width: 7),
-            Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(
-                color: _editingMessage != null ? ShadColors.gold : ShadColors.crimson,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _editingMessage != null ? Icons.check : Icons.send_rounded,
-                  color: Colors.white, size: 14,
+            const SizedBox(width: 10),
+            GestureDetector(
+              key: const ValueKey('chat-send'),
+              onTap: _editingMessage != null ? _saveEdit : _send,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
+                child: Center(
+                  child: _editingMessage != null
+                      ? const Icon(Icons.check, size: 18, color: Colors.white)
+                      : const LxIcon('send', size: 18, color: Colors.white),
                 ),
-                onPressed: _editingMessage != null ? _saveEdit : _send,
-                padding: EdgeInsets.zero,
               ),
             ),
           ]),

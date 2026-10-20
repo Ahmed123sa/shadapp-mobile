@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import '../luxe/tokens.dart';
 import '../theme.dart';
+import 'luxe/luxe_widgets.dart';
 
 class PaymentDetailSheet extends StatelessWidget {
   final Map<String, dynamic> payment;
@@ -29,12 +31,21 @@ class PaymentDetailSheet extends StatelessWidget {
 
     final statusInfo = _statusInfo(status, l10n);
 
-    return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 24),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(top: BorderSide(color: ShadColors.gold.withAlpha(60), width: 1)),
+    final amt = num.tryParse(amount);
+    final dot = status == 'approved'
+        ? LxStatus.ok
+        : status == 'overdue' || status == 'rejected'
+            ? LxStatus.bad
+            : (status == 'scheduled' || status == 'pending')
+                ? LxStatus.wait
+                : LxStatus.off;
+
+    return Builder(builder: (context) => Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(22, 12, 22, 26),
+      decoration: const BoxDecoration(
+        color: Lx.sheet,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet)),
+        border: Border(top: BorderSide(color: Lx.line2)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -42,45 +53,35 @@ class PaymentDetailSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const ValueKey('lx-sheet-handle'),
               width: 36, height: 4,
-              decoration: BoxDecoration(
-                color: ShadColors.cardBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
+              decoration: BoxDecoration(color: Lx.line2, borderRadius: BorderRadius.circular(2)),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: ShadColors.gold.withAlpha(20),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ShadColors.gold.withAlpha(40), width: 0.5),
-              ),
-              child: Icon(statusInfo.$2, size: 18, color: ShadColors.gold),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(installmentLabel ?? l10n.paymentDetail_title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-                  Text(statusInfo.$1,
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusInfo.$3)),
-                ],
-              ),
-            ),
+          const SizedBox(height: 18),
+          Text(installmentLabel ?? l10n.paymentDetail_title, style: Lx.display(context, size: 22)),
+          const SizedBox(height: 6),
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            LuxeStatusDot(status: dot),
+            const SizedBox(width: 7),
+            Text(statusInfo.$1, style: Lx.text(context, size: 12, color: Lx.ink2)),
           ]),
-          const SizedBox(height: 16),
-          _row(l10n.paymentDetail_amount, '$amount $currency'),
-          if (dueDate != null && dueDate.isNotEmpty) _row(l10n.paymentDetail_dueDate, _formatDate(dueDate)),
-          if (notes != null && notes.isNotEmpty) _row(l10n.paymentDetail_notes, notes),
+          const SizedBox(height: 14),
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text.rich(TextSpan(children: [
+              TextSpan(text: amt != null ? lxFormatMoney(amt) : amount, style: Lx.display(context, size: 28)),
+              TextSpan(text: ' $currency', style: Lx.text(context, size: 12, color: Lx.muted)),
+            ])),
+          ),
+          const SizedBox(height: 8),
+          Container(height: 1, color: Lx.line),
+          if (dueDate != null && dueDate.isNotEmpty) _row(context, l10n.paymentDetail_dueDate, _formatDate(dueDate)),
+          if (notes != null && notes.isNotEmpty) _row(context, l10n.paymentDetail_notes, notes),
           if (status == 'rejected' && rejectionReason != null && rejectionReason.isNotEmpty)
-            _row(l10n.paymentsRejectionReason, rejectionReason),
+            _row(context, l10n.paymentsRejectionReason, rejectionReason),
           if (showPayButton && status == 'scheduled') ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -88,28 +89,30 @@ class PaymentDetailSheet extends StatelessWidget {
                 icon: const Icon(Icons.payment, size: 16),
                 label: Text(l10n.paymentDetail_payNow),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ShadColors.gold,
+                  backgroundColor: Lx.crimson,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: Lx.text(context, size: 14, weight: FontWeight.w500),
                 ),
               ),
             ),
           ],
         ],
       ),
-    );
+    ));
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(BuildContext context, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+          Text(label, style: Lx.text(context, size: 12.5, color: Lx.muted)),
           const SizedBox(width: 12),
-          Flexible(child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textAlign: TextAlign.end)),
+          Flexible(child: Text(value, style: Lx.text(context, size: 12.5), textAlign: TextAlign.end)),
         ],
       ),
     );

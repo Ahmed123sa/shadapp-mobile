@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../luxe/tokens.dart';
 import '../theme.dart';
 import '../api_client.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import 'status_badge.dart';
+import 'luxe/luxe_widgets.dart';
 
 class ChatContractCard extends StatefulWidget {
   final Map<String, dynamic> contract;
@@ -60,96 +61,108 @@ class _ChatContractCardState extends State<ChatContractCard> {
     final showApprove = widget.isClient && status == 'sent' && widget.canApprove;
     final showNeedsOwner = widget.isClient && status == 'sent' && !widget.canApprove;
     final showPayment = widget.isClient && (status == 'company_approved' || status == 'completed');
-    final isGoldBorder = status == 'company_approved';
 
+    final cur = c['currency'] as String? ?? 'SAR';
+    final amt = num.tryParse('${c['value'] ?? 0}');
+    final dot = (status == 'company_approved' || status == 'completed')
+        ? LxStatus.ok
+        : (status == 'rejected' || status == 'cancelled')
+            ? LxStatus.bad
+            : status == 'sent'
+                ? LxStatus.wait
+                : LxStatus.off;
+
+    // Mockup `.mc` (+ `.ap` while it still needs the client's approval).
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: isGoldBorder ? ShadColors.gold : ShadColors.primary, width: isGoldBorder ? 1.5 : 2),
-        borderRadius: BorderRadius.circular(12),
-        color: ShadColors.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: showApprove ? const Color(0x59941414) : Lx.line),
+        gradient: showApprove
+            ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x1A941414), Color(0x08941414)])
+            : Lx.cardGradient,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(isGoldBorder ? Icons.verified : Icons.description,
-                color: isGoldBorder ? ShadColors.gold : ShadColors.primary, size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c['title'] ?? '', style: ShadTypography.cardTitle),
-                    const SizedBox(height: 2),
-                    Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'} • ${clauses.length} ${l10n.contractClausesLabel}',
-                      style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
-                    if (widget.clientType == 'business')
-                      Text(l10n.contractValueExcludesVat, style: TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
-                  ],
-                ),
-              ),
-              StatusBadge(status: status, fontSize: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Flexible(child: Text(l10n.contracts.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2))),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              LuxeStatusDot(status: dot),
+              const SizedBox(width: 6),
+              Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 11, color: Lx.ink2)),
             ]),
-            if (status == 'company_approved')
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(l10n.contractApprovedUploadPayment,
-                  style: const TextStyle(fontSize: 10, color: ShadColors.gold, fontWeight: FontWeight.w500)),
-              ),
-            if (['client_approved', 'company_approved', 'completed'].contains(status) && c['pdf_url'] != null) ...[
-              const SizedBox(height: 4),
-              InkWell(
-                onTap: () => _viewPdf(c['pdf_url'] as String?),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.picture_as_pdf, size: 14, color: ShadColors.error),
-                  const SizedBox(width: 4),
-                  Text(
-                    status == 'client_approved' ? l10n.viewSignedContract : l10n.downloadFinalContract,
-                    style: ShadTypography.cardBody.copyWith(color: ShadColors.primary, decoration: TextDecoration.underline, fontSize: 11),
-                  ),
-                ]),
-              ),
-            ],
+          ]),
+          const SizedBox(height: 6),
+          Text(c['title'] ?? '', style: Lx.display(context, size: 18)),
+          const SizedBox(height: 2),
+          Text('${amt != null ? lxFormatMoney(amt) : (c['value'] ?? 0)} $cur • ${clauses.length} ${l10n.contractClausesLabel}',
+              style: Lx.text(context, size: 12.5, color: Lx.muted)),
+          if (widget.clientType == 'business')
+            Text(l10n.contractValueExcludesVat, style: Lx.text(context, size: 10, color: Lx.faint)),
+          if (status == 'company_approved')
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(l10n.contractApprovedUploadPayment, style: Lx.text(context, size: 11, color: Lx.ok)),
+            ),
+          if (['client_approved', 'company_approved', 'completed'].contains(status) && c['pdf_url'] != null) ...[
             const SizedBox(height: 8),
-            Row(children: [
-              TextButton.icon(
-                onPressed: widget.onViewClauses,
-                icon: const Icon(Icons.list_alt, size: 18),
-                label: Text(l10n.viewClauses),
-              ),
-              const Spacer(),
-              if (showPayment)
-                ElevatedButton.icon(
-                  onPressed: widget.onGoToPayments,
-                  icon: const Icon(Icons.payment, size: 16),
-                  label: Text(l10n.uploadPayment),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ShadColors.crimson,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    textStyle: ShadTypography.cardBody.copyWith(fontWeight: FontWeight.w600),
-                  ),
+            InkWell(
+              onTap: () => _viewPdf(c['pdf_url'] as String?),
+              child: Container(
+                padding: const EdgeInsets.only(bottom: 1),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                child: Text(
+                  status == 'client_approved' ? l10n.viewSignedContract : l10n.downloadFinalContract,
+                  style: Lx.text(context, size: 12, color: Lx.ink2),
                 ),
-              if (showApprove)
-                ElevatedButton(
-                  onPressed: widget.onApprove,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ShadColors.success,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    textStyle: ShadTypography.cardBody.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  child: Text(l10n.approve),
-                ),
-            ]),
-            if (showNeedsOwner)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
               ),
+            ),
           ],
-        ),
+          const SizedBox(height: 10),
+          Row(children: [
+            TextButton.icon(
+              onPressed: widget.onViewClauses,
+              icon: const Icon(Icons.list_alt, size: 17),
+              label: Text(l10n.viewClauses),
+              style: TextButton.styleFrom(foregroundColor: Lx.ink2, padding: const EdgeInsets.symmetric(horizontal: 8), textStyle: Lx.text(context, size: 12.5)),
+            ),
+            const Spacer(),
+            if (showPayment)
+              ElevatedButton.icon(
+                onPressed: widget.onGoToPayments,
+                icon: const Icon(Icons.payment, size: 16),
+                label: Text(l10n.uploadPayment),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Lx.crimson,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  textStyle: Lx.text(context, size: 12.5, weight: FontWeight.w500),
+                ),
+              ),
+            if (showApprove)
+              ElevatedButton(
+                onPressed: widget.onApprove,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Lx.crimson,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  textStyle: Lx.text(context, size: 12.5, weight: FontWeight.w500),
+                ),
+                child: Text(l10n.approve),
+              ),
+          ]),
+          if (showNeedsOwner)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: LuxeHint(l10n.subuserActionNeedsOwner),
+            ),
+        ],
       ),
     );
   }

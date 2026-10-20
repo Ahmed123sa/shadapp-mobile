@@ -10,7 +10,8 @@ import '../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
-import '../../core/widgets/shad_logo.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../data/approval_repository.dart';
 import '../../data/chat_repository.dart';
 import '../../data/client_repository.dart';
@@ -529,132 +530,164 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     if (allowedBottomTabs.isEmpty) allowedBottomTabs.add(0);
     if (allowedBottomTabs.length < 2) allowedBottomTabs.add(allowedBottomTabs.contains(0) ? 1 : 0);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: const Padding(
-          padding: EdgeInsetsDirectional.only(start: 8),
-          child: ShadLogo(size: 28, showText: false),
+    final l10n = AppLocalizations.of(context)!;
+    final company = (_client?['company_name'] ?? _client?['contact_person'] ?? '').toString();
+    final navItems = <LuxeNavItem>[
+      for (final idx in allowedBottomTabs)
+        LuxeNavItem(
+          id: tabKeys[idx],
+          lxIcon: _isTabLocked(idx) ? 'lock' : _tabLxIcons[idx],
+          label: _tabLabel(idx),
+          badge: _isTabLocked(idx) ? 0 : _badgeFor(idx),
         ),
-        actions: [
-          Stack(children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              // plans/notifications-badges-toasts-plan.md ن12 — this used to
-              // leave the badge showing its stale pre-visit count until the
-              // next 60s poll tick, even though the notifications page
-              // itself just marked things read/deleted.
-              onPressed: () => context.push('/notifications').then((_) => _loadNotifs()),
-            ),
-            if (_unreadNotifs > 0)
-              Positioned(
-                right: 6, top: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
-                  // ن12 — capped at 99+ like every other tab badge in this
-                  // app; this one was left uncapped.
-                  child: Text(_unreadNotifs > 99 ? '99+' : '$_unreadNotifs', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+      LuxeNavItem(id: 'more', lxIcon: 'more', label: l10n.dashboard_more),
+    ];
+    final moreIndex = navItems.length - 1;
+
+    return Scaffold(
+      backgroundColor: Lx.page,
+      body: SafeArea(
+        bottom: false,
+        child: LuxeGlow(
+          child: Column(
+            children: [
+              LuxeTopBar(
+                company: company,
+                avatarInitial: _avatarInitial(),
+                unread: _unreadNotifs > 0,
+                // plans/notifications-badges-toasts-plan.md ن12 — the badge
+                // used to keep its stale pre-visit state until the next 60s
+                // poll tick, even though the notifications page itself had
+                // just marked things read/deleted.
+                onBell: () => context.push('/notifications').then((_) => _loadNotifs()),
+                onAvatar: _showMoreSheet,
+              ),
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: [
+                    ...pages,
+                    MeetingsPage(meetingProvider: _childMeetingProvider, api: _api),
+                    SignatureTab(clientProvider: _childClientProvider, signatureProvider: _childSignatureProvider, api: _api),
+                    SubUsersPage(subUserProvider: _childSubUserProvider, api: _api),
+                  ],
                 ),
               ),
-          ]),
-          IconButton(
-            icon: const Icon(Icons.language, size: 20),
-            onPressed: () => context.read<LocaleProvider>().toggle(),
-            tooltip: AppLocalizations.of(context)!.dashboard_changeLanguage,
-          ),
-          IconButton(icon: const Icon(Icons.settings_outlined, size: 20), onPressed: () => context.push('/settings'), tooltip: AppLocalizations.of(context)!.dashboard_settings),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: AppLocalizations.of(context)!.dashboard_more,
-            onSelected: (value) {
-              setState(() {
-                if (value == 'meetings') _selectedIndex = 5;
-                if (value == 'signature') _selectedIndex = 6;
-                if (value == 'subusers') _selectedIndex = 7;
-              });
-            },
-            itemBuilder: (context) {
-              final l10n = AppLocalizations.of(context)!;
-              return [
-                if (_isTabAllowedByPermission('meetings'))
-                  PopupMenuItem(value: 'meetings', child: ListTile(leading: const Icon(Icons.videocam_outlined), title: Text(l10n.dashboard_meetings), dense: true)),
-                if (!_isSubUser) ...[
-                  PopupMenuItem(value: 'signature', child: ListTile(leading: const Icon(Icons.edit_outlined), title: Text(l10n.signature), dense: true)),
-                  PopupMenuItem(value: 'subusers', child: ListTile(leading: const Icon(Icons.people_outlined), title: Text(l10n.dashboard_team), dense: true)),
-                ],
-              ];
-            },
-          ),
-          IconButton(icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: AppLocalizations.of(context)!.dashboard_logout),
-        ],
-      ),
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _selectedIndex >= 5 ? _selectedIndex : _selectedIndex,
-            children: [
-              ...pages,
-              MeetingsPage(meetingProvider: _childMeetingProvider, api: _api),
-              SignatureTab(clientProvider: _childClientProvider, signatureProvider: _childSignatureProvider, api: _api),
-              SubUsersPage(subUserProvider: _childSubUserProvider, api: _api),
             ],
           ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: ShadColors.cardBorder)),
-        ),
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            navigationBarTheme: NavigationBarThemeData(
-              indicatorColor: ShadColors.crimson.withAlpha(46),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold);
-                }
-                return TextStyle(fontSize: 11, color: ShadColors.textSecondary);
-              }),
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return IconThemeData(size: 22, color: ShadColors.gold);
-                }
-                return IconThemeData(size: 22, color: ShadColors.textSecondary);
-              }),
-            ),
-          ),
-          child: NavigationBar(
-          selectedIndex: allowedBottomTabs.indexOf(_selectedIndex).clamp(0, allowedBottomTabs.length - 1),
-          onDestinationSelected: (i) {
-            final targetTab = allowedBottomTabs[i];
-            if (_isTabLocked(targetTab)) {
-              final l10n = AppLocalizations.of(context)!;
-              final reqStage = _tabRequiredStage(targetTab);
-              final stageLabels = ['', l10n.dashboard_stage_signature, l10n.dashboard_stage_receiveContract, l10n.dashboard_stage_yourApproval, l10n.dashboard_stage_companyApproval, l10n.dashboard_stage_paymentProof, l10n.dashboard_stage_activateSpace];
-              final label = stageLabels.length > reqStage ? stageLabels[reqStage] : '';
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(l10n.dashboard_tabLockedMessage(label)),
-                duration: const Duration(seconds: 3),
-              ));
-              return;
-            }
-            setState(() => _selectedIndex = targetTab);
-            if (targetTab == 0) _contractRefreshNotifier.value++;
-            if (targetTab == 4) _fileRefreshNotifier.value++;
-          },
-          indicatorColor: Colors.transparent,
-          destinations: [
-            for (final idx in allowedBottomTabs)
-              NavigationDestination(
-                icon: _navIcon(_isTabLocked(idx) ? Icons.lock_outline : _tabIcons[idx], idx, isChat: idx == 2),
-                selectedIcon: _navIcon(_tabSelectedIcons[idx], idx, selected: true, isChat: idx == 2),
-                label: _tabLabel(idx),
-              ),
-          ],
         ),
       ),
+      bottomNavigationBar: LuxeBottomNav(
+        items: navItems,
+        currentIndex: _selectedIndex >= 5 ? moreIndex : allowedBottomTabs.indexOf(_selectedIndex).clamp(0, allowedBottomTabs.length - 1),
+        onTap: (i) {
+          if (i == moreIndex) {
+            _showMoreSheet();
+            return;
+          }
+          final targetTab = allowedBottomTabs[i];
+          if (_isTabLocked(targetTab)) {
+            final reqStage = _tabRequiredStage(targetTab);
+            final stageLabels = ['', l10n.dashboard_stage_signature, l10n.dashboard_stage_receiveContract, l10n.dashboard_stage_yourApproval, l10n.dashboard_stage_companyApproval, l10n.dashboard_stage_paymentProof, l10n.dashboard_stage_activateSpace];
+            final label = stageLabels.length > reqStage ? stageLabels[reqStage] : '';
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l10n.dashboard_tabLockedMessage(label)),
+              duration: const Duration(seconds: 3),
+            ));
+            return;
+          }
+          setState(() => _selectedIndex = targetTab);
+          if (targetTab == 0) _contractRefreshNotifier.value++;
+          if (targetTab == 4) _fileRefreshNotifier.value++;
+        },
       ),
     );
+  }
+
+  String _avatarInitial() {
+    final name = (_api.userName ?? _client?['contact_person'] ?? _client?['company_name'] ?? '').toString().trim();
+    return name.isEmpty ? '' : String.fromCharCode(name.runes.first);
+  }
+
+  int _badgeFor(int index) {
+    switch (index) {
+      case 0: return _badgeContracts;
+      case 1: return _badgePayments;
+      case 2: return _unreadChat;
+      case 3: return _badgeApprovals;
+      case 4: return _badgeFiles;
+      default: return 0;
+    }
+  }
+
+  /// The mockup's "More" sheet: who you are, the extra pages, language, logout.
+  void _showMoreSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final name = (_api.userName ?? _client?['contact_person'] ?? '').toString();
+    showLuxeSheet<void>(context, builder: (ctx) {
+      void go(int index) {
+        Navigator.pop(ctx);
+        setState(() => _selectedIndex = index);
+      }
+
+      final rows = <Widget>[
+        if (_isTabAllowedByPermission('meetings'))
+          LuxeMoreRow(key: const ValueKey('more-meetings'), lxIcon: 'video', label: l10n.dashboard_meetings, onTap: () => go(5)),
+        if (!_isSubUser) ...[
+          LuxeMoreRow(key: const ValueKey('more-team'), lxIcon: 'users', label: l10n.dashboard_team, onTap: () => go(7)),
+          LuxeMoreRow(key: const ValueKey('more-signature'), lxIcon: 'sign', label: l10n.signature, onTap: () => go(6)),
+        ],
+        LuxeMoreRow(
+          key: const ValueKey('more-settings'),
+          lxIcon: 'gear',
+          label: l10n.dashboard_settings,
+          onTap: () {
+            Navigator.pop(ctx);
+            context.push('/settings');
+          },
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('more-language'),
+          lxIcon: 'lang',
+          label: isAr ? 'English' : 'العربية',
+          onTap: () {
+            Navigator.pop(ctx);
+            context.read<LocaleProvider>().toggle();
+          },
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('more-logout'),
+          lxIcon: 'out',
+          label: l10n.dashboard_logout,
+          danger: true,
+          last: true,
+          onTap: () {
+            Navigator.pop(ctx);
+            _logout();
+          },
+        ),
+      ];
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(children: [
+            LuxeAvatar(initial: _avatarInitial()),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, key: const ValueKey('more-name'), style: Lx.display(ctx, size: 16)),
+                Text(
+                  (_isSubUser ? l10n.dashboardRoleAssistant : l10n.dashboardRoleOwner).toUpperCase(),
+                  style: Lx.text(ctx, size: 11, color: Lx.faint).copyWith(letterSpacing: 1.1),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+        ...rows,
+      ]);
+    });
   }
 
   String _tabLabel(int index) {
@@ -668,50 +701,5 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
       default: return '';
     }
   }
-  static const _tabIcons = [Icons.description_outlined, Icons.payments_outlined, Icons.chat_outlined, Icons.check_circle_outlined, Icons.folder_outlined];
-  static const _tabSelectedIcons = [Icons.description_rounded, Icons.payments_rounded, Icons.chat_rounded, Icons.check_circle_rounded, Icons.folder_rounded];
-
-  Widget _navIcon(IconData icon, int index, {bool selected = false, bool isChat = false}) {
-    final isUnlocked = !_isTabLocked(index);
-    int badgeCount = 0;
-    switch (index) {
-      case 0: badgeCount = _badgeContracts; break;
-      case 1: badgeCount = _badgePayments; break;
-      case 2: badgeCount = _unreadChat; break;
-      case 3: badgeCount = _badgeApprovals; break;
-      case 4: badgeCount = _badgeFiles; break;
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (selected)
-          Container(
-            height: 2,
-            width: 24,
-            margin: const EdgeInsets.only(bottom: 4),
-            decoration: const BoxDecoration(
-              color: ShadColors.gold,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(1)),
-            ),
-          ),
-        Stack(clipBehavior: Clip.none, children: [
-          Icon(icon, size: 22,
-            color: selected ? ShadColors.gold : null),
-          if (badgeCount > 0 && isUnlocked)
-            Positioned(
-              right: -6, top: -4,
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: const BoxDecoration(color: ShadColors.gold, shape: BoxShape.circle),
-                child: Text(
-                  badgeCount > 99 ? '99+' : '$badgeCount',
-                  style: const TextStyle(fontSize: 7, color: Colors.black, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-        ]),
-      ],
-    );
-  }
+  static const _tabLxIcons = ['scroll', 'wallet', 'chat', 'check', 'folder'];
 }

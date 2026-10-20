@@ -91,3 +91,12 @@ Color lxStatusColor(LxStatus s) {
       return Lx.muted;
   }
 }
+
+/// 14500 → "14,500", 1234.5 → "1,234.50" (the mockup's grouped numbers).
+String lxFormatMoney(num v) {
+  final d = v.toDouble();
+  final s = d.toStringAsFixed(d == d.roundToDouble() ? 0 : 2);
+  final parts = s.split('.');
+  final whole = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  return parts.length > 1 ? '$whole.${parts[1]}' : whole;
+}

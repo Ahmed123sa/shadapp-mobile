@@ -174,7 +174,7 @@ void main() {
       await pumpPage(tester, api);
 
       expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
-      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsNothing);
       expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
     });
 
@@ -189,7 +189,7 @@ void main() {
       await pumpPage(tester, api);
 
       expect(find.widgetWithText(ElevatedButton, 'Approve'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsOneWidget);
     });
 
     testWidgets('hides the document upload button in the contract detail sheet when can_upload_files is missing', (tester) async {

@@ -1,3 +1,4 @@
+import 'package:shadapp_client/core/widgets/luxe/luxe_widgets.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +33,7 @@ void main() {
     await pumpPage(tester, provider);
 
     expect(find.text('Q1 report'), findsOneWidget);
-    expect(find.text('Ahmed'), findsOneWidget);
+    expect(find.textContaining('Ahmed'), findsOneWidget);
   });
 
   testWidgets('shows the empty state when there are no approvals', (tester) async {
@@ -74,9 +75,9 @@ void main() {
     final provider = ApprovalProvider(repository: ApprovalRepository(api: buildTestApiClient(client: httpClient)));
 
     await pumpPage(tester, provider);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve'));
+    await tester.tap(find.widgetWithText(LuxeButton, 'Approve'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve').last);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Approve'));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'action': 'approved'});
@@ -98,7 +99,7 @@ void main() {
     final provider = ApprovalProvider(repository: ApprovalRepository(api: buildTestApiClient(client: httpClient)));
 
     await pumpPage(tester, provider);
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Request Edit'));
+    await tester.tap(find.widgetWithText(LuxeButton, 'Request Edit'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'please fix the total');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send'));
@@ -143,8 +144,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsNothing);
-      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsNothing);
+      expect(find.widgetWithText(LuxeButton, 'Approve'), findsNothing);
+      expect(find.widgetWithText(LuxeButton, 'Request Edit'), findsNothing);
       expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
     });
 
@@ -165,8 +166,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(ElevatedButton, 'Approve'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Request Edit'), findsOneWidget);
+      expect(find.widgetWithText(LuxeButton, 'Approve'), findsOneWidget);
+      expect(find.widgetWithText(LuxeButton, 'Request Edit'), findsOneWidget);
     });
   });
 }

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/status_badge.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
@@ -77,7 +79,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: ShadColors.success),
+              style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white),
               child: Text(l10n.approve),
             ),
           ],
@@ -147,190 +149,133 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
         children: [
+          LuxePageTitle(l10n.dashboard_tab_approvals),
           ...sorted.map((a) {
-            final hasCertificate = a.hasCertificate;
             final status = a.status;
-            final accentColor = status == 'approved' ? ShadColors.success :
-                status == 'rejected' || status == 'edit_requested' ? ShadColors.error : ShadColors.gold;
-            final createdAt = a.createdAt;
-            final requestedBy = a.requestedByName ?? '';
-            final isCompleted = a.isCompleted;
-            final actionTaken = a.actionTaken;
+            final isPending = status == 'pending';
+            final dot = status == 'approved' || status == 'completed'
+                ? LxStatus.ok
+                : isPending
+                    ? LxStatus.wait
+                    : (status == 'rejected' || status == 'edit_requested')
+                        ? LxStatus.bad
+                        : LxStatus.off;
+            final statusText = statusLabels(l10n)[status] ?? status;
+            final sub = [
+              if ((a.requestedByName ?? '').isNotEmpty) a.requestedByName!,
+              if (a.createdAt != null) a.createdAt!.split('T')[0],
+            ].join(' · ');
+            final canRespond = _api.canDo('can_respond_approvals');
             final reason = a.reason;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
-              ),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+            return LuxeCard(
+              key: ValueKey('approval-card-${a.id}'),
+              attention: isPending && !a.isCompleted,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(a.title, style: Lx.text(context, size: 15, weight: FontWeight.w500)),
+                if (a.description != null && a.description!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(a.description!, style: Lx.text(context, size: 12.5, color: Lx.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+                if (sub.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                ],
+                if (a.referenceNo != null) ...[
+                  const SizedBox(height: 2),
+                  Text('${l10n.approvals_referenceNo}: ${a.referenceNo}', style: Lx.text(context, size: 11.5, color: Lx.faint)),
+                ],
+                const SizedBox(height: 8),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  LuxeStatusDot(status: dot),
+                  const SizedBox(width: 7),
+                  Text(statusText, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                ]),
+                if (a.hasCertificate)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: InkWell(
+                      key: ValueKey('approval-certificate-${a.id}'),
+                      onTap: () async {
+                        final uri = Uri.tryParse(_api.resolveFileUrl(a.certificatePdfUrl!));
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } else {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.approvals_fileOpenFailed)));
+                        }
+                      },
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const LxIcon('doc', size: 16, color: Lx.ink2),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.only(bottom: 1),
+                          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                          child: Text(l10n.approvals_certificate, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+                        ),
+                      ]),
                     ),
                   ),
-                ),
-                Expanded(child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(
-                          a.title,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
-                        ),
-                        if (a.description != null && a.description!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(a.description!, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        ],
-                        const SizedBox(height: 8),
-                        Row(children: [
-                          if (requestedBy.isNotEmpty) ...[
-                            Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(requestedBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
-                            const SizedBox(width: 12),
-                          ],
-                          if (createdAt != null) ...[
-                            Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                          ],
-                        ]),
-                        if (a.referenceNo != null) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: ShadColors.gold.withAlpha(20),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text('${l10n.approvals_referenceNo}: ${a.referenceNo}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
-                          ),
-                        ],
-                      ])),
-                      const SizedBox(width: 10),
-                      StatusBadge(status: status),
-                    ]),
-                    if (hasCertificate)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: InkWell(
-                          onTap: () async {
-                            final url = _api.resolveFileUrl(a.certificatePdfUrl!);
-                            final uri = Uri.tryParse(url);
-                            if (uri != null && await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            } else {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.approvals_fileOpenFailed)));
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: ShadColors.gold.withAlpha(15),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: ShadColors.gold.withAlpha(40)),
-                            ),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.picture_as_pdf, size: 18, color: ShadColors.gold),
-                              const SizedBox(width: 8),
-                              Text(l10n.approvals_certificate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold)),
-                            ]),
-                          ),
-                        ),
+                if (a.actionTaken) ...[
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    LuxeStatusDot(status: a.actionResult == 'approved' ? LxStatus.ok : LxStatus.bad),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        a.actionResult == 'approved' ? l10n.approvals_approvedLabel : l10n.approvals_requestedEditLabel,
+                        style: Lx.text(context, size: 12.5, color: a.actionResult == 'approved' ? Lx.ok : Lx.danger),
                       ),
-                    if (actionTaken) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: a.actionResult == 'approved' ? ShadColors.successLight : ShadColors.errorLight,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: a.actionResult == 'approved' ? ShadColors.success.withAlpha(40) : ShadColors.error.withAlpha(40),
-                          ),
-                        ),
-                        child: Row(children: [
-                          Icon(
-                            a.actionResult == 'approved' ? Icons.check_circle : Icons.cancel,
-                            size: 18, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(
-                            a.actionResult == 'approved' ? l10n.approvals_approvedLabel : l10n.approvals_requestedEditLabel,
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error),
-                          )),
-                        ]),
-                      ),
-                    ],
-                    if (reason != null && reason.isNotEmpty && status == 'edit_requested') ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: ShadColors.gold.withAlpha(20),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: ShadColors.gold.withAlpha(40)),
-                        ),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(l10n.approvals_editReasonLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
-                          const SizedBox(height: 4),
-                          Text(reason, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
-                        ]),
-                      ),
-                    ],
-                    // subuser-review-plan.md م٦ — responding to an approval
-                    // request maps to can_respond_approvals, per the plan's
-                    // action table.
-                    if (!isCompleted && status == 'pending' && _api.canDo('can_respond_approvals'))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Row(children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _respond(a.id, 'approved'),
-                              icon: const Icon(Icons.check, size: 15),
-                              label: Text(l10n.approvals_approveButton, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ShadColors.success,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _respond(a.id, 'edit_requested'),
-                              icon: const Icon(Icons.edit, size: 15),
-                              label: Text(l10n.approvals_requestEditButton, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                        ]),
-                      )
-                    else if (!isCompleted && status == 'pending')
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
-                      ),
+                    ),
                   ]),
-                )),
+                ],
+                if (reason != null && reason.isNotEmpty && status == 'edit_requested') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: Lx.line2)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(l10n.approvals_editReasonLabel, style: Lx.text(context, size: 11, color: Lx.crimsonInk)),
+                      const SizedBox(height: 4),
+                      Text(reason, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+                    ]),
+                  ),
+                ],
+                // subuser-review-plan.md م٦ — responding to an approval
+                // request maps to can_respond_approvals, per the plan's
+                // action table.
+                if (!a.isCompleted && isPending && canRespond)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Row(children: [
+                      Expanded(
+                        child: LuxeButton(
+                          key: ValueKey('approval-edit-${a.id}'),
+                          label: l10n.approvals_requestEditButton,
+                          size: LuxeButtonSize.sm,
+                          onPressed: () => _respond(a.id, 'edit_requested'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: LuxeButton(
+                          key: ValueKey('approval-approve-${a.id}'),
+                          label: l10n.approvals_approveButton,
+                          kind: LuxeButtonKind.primary,
+                          size: LuxeButtonSize.sm,
+                          onPressed: () => _respond(a.id, 'approved'),
+                        ),
+                      ),
+                    ]),
+                  )
+                else if (!a.isCompleted && isPending)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: LuxeHint(l10n.subuserActionNeedsOwner),
+                  ),
               ]),
             );
           }),

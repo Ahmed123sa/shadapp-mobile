@@ -34,6 +34,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/core/reverb_service.dart';
 import 'package:shadapp_client/features/dashboard/client_dashboard_screen.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -137,7 +138,8 @@ void main() {
     // by the embedded SignatureTab's _loadExisting() (both read the same
     // client id) — a pre-existing quirk, not something introduced here.
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(2);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(LuxeBottomNav), findsOneWidget);
+    expect(find.byKey(const ValueKey('lx-nav-more')), findsOneWidget);
   });
 
   testWidgets('shows the unread notifications badge from /notifications', (tester) async {
@@ -149,7 +151,8 @@ void main() {
 
     await pumpPage(tester, api);
 
-    expect(find.text('3'), findsOneWidget);
+    // The mockup shows a pip on the bell, not a count.
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsOneWidget);
   });
 
   // plans/notifications-badges-toasts-plan.md ن12 — the bell used to leave
@@ -196,20 +199,20 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
     ));
     await pumpBriefly(tester);
-    expect(find.text('3'), findsOneWidget);
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsOneWidget);
 
     // The notifications page marks everything read server-side while the
     // user is on it — simulated here by changing what the next /notifications
     // GET returns.
     unread = 0;
-    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await tester.tap(find.byKey(const ValueKey('lx-bell')));
     await pumpBriefly(tester);
     expect(find.text('BACK'), findsOneWidget);
 
     await tester.tap(find.text('BACK'));
     await pumpBriefly(tester);
 
-    expect(find.text('3'), findsNothing);
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsNothing);
   });
 
   // server-side-stats-plan.md, Stage 3 (M8) — the chat nav badge used to be
@@ -312,7 +315,9 @@ void main() {
     stubCommon(httpClient);
 
     await pumpPage(tester, api);
-    await tester.tap(find.byIcon(Icons.logout_rounded));
+    await tester.tap(find.byKey(const ValueKey('lx-avatar')));
+    await pumpBriefly(tester);
+    await tester.tap(find.byKey(const ValueKey('more-logout')));
     await pumpBriefly(tester);
     // The confirmation dialog's title and its confirm button both read
     // "Logout" (dashboard_logout / dashboard_logoutAction) — target the
@@ -397,5 +402,43 @@ void main() {
     await tester.pump();
 
     expect(find.text('New meeting scheduled'), findsOneWidget);
+  });
+
+  testWidgets('the avatar opens the More sheet with meetings / team / signature / settings / language / logout', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'client';
+    stubCommon(httpClient);
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byKey(const ValueKey('lx-avatar')));
+    await pumpBriefly(tester);
+
+    for (final k in ['more-meetings', 'more-team', 'more-signature', 'more-settings', 'more-language', 'more-logout']) {
+      expect(find.byKey(ValueKey(k)), findsOneWidget, reason: k);
+    }
+
+    await tester.tap(find.byKey(const ValueKey('more-meetings')));
+    await pumpBriefly(tester);
+    expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 5);
+  });
+
+  testWidgets('a sub-user\'s More sheet has no team or signature rows', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    api.role = 'sub_user';
+    api.subUserId = 1;
+    stubCommon(httpClient, subUserJson: '{"sub_user":{"id":1,"permissions":{"can_view_meetings":true,"can_chat":true}}}');
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byKey(const ValueKey('lx-avatar')));
+    await pumpBriefly(tester);
+
+    expect(find.byKey(const ValueKey('more-team')), findsNothing);
+    expect(find.byKey(const ValueKey('more-signature')), findsNothing);
+    expect(find.byKey(const ValueKey('more-meetings')), findsOneWidget);
+    expect(find.byKey(const ValueKey('more-settings')), findsOneWidget);
   });
 }

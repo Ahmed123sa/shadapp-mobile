@@ -54,9 +54,9 @@ void main() {
 
     await pumpPage(tester, provider, api: api);
 
-    expect(find.text('Upcoming'), findsOneWidget);
+    expect(find.text('UPCOMING'), findsOneWidget);
     expect(find.text('Future meeting'), findsOneWidget);
-    expect(find.text('Previous'), findsOneWidget);
+    expect(find.text('PREVIOUS'), findsOneWidget);
     expect(find.text('Past meeting'), findsOneWidget);
   });
 
@@ -89,7 +89,7 @@ void main() {
 
     await pumpPage(tester, provider, api: api);
 
-    expect(find.text('45 min'), findsOneWidget);
+    expect(find.textContaining('45 min'), findsOneWidget);
   });
 
   testWidgets('a null workspaceId skips the fetch and shows the empty state', (tester) async {
@@ -123,7 +123,7 @@ void main() {
 
       await pumpPage(tester, provider, api: api);
 
-      expect(find.byIcon(Icons.videocam), findsNothing);
+      expect(find.byKey(const ValueKey('meeting-join-1')), findsNothing);
       expect(find.text('This action needs approval from the account owner or a user with permission'), findsOneWidget);
     });
 
@@ -142,7 +142,7 @@ void main() {
 
       await pumpPage(tester, provider, api: api);
 
-      expect(find.byIcon(Icons.videocam), findsOneWidget);
+      expect(find.byKey(const ValueKey('meeting-join-1')), findsOneWidget);
     });
   });
 }

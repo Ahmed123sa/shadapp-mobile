@@ -953,6 +953,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dashboard_settings => 'الإعدادات';
 
   @override
+  String get dashboardRoleOwner => 'صاحب الحساب';
+
+  @override
+  String get dashboardRoleAssistant => 'مساعد';
+
+  @override
   String get dashboard_more => 'المزيد';
 
   @override
@@ -3395,6 +3401,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get editReasonHint => 'اذكر سبب التعديل...';
+
+  @override
+  String get contractStepSent => 'اتبعت';
+
+  @override
+  String get contractStepYouApproved => 'وافقت';
+
+  @override
+  String get contractStepCompanyApproved => 'وافقت الشركة';
+
+  @override
+  String get contractStepActive => 'ساري';
+
+  @override
+  String get contractDownloadPdfShort => 'PDF';
 
   @override
   String get awaitingContracts => 'في انتظار العقود...';

@@ -1958,6 +1958,18 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get dashboard_settings;
 
+  /// No description provided for @dashboardRoleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Account owner'**
+  String get dashboardRoleOwner;
+
+  /// No description provided for @dashboardRoleAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get dashboardRoleAssistant;
+
   /// No description provided for @dashboard_more.
   ///
   /// In en, this message translates to:
@@ -6597,6 +6609,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the reason for editing...'**
   String get editReasonHint;
+
+  /// No description provided for @contractStepSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get contractStepSent;
+
+  /// No description provided for @contractStepYouApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'You approved'**
+  String get contractStepYouApproved;
+
+  /// No description provided for @contractStepCompanyApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Company approved'**
+  String get contractStepCompanyApproved;
+
+  /// No description provided for @contractStepActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get contractStepActive;
+
+  /// No description provided for @contractDownloadPdfShort.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get contractDownloadPdfShort;
 
   /// No description provided for @awaitingContracts.
   ///

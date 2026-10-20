@@ -55,7 +55,7 @@ void main() {
         headers: any(named: 'headers'))).called(1);
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
         headers: any(named: 'headers'))).called(1);
-    expect(find.text('500 SAR'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('payment-card-1')), matching: find.text('500 SAR')), findsOneWidget);
     expect(find.text('Pending'), findsWidgets); // filter chip label + card status both read "Pending"
     expect(find.text('No payments'), findsNothing);
   });
@@ -90,14 +90,14 @@ void main() {
     });
 
     await pumpPage(tester, api);
-    expect(find.text('111 SAR'), findsOneWidget);
-    expect(find.text('222 SAR'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('payment-card-1')), matching: find.text('111 SAR')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('payment-card-2')), matching: find.text('222 SAR')), findsOneWidget);
 
     await tester.tap(find.text('Accepted'));
     await tester.pumpAndSettle();
 
-    expect(find.text('111 SAR'), findsNothing);
-    expect(find.text('222 SAR'), findsOneWidget);
+    expect(find.byKey(const ValueKey('payment-card-1')), findsNothing);
+    expect(find.descendant(of: find.byKey(const ValueKey('payment-card-2')), matching: find.text('222 SAR')), findsOneWidget);
   });
 
   testWidgets('shows the error state with retry when the payments load fails', (tester) async {

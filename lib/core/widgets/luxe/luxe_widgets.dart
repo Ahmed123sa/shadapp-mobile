@@ -217,14 +217,16 @@ class LuxeProgressSplit extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(3),
       child: SizedBox(
-        height: 5,
+        height: 6,
         child: Stack(children: [
           Container(color: Lx.line2),
           FractionallySizedBox(
             key: const ValueKey('lx-progress-fill'),
             alignment: AlignmentDirectional.centerStart,
             widthFactor: f,
-            child: Container(color: Lx.ok),
+            child: Container(
+              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Lx.ok, Color(0xFFA9D1A5)])),
+            ),
           ),
         ]),
       ),
@@ -266,18 +268,19 @@ class LuxePermGroup extends StatelessWidget {
       ]);
 }
 
-// ── Bottom navigation ──
+// ── Bottom navigation (client mockup .nav) ──
 class LuxeNavItem {
-  final IconData icon;
+  final IconData? icon; // Material icon (legacy)
+  final String? lxIcon; // mockup icon name (lx_icons.dart); wins over [icon]
   final String label;
   final int badge;
   final String id;
-  const LuxeNavItem({required this.id, required this.icon, required this.label, this.badge = 0});
+  const LuxeNavItem({required this.id, this.icon, this.lxIcon, required this.label, this.badge = 0});
 }
 
 class LuxeBottomNav extends StatelessWidget {
   final List<LuxeNavItem> items;
-  final int currentIndex; // -1 = none selected (e.g. "More" screens)
+  final int currentIndex; // -1 = none selected
   final ValueChanged<int> onTap;
   const LuxeBottomNav({super.key, required this.items, required this.currentIndex, required this.onTap});
 
@@ -295,37 +298,48 @@ class LuxeBottomNav extends StatelessWidget {
                 child: InkWell(
                   key: ValueKey('lx-nav-${items[i].id}'),
                   onTap: () => onTap(i),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Stack(clipBehavior: Clip.none, children: [
-                        Icon(items[i].icon, size: 22, color: i == currentIndex ? Lx.ink : Lx.muted),
-                        if (items[i].badge > 0)
-                          PositionedDirectional(
-                            top: -4,
-                            end: -10,
-                            child: Container(
-                              key: ValueKey('lx-nav-badge-${items[i].id}'),
-                              constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(color: Lx.crimson, borderRadius: BorderRadius.circular(8)),
-                              alignment: Alignment.center,
-                              child: Text(items[i].badge > 99 ? '99+' : '${items[i].badge}',
-                                  style: Lx.text(context, size: 9.5, color: Colors.white)),
+                  child: LayoutBuilder(builder: (context, c) {
+                    final on = i == currentIndex;
+                    final color = on ? Lx.ink : Lx.muted;
+                    final it = items[i];
+                    return Stack(clipBehavior: Clip.none, children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: Center(
+                              child: it.lxIcon != null
+                                  ? LxIcon(it.lxIcon!, size: 18, color: color)
+                                  : Icon(it.icon, size: 18, color: color),
                             ),
                           ),
-                      ]),
-                      const SizedBox(height: 3),
-                      Text(items[i].label, style: Lx.text(context, size: 10.5, color: i == currentIndex ? Lx.ink : Lx.muted)),
-                      const SizedBox(height: 3),
-                      Container(
-                        key: i == currentIndex ? const ValueKey('lx-nav-active-dot') : null,
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(color: i == currentIndex ? Lx.crimsonInk : Colors.transparent, shape: BoxShape.circle),
+                          const SizedBox(height: 3),
+                          Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 10.5, color: color)),
+                          const SizedBox(height: 3),
+                          Container(
+                            key: on ? const ValueKey('lx-nav-active-dot') : null,
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(color: on ? Lx.crimsonInk : Colors.transparent, shape: BoxShape.circle),
+                          ),
+                        ]),
                       ),
-                    ]),
-                  ),
+                      if (it.badge > 0)
+                        PositionedDirectional(
+                          top: 2,
+                          start: c.maxWidth / 2 + 6,
+                          child: Container(
+                            key: ValueKey('lx-nav-badge-${it.id}'),
+                            constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(color: Lx.crimson, borderRadius: BorderRadius.circular(8)),
+                            alignment: Alignment.center,
+                            child: Text(it.badge > 99 ? '99+' : '${it.badge}', style: Lx.text(context, size: 9.5, color: Colors.white)),
+                          ),
+                        ),
+                    ]);
+                  }),
                 ),
               ),
           ]),
@@ -456,4 +470,259 @@ class _DashedRRectPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DashedRRectPainter old) => old.color != color || old.radius != radius;
+}
+
+
+// ── Page background: the mockup's two soft glows (.glow) ──
+class LuxeGlow extends StatelessWidget {
+  final Widget child;
+  const LuxeGlow({super.key, required this.child});
+  @override
+  Widget build(BuildContext context) => Stack(children: [
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              key: ValueKey('lx-glow'),
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0.7, -1.05),
+                  radius: 0.9,
+                  colors: [Color(0x38941414), Color(0x00941414)],
+                  stops: [0, 0.62],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-0.9, 1.1),
+                  radius: 0.8,
+                  colors: [Color(0x12A8986A), Color(0x00A8986A)],
+                  stops: [0, 0.6],
+                ),
+              ),
+            ),
+          ),
+        ),
+        child,
+      ]);
+}
+
+// ── Top bar (mockup .top): d. mark, company, bell with pip, avatar ──
+class LuxeTopBar extends StatelessWidget {
+  final String company;
+  final String avatarInitial;
+  final bool unread; // crimson pip on the bell
+  final VoidCallback? onBell;
+  final VoidCallback? onAvatar;
+  const LuxeTopBar({
+    super.key,
+    this.company = '',
+    this.avatarInitial = '',
+    this.unread = false,
+    this.onBell,
+    this.onAvatar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      child: Row(children: [
+        const Text.rich(
+          TextSpan(children: [
+            TextSpan(text: 'd'),
+            TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
+          ]),
+          key: ValueKey('lx-brand'),
+          style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 30, height: 1, color: Lx.ink),
+        ),
+        if (company.isNotEmpty)
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 130),
+                child: Text(company, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.faint)),
+              ),
+            ),
+          ),
+        const Spacer(),
+        SizedBox(
+          width: 38,
+          height: 38,
+          child: InkResponse(
+            key: const ValueKey('lx-bell'),
+            onTap: onBell,
+            radius: 20,
+            child: Stack(alignment: Alignment.center, children: [
+              const LxIcon('bell', size: 18, color: Lx.muted),
+              if (unread)
+                const PositionedDirectional(
+                  top: 8,
+                  end: 9,
+                  child: SizedBox(
+                    key: ValueKey('lx-bell-pip'),
+                    width: 6,
+                    height: 6,
+                    child: DecoratedBox(decoration: BoxDecoration(color: Lx.crimsonInk, shape: BoxShape.circle)),
+                  ),
+                ),
+            ]),
+          ),
+        ),
+        SizedBox(
+          width: 38,
+          height: 38,
+          child: InkResponse(
+            key: const ValueKey('lx-avatar'),
+            onTap: onAvatar,
+            radius: 20,
+            child: Center(child: LuxeAvatar(initial: avatarInitial)),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Avatar (mockup .av: 32px circle, serif italic initial) ──
+class LuxeAvatar extends StatelessWidget {
+  final String initial;
+  final double size;
+  const LuxeAvatar({super.key, required this.initial, this.size = 32});
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFF262626),
+          shape: BoxShape.circle,
+          border: Border.all(color: Lx.line2),
+        ),
+        child: Text(initial, style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: size * 0.375 + 0.0, color: Lx.ink)),
+      );
+}
+
+// ── Row in the "More" sheet (mockup .mrow) ──
+class LuxeMoreRow extends StatelessWidget {
+  final String lxIcon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+  final bool last;
+  const LuxeMoreRow({super.key, required this.lxIcon, required this.label, required this.onTap, this.danger = false, this.last = false});
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? Lx.danger : Lx.ink;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+        child: Row(children: [
+          LxIcon(lxIcon, size: 18, color: danger ? Lx.danger : Lx.muted),
+          const SizedBox(width: 14),
+          Expanded(child: Text(label, style: Lx.text(context, size: 14.5, color: color))),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Page title (mockup `h1.h`): serif 26 with the crimson full stop ──
+class LuxePageTitle extends StatelessWidget {
+  final String text;
+  const LuxePageTitle(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    final style = Lx.display(context, size: 26);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 16),
+      child: Text.rich(
+        TextSpan(children: [
+          TextSpan(text: text),
+          TextSpan(text: '.', style: style.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+        ]),
+        key: const ValueKey('lx-page-title'),
+        style: style,
+      ),
+    );
+  }
+}
+
+// ── Small-caps kind label (mockup `.kind`) ──
+class LuxeKind extends StatelessWidget {
+  final String text;
+  const LuxeKind(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) =>
+      Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2));
+}
+
+// ── Amount with small currency (mockup `.amt`) ──
+class LuxeAmount extends StatelessWidget {
+  final String value;
+  final String currency;
+  final double size;
+  const LuxeAmount(this.value, this.currency, {super.key, this.size = 20});
+  @override
+  Widget build(BuildContext context) => Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text.rich(TextSpan(children: [
+          TextSpan(text: value, style: Lx.display(context, size: size)),
+          TextSpan(text: ' $currency', style: Lx.text(context, size: 11, color: Lx.muted)),
+        ])),
+      );
+}
+
+// ── Labelled steps (mockup `.steps`): bar + caption, done green / now red ──
+class LuxeLabeledSteps extends StatelessWidget {
+  final List<String> labels;
+  final int current; // steps before it are done, it is "now"; >= length = all done
+  const LuxeLabeledSteps({super.key, required this.labels, required this.current});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          for (var i = 0; i < labels.length; i++) ...[
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(
+                  key: ValueKey('lx-cstep-$i'),
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: i < current ? Lx.ok : i == current ? Lx.crimsonInk : Lx.line2,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(labels[i], style: Lx.text(context, size: 9.5, color: i == current ? Lx.ink : Lx.faint)),
+              ]),
+            ),
+            if (i < labels.length - 1) const SizedBox(width: 4),
+          ],
+        ]),
+      );
+}
+
+// ── "Locked" hint line (mockup `hint()`): lock icon + faint text ──
+class LuxeHint extends StatelessWidget {
+  final String text;
+  final bool center;
+  const LuxeHint(this.text, {super.key, this.center = false});
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
+        children: [
+          const LxIcon('lock', size: 14, color: Lx.faint),
+          const SizedBox(width: 8),
+          Flexible(child: Text(text, style: Lx.text(context, size: 12.5, color: Lx.faint))),
+        ],
+      );
 }

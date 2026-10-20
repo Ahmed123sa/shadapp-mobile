@@ -954,6 +954,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboard_settings => 'Settings';
 
   @override
+  String get dashboardRoleOwner => 'Account owner';
+
+  @override
+  String get dashboardRoleAssistant => 'Assistant';
+
+  @override
   String get dashboard_more => 'More';
 
   @override
@@ -3409,6 +3415,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editReasonHint => 'Enter the reason for editing...';
+
+  @override
+  String get contractStepSent => 'Sent';
+
+  @override
+  String get contractStepYouApproved => 'You approved';
+
+  @override
+  String get contractStepCompanyApproved => 'Company approved';
+
+  @override
+  String get contractStepActive => 'Active';
+
+  @override
+  String get contractDownloadPdfShort => 'PDF';
 
   @override
   String get awaitingContracts => 'Awaiting contracts...';

@@ -19,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
 import '../../data/file_repository.dart';
 import '../../providers/file_provider.dart';
@@ -144,9 +145,9 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Row(children: [
-                const Icon(Icons.arrow_forward_ios, size: 12, color: ShadColors.textSecondary),
+                const Icon(Icons.arrow_forward_ios, size: 12, color: Lx.muted),
                 const SizedBox(width: 6),
-                Text(l10n.allContracts, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                Text(l10n.allContracts, style: const TextStyle(fontSize: 12, color: Lx.muted)),
               ]),
             ),
             const SizedBox(height: 14),
@@ -155,26 +156,26 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: ShadColors.surfaceDarker,
+                color: Lx.sheet,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: ShadColors.cardBorder),
+                border: Border.all(color: Lx.line2),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(c['title'] ?? '', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
+                Text(c['title'] ?? '', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Lx.ink2, fontFamily: Lx.serif)),
                 if (c['contract_type'] == 'additional')
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [ShadColors.gold.withAlpha(50), ShadColors.gold.withAlpha(25)]),
+                        gradient: LinearGradient(colors: [Lx.ink2.withAlpha(50), Lx.ink2.withAlpha(25)]),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: ShadColors.gold.withAlpha(80)),
+                        border: Border.all(color: Lx.ink2.withAlpha(80)),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
+                        const Icon(Icons.add_circle_outline, size: 12, color: Lx.ink2),
                         const SizedBox(width: 4),
-                        Text(l10n.additionalServiceContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                        Text(l10n.additionalServiceContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Lx.ink2)),
                       ]),
                     ),
                   ),
@@ -184,25 +185,25 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: ShadColors.infoBg.withAlpha(60),
+                        color: Lx.surface.withAlpha(60),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: ShadColors.infoAccent.withAlpha(80)),
+                        border: Border.all(color: Lx.ink2.withAlpha(80)),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.description_outlined, size: 12, color: ShadColors.infoAccent),
+                        const Icon(Icons.description_outlined, size: 12, color: Lx.ink2),
                         const SizedBox(width: 4),
-                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.infoAccent)),
+                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Lx.ink2)),
                       ]),
                     ),
                   ),
                 const SizedBox(height: 4),
-                Text('#${c['id'] ?? ''}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text('#${c['id'] ?? ''}', style: const TextStyle(fontSize: 11, color: Lx.muted)),
                 const SizedBox(height: 12),
-                Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
+                Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Lx.ink, fontFamily: Lx.serif)),
                 if (widget.clientType == 'business')
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(l10n.contractValueExcludesVat, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                    child: Text(l10n.contractValueExcludesVat, style: const TextStyle(fontSize: 11, color: Lx.muted)),
                   ),
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -210,8 +211,8 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 6,
-                    backgroundColor: ShadColors.cardBorder,
-                    valueColor: const AlwaysStoppedAnimation(ShadColors.gold),
+                    backgroundColor: Lx.line2,
+                    valueColor: const AlwaysStoppedAnimation(Lx.ok),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -222,7 +223,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     child: Container(
                       height: 5, margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: BoxDecoration(
-                        color: done ? ShadColors.crimson : current ? ShadColors.gold : ShadColors.cardBorder,
+                        color: done ? Lx.ok : current ? Lx.crimsonInk : Lx.line2,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -233,7 +234,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             const SizedBox(height: 16),
 
             // Info rows
-            Text(l10n.contractInfo, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+            Text(l10n.contractInfo, style: const TextStyle(fontSize: 12, color: Lx.muted)),
             const SizedBox(height: 8),
             if (c['start_date'] != null)
               _infoRow(l10n.startDate, (c['start_date'] as String).split('T')[0]),
@@ -249,20 +250,20 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
 
             // Clauses (only in modal)
             if (clauses.isNotEmpty) ...[
-              Text(l10n.contractClauses, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.contractClauses, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ink)),
               const SizedBox(height: 8),
               ...clauses.map((cl) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.circle, size: 6, color: ShadColors.textDisabled),
+                  const Icon(Icons.circle, size: 6, color: Lx.faint),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(cl['content'] ?? '', style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary))),
+                  Expanded(child: Text(cl['content'] ?? '', style: const TextStyle(fontSize: 13, color: Lx.ink))),
                 ]),
               )),
               const SizedBox(height: 16),
@@ -270,26 +271,26 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
 
             // Required documents (only show when action is needed)
             if (requiredDocs.isNotEmpty && needsAction) ...[
-              Text(l10n.requiredDocuments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.requiredDocuments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ink)),
               const SizedBox(height: 8),
               ...requiredDocs.map((doc) {
                 final docStatus = doc['status'] as String? ?? 'pending';
                 final docStatusColor = docStatus == 'approved'
-                    ? ShadColors.success
+                    ? Lx.ok
                     : docStatus == 'rejected'
-                        ? ShadColors.error
-                        : ShadColors.warning;
+                        ? Lx.danger
+                        : Lx.wait;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: ShadColors.card,
+                    color: Lx.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: ShadColors.cardBorder),
+                    border: Border.all(color: Lx.line2),
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Text(doc['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: ShadColors.textPrimary))),
+                      Expanded(child: Text(doc['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Lx.ink))),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -304,7 +305,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     ]),
                     if (doc['rejection_reason'] != null) ...[
                       const SizedBox(height: 4),
-                      Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
+                      Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: Lx.danger)),
                     ],
                     // subuser-review-plan.md م٦ — required-document uploads
                     // map to can_upload_files, per the plan's action table.
@@ -319,8 +320,8 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                             : const Icon(Icons.upload_file, size: 16),
                           label: Text(_uploading ? l10n.uploading : l10n.uploadDocument),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: ShadColors.primary,
-                            side: const BorderSide(color: ShadColors.primary),
+                            foregroundColor: Lx.ink2,
+                            side: const BorderSide(color: Lx.ink2),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           ),
                         ),
@@ -336,35 +337,35 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             if (_loadingFiles) ...[
               const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
             ] else if (_uploadedFiles.isNotEmpty) ...[
-              Text(l10n.uploadedFiles, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.uploadedFiles, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ink)),
               const SizedBox(height: 8),
               ..._uploadedFiles.map((f) => Container(
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Row(children: [
-                  const Icon(Icons.attach_file, size: 16, color: ShadColors.gold),
+                  const Icon(Icons.attach_file, size: 16, color: Lx.ink2),
                   const SizedBox(width: 8),
                   Expanded(
                     child: GestureDetector(
                       onTap: () => _downloadFile(f['file_url'] as String? ?? ''),
-                      child: Text(f['name'] ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.primary, decoration: TextDecoration.underline))),
+                      child: Text(f['name'] ?? '', style: const TextStyle(fontSize: 12, color: Lx.ink2, decoration: TextDecoration.underline))),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: (f['status'] as String?) == 'approved'
-                          ? ShadColors.success.withAlpha(25)
-                          : ShadColors.warning.withAlpha(25),
+                          ? Lx.ok.withAlpha(25)
+                          : Lx.wait.withAlpha(25),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       statusLabels(AppLocalizations.of(context)!)[f['status'] as String? ?? ''] ?? f['status'] ?? '',
-                      style: TextStyle(fontSize: 9, color: (f['status'] as String?) == 'approved' ? ShadColors.success : ShadColors.warning),
+                      style: TextStyle(fontSize: 9, color: (f['status'] as String?) == 'approved' ? Lx.ok : Lx.wait),
                     ),
                   ),
                 ]),
@@ -377,12 +378,12 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
             // can_approve_contracts must not see the approve/edit-request
             // buttons at all, only find out about them via a 403.
             if (needsAction && _api.canDo('can_approve_contracts')) ...[
-              Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+              Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ink)),
               if (hasMissingDocs) ...[
                 const SizedBox(height: 6),
                 Text(
                   l10n.contractUploadRequiredFirst,
-                  style: const TextStyle(fontSize: 11, color: ShadColors.warning, fontWeight: FontWeight.w500),
+                  style: const TextStyle(fontSize: 11, color: Lx.wait, fontWeight: FontWeight.w500),
                 ),
               ],
               const SizedBox(height: 8),
@@ -396,12 +397,13 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     icon: const Icon(Icons.check, size: 18),
                     label: Text(l10n.approve),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.success,
+                      backgroundColor: Lx.crimson,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      disabledBackgroundColor: ShadColors.cardBorder,
-                      disabledForegroundColor: ShadColors.textDisabled,
+                      shape: const StadiumBorder(),
+                      disabledBackgroundColor: Lx.line2,
+                      disabledForegroundColor: Lx.faint,
                     ),
                   ),
                 ),
@@ -415,16 +417,16 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     icon: const Icon(Icons.edit, size: 18),
                     label: Text(l10n.edit),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: ShadColors.warning,
-                      side: const BorderSide(color: ShadColors.warning),
+                      foregroundColor: Lx.wait,
+                      side: const BorderSide(color: Lx.wait),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: const StadiumBorder(),
                     ),
                   ),
                 ),
               ]),
             ] else if (needsAction) ...[
-              Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
+              Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 12, color: Lx.faint)),
             ],
 
             // Download PDF (shown whenever available)
@@ -437,10 +439,10 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                   icon: const Icon(Icons.picture_as_pdf, size: 18),
                   label: Text(l10n.downloadContractPdf),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: ShadColors.gold,
-                    side: const BorderSide(color: ShadColors.gold),
+                    foregroundColor: Lx.ink2,
+                    side: const BorderSide(color: Lx.ink2),
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: const StadiumBorder(),
                   ),
                 ),
               ),
@@ -450,16 +452,16 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: ShadColors.success.withAlpha(15),
+                  color: Lx.ok.withAlpha(15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.success.withAlpha(40)),
+                  border: Border.all(color: Lx.ok.withAlpha(40)),
                 ),
                 child: Column(children: [
-                  const Icon(Icons.check_circle, size: 40, color: ShadColors.success),
+                  const Icon(Icons.check_circle, size: 40, color: Lx.ok),
                   const SizedBox(height: 8),
-                  Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
+                  Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ok)),
                   const SizedBox(height: 4),
-                  Text(l10n.goToPaymentHint, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
+                  Text(l10n.goToPaymentHint, style: const TextStyle(fontSize: 12, color: Lx.ok)),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () {
@@ -469,10 +471,11 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                     icon: const Icon(Icons.payment, size: 18),
                     label: Text(l10n.goToPayment),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.success,
+                      backgroundColor: Lx.crimson,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: const StadiumBorder(),
                     ),
                   ),
                 ]),
@@ -484,9 +487,9 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Column(children: [
                   Center(
@@ -495,7 +498,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       status == 'edit_requested' ? l10n.editRequestedStatus :
                       status == 'rejected' ? l10n.rejectedStatus :
                       status == 'completed' ? l10n.completedStatus : '',
-                      style: const TextStyle(fontSize: 13, color: ShadColors.textSecondary),
+                      style: const TextStyle(fontSize: 13, color: Lx.muted),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -505,14 +508,14 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: ShadColors.gold.withAlpha(20),
+                        color: Lx.ink2.withAlpha(20),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: ShadColors.gold.withAlpha(40)),
+                        border: Border.all(color: Lx.ink2.withAlpha(40)),
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(l10n.editReasonTitle, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                        Text(l10n.editReasonTitle, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Lx.ink2)),
                         const SizedBox(height: 4),
-                        Text(c['edit_reason'] as String, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
+                        Text(c['edit_reason'] as String, style: const TextStyle(fontSize: 12, color: Lx.ink)),
                       ]),
                     ),
                   ],
@@ -543,12 +546,12 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
+        border: Border(bottom: BorderSide(color: Lx.line2, width: 0.5)),
       ),
       child: Row(children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Lx.muted)),
         const Spacer(),
-        Text(value, style: TextStyle(fontSize: 12, color: gold ? ShadColors.gold : ShadColors.textPrimary, fontWeight: gold ? FontWeight.w600 : FontWeight.w400)),
+        Text(value, style: TextStyle(fontSize: 12, color: gold ? Lx.ink2 : Lx.ink, fontWeight: gold ? FontWeight.w600 : FontWeight.w400)),
       ]),
     );
   }

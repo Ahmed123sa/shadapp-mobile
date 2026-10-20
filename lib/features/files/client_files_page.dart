@@ -5,10 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/loading_state.dart';
-import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/status_badge.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/file_provider.dart';
 
 class ClientFilesPage extends StatefulWidget {
@@ -76,7 +77,8 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     }
     await showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      backgroundColor: Lx.sheet,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet))),
       builder: (ctx) {
         int? selectedDef;
         return StatefulBuilder(
@@ -84,7 +86,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(l10n.files_chooseDocType, style: ShadTypography.cardTitle),
+                Text(l10n.files_chooseDocType, style: Lx.display(context, size: 18)),
                 const Spacer(),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
@@ -94,22 +96,24 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                 return ListTile(
                   leading: Icon(
                     isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                    color: isSelected ? ShadColors.crimson : ShadColors.textDisabled,
+                    color: isSelected ? Lx.crimsonInk : Lx.faint,
                   ),
                   title: Text('${d['name']}${d['is_required'] == true ? ' *' : ''}',
-                      style: ShadTypography.cardBody),
+                      style: Lx.text(context, size: 14)),
                   onTap: () => setSheetState(() => selectedDef = d['id'] as int),
                 );
               }),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: LuxeButton(
+                  label: l10n.files_chooseAndUpload,
+                  kind: LuxeButtonKind.primary,
+                  size: LuxeButtonSize.lg,
                   onPressed: () {
                     Navigator.pop(ctx);
                     _pickAndUpload(selectedDef);
                   },
-                  child: Text(l10n.files_chooseAndUpload),
                 ),
               ),
             ]),
@@ -154,7 +158,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white),
             child: Text(l10n.delete),
           ),
         ],
@@ -172,6 +176,81 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     }
   }
 
+  Future<void> _open(BuildContext context, String? fileUrl) async {
+    if (fileUrl == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final uri = Uri.tryParse(_api.resolveFileUrl(fileUrl));
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
+    }
+  }
+
+  /// Mockup `.fic`: a 34×42 outlined page with the extension underneath.
+  Widget _fic(String name) {
+    final dot = name.lastIndexOf('.');
+    final ext = (dot >= 0 && dot < name.length - 1 ? name.substring(dot + 1) : 'FILE').toUpperCase();
+    return Container(
+      width: 34,
+      height: 42,
+      padding: const EdgeInsets.only(bottom: 5),
+      alignment: Alignment.bottomCenter,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Lx.line2)),
+      child: Text(ext.length > 4 ? ext.substring(0, 4) : ext, style: Lx.text(context, size: 8.5, color: Lx.muted).copyWith(letterSpacing: 0.9)),
+    );
+  }
+
+  String _sizeLabel(dynamic size) {
+    final n = num.tryParse('$size');
+    if (n == null) return '';
+    if (n >= 1024 * 1024) return '${(n / 1024 / 1024).toStringAsFixed(1)} MB';
+    return '${(n / 1024).toStringAsFixed(0)} KB';
+  }
+
+  Widget _fileCard({
+    required Key key,
+    required String name,
+    required String meta,
+    required String? fileUrl,
+    Widget? status,
+    String? note,
+    VoidCallback? onDelete,
+  }) {
+    return LuxeCard(
+      key: key,
+      child: Row(children: [
+        _fic(name),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: fileUrl != null ? () => _open(context, fileUrl) : null,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: Lx.text(context, size: 13.5), overflow: TextOverflow.ellipsis),
+              if (meta.isNotEmpty) Text(meta, style: Lx.text(context, size: 11, color: Lx.faint), overflow: TextOverflow.ellipsis),
+              if (status != null) Padding(padding: const EdgeInsets.only(top: 6), child: status),
+              if (note != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(note, style: Lx.text(context, size: 11, color: Lx.danger))),
+            ]),
+          ),
+        ),
+        if (onDelete != null)
+          GestureDetector(
+            onTap: onDelete,
+            child: const Padding(padding: EdgeInsetsDirectional.only(start: 4, end: 4), child: Icon(Icons.close, size: 17, color: Lx.faint)),
+          ),
+        if (fileUrl != null)
+          InkWell(
+            key: ValueKey('${(key as ValueKey).value}-download'),
+            customBorder: const CircleBorder(),
+            onTap: () => _open(context, fileUrl),
+            child: const SizedBox(width: 38, height: 38, child: Center(child: LxIcon('down', size: 19, color: Lx.muted))),
+          ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const LoadingState();
@@ -179,201 +258,105 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      color: ShadColors.gold,
-      backgroundColor: ShadColors.card,
+      color: Lx.crimsonInk,
+      backgroundColor: Lx.surface,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
         children: [
-        if (_definitions.isNotEmpty) ...[
-          Text(l10n.files_docDefinitions, style: ShadTypography.sectionHeader),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: _definitions.map<Widget>((d) =>
-            Chip(
-              label: Text('${d['name']}${d['is_required'] == true ? ' *' : ''}',
-                  style: ShadTypography.caption.copyWith(color: ShadColors.textPrimary)),
-              backgroundColor: ShadColors.card,
-              side: BorderSide(color: d['is_required'] == true ? ShadColors.gold : ShadColors.cardBorder),
-            ),
-          ).toList()),
-          const SizedBox(height: 16),
-        ],
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(l10n.files_uploadedFiles, style: ShadTypography.sectionHeader),
+          LuxePageTitle(l10n.dashboard_tab_files),
           // subuser-review-plan.md م٦ — uploading a file maps to
           // can_upload_files, per the plan's action table.
           if (_api.canDo('can_upload_files'))
-            TextButton.icon(
-              onPressed: _uploading ? null : _upload,
-              icon: _uploading
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.upload_file, size: 18),
-              label: Text(_uploading ? l10n.files_uploading : l10n.files_uploadFile),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: LuxeButton(
+                  key: const ValueKey('files-upload'),
+                  label: _uploading ? l10n.files_uploading : l10n.files_uploadFile,
+                  lxIcon: 'up',
+                  kind: LuxeButtonKind.primary,
+                  size: LuxeButtonSize.lg,
+                  onPressed: _uploading ? () {} : _upload,
+                ),
+              ),
             ),
-        ]),
-        const SizedBox(height: 8),
-        if (_files.isEmpty && _paymentFiles.isEmpty)
-          EmptyState(icon: Icons.folder_outlined, title: l10n.files_noFiles)
-        else
-          ..._files.map((f) {
-            final status = f['status'] as String? ?? 'pending';
-            final tag = f['tag'] as String? ?? '';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
-              ),
-              child: GestureDetector(
-                onTap: f['file_url'] != null ? () async {
-                  final url = _api.resolveFileUrl(f['file_url'] as String);
-                  final uri = Uri.tryParse(url);
-                  if (uri != null && await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
-                  }
-                } : null,
-                child: Row(children: [
-                  Container(
-                    width: 38, height: 38,
-                    decoration: BoxDecoration(
-                      color: ShadColors.gold.withAlpha(30),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.attach_file, size: 20, color: ShadColors.gold),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(f['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis),
-                      ),
-                      if (tag.isNotEmpty)
-                        Container(
-                          margin: const EdgeInsetsDirectional.only(start: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: ShadColors.crimson.withAlpha(40),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: ShadColors.crimson.withAlpha(70)),
-                          ),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.label, size: 11, color: ShadColors.crimson),
-                            const SizedBox(width: 4),
-                            Text(tag, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.crimson)),
-                          ]),
-                        ),
-                    ]),
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      StatusBadge(status: status, fontSize: 10),
-                      const SizedBox(width: 8),
-                      if (f['definition_name'] != null)
-                        Text(f['definition_name'], style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.primary)),
-                      if (f['definition_name'] != null && f['size'] != null)
-                        const Text('  •  ', style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
-                      if (f['size'] != null)
-                        Text('${(f['size'] / 1024).toStringAsFixed(0)} KB',
-                            style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'PlayfairDisplay')),
-                    ]),
-                    if (f['rejection_reason'] != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(l10n.rejectionReason(f['rejection_reason']), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
-                      ),
-                  ])),
-                  if (status != 'approved')
-                    GestureDetector(
-                      onTap: () => _deleteFile(f),
-                      child: const Padding(
-                        padding: EdgeInsetsDirectional.only(start: 4),
-                        child: Icon(Icons.close, size: 18, color: ShadColors.error),
-                      ),
-                    ),
+          if (_definitions.isNotEmpty) ...[
+            LuxeKind(l10n.files_docDefinitions),
+            const SizedBox(height: 8),
+            Wrap(spacing: 6, runSpacing: 6, children: _definitions.map<Widget>((d) {
+              final req = d['is_required'] == true;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Lx.rPill),
+                  border: Border.all(color: req ? const Color(0x80941414) : Lx.line2),
+                ),
+                child: Text('${d['name']}${req ? ' *' : ''}', style: Lx.text(context, size: 11.5, color: Lx.ink2)),
+              );
+            }).toList()),
+            const SizedBox(height: 14),
+          ],
+          if (_files.isEmpty && _paymentFiles.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: Text(l10n.files_noFiles, style: Lx.text(context, size: 14, color: Lx.muted))),
+            )
+          else
+            ..._files.map((f) {
+              final status = f['status'] as String? ?? 'pending';
+              final tag = f['tag'] as String? ?? '';
+              final date = (f['created_at'] as String?)?.split('T').first;
+              final meta = [
+                if (f['definition_name'] != null) f['definition_name'].toString(),
+                if (tag.isNotEmpty) tag,
+                if (date != null) date,
+                if (f['size'] != null) _sizeLabel(f['size']),
+              ].join(' · ');
+              final dotStatus = status == 'approved' ? LxStatus.ok : status == 'rejected' ? LxStatus.bad : LxStatus.wait;
+              return _fileCard(
+                key: ValueKey('file-card-${f['id']}'),
+                name: f['name'] ?? '',
+                meta: meta,
+                fileUrl: f['file_url'] as String?,
+                status: Row(mainAxisSize: MainAxisSize.min, children: [
+                  LuxeStatusDot(status: dotStatus),
+                  const SizedBox(width: 7),
+                  Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 11.5, color: Lx.ink2)),
                 ]),
-              ),
-            );
-          }),
-        if (_paymentFiles.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text(l10n.files_paymentProofs, style: ShadTypography.sectionHeader),
-          const SizedBox(height: 10),
-          ..._paymentFiles.map((pf) {
-            final status = pf['status'] as String? ?? 'pending';
-            final date = pf['created_at'] as String?;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
-              ),
-              child: GestureDetector(
-                onTap: pf['file_url'] != null ? () async {
-                  final url = _api.resolveFileUrl(pf['file_url'] as String);
-                  final uri = Uri.tryParse(url);
-                  if (uri != null && await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
-                  }
-                } : null,
-                child: Row(children: [
-                  Container(
-                    width: 38, height: 38,
-                    decoration: BoxDecoration(
-                      color: ShadColors.success.withAlpha(30),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.receipt_long, size: 20, color: ShadColors.success),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(pf['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis),
-                      ),
-                      Container(
-                        margin: const EdgeInsetsDirectional.only(start: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: ShadColors.success.withAlpha(40),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: ShadColors.success.withAlpha(70)),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.receipt_long, size: 11, color: ShadColors.success),
-                          const SizedBox(width: 4),
-                          Text(l10n.files_paymentProof, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.success)),
-                        ]),
-                      ),
-                    ]),
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      StatusBadge(status: status, fontSize: 10),
-                      if (date != null) ...[
-                        const SizedBox(width: 8),
-                        Text(date.split('T')[0], style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                      ],
-                    ]),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${pf['amount'] ?? ''} ${pf['currency'] ?? 'SAR'}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'PlayfairDisplay'),
-                    ),
-                  ])),
+                note: f['rejection_reason'] != null ? l10n.rejectionReason(f['rejection_reason']) : null,
+                onDelete: status != 'approved' ? () => _deleteFile(f) : null,
+              );
+            }),
+          if (_paymentFiles.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            LuxeKind(l10n.files_paymentProofs),
+            const SizedBox(height: 8),
+            ..._paymentFiles.map((pf) {
+              final status = pf['status'] as String? ?? 'pending';
+              final date = (pf['created_at'] as String?)?.split('T').first;
+              final amount = num.tryParse('${pf['amount'] ?? ''}');
+              final meta = [
+                l10n.files_paymentProof,
+                if (date != null) date,
+                if (amount != null) '${lxFormatMoney(amount)} ${pf['currency'] ?? 'SAR'}',
+              ].join(' · ');
+              final dotStatus = status == 'approved' ? LxStatus.ok : status == 'rejected' ? LxStatus.bad : LxStatus.wait;
+              return _fileCard(
+                key: ValueKey('payment-file-card-${pf['id']}'),
+                name: pf['name'] ?? '',
+                meta: meta,
+                fileUrl: pf['file_url'] as String?,
+                status: Row(mainAxisSize: MainAxisSize.min, children: [
+                  LuxeStatusDot(status: dotStatus),
+                  const SizedBox(width: 7),
+                  Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 11.5, color: Lx.ink2)),
                 ]),
-              ),
-            );
-          }),
+              );
+            }),
+          ],
         ],
-      ],
-    ),
+      ),
     );
   }
 }

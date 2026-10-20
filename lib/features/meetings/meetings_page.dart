@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/helpers/meeting_helpers.dart';
 import '../../core/widgets/loading_state.dart';
-import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/status_badge.dart';
 import '../../models/meeting.dart';
 import '../../providers/meeting_provider.dart';
 
@@ -86,149 +87,123 @@ class _MeetingsPageState extends State<MeetingsPage> {
     }).toList();
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _load,
-        child: _meetings.isEmpty
-          ? EmptyState(icon: Icons.videocam_outlined, title: l10n.meetings_noMeetings)
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (upcoming.isNotEmpty) ...[
-                  Text(l10n.meetings_upcoming, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                  const SizedBox(height: 12),
-                  ...upcoming.map((m) => _meetingCard(m, true)),
-                ],
-                if (past.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Text(l10n.meetings_previous, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                  const SizedBox(height: 12),
-                  ...past.map((m) => _meetingCard(m, false)),
-                ],
-              ],
-            ),
+        child: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+          children: [
+            LuxePageTitle(l10n.dashboard_meetings),
+            if (_meetings.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: Text(l10n.meetings_noMeetings, style: Lx.text(context, size: 14, color: Lx.muted))),
+              ),
+            if (upcoming.isNotEmpty) ...[
+              LuxeKind(l10n.meetings_upcoming),
+              const SizedBox(height: 8),
+              ...upcoming.map((m) => _meetingCard(m, true)),
+            ],
+            if (past.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              LuxeKind(l10n.meetings_previous),
+              const SizedBox(height: 8),
+              ...past.map((m) => _meetingCard(m, false)),
+            ],
+          ],
+        ),
       ),
     );
   }
 
+  Widget _calendar(Meeting m) {
+    DateTime? d;
+    try {
+      d = DateTime.parse(m.scheduledAt!).toLocal();
+    } catch (_) {}
+    if (d == null) return const SizedBox(width: 46);
+    final locale = Localizations.localeOf(context).toString();
+    return Container(
+      width: 58,
+      padding: const EdgeInsetsDirectional.only(end: 12),
+      decoration: const BoxDecoration(border: BorderDirectional(end: BorderSide(color: Lx.line))),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(DateFormat.MMM(locale).format(d).toUpperCase(), style: Lx.text(context, size: 9.5, color: Lx.crimsonInk).copyWith(letterSpacing: 1.9)),
+        Text('${d.day}', style: Lx.display(context, size: 26).copyWith(height: 1.1)),
+      ]),
+    );
+  }
+
   Widget _meetingCard(Meeting m, bool isUpcoming) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-          width: 44,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(_time(m.scheduledAt), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: isUpcoming ? ShadColors.gold : ShadColors.textSecondary, fontFamily: 'Archivo')),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: ShadColors.card.withAlpha(isUpcoming ? 255 : 180),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: ShadColors.cardBorder),
-            ),
+    final l10n = AppLocalizations.of(context)!;
+    final sub = [
+      _time(m.scheduledAt),
+      if (m.durationMinutes != null) '${m.durationMinutes} min',
+    ].where((e) => e.isNotEmpty).join(' · ');
+    final isDone = m.status == 'completed' || (!isUpcoming && m.status != 'cancelled');
+    return LuxeCard(
+      key: ValueKey('meeting-card-${m.id}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          if (isUpcoming) ...[_calendar(m), const SizedBox(width: 12)],
+          Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(width: 3, height: 32, decoration: BoxDecoration(
-                  color: isUpcoming ? ShadColors.gold : ShadColors.cardBorder,
-                  borderRadius: BorderRadius.circular(2),
-                )),
-                const SizedBox(width: 12),
-                Expanded(child: Text(m.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
-                // Meeting.status defaults to 'scheduled' when the API omits
-                // it, so this always renders now — a minor behavior change
-                // from the original (which hid the badge entirely on a null
-                // status). Accepted rather than threading an extra
-                // "was this field present" flag through the model for an
-                // edge case that shouldn't occur in real responses.
-                StatusBadge(status: m.status),
-              ]),
-              const SizedBox(height: 8),
-              Row(children: [
-                Icon(Icons.schedule, size: 12, color: ShadColors.textSecondary),
-                const SizedBox(width: 4),
-                Text(_time(m.scheduledAt), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                if (m.durationMinutes != null) ...[
-                  const SizedBox(width: 12),
-                  Icon(Icons.timer, size: 12, color: ShadColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('${m.durationMinutes} min', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                ],
-              ]),
-              if (m.status == 'scheduled' && m.link != null) ...[
-                const SizedBox(height: 10),
-                Builder(
-                  builder: (ctx) {
-                    final joinStatus = getMeetingJoinStatus(m.scheduledAt!, AppLocalizations.of(ctx)!);
-                    // subuser-review-plan.md م٦ — joining a meeting maps to
-                    // can_join_meetings, per the plan's action table.
-                    final canJoin = joinStatus.canJoin && _api.canDo('can_join_meetings');
-                    return SizedBox(
-                      width: double.infinity,
-                      child: canJoin
-                          ? OutlinedButton.icon(
-                              onPressed: () async {
-                                final uri = Uri.tryParse(m.link!);
-                                if (uri != null && await canLaunchUrl(uri)) {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                }
-                              },
-                              icon: const Icon(Icons.videocam, size: 16),
-                              label: Text(joinStatus.label),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: ShadColors.success,
-                                side: const BorderSide(color: ShadColors.success),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(vertical: 8)),
-                            )
-                          : joinStatus.canJoin
-                              // Time-wise this meeting could be joined, but
-                              // the sub-user lacks can_join_meetings.
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  child: Text(
-                                    AppLocalizations.of(ctx)!.subuserActionNeedsOwner,
-                                    style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              : Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: ShadColors.meetingBlueBg,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: ShadColors.meetingBlueBorder.withAlpha(80)),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.schedule, size: 14, color: ShadColors.meetingBlue),
-                                      const SizedBox(width: 6),
-                                      Text(joinStatus.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
-                                    ],
-                                  ),
-                                ),
-                    );
-                  },
-                ),
-                if (m.passcode != null) ...[
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Icon(Icons.lock, size: 12, color: ShadColors.textDisabled),
-                    const SizedBox(width: 4),
-                    Text('Passcode: ${m.passcode}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                  ]),
-                ],
+              Text(m.title, style: Lx.text(context, size: isUpcoming ? 15 : 14.5, weight: FontWeight.w500)),
+              if (sub.isNotEmpty) Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+              if (!isUpcoming) ...[
+                const SizedBox(height: 8),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  LuxeStatusDot(status: m.status == 'cancelled' ? LxStatus.bad : isDone ? LxStatus.off : LxStatus.wait),
+                  const SizedBox(width: 7),
+                  Text(statusLabels(l10n)[m.status] ?? m.status, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                ]),
               ],
             ]),
           ),
-        ),
+        ]),
+        if (m.status == 'scheduled' && m.link != null)
+          Builder(
+            builder: (ctx) {
+              final joinStatus = getMeetingJoinStatus(m.scheduledAt!, AppLocalizations.of(ctx)!);
+              // subuser-review-plan.md م٦ — joining a meeting maps to
+              // can_join_meetings, per the plan's action table.
+              final canJoin = joinStatus.canJoin && _api.canDo('can_join_meetings');
+              return Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: canJoin
+                    ? SizedBox(
+                        width: double.infinity,
+                        child: LuxeButton(
+                          key: ValueKey('meeting-join-${m.id}'),
+                          label: joinStatus.label,
+                          lxIcon: 'video',
+                          kind: LuxeButtonKind.primary,
+                          onPressed: () async {
+                            final uri = Uri.tryParse(m.link!);
+                            if (uri != null && await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                        ),
+                      )
+                    : joinStatus.canJoin
+                        // Time-wise this meeting could be joined, but the
+                        // sub-user lacks can_join_meetings.
+                        ? LuxeHint(AppLocalizations.of(ctx)!.subuserActionNeedsOwner)
+                        : Row(children: [
+                            const LuxeStatusDot(status: LxStatus.wait),
+                            const SizedBox(width: 8),
+                            Text(joinStatus.label, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                          ]),
+              );
+            },
+          ),
+        if (m.status == 'scheduled' && m.link != null && m.passcode != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('Passcode: ${m.passcode}', style: Lx.text(context, size: 11, color: Lx.faint)),
+          ),
       ]),
     );
   }
 }
-
-

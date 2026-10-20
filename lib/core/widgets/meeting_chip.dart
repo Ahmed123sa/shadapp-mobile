@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import 'package:intl/intl.dart';
+import '../luxe/lx_icons.dart';
+import '../luxe/tokens.dart';
 import '../theme.dart';
 import '../helpers/meeting_helpers.dart';
-import 'status_badge.dart';
+import 'luxe/luxe_widgets.dart';
 
 class MeetingChip extends StatelessWidget {
   final Map<String, dynamic> metadata;
@@ -55,111 +58,115 @@ class MeetingChip extends StatelessWidget {
       timeText += ' • ${duration}m';
     }
 
+    // Mockup `.mc` meeting card: calendar block + serif title + sub + join.
+    DateTime? when;
+    if (scheduledAt != null) {
+      try {
+        final hasTz = scheduledAt.endsWith('Z') || RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(scheduledAt);
+        when = hasTz ? DateTime.parse(scheduledAt).toLocal() : DateTime.parse(scheduledAt);
+      } catch (_) {}
+    }
+    final locale = Localizations.localeOf(context).toString();
+    final dim = status != 'scheduled';
+
+    Widget? action;
+    if (scheduledAt != null && link != null && status == 'scheduled') {
+      final joinStatus = getMeetingJoinStatus(scheduledAt, l10n);
+      final buttonLabel = onEnter != null
+          ? ((isHost ?? true) ? l10n.meeting_startAsHost : l10n.meeting_join)
+          : joinStatus.label;
+      action = joinStatus.canJoin
+          ? GestureDetector(
+              onTap: () async {
+                final meetingId = metadata['meeting_id'] as int?;
+                if (onEnter != null && meetingId != null) {
+                  await onEnter!(meetingId);
+                  return;
+                }
+                final uri = Uri.tryParse(link);
+                if (uri != null && await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line2)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const LxIcon('video', size: 15, color: Lx.ink),
+                  const SizedBox(width: 7),
+                  Text(buttonLabel, style: Lx.text(context, size: 12.5)),
+                ]),
+              ),
+            )
+          : Row(mainAxisSize: MainAxisSize.min, children: [
+              const LuxeStatusDot(status: LxStatus.wait),
+              const SizedBox(width: 7),
+              Text(joinStatus.label, style: Lx.text(context, size: 12, color: Lx.ink2)),
+            ]);
+    }
+
     return Container(
-      constraints: const BoxConstraints(maxWidth: 300),
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(maxWidth: 340),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: ShadColors.chatBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
+        gradient: Lx.cardGradient,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Lx.line),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: ShadColors.meetingBlueBg,
-              borderRadius: BorderRadius.circular(7),
-              border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
-            ),
-            child: const Icon(Icons.videocam, size: 16, color: ShadColors.meetingBlue),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 23 Sept 2026 — a completed/cancelled meeting used to look
-                // exactly like an upcoming one here (only the Join pill
-                // below checked status). Now it gets the same StatusBadge
-                // as meetings_tab.dart, and its time line is dimmed. The
-                // backend keeps metadata.status in sync (Meeting::booted()).
-                Row(children: [
-                  Flexible(
-                    child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-                  ),
+          Row(children: [
+            if (when != null)
+              Container(
+                width: 58,
+                padding: const EdgeInsetsDirectional.only(end: 12),
+                decoration: const BoxDecoration(border: BorderDirectional(end: BorderSide(color: Lx.line))),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(DateFormat.MMM(locale).format(when).toUpperCase(), style: Lx.text(context, size: 9.5, color: dim ? Lx.faint : Lx.crimsonInk).copyWith(letterSpacing: 1.9)),
+                  Text('${when.day}', style: Lx.display(context, size: 26).copyWith(height: 1.1)),
+                ]),
+              ),
+            if (when != null) const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 23 Sept 2026 — a completed/cancelled meeting used to look
+                  // exactly like an upcoming one here (only the Join pill
+                  // below checked status). Now it shows its status and its
+                  // time line is dimmed. The backend keeps metadata.status
+                  // in sync (Meeting::booted()).
+                  Text(title, style: Lx.display(context, size: 17, color: dim ? Lx.ink2 : Lx.ink)),
+                  if (timeText.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(timeText, style: Lx.text(context, size: 12.5, color: dim ? Lx.faint : Lx.muted)),
+                  ],
                   if (status != 'scheduled') ...[
-                    const SizedBox(width: 6),
-                    StatusBadge(status: status, fontSize: 9),
+                    const SizedBox(height: 6),
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      LuxeStatusDot(status: status == 'cancelled' ? LxStatus.bad : LxStatus.off),
+                      const SizedBox(width: 7),
+                      Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                    ]),
                   ] else if (rescheduled) ...[
                     // 23 Sept 2026 — the backend posts a fresh card (with
                     // metadata.rescheduled) when a meeting's time changes,
                     // so the client notices; this pill says why it's there.
-                    const SizedBox(width: 6),
+                    const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: ShadColors.meetingBlueBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
-                      ),
-                      child: Text(l10n.meetingChipRescheduled, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line2)),
+                      child: Text(l10n.meetingChipRescheduled, style: Lx.text(context, size: 10, color: Lx.crimsonInk)),
                     ),
                   ],
-                ]),
-                if (timeText.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(timeText, style: TextStyle(
-                    fontSize: 10,
-                    color: status == 'scheduled' ? ShadColors.textSecondary : ShadColors.textDisabled,
-                  )),
                 ],
-              ],
+              ),
             ),
-          ),
-          if (scheduledAt != null && link != null && status == 'scheduled') ...[
-            const SizedBox(width: 10),
-            Builder(
-              builder: (ctx) {
-                final joinStatus = getMeetingJoinStatus(scheduledAt, l10n);
-                final buttonLabel = onEnter != null
-                    ? ((isHost ?? true) ? l10n.meeting_startAsHost : l10n.meeting_join)
-                    : joinStatus.label;
-                if (joinStatus.canJoin) {
-                  return GestureDetector(
-                    onTap: () async {
-                      final meetingId = metadata['meeting_id'] as int?;
-                      if (onEnter != null && meetingId != null) {
-                        await onEnter!(meetingId);
-                        return;
-                      }
-                      final uri = Uri.tryParse(link);
-                      if (uri != null && await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: ShadColors.success,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(buttonLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
-                    ),
-                  );
-                }
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ShadColors.meetingBlueBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
-                  ),
-                  child: Text(joinStatus.label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
-                );
-              },
-            ),
+          ]),
+          if (action != null) ...[
+            const SizedBox(height: 12),
+            Align(alignment: AlignmentDirectional.centerStart, child: action),
           ],
         ],
       ),

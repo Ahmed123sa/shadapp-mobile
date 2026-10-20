@@ -196,7 +196,7 @@ void main() {
 
     await pumpPage(tester, api);
     await tester.enterText(find.byType(TextField), 'a plain message');
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'a plain message'});
@@ -221,7 +221,7 @@ void main() {
     await tester.tap(find.text('Reply'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'replying now');
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'replying now', 'reply_to_id': 2});
@@ -245,7 +245,7 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'edited message');
-    await tester.tap(find.byIcon(Icons.check));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'edited message'});
@@ -383,7 +383,7 @@ void main() {
     ]);
 
     await pumpPage(tester, api);
-    await tester.tap(find.byIcon(Icons.copy_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-contracts')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
@@ -399,7 +399,7 @@ void main() {
     stubDefaultGets(httpClient, contracts: []);
 
     await pumpPage(tester, api);
-    await tester.tap(find.byIcon(Icons.copy_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-contracts')));
     await tester.pumpAndSettle();
 
     expect(find.text('No Contracts'), findsOneWidget);
@@ -413,7 +413,7 @@ void main() {
     stubDefaultGets(httpClient, meetings: []);
 
     await pumpPage(tester, api);
-    await tester.tap(find.byIcon(Icons.videocam_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-zoom')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),
