@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../data/staff_permissions.dart';
 
 /// Shared by the manager's Team screen and the workspace Team tab
@@ -24,7 +24,7 @@ class PermissionChips extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final anyOn = staffPermissionGroups.any((g) => permissions[g.view] == true);
     if (!anyOn) {
-      return Text(l10n.mtNone, key: const ValueKey('permission-chips-none'), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary));
+      return Text(l10n.mtNone, key: const ValueKey('permission-chips-none'), style: const TextStyle(fontSize: 11, color: Lx.muted));
     }
     return Wrap(
       key: const ValueKey('permission-chips'),
@@ -36,18 +36,18 @@ class PermissionChips extends StatelessWidget {
             Container(
               key: ValueKey('chip-off-${g.id}'),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: ShadColors.cardBorder)),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: Lx.line2)),
               child: Text(_groupLabel(l10n, g.id),
-                  style: const TextStyle(fontSize: 10, color: ShadColors.textDisabled, decoration: TextDecoration.lineThrough)),
+                  style: const TextStyle(fontSize: 10, color: Lx.faint, decoration: TextDecoration.lineThrough)),
             )
           else
             Container(
               key: ValueKey('chip-on-${g.id}'),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: ShadColors.gold.withAlpha(90))),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: Lx.wait.withAlpha(90))),
               child: Text(
                 '${_groupLabel(l10n, g.id)} · ${l10n.mtView}${permissions[g.act] == true ? ' + ${_actLabel(l10n, g.id)}' : ''}',
-                style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary),
+                style: const TextStyle(fontSize: 10, color: Lx.muted),
               ),
             ),
       ],
@@ -75,8 +75,8 @@ Future<PermissionsResult?> showPermissionsSheet(
 }) {
   return showModalBottomSheet<PermissionsResult>(
     context: context,
+    backgroundColor: Lx.sheet,
     isScrollControlled: true,
-    backgroundColor: ShadColors.card,
     builder: (_) => _PermissionsSheet(
       memberName: memberName,
       clients: clients,
@@ -127,7 +127,7 @@ class _PermissionsSheetState extends State<_PermissionsSheet> {
         key: ValueKey('mt-sw-$key'),
         dense: true,
         contentPadding: EdgeInsets.zero,
-        title: Text(_rowLabel(l10n, key), style: TextStyle(fontSize: 13, color: enabled ? ShadColors.textPrimary : ShadColors.textDisabled)),
+        title: Text(_rowLabel(l10n, key), style: TextStyle(fontSize: 13, color: enabled ? Lx.ink : Lx.faint)),
         value: _perms[key] == true,
         onChanged: enabled ? (v) => setState(() => _perms = setStaffPermission(_perms, key, v)) : null,
       ),
@@ -144,22 +144,22 @@ class _PermissionsSheetState extends State<_PermissionsSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            Text(widget.memberName, style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+            Text(widget.memberName, style: const TextStyle(fontSize: 11, color: Lx.faint)),
             const SizedBox(height: 2),
             Text(l10n.mtLinkClient, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 14),
-            Text(l10n.mtPickClient, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            Text(l10n.mtPickClient, style: const TextStyle(fontSize: 11, color: Lx.muted)),
             const SizedBox(height: 4),
             if (fixed)
               Container(
                 key: const ValueKey('mt-client-fixed'),
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: ShadColors.inputFill, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: Lx.surface, borderRadius: BorderRadius.circular(10)),
                 child: Text(widget.fixedClientName ?? ''),
               )
             else if (widget.clients.isEmpty)
-              Text(l10n.mtNoClientsToLink, key: const ValueKey('mt-no-clients'), style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary))
+              Text(l10n.mtNoClientsToLink, key: const ValueKey('mt-no-clients'), style: const TextStyle(fontSize: 12, color: Lx.muted))
             else
               DropdownButtonFormField<int>(
                 key: const ValueKey('mt-client-select'),
@@ -173,15 +173,15 @@ class _PermissionsSheetState extends State<_PermissionsSheet> {
                 onChanged: (v) => setState(() => _wsId = v),
               ),
             const SizedBox(height: 16),
-            Text(l10n.mtPermOnClient, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            Text(l10n.mtPermOnClient, style: const TextStyle(fontSize: 11, color: Lx.muted)),
             for (final g in staffPermissionGroups) ...[
               const SizedBox(height: 8),
-              Text(_groupLabel(l10n, g.id), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+              Text(_groupLabel(l10n, g.id), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait)),
               _switch(l10n, g.view),
               _switch(l10n, g.act, indent: true, enabled: _perms[g.view] == true),
             ],
             const SizedBox(height: 8),
-            Text(l10n.mtDepNote, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            Text(l10n.mtDepNote, style: const TextStyle(fontSize: 11, color: Lx.muted)),
             const SizedBox(height: 16),
             Row(children: [
               Expanded(

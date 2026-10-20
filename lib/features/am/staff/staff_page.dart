@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -72,6 +73,7 @@ class _StaffPageState extends State<StaffPage> {
   Future<void> _openForm([Map<String, dynamic>? member]) async {
     final saved = await showModalBottomSheet<String>(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _StaffForm(repository: _repo, member: member),
@@ -85,6 +87,7 @@ class _StaffPageState extends State<StaffPage> {
   Future<void> _openPassword(Map<String, dynamic> member) async {
     final saved = await showModalBottomSheet<String>(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _PasswordForm(repository: _repo, member: member),
@@ -131,6 +134,7 @@ class _StaffPageState extends State<StaffPage> {
   Future<void> _openClients(Map<String, dynamic> member) async {
     await showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _ClientsSheet(repository: _repo, member: member),
@@ -141,21 +145,36 @@ class _StaffPageState extends State<StaffPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
+      backgroundColor: Lx.page,
       appBar: AppBar(
-        title: Text(l10n.staffNavTitle),
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: const SizedBox.shrink(),
         leading: BackButton(onPressed: () => context.pop()),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('staff-add'),
+        backgroundColor: Lx.crimson,
+        foregroundColor: Colors.white,
+        elevation: 0,
         onPressed: () => _openForm(),
         icon: const Icon(Icons.add),
         label: Text(l10n.staffAdd),
       ),
-      body: Column(children: [
+      body: LuxeFormTheme(child: Column(children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+            child: LuxePageTitle(l10n.staffNavTitle),
+          ),
+        ),
         SwitchListTile(
           key: const ValueKey('staff-show-archived'),
           dense: true,
-          title: Text(l10n.staffShowArchived, style: const TextStyle(fontSize: 13)),
+          title: Text(l10n.staffShowArchived, style: Lx.text(context, size: 13)),
           value: _includeArchived,
           onChanged: (v) {
             setState(() => _includeArchived = v);
@@ -163,7 +182,7 @@ class _StaffPageState extends State<StaffPage> {
           },
         ),
         Expanded(child: _body(l10n)),
-      ]),
+      ])),
     );
   }
 
@@ -192,11 +211,11 @@ class _StaffPageState extends State<StaffPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             CircleAvatar(
-              backgroundColor: ShadColors.crimson.withAlpha(40),
+              backgroundColor: Lx.crimson.withAlpha(40),
               backgroundImage: (m['avatar_url'] as String?)?.isNotEmpty == true ? NetworkImage(ApiClient().resolveFileUrl(m['avatar_url'] as String)) : null,
               child: (m['avatar_url'] as String?)?.isNotEmpty == true
                   ? null
-                  : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: ShadColors.crimson, fontWeight: FontWeight.w700)),
+                  : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Lx.crimson, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -205,16 +224,16 @@ class _StaffPageState extends State<StaffPage> {
                   Flexible(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
                   if (archived) ...[
                     const SizedBox(width: 6),
-                    Text(l10n.staffArchivedBadge, style: const TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
+                    Text(l10n.staffArchivedBadge, style: const TextStyle(fontSize: 10, color: Lx.faint)),
                   ],
                 ]),
-                Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                Text('${l10n.staffClientsLabel}: $count', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: Lx.muted)),
+                Text('${l10n.staffClientsLabel}: $count', style: const TextStyle(fontSize: 11, color: Lx.muted)),
                 if (safeList(m['teams']).isNotEmpty)
                   Text(
                     l10n.mtInTeams(safeList(m['teams']).map((t) => t is Map ? '${t['name']}' : '').where((n) => n.isNotEmpty).join('، ')),
                     key: ValueKey('staff-teams-${m['id']}'),
-                    style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary),
+                    style: const TextStyle(fontSize: 11, color: Lx.muted),
                   ),
               ]),
             ),
@@ -228,7 +247,7 @@ class _StaffPageState extends State<StaffPage> {
               archived ? l10n.staffUnarchiveAction : l10n.staffArchiveAction,
               busy ? null : () => _toggleArchive(m),
               key: 'staff-archive-${m['id']}',
-              color: archived ? ShadColors.success : ShadColors.crimson,
+              color: archived ? Lx.ok : Lx.crimson,
             ),
           ]),
         ]),
@@ -341,7 +360,7 @@ class _StaffFormState extends State<_StaffForm> {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(_editing ? l10n.staffEditAction : l10n.staffAdd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: ShadColors.crimson, fontSize: 13))),
+          if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: Lx.crimson, fontSize: 13))),
           TextField(key: const ValueKey('staff-form-name'), controller: _name, decoration: InputDecoration(labelText: l10n.staffFieldName)),
           const SizedBox(height: 8),
           TextField(key: const ValueKey('staff-form-email'), controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l10n.staffFieldEmail)),
@@ -426,7 +445,7 @@ class _PasswordFormState extends State<_PasswordForm> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('${l10n.staffChangePassword} — ${widget.member['name'] ?? ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
-        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: ShadColors.crimson, fontSize: 13))),
+        if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: Lx.crimson, fontSize: 13))),
         TextField(key: const ValueKey('staff-password-field'), controller: _password, obscureText: true, decoration: InputDecoration(labelText: l10n.staffFieldPassword)),
         const SizedBox(height: 12),
         ElevatedButton(
@@ -479,7 +498,7 @@ class _ClientsSheetState extends State<_ClientsSheet> {
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
         else if (_clients.isEmpty)
-          Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text(l10n.staffNoClients, style: const TextStyle(color: ShadColors.textDisabled))))
+          Padding(padding: const EdgeInsets.symmetric(vertical: 24), child: Center(child: Text(l10n.staffNoClients, style: const TextStyle(color: Lx.faint))))
         else
           Flexible(
             child: ListView(shrinkWrap: true, children: [

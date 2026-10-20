@@ -9,7 +9,7 @@
 // `mounted` getter for the same reason — same check, different spelling.
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../providers/contract_provider.dart';
 
 Future<void> showSaveClauseDialog({
@@ -32,53 +32,53 @@ Future<void> showSaveClauseDialog({
       return StatefulBuilder(
         builder: (ctx, setDialogState) {
           return AlertDialog(
-            backgroundColor: ShadColors.card,
+            backgroundColor: Lx.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(
               existing == null ? localL10n.adminSettings_addClause : localL10n.adminSettings_editClause,
-              style: const TextStyle(fontFamily: 'PlayfairDisplay', color: ShadColors.gold, fontSize: 18, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontFamily: Lx.serif, color: Lx.wait, fontSize: 18, fontWeight: FontWeight.w700),
             ),
             content: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 TextField(
                   controller: titleController,
-                  style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
+                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
                   decoration: InputDecoration(
                     labelText: localL10n.adminSettings_clauseName,
                     hintText: localL10n.adminSettings_clauseNamePh,
-                    labelStyle: const TextStyle(color: ShadColors.textSecondary),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ShadColors.cardBorder)),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ShadColors.gold)),
+                    labelStyle: const TextStyle(color: Lx.muted),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: categoryController,
-                  style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
+                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
                   decoration: InputDecoration(
                     labelText: localL10n.adminSettings_clauseCategory,
-                    labelStyle: const TextStyle(color: ShadColors.textSecondary),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ShadColors.cardBorder)),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ShadColors.gold)),
+                    labelStyle: const TextStyle(color: Lx.muted),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: contentController,
                   maxLines: 3,
-                  style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
+                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
                   decoration: InputDecoration(
                     labelText: localL10n.adminSettings_clauseContent,
                     hintText: localL10n.adminSettings_clauseContentPh,
-                    labelStyle: const TextStyle(color: ShadColors.textSecondary),
-                    enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: ShadColors.cardBorder)),
-                    focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: ShadColors.gold)),
+                    labelStyle: const TextStyle(color: Lx.muted),
+                    enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                    focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
                     alignLabelWithHint: true,
                   ),
                 ),
                 const SizedBox(height: 14),
                 Row(children: [
-                  Text(localL10n.adminSettings_clauseType, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                  Text(localL10n.adminSettings_clauseType, style: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans)),
                   const SizedBox(width: 12),
                   _typeChip('fixed', localL10n.adminSettings_clauseFixed, type, (v) => setDialogState(() => type = v)),
                   const SizedBox(width: 8),
@@ -89,7 +89,7 @@ Future<void> showSaveClauseDialog({
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text(localL10n.cancel, style: const TextStyle(fontFamily: 'Archivo')),
+                child: Text(localL10n.cancel, style: const TextStyle(fontFamily: Lx.sans)),
               ),
               TextButton(
                 onPressed: () {
@@ -98,7 +98,7 @@ Future<void> showSaveClauseDialog({
                   if (title.isEmpty || content.isEmpty) return;
                   Navigator.pop(ctx, true);
                 },
-                child: Text(localL10n.save, style: const TextStyle(fontFamily: 'Archivo', fontWeight: FontWeight.w700)),
+                child: Text(localL10n.save, style: const TextStyle(fontFamily: Lx.sans, fontWeight: FontWeight.w700)),
               ),
             ],
           );
@@ -137,11 +137,11 @@ Widget _typeChip(String value, String label, String selected, ValueChanged<Strin
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? ShadColors.crimson : ShadColors.background,
+        color: isSelected ? Lx.crimson : Lx.page,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: isSelected ? ShadColors.crimson : ShadColors.cardBorder),
+        border: Border.all(color: isSelected ? Lx.crimson : Lx.line2),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? ShadColors.textOnCrimson : ShadColors.textSecondary, fontFamily: 'Archivo')),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? Lx.ink : Lx.muted, fontFamily: Lx.sans)),
     ),
   );
 }
@@ -156,15 +156,15 @@ Future<void> deleteClauseTemplate({
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: ShadColors.card,
+      backgroundColor: Lx.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(l10n.delete, style: const TextStyle(fontFamily: 'PlayfairDisplay', color: ShadColors.gold, fontSize: 18, fontWeight: FontWeight.w700)),
-      content: Text(l10n.adminSettings_clauseDeleteConfirm, style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+      title: Text(l10n.delete, style: const TextStyle(fontFamily: Lx.serif, color: Lx.wait, fontSize: 18, fontWeight: FontWeight.w700)),
+      content: Text(l10n.adminSettings_clauseDeleteConfirm, style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel, style: const TextStyle(fontFamily: 'Archivo'))),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel, style: const TextStyle(fontFamily: Lx.sans))),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(l10n.delete, style: const TextStyle(fontFamily: 'Archivo', fontWeight: FontWeight.w700, color: ShadColors.error)),
+          child: Text(l10n.delete, style: const TextStyle(fontFamily: Lx.sans, fontWeight: FontWeight.w700, color: Lx.danger)),
         ),
       ],
     ),
@@ -228,9 +228,9 @@ Widget buildClauseTemplatesSection({
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: ShadColors.card,
+      color: Lx.surface,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: ShadColors.cardBorder),
+      border: Border.all(color: Lx.line2),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -238,10 +238,10 @@ Widget buildClauseTemplatesSection({
         ElevatedButton.icon(
           onPressed: clauseSaving ? null : onAdd,
           icon: const Icon(Icons.add, size: 16),
-          label: Text(l10n.adminSettings_addClause, style: const TextStyle(fontSize: 12, fontFamily: 'Archivo')),
+          label: Text(l10n.adminSettings_addClause, style: const TextStyle(fontSize: 12, fontFamily: Lx.sans)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: ShadColors.gold,
-            foregroundColor: ShadColors.background,
+            backgroundColor: Lx.crimson,
+            foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
@@ -253,7 +253,7 @@ Widget buildClauseTemplatesSection({
       else if (clauses.isEmpty)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(child: Text(l10n.adminSettings_clausesEmpty, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo'))),
+          child: Center(child: Text(l10n.adminSettings_clausesEmpty, style: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans))),
         )
       else
         Column(children: [
@@ -264,10 +264,10 @@ Widget buildClauseTemplatesSection({
             child: ElevatedButton.icon(
               onPressed: onSaveOrder,
               icon: const Icon(Icons.save_outlined, size: 16),
-              label: Text(l10n.adminSettings_clauseSaveOrder, style: const TextStyle(fontSize: 12, fontFamily: 'Archivo')),
+              label: Text(l10n.adminSettings_clauseSaveOrder, style: const TextStyle(fontSize: 12, fontFamily: Lx.sans)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: ShadColors.crimson,
-                foregroundColor: ShadColors.textOnCrimson,
+                backgroundColor: Lx.crimson,
+                foregroundColor: Lx.ink,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
@@ -294,19 +294,19 @@ Widget _clauseTile(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: ShadColors.background,
+      color: Lx.page,
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
+      border: Border.all(color: Lx.line2),
     ),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Column(children: [
         GestureDetector(
           onTap: () => onMove(index, -1),
-          child: const Icon(Icons.keyboard_arrow_up, size: 18, color: ShadColors.textSecondary),
+          child: const Icon(Icons.keyboard_arrow_up, size: 18, color: Lx.muted),
         ),
         GestureDetector(
           onTap: () => onMove(index, 1),
-          child: const Icon(Icons.keyboard_arrow_down, size: 18, color: ShadColors.textSecondary),
+          child: const Icon(Icons.keyboard_arrow_down, size: 18, color: Lx.muted),
         ),
       ]),
       const SizedBox(width: 10),
@@ -314,48 +314,48 @@ Widget _clauseTile(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text(clause['title'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.textPrimary)),
+              child: Text(clause['title'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif, color: Lx.ink)),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isFixed ? ShadColors.gold.withValues(alpha: 0.15) : ShadColors.textSecondary.withValues(alpha: 0.15),
+                color: isFixed ? Lx.wait.withValues(alpha: 0.15) : Lx.muted.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 isFixed ? l10n.adminSettings_clauseFixed : l10n.adminSettings_clauseOptional,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isFixed ? ShadColors.gold : ShadColors.textSecondary, fontFamily: 'Archivo'),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isFixed ? Lx.wait : Lx.muted, fontFamily: Lx.sans),
               ),
             ),
           ]),
           if ((clause['category'] as String? ?? '').isNotEmpty) ...[
             const SizedBox(height: 2),
-            Text(clause['category'] as String, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+            Text(clause['category'] as String, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans)),
           ],
           const SizedBox(height: 4),
-          Text(clause['content'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo', height: 1.4)),
+          Text(clause['content'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans, height: 1.4)),
           const SizedBox(height: 6),
           Row(children: [
-            Icon(Icons.circle, size: 8, color: isActive ? ShadColors.success : ShadColors.textDisabled),
+            Icon(Icons.circle, size: 8, color: isActive ? Lx.ok : Lx.faint),
             const SizedBox(width: 4),
             Text(
               isActive ? l10n.adminSettings_clauseActive : l10n.adminSettings_clauseInactive,
-              style: TextStyle(fontSize: 10, color: isActive ? ShadColors.success : ShadColors.textDisabled, fontFamily: 'Archivo'),
+              style: TextStyle(fontSize: 10, color: isActive ? Lx.ok : Lx.faint, fontFamily: Lx.sans),
             ),
             const Spacer(),
             GestureDetector(
               onTap: () => onToggle(clause),
-              child: Icon(Icons.visibility_outlined, size: 16, color: isActive ? ShadColors.gold : ShadColors.textDisabled),
+              child: Icon(Icons.visibility_outlined, size: 16, color: isActive ? Lx.wait : Lx.faint),
             ),
             const SizedBox(width: 12),
             GestureDetector(
               onTap: () => onEdit(clause),
-              child: const Icon(Icons.edit_outlined, size: 16, color: ShadColors.textSecondary),
+              child: const Icon(Icons.edit_outlined, size: 16, color: Lx.muted),
             ),
             const SizedBox(width: 12),
             GestureDetector(
               onTap: () => onDelete(clause),
-              child: const Icon(Icons.delete_outline, size: 16, color: ShadColors.error),
+              child: const Icon(Icons.delete_outline, size: 16, color: Lx.danger),
             ),
           ]),
         ]),

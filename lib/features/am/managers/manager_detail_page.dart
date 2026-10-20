@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -84,9 +85,9 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
       return Scaffold(
         body: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.error_outline, color: ShadColors.error, size: 48),
+            const Icon(Icons.error_outline, color: Lx.danger, size: 48),
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: ShadColors.error)),
+            Text(_error!, style: const TextStyle(color: Lx.danger)),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _load, child: Text(l10n.retry)),
           ]),
@@ -140,13 +141,8 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
         : paymentsByMonth;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(name, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700)),
-      ),
+      backgroundColor: Lx.page,
+      appBar: AppBar(backgroundColor: Lx.page, elevation: 0, scrolledUnderElevation: 0, iconTheme: const IconThemeData(color: Lx.muted), title: const SizedBox.shrink()),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -155,30 +151,30 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
             Center(
               child: CircleAvatar(
                 radius: 36,
-                backgroundColor: ShadColors.crimson,
+                backgroundColor: const Color(0xFF262626),
                 backgroundImage: avatarUrl != null ? NetworkImage(_api.resolveFileUrl(avatarUrl)) : null,
-                child: avatarUrl == null ? Text(initials, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')) : null,
+                child: avatarUrl == null ? Text(initials, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif)) : null,
               ),
             ),
             const SizedBox(height: 12),
-            Center(child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.textPrimary))),
+            Center(child: Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: Lx.serif, color: Lx.ink))),
             const SizedBox(height: 4),
-            Center(child: Text(email, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo'), textDirection: TextDirection.ltr)),
+            Center(child: Text(email, style: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans), textDirection: TextDirection.ltr)),
             if (phone != null && phone.isNotEmpty)
-              Center(child: Text(phone, style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled, fontFamily: 'Archivo'), textDirection: TextDirection.ltr)),
+              Center(child: Text(phone, style: const TextStyle(fontSize: 11, color: Lx.faint, fontFamily: Lx.sans), textDirection: TextDirection.ltr)),
             const SizedBox(height: 20),
 
             _sectionLabel(l10n.managerDetailStats),
             Row(children: [
-              _statCard(l10n.managerDetailClients, '$clientsCount', ShadColors.sent),
+              _statCard(l10n.managerDetailClients, '$clientsCount', Lx.ink),
               const SizedBox(width: 8),
-              _statCard(l10n.managerDetailActiveSpaces, '$activeWorkspaces', ShadColors.success),
+              _statCard(l10n.managerDetailActiveSpaces, '$activeWorkspaces', Lx.ink),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _statCard(l10n.managerDetailTotalIncome, incomeValue, ShadColors.gold),
+              _statCard(l10n.managerDetailTotalIncome, incomeValue, Lx.ink),
               const SizedBox(width: 8),
-              _statCard(l10n.managerDetailPendingPayments, '$pendingPayments', ShadColors.warning),
+              _statCard(l10n.managerDetailPendingPayments, '$pendingPayments', Lx.ink),
             ]),
             const SizedBox(height: 20),
 
@@ -189,15 +185,15 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Row(children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: _statusColor(e.key), shape: BoxShape.circle)),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(_statusLabel(e.key, l10n), style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
-                  Text('${e.value}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _statusColor(e.key), fontFamily: 'PlayfairDisplay')),
+                  Expanded(child: Text(_statusLabel(e.key, l10n), style: const TextStyle(fontSize: 12, color: Lx.ink, fontFamily: Lx.sans))),
+                  Text('${e.value}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _statusColor(e.key), fontFamily: Lx.serif)),
                 ]),
               )),
               const SizedBox(height: 20),
@@ -217,13 +213,13 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                         decoration: BoxDecoration(
-                          color: active ? ShadColors.goldSoft : Colors.transparent,
+                          color: active ? Lx.wait.withAlpha(35) : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
+                          border: Border.all(color: active ? Lx.wait : Lx.line2),
                         ),
                         child: Text(cur, style: TextStyle(
                           fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                          color: active ? ShadColors.gold : ShadColors.textSecondary,
+                          color: active ? Lx.wait : Lx.muted,
                         )),
                       ),
                     );
@@ -246,32 +242,32 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: ShadColors.card,
+                    color: Lx.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: ShadColors.cardBorder),
+                    border: Border.all(color: Lx.line2),
                   ),
                   child: Row(children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: ShadColors.crimson.withAlpha(30),
+                      backgroundColor: Lx.crimson.withAlpha(30),
                       child: Text(cName.isNotEmpty ? cName.substring(0, 1).toUpperCase() : '?',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Lx.wait)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(cName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-                        Text(person, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                        Text(cName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink, fontFamily: Lx.sans)),
+                        Text(person, style: const TextStyle(fontSize: 10, color: Lx.muted, fontFamily: Lx.sans)),
                       ]),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: (wsActive ? ShadColors.success : ShadColors.textDisabled).withAlpha(20),
+                        color: (wsActive ? Lx.ok : Lx.faint).withAlpha(20),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(wsActive ? l10n.managerDetailActive : l10n.managerDetailInactive,
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: wsActive ? ShadColors.success : ShadColors.textDisabled)),
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: wsActive ? Lx.ok : Lx.faint)),
                     ),
                   ]),
                 );
@@ -286,7 +282,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, letterSpacing: 1.2, fontWeight: FontWeight.w500)),
+      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 10, color: Lx.faint, letterSpacing: 1.2, fontWeight: FontWeight.w500)),
     );
   }
 
@@ -295,14 +291,14 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: ShadColors.card,
+          color: Lx.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ShadColors.cardBorder),
+          border: Border.all(color: Lx.line2),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color, fontFamily: 'PlayfairDisplay')),
+          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color, fontFamily: Lx.serif)),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+          Text(label, style: const TextStyle(fontSize: 10, color: Lx.muted, fontFamily: Lx.sans)),
         ]),
       ),
     );
@@ -310,14 +306,14 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
 
   Widget _paymentsChart(Map<String, dynamic> data, AppLocalizations l10n) {
     final entries = data.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-    if (entries.isEmpty) return Center(child: Text(l10n.managerDetailNoData, style: const TextStyle(color: ShadColors.textDisabled)));
+    if (entries.isEmpty) return Center(child: Text(l10n.managerDetailNoData, style: const TextStyle(color: Lx.faint)));
     final spots = entries.asMap().entries.map((e) => FlSpot(e.key.toDouble(), _toDouble(e.value.value))).toList();
 
     return LineChart(LineChartData(
       lineBarsData: [LineChartBarData(
-        spots: spots, isCurved: true, color: ShadColors.gold, barWidth: 2,
-        belowBarData: BarAreaData(show: true, color: ShadColors.gold.withValues(alpha: 0.1)),
-        dotData: FlDotData(show: true, getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(radius: 2, color: ShadColors.gold, strokeWidth: 0)),
+        spots: spots, isCurved: true, color: Lx.wait, barWidth: 2,
+        belowBarData: BarAreaData(show: true, color: Lx.wait.withValues(alpha: 0.1)),
+        dotData: FlDotData(show: true, getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(radius: 2, color: Lx.wait, strokeWidth: 0)),
       )],
       titlesData: FlTitlesData(
         show: true,
@@ -328,10 +324,10 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
             if (idx < 0 || idx >= entries.length) return const SizedBox();
             final parts = entries[idx].key.split('-');
             final label = parts.length >= 2 ? '${parts[1]}/${parts[0].substring(2)}' : entries[idx].key;
-            return Padding(padding: const EdgeInsets.only(top: 4), child: Text(label, style: const TextStyle(color: ShadColors.textSecondary, fontSize: 9)));
+            return Padding(padding: const EdgeInsets.only(top: 4), child: Text(label, style: const TextStyle(color: Lx.muted, fontSize: 9)));
           },
         )),
-        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(color: ShadColors.textDisabled, fontSize: 10)))),
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(color: Lx.faint, fontSize: 10)))),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
@@ -347,7 +343,7 @@ class _ManagerDetailPageState extends State<ManagerDetailPage> {
   }
 
   Color _statusColor(String status) {
-    return statusColors[status] ?? ShadColors.textSecondary;
+    return statusColors[status] ?? Lx.muted;
   }
 
   String _statusLabel(String status, AppLocalizations l10n) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme.dart';
-import '../../../core/widgets/shad_logo.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../models/manager.dart';
 import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -41,110 +41,110 @@ class _AccountManagersPageState extends State<AccountManagersPage> {
     if (mounted) setState(() => _loading = false);
   }
 
+  Future<void> _openCreate() async {
+    final result = await context.push<bool>('/am/managers/create');
+    if (result == true) _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final newBtn = SizedBox(
+      width: double.infinity,
+      child: LuxeButton(
+        key: const ValueKey('managers-new'),
+        label: l10n.accountManagersAddButton,
+        lxIcon: 'plus',
+        kind: LuxeButtonKind.primary,
+        size: LuxeButtonSize.lg,
+        onPressed: _openCreate,
+      ),
+    );
     return Scaffold(
+      backgroundColor: Lx.page,
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ShadLogo(size: 24, showText: false),
-            const SizedBox(width: 8),
-            Text(l10n.amManageManagers, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay')),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: const SizedBox.shrink(),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: Lx.crimsonInk))
+          : _errorMsg != null
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(_errorMsg!, style: Lx.text(context, size: 14, color: Lx.danger)),
+                    const SizedBox(height: 12),
+                    LuxeFormTheme(child: ElevatedButton(onPressed: _load, child: Text(l10n.retry))),
+                  ]),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  color: Lx.crimsonInk,
+                  child: ListView(
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 28),
+                    children: [
+                      LuxePageTitle(l10n.amManageManagers),
+                      newBtn,
+                      const SizedBox(height: 12),
+                      if (_managers.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: Column(children: [
+                            Text(l10n.accountManagersEmpty, style: Lx.display(context, size: 20)),
+                            const SizedBox(height: 8),
+                            Text(l10n.accountManagersAddHint, textAlign: TextAlign.center, style: Lx.text(context, size: 13.5, color: Lx.muted)),
+                          ]),
+                        )
+                      else
+                        ..._managers.map(_managerCard),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _managerCard(Manager m) {
+    final l10n = AppLocalizations.of(context)!;
+    final phone = m.phone;
+    return LuxeCard(
+      key: ValueKey('manager-card-${m.id}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          LuxeAvatar(initial: m.name.isNotEmpty ? m.name[0].toUpperCase() : '?', size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(m.name, style: Lx.display(context, size: 16)),
+              if ((m.email ?? '').isNotEmpty)
+                Text(m.email!, style: Lx.text(context, size: 12, color: Lx.muted)),
+              if (phone != null && phone.isNotEmpty)
+                Directionality(textDirection: TextDirection.ltr, child: Text(phone, style: Lx.text(context, size: 12, color: Lx.faint))),
+            ]),
+          ),
+          Text(l10n.accountManagersClientCount(m.managedClientsCount), style: Lx.text(context, size: 12, color: Lx.muted)),
+        ]),
+        if (m.dateOfBirth != null && m.dateOfBirth!.length >= 10)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(m.dateOfBirth!.substring(0, 10), style: Lx.text(context, size: 12, color: Lx.faint)),
+          ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: LuxeButton(
+            key: ValueKey('manager-edit-${m.id}'),
+            label: l10n.edit,
+            size: LuxeButtonSize.sm,
+            kind: LuxeButtonKind.outline,
             onPressed: () async {
-              final result = await context.push<bool>('/am/managers/create');
+              final result = await context.push<bool>('/am/managers/${m.id}/edit');
               if (result == true) _load();
             },
           ),
-        ],
-      ),
-      body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : _errorMsg != null
-          ? Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(_errorMsg!, style: const TextStyle(color: ShadColors.error)),
-                const SizedBox(height: 12),
-                ElevatedButton(onPressed: _load, child: Text(l10n.retry)),
-              ]),
-            )
-          : _managers.isEmpty
-            ? Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.people_outline, size: 56, color: ShadColors.textDisabled),
-                  const SizedBox(height: 16),
-                  Text(l10n.accountManagersEmpty, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-                  const SizedBox(height: 8),
-                  Text(l10n.accountManagersAddHint, style: const TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final result = await context.push<bool>('/am/managers/create');
-                      if (result == true) _load();
-                    },
-                    icon: const Icon(Icons.person_add, size: 18),
-                    label: Text(l10n.accountManagersAddButton),
-                  ),
-                ]),
-              )
-            : RefreshIndicator(
-                onRefresh: _load,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _managers.length,
-                  itemBuilder: (_, i) {
-                    final m = _managers[i];
-                    final name = m.name;
-                    final email = m.email ?? '';
-                    final mgrId = m.id;
-                    final clientCount = m.managedClientsCount;
-                    final phone = m.phone;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: ShadColors.card,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: ShadColors.cardBorder),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: ShadColors.black,
-                          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: const TextStyle(color: ShadColors.textPrimary, fontWeight: FontWeight.bold, fontFamily: 'Archivo')),
-                        ),
-                        title: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-                        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(email, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                          if (phone != null && phone.isNotEmpty)
-                            Text(phone, style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
-                          Row(children: [
-                            Text(l10n.accountManagersClientCount(clientCount), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                            if (m.dateOfBirth != null && m.dateOfBirth!.isNotEmpty) ...[
-                              Text(' · ', style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
-                              Text(m.dateOfBirth!.substring(0, 10), style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                            ],
-                          ]),
-                        ]),
-                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 20, color: ShadColors.gold),
-                            onPressed: () async {
-                              final result = await context.push<bool>('/am/managers/$mgrId/edit');
-                              if (result == true) _load();
-                            },
-                          ),
-                        ]),
-                      ),
-                    );
-                  },
-                ),
-              ),
+        ),
+      ]),
     );
   }
 }

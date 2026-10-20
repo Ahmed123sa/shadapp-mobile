@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../data/signature_repository.dart';
 import '../../../data/system_settings_repository.dart';
 import '../../../providers/auth_provider.dart';
@@ -356,14 +357,14 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? ShadColors.crimson : ShadColors.card,
+          color: selected ? Lx.crimson : Lx.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? ShadColors.crimson : ShadColors.cardBorder),
+          border: Border.all(color: selected ? Lx.crimson : Lx.line2),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 18, color: selected ? ShadColors.textOnCrimson : ShadColors.textSecondary),
+          Icon(icon, size: 18, color: selected ? Lx.ink : Lx.muted),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? ShadColors.textOnCrimson : ShadColors.textSecondary)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? Lx.ink : Lx.muted)),
         ]),
       ),
     );
@@ -371,25 +372,31 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) return const Scaffold(backgroundColor: Lx.page, body: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
     final isAM = _api.role == 'account_manager' || _api.role == 'manager_assistant';
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return LuxeFormTheme(child: Scaffold(
+      backgroundColor: Lx.page,
       appBar: AppBar(
-        title: Text(l10n.settingsTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.gold)),
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: const SizedBox.shrink(),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 28),
         children: [
+          LuxePageTitle(l10n.settingsTitle),
           // The account manager's own team of company staff (PLAN_2 ف٦).
           if (_api.role == 'account_manager') ...[
             Card(
               child: ListTile(
                 key: const ValueKey('am-my-team-entry'),
-                leading: const Icon(Icons.groups_outlined, color: ShadColors.gold),
+                leading: const Icon(Icons.groups_outlined, color: Lx.wait),
                 title: Text(l10n.mtTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                subtitle: Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 11, color: Lx.muted)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/am/my-team'),
               ),
@@ -404,9 +411,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ShadColors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ShadColors.cardBorder),
+              color: Lx.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Lx.line2),
             ),
             child: Column(children: [
               // Avatar
@@ -415,18 +422,18 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 child: Stack(children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: ShadColors.crimson,
+                    backgroundColor: Lx.crimson,
                     backgroundImage: _avatarUrl != null ? NetworkImage(_api.resolveFileUrl(_avatarUrl!)) : null,
                     child: _avatarUrl == null
-                        ? const Icon(Icons.person, size: 40, color: ShadColors.gold)
+                        ? const Icon(Icons.person, size: 40, color: Lx.wait)
                         : null,
                   ),
                   Positioned(
                     bottom: 0, right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: ShadColors.gold, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, size: 14, color: ShadColors.background),
+                      decoration: const BoxDecoration(color: Lx.wait, shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt, size: 14, color: Lx.page),
                     ),
                   ),
                 ]),
@@ -434,7 +441,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               const SizedBox(height: 4),
               TextButton(
                 onPressed: _pickAvatar,
-                child: Text(l10n.profileChangePicture, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
+                child: Text(l10n.profileChangePicture, style: const TextStyle(fontSize: 11, color: Lx.wait, fontFamily: Lx.sans)),
               ),
               const SizedBox(height: 12),
               // Name field
@@ -459,14 +466,14 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 child: ElevatedButton(
                   onPressed: _saving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ShadColors.gold,
-                    foregroundColor: ShadColors.background,
+                    backgroundColor: Lx.crimson,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: _saving
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : Text(l10n.settingsSaveChanges, style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
+                      : Text(l10n.settingsSaveChanges, style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: Lx.sans)),
                 ),
               ),
             ]),
@@ -485,19 +492,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    Icon(Icons.verified, size: 14, color: ShadColors.success),
+                    Icon(Icons.verified, size: 14, color: Lx.ok),
                     const SizedBox(width: 6),
-                    Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo')),
+                    Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait, fontFamily: Lx.sans)),
                     const Spacer(),
                     GestureDetector(
                       onTap: _deleteSignature,
-                      child: const Icon(Icons.delete_outline, size: 16, color: ShadColors.error),
+                      child: const Icon(Icons.delete_outline, size: 16, color: Lx.danger),
                     ),
                   ]),
                   const SizedBox(height: 10),
@@ -506,9 +513,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: ShadColors.background,
+                        color: Lx.page,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: ShadColors.cardBorder),
+                        border: Border.all(color: Lx.line2),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
@@ -520,12 +527,12 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: ShadColors.background,
+                        color: Lx.page,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: ShadColors.cardBorder),
+                        border: Border.all(color: Lx.line2),
                       ),
                       child: Center(
-                        child: Text(_existingSigText!, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: ShadColors.gold)),
+                        child: Text(_existingSigText!, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: Lx.wait)),
                       ),
                     ),
                 ]),
@@ -537,17 +544,17 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: ShadColors.card,
+                color: Lx.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
+                border: Border.all(color: Lx.line2),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Icon(Icons.add_circle_outline, size: 14, color: ShadColors.gold),
+                  Icon(Icons.add_circle_outline, size: 14, color: Lx.wait),
                   const SizedBox(width: 6),
                   Text(
                     (_existingSigUrl != null || _existingSigText != null) ? l10n.settingsNewSignature : l10n.settingsAddYourSignature,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'Archivo'),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait, fontFamily: Lx.sans),
                   ),
                 ]),
                 const SizedBox(height: 12),
@@ -569,8 +576,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       icon: const Icon(Icons.fullscreen, size: 20),
                       label: Text(l10n.signatureOpenFullscreen, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: ShadColors.gold,
-                        foregroundColor: ShadColors.background,
+                        backgroundColor: Lx.crimson,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -581,10 +588,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: _saving ? null : _pickImage,
-                      icon: const Icon(Icons.image, size: 16, color: ShadColors.gold),
-                      label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: ShadColors.gold, fontSize: 12, fontFamily: 'Archivo')),
+                      icon: const Icon(Icons.image, size: 16, color: Lx.wait),
+                      label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: Lx.wait, fontSize: 12, fontFamily: Lx.sans)),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: ShadColors.gold),
+                        side: const BorderSide(color: Lx.wait),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -600,17 +607,17 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: ShadColors.black,
+                      color: Lx.page,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: ShadColors.cardBorder),
+                      border: Border.all(color: Lx.line2),
                     ),
                     child: TextField(
                       controller: _sigTextController,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: ShadColors.gold),
+                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: Lx.wait),
                       decoration: InputDecoration(
                         hintText: l10n.settingsSignatureHint,
-                        hintStyle: const TextStyle(color: ShadColors.textDisabled, fontSize: 18),
+                        hintStyle: const TextStyle(color: Lx.faint, fontSize: 18),
                         border: InputBorder.none,
                       ),
                       maxLines: 1,
@@ -626,8 +633,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                           : const Icon(Icons.check_circle, size: 18),
                       label: Text(l10n.signatureSaveSignature, style: const TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: ShadColors.crimson,
-                        foregroundColor: ShadColors.textOnCrimson,
+                        backgroundColor: Lx.crimson,
+                        foregroundColor: Lx.ink,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
@@ -648,14 +655,14 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: ShadColors.card,
+                color: Lx.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
+                border: Border.all(color: Lx.line2),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(l10n.settingsCorporateTax, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                Text(l10n.settingsCorporateTax, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
                 const SizedBox(height: 4),
-                Text(l10n.settingsCorporateTaxDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text(l10n.settingsCorporateTaxDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
@@ -667,7 +674,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('%', style: TextStyle(fontSize: 14, color: ShadColors.textSecondary)),
+                  const Text('%', style: TextStyle(fontSize: 14, color: Lx.muted)),
                 ]),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -675,48 +682,48 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   child: ElevatedButton(
                     onPressed: _taxSaving ? null : _saveTax,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.gold,
-                      foregroundColor: ShadColors.background,
+                      backgroundColor: Lx.crimson,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: _taxSaving
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(l10n.settingsSaveTax, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Archivo')),
+                        : Text(l10n.settingsSaveTax, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: Lx.sans)),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Divider(color: ShadColors.cardBorder),
+                const Divider(color: Lx.line2),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.settingManagersCanReviewFiles, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                      Text(l10n.settingManagersCanReviewFiles, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
                       const SizedBox(height: 4),
-                      Text(l10n.settingManagersCanReviewFilesDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                      Text(l10n.settingManagersCanReviewFilesDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
                     ]),
                   ),
                   Switch(
                     value: _managersCanReviewFiles,
                     onChanged: _savingManagersCanReviewFiles ? null : _toggleManagersCanReviewFiles,
-                    activeThumbColor: ShadColors.gold,
+                    activeThumbColor: Lx.wait,
                   ),
                 ]),
                 const SizedBox(height: 12),
-                const Divider(color: ShadColors.cardBorder),
+                const Divider(color: Lx.line2),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.settingShowContractDates, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
+                      Text(l10n.settingShowContractDates, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
                       const SizedBox(height: 4),
-                      Text(l10n.settingShowContractDatesDesc, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                      Text(l10n.settingShowContractDatesDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
                     ]),
                   ),
                   Switch(
                     value: _showContractDates,
                     onChanged: _savingShowContractDates ? null : _toggleShowContractDates,
-                    activeThumbColor: ShadColors.gold,
+                    activeThumbColor: Lx.wait,
                   ),
                 ]),
               ]),
@@ -730,7 +737,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
             const SizedBox(height: 20),
             _sectionHeader(Icons.description_outlined, l10n.adminSettings_clauses),
             const SizedBox(height: 4),
-            Text(l10n.adminSettings_clausesDescription, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            Text(l10n.adminSettings_clausesDescription, style: TextStyle(fontSize: 11, color: Lx.muted)),
             const SizedBox(height: 8),
             buildClauseTemplatesSection(
               context: context,
@@ -748,44 +755,47 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
           const SizedBox(height: 32),
         ],
       ),
-    );
+    ));
   }
 
   Widget _sectionHeader(IconData icon, String title) {
-    return Row(children: [
-      Icon(icon, size: 16, color: ShadColors.gold),
-      const SizedBox(width: 6),
-      Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
-    ]);
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Row(children: [
+        Icon(icon, size: 16, color: Lx.muted),
+        const SizedBox(width: 8),
+        Text(title, style: Lx.display(context, size: 18)),
+      ]),
+    );
   }
 
   Widget _subLabel(String text) {
-    return Text(text, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo'));
+    return Text(text, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans));
   }
 
   Widget _settingsField({required TextEditingController controller, required String label, required IconData icon, TextInputType? keyboardType}) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary, fontFamily: 'Archivo'),
+      style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo'),
-        prefixIcon: Icon(icon, size: 18, color: ShadColors.textSecondary),
+        labelStyle: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans),
+        prefixIcon: Icon(icon, size: 18, color: Lx.muted),
         filled: true,
-        fillColor: ShadColors.background,
+        fillColor: Lx.page,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: ShadColors.cardBorder),
+          borderSide: const BorderSide(color: Lx.line2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: ShadColors.cardBorder),
+          borderSide: const BorderSide(color: Lx.line2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: ShadColors.gold),
+          borderSide: const BorderSide(color: Lx.wait),
         ),
       ),
     );

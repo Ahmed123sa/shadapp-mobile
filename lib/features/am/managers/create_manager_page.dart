@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/password_field.dart';
-import '../../../core/widgets/shad_logo.dart';
 import '../../../providers/manager_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 
@@ -105,40 +105,40 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         await showDialog(
           context: context,
           builder: (ctx) => Dialog(
-            backgroundColor: ShadColors.card,
+            backgroundColor: Lx.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: ShadColors.goldBorder),
+              side: const BorderSide(color: Lx.line2),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(AppLocalizations.of(ctx)!.createManagerCreated, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                Text(AppLocalizations.of(ctx)!.createManagerCreated, style: const TextStyle(fontFamily: Lx.serif, fontSize: 16, fontWeight: FontWeight.w700, color: Lx.crimsonInk)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Lx.page, borderRadius: BorderRadius.circular(8)),
                   child: Row(children: [
-                    Text(AppLocalizations.of(ctx)!.emailLabel, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                    Text(AppLocalizations.of(ctx)!.emailLabel, style: const TextStyle(fontSize: 12, color: Lx.muted)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(creds?['email'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
+                    Expanded(child: Text(creds?['email'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Lx.ink), textDirection: TextDirection.ltr)),
                     InkWell(
                       onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.createManagerEmailCopied))),
-                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
+                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: Lx.crimsonInk)),
                     ),
                   ]),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: ShadColors.black, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Lx.page, borderRadius: BorderRadius.circular(8)),
                   child: Row(children: [
-                    Text(AppLocalizations.of(ctx)!.createManagerPassword, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                    Text(AppLocalizations.of(ctx)!.createManagerPassword, style: const TextStyle(fontSize: 12, color: Lx.muted)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(creds?['password'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary), textDirection: TextDirection.ltr)),
+                    Expanded(child: Text(creds?['password'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Lx.ink), textDirection: TextDirection.ltr)),
                     InkWell(
                       onTap: () => ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(AppLocalizations.of(ctx)!.createManagerPasswordCopied))),
-                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
+                      child: Text(AppLocalizations.of(ctx)!.createManagerCopy, style: const TextStyle(fontSize: 11, color: Lx.crimsonInk)),
                     ),
                   ]),
                 ),
@@ -167,7 +167,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, letterSpacing: 1.2, fontWeight: FontWeight.w500)),
+      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 10, color: Lx.faint, letterSpacing: 1.2, fontWeight: FontWeight.w500)),
     );
   }
 
@@ -176,45 +176,33 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
+    return LuxeFormTheme(
+      child: Scaffold(
+      backgroundColor: Lx.page,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ShadLogo(size: 20, showText: false),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_isEdit ? l10n.createManagerEditTitle : l10n.createManagerCreateTitle,
-                    style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 15, fontWeight: FontWeight.w700)),
-                Text(_isEdit ? 'Edit Manager' : 'New Manager',
-                    style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
-              ],
-            ),
-          ],
-        ),
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: const SizedBox.shrink(),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 28),
           children: [
+            LuxePageTitle(_isEdit ? l10n.createManagerEditTitle : l10n.createManagerCreateTitle),
             if (_errorMsg != null)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: ShadColors.errorLight,
+                  color: Lx.danger.withAlpha(30),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.error.withAlpha(80)),
+                  border: Border.all(color: Lx.danger.withAlpha(80)),
                 ),
-                child: Text(_errorMsg!, style: const TextStyle(color: ShadColors.error, fontSize: 12)),
+                child: Text(_errorMsg!, style: const TextStyle(color: Lx.danger, fontSize: 12)),
               ),
 
             _sectionLabel(l10n.createManagerBasicData),
@@ -269,8 +257,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(_dobController.text.isNotEmpty ? _dobController.text : l10n.createManagerSelectDate,
-                        style: TextStyle(fontSize: 14, color: _dobController.text.isNotEmpty ? ShadColors.textPrimary : ShadColors.textDisabled)),
-                    const Icon(Icons.calendar_today, size: 18, color: ShadColors.gold),
+                        style: TextStyle(fontSize: 14, color: _dobController.text.isNotEmpty ? Lx.ink : Lx.faint)),
+                    const Icon(Icons.calendar_today, size: 18, color: Lx.crimsonInk),
                   ],
                 ),
               ),
@@ -281,21 +269,21 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
+                  color: Lx.surface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.createManagerAutoPassword, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                      Text(l10n.createManagerAutoPassword, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink)),
                       const SizedBox(height: 2),
-                      Text(l10n.createManagerAutoPasswordHint, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                      Text(l10n.createManagerAutoPasswordHint, style: const TextStyle(fontSize: 10, color: Lx.muted)),
                     ]),
                   ),
                   Switch(
                     value: _autoPassword,
-                    activeTrackColor: ShadColors.crimson,
+                    activeTrackColor: Lx.crimson,
                     onChanged: (v) => setState(() => _autoPassword = v),
                   ),
                 ]),
@@ -342,6 +330,6 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 }

@@ -84,7 +84,7 @@ void main() {
     final provider = ManagerProvider(repository: ManagerRepository(api: buildTestApiClient(client: httpClient)));
 
     await pumpPage(tester, provider);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byKey(const ValueKey('managers-new')));
     await tester.pumpAndSettle();
 
     expect(find.text('CREATE_PAGE'), findsOneWidget);

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../data/staff_permissions.dart';
@@ -117,7 +118,7 @@ class _MyTeamPageState extends State<MyTeamPage> {
           TextButton(
             key: const ValueKey('mt-remove-confirm'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.mtRemoveConfirm, style: const TextStyle(color: ShadColors.crimson)),
+            child: Text(l10n.mtRemoveConfirm, style: const TextStyle(color: Lx.crimson)),
           ),
         ],
       ),
@@ -156,8 +157,12 @@ class _MyTeamPageState extends State<MyTeamPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.mtTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay', color: ShadColors.gold))),
-      body: _body(l10n),
+      backgroundColor: Lx.page,
+      appBar: AppBar(backgroundColor: Lx.page, elevation: 0, scrolledUnderElevation: 0, iconTheme: const IconThemeData(color: Lx.muted), title: const SizedBox.shrink()),
+      body: LuxeFormTheme(child: Column(children: [
+        Align(alignment: AlignmentDirectional.centerStart, child: Padding(padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0), child: LuxePageTitle(l10n.mtTitle))),
+        Expanded(child: _body(l10n)),
+      ])),
     );
   }
 
@@ -169,7 +174,7 @@ class _MyTeamPageState extends State<MyTeamPage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+          Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 12, color: Lx.muted)),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -183,20 +188,20 @@ class _MyTeamPageState extends State<MyTeamPage> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(_error!, key: const ValueKey('mt-error'), style: const TextStyle(fontSize: 13, color: ShadColors.crimson)),
+              child: Text(_error!, key: const ValueKey('mt-error'), style: const TextStyle(fontSize: 13, color: Lx.crimson)),
             ),
           if (_showOthers) _othersPanel(l10n),
           const SizedBox(height: 16),
           Row(children: [
             Text(l10n.mtMyTeam, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(width: 8),
-            Text('${_team.length}', key: const ValueKey('mt-team-count'), style: const TextStyle(fontSize: 13, color: ShadColors.gold, fontWeight: FontWeight.w700)),
+            Text('${_team.length}', key: const ValueKey('mt-team-count'), style: const TextStyle(fontSize: 13, color: Lx.wait, fontWeight: FontWeight.w700)),
           ]),
           const SizedBox(height: 8),
           if (_team.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Center(child: Text(l10n.mtEmptyTeam, key: const ValueKey('mt-empty'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled))),
+              child: Center(child: Text(l10n.mtEmptyTeam, key: const ValueKey('mt-empty'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Lx.faint))),
             ),
           for (final m in _team) _memberCard(m, l10n),
         ],
@@ -209,16 +214,16 @@ class _MyTeamPageState extends State<MyTeamPage> {
       key: const ValueKey('mt-company-panel'),
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: ShadColors.cardAlt, borderRadius: BorderRadius.circular(12), border: Border.all(color: ShadColors.gold.withAlpha(90))),
+      decoration: BoxDecoration(color: Lx.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.wait.withAlpha(90))),
       // The tiles paint on the nearest Material, which the decorated box would hide.
       child: Material(
         type: MaterialType.transparency,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(l10n.mtCompanyStaffTitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+        Text(l10n.mtCompanyStaffTitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Lx.wait)),
         if (_others.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(l10n.mtNoOtherStaff, key: const ValueKey('mt-no-others'), style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+            child: Text(l10n.mtNoOtherStaff, key: const ValueKey('mt-no-others'), style: const TextStyle(fontSize: 12, color: Lx.muted)),
           ),
         for (final o in _others)
           CheckboxListTile(
@@ -229,7 +234,7 @@ class _MyTeamPageState extends State<MyTeamPage> {
             value: _picked.contains(o['id']),
             onChanged: (v) => setState(() => v == true ? _picked.add(o['id'] as int) : _picked.remove(o['id'])),
             title: Text('${o['name']}', style: const TextStyle(fontSize: 13)),
-            subtitle: Text(_teamsLine(o, l10n), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            subtitle: Text(_teamsLine(o, l10n), style: const TextStyle(fontSize: 11, color: Lx.muted)),
           ),
         if (_others.isNotEmpty)
           SizedBox(
@@ -264,31 +269,31 @@ class _MyTeamPageState extends State<MyTeamPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             CircleAvatar(
-              backgroundColor: ShadColors.crimson.withAlpha(40),
+              backgroundColor: Lx.crimson.withAlpha(40),
               backgroundImage: (m['avatar_url'] as String?)?.isNotEmpty == true ? NetworkImage(_api.resolveFileUrl(m['avatar_url'] as String)) : null,
               child: (m['avatar_url'] as String?)?.isNotEmpty == true
                   ? null
-                  : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: ShadColors.crimson, fontWeight: FontWeight.w700)),
+                  : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Lx.crimson, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: Lx.muted)),
                 if (others.isNotEmpty)
-                  Text(l10n.mtInTeams(others.map((t) => '${t['name']}').join('، ')), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                  Text(l10n.mtInTeams(others.map((t) => '${t['name']}').join('، ')), style: const TextStyle(fontSize: 11, color: Lx.muted)),
               ]),
             ),
           ]),
           const SizedBox(height: 8),
           if (assignments.isEmpty)
-            Text(l10n.mtNoClientsLinked, key: ValueKey('mt-no-links-$id'), style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
+            Text(l10n.mtNoClientsLinked, key: ValueKey('mt-no-links-$id'), style: const TextStyle(fontSize: 12, color: Lx.faint)),
           for (final a in assignments)
             Container(
               key: ValueKey('mt-link-row-$id-${a['workspace_id']}'),
               margin: const EdgeInsets.only(top: 6),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: ShadColors.cardAlt, borderRadius: BorderRadius.circular(10), border: Border.all(color: ShadColors.cardBorder)),
+              decoration: BoxDecoration(color: Lx.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: Lx.line2)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('${a['name'] ?? ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
@@ -298,7 +303,7 @@ class _MyTeamPageState extends State<MyTeamPage> {
                   TextButton(
                     key: ValueKey('mt-unlink-$id-${a['workspace_id']}'),
                     onPressed: _busy ? null : () => _run(() => _repo.unassign(a['workspace_id'] as int, id as int)),
-                    child: Text(l10n.mtUnlink, style: const TextStyle(color: ShadColors.crimson)),
+                    child: Text(l10n.mtUnlink, style: const TextStyle(color: Lx.crimson)),
                   ),
                 ]),
               ]),
@@ -309,7 +314,7 @@ class _MyTeamPageState extends State<MyTeamPage> {
             OutlinedButton(
               key: ValueKey('mt-remove-$id'),
               onPressed: _busy ? null : () => _remove(m),
-              style: OutlinedButton.styleFrom(foregroundColor: ShadColors.crimson, side: BorderSide(color: ShadColors.crimson.withAlpha(120))),
+              style: OutlinedButton.styleFrom(foregroundColor: Lx.crimson, side: BorderSide(color: Lx.crimson.withAlpha(120))),
               child: Text(l10n.mtRemoveFromTeam, style: const TextStyle(fontSize: 12)),
             ),
           ]),

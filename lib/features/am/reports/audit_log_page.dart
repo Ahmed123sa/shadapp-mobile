@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -120,9 +121,9 @@ class _AuditLogPageState extends State<AuditLogPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error_outline, color: ShadColors.error, size: 48),
+          Icon(Icons.error_outline, color: Lx.danger, size: 48),
           const SizedBox(height: 12),
-          Text(_error!, style: ShadTypography.cardBody.copyWith(color: ShadColors.error)),
+          Text(_error!, style: ShadTypography.cardBody.copyWith(color: Lx.danger)),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context)!.auditLogRetry)),
         ],
@@ -181,12 +182,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
       padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 4),
       child: Row(
         children: [
-          Expanded(child: Container(height: 0.5, color: ShadColors.borderLight)),
+          Expanded(child: Container(height: 0.5, color: Lx.line2)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(label, style: const TextStyle(fontSize: 9.5, color: ShadColors.textMuted)),
+            child: Text(label, style: const TextStyle(fontSize: 9.5, color: Lx.faint)),
           ),
-          Expanded(child: Container(height: 0.5, color: ShadColors.borderLight)),
+          Expanded(child: Container(height: 0.5, color: Lx.line2)),
         ],
       ),
     );
@@ -196,31 +197,31 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsetsDirectional.only(start: 6, end: 14, top: 10, bottom: 10),
       decoration: const BoxDecoration(
-        color: ShadColors.surfaceDarker,
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        color: Lx.page,
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back_ios, size: 16, color: ShadColors.textSecondary),
+            child: const Icon(Icons.arrow_back_ios, size: 16, color: Lx.muted),
           ),
           const SizedBox(width: 4),
           const Text('d', style: TextStyle(
-            fontFamily: 'Playfair Display', fontSize: 15, fontStyle: FontStyle.italic, color: ShadColors.textPrimary,
+            fontFamily: Lx.serif, fontSize: 15, fontStyle: FontStyle.italic, color: Lx.ink,
           )),
           Container(
             width: 4, height: 4,
             margin: const EdgeInsetsDirectional.only(bottom: 1, start: 4),
-            decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)!.auditLogTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
-                Text(AppLocalizations.of(context)!.auditLogEventCount(_total), style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
+                Text(AppLocalizations.of(context)!.auditLogTitle, style: Lx.display(context, size: 20)),
+                Text(AppLocalizations.of(context)!.auditLogEventCount(_total), style: const TextStyle(fontSize: 9, color: Lx.muted)),
               ],
             ),
           ),
@@ -233,14 +234,14 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         decoration: BoxDecoration(
-          color: ShadColors.surfaceDarker,
+          color: Lx.page,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: ShadColors.borderLight),
+          border: Border.all(color: Lx.line2),
         ),
         child: Row(
           children: [
@@ -248,10 +249,10 @@ class _AuditLogPageState extends State<AuditLogPage> {
             const SizedBox(width: 7),
             Expanded(
               child: TextField(
-                style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
+                style: const TextStyle(fontSize: 12, color: Lx.ink),
                 decoration: InputDecoration.collapsed(
                   hintText: AppLocalizations.of(context)!.auditLogSearch,
-                  hintStyle: const TextStyle(color: ShadColors.textMuted, fontSize: 12),
+                  hintStyle: const TextStyle(color: Lx.faint, fontSize: 12),
                 ),
                 onChanged: (v) {
                   _searchQuery = v;
@@ -280,7 +281,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -299,14 +300,11 @@ class _AuditLogPageState extends State<AuditLogPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 margin: const EdgeInsetsDirectional.only(end: 6),
                 decoration: BoxDecoration(
-                  color: active ? ShadColors.crimsonSoft : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: active ? ShadColors.crimsonBorder : ShadColors.borderLight),
+                  color: active ? Lx.ink : Colors.transparent,
+                  borderRadius: BorderRadius.circular(Lx.rPill),
+                  border: Border.all(color: active ? Lx.ink : Lx.line2),
                 ),
-                child: Text(c.$2, style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600,
-                  color: active ? ShadColors.textPrimary : ShadColors.textSecondary,
-                )),
+                child: Text(c.$2, style: Lx.text(context, size: 12, color: active ? const Color(0xFF111111) : Lx.muted)),
               ),
             );
           }).toList(),
@@ -319,7 +317,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: Row(
         children: [
@@ -340,7 +338,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
           firstDate: DateTime(2020),
           lastDate: DateTime.now(),
           builder: (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: ShadColors.gold)),
+            data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: Lx.wait)),
             child: child!,
           ),
         );
@@ -349,13 +347,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: ShadColors.surfaceDarker,
+          color: Lx.page,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ShadColors.borderLight),
+          border: Border.all(color: Lx.line2),
         ),
         child: Text(
           value != null ? '${value.day}/${value.month}/${value.year}' : label,
-          style: const TextStyle(fontSize: 11, color: ShadColors.textMuted),
+          style: const TextStyle(fontSize: 11, color: Lx.faint),
         ),
       ),
     );
@@ -402,9 +400,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
     final avatarColors = _userAvatarColors(userName);
 
     return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.overlayFaint)),
+      margin: const EdgeInsetsDirectional.fromSTEB(14, 0, 14, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: Lx.surface,
+        borderRadius: BorderRadius.circular(Lx.rCard),
+        border: Border.all(color: Lx.line),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,7 +424,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_auditLabel(action), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                Text(_auditLabel(action), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink)),
                 const SizedBox(height: 3),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
@@ -431,7 +432,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
                     color: badgeColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(badgeText, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                  child: Text(badgeText, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Lx.ink)),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -448,7 +449,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
                     const SizedBox(width: 4),
                     Text(
                       userName.isNotEmpty ? '$userName • $time' : time,
-                      style: const TextStyle(fontSize: 10, color: ShadColors.textMuted),
+                      style: const TextStyle(fontSize: 10, color: Lx.faint),
                     ),
                   ],
                 ),
@@ -466,21 +467,21 @@ class _AuditLogPageState extends State<AuditLogPage> {
       case 'contract':
         return (ShadColors.blue, ShadColors.blue.withAlpha(30), _entityText(action));
       case 'payment':
-        return (ShadColors.gold, ShadColors.goldSoft, _entityText(action));
+        return (Lx.wait, Lx.wait.withAlpha(35), _entityText(action));
       case 'client':
-        return (ShadColors.success, ShadColors.success.withAlpha(25), _entityText(action));
+        return (Lx.ok, Lx.ok.withAlpha(25), _entityText(action));
       case 'approval':
         return (ShadColors.purple, ShadColors.purple.withAlpha(30), _entityText(action));
       case 'login':
         return (ShadColors.orange, ShadColors.orange.withAlpha(25), _entityText(action));
       case 'meeting':
-        return (ShadColors.crimson, ShadColors.crimsonSoft, _entityText(action));
+        return (Lx.crimson, Lx.crimson.withAlpha(46), _entityText(action));
       case 'file':
         return (ShadColors.blue, ShadColors.blue.withAlpha(25), _entityText(action));
       case 'workspace':
         return (ShadColors.purple, ShadColors.purple.withAlpha(25), _entityText(action));
       default:
-        return (ShadColors.textSecondary, ShadColors.cardBorder, action);
+        return (Lx.muted, Lx.line2, action);
     }
   }
 
@@ -500,12 +501,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
   (Color, Color, Color) _userAvatarColors(String name) {
     final hash = name.codeUnits.fold<int>(0, (a, b) => a + b);
     final palettes = [
-      (ShadColors.crimsonSoft, ShadColors.crimsonBorder, ShadColors.gold),
+      (Lx.crimson.withAlpha(46), Lx.crimson.withAlpha(82), Lx.wait),
       (ShadColors.purple.withAlpha(30), ShadColors.purple.withAlpha(80), ShadColors.purple),
       (ShadColors.blue.withAlpha(30), ShadColors.blue.withAlpha(80), ShadColors.blue),
-      (ShadColors.success.withAlpha(25), ShadColors.success.withAlpha(60), ShadColors.success),
+      (Lx.ok.withAlpha(25), Lx.ok.withAlpha(60), Lx.ok),
       (ShadColors.orange.withAlpha(25), ShadColors.orange.withAlpha(60), ShadColors.orange),
-      (ShadColors.goldSoft, ShadColors.goldBorder, ShadColors.gold),
+      (Lx.wait.withAlpha(35), Lx.wait.withAlpha(90), Lx.wait),
     ];
     return palettes[hash % palettes.length];
   }
@@ -515,7 +516,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: ShadColors.divider)),
+        border: Border(top: BorderSide(color: Lx.line2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -544,7 +545,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     if (end < _totalPages) {
       widgets.add(Padding(
         padding: const EdgeInsetsDirectional.only(end: 4),
-        child: Text('…$_totalPages', style: const TextStyle(fontSize: 10, color: ShadColors.textMuted)),
+        child: Text('…$_totalPages', style: const TextStyle(fontSize: 10, color: Lx.faint)),
       ));
     }
     return widgets;
@@ -556,12 +557,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: active ? ShadColors.crimsonSoft : Colors.transparent,
+          color: active ? Lx.crimson.withAlpha(46) : Colors.transparent,
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: active ? ShadColors.crimsonBorder : ShadColors.borderLight),
+          border: Border.all(color: active ? Lx.crimson.withAlpha(82) : Lx.line2),
         ),
         child: Text(label, style: TextStyle(
-          fontSize: 11, color: enabled ? (active ? ShadColors.textPrimary : ShadColors.textSecondary) : ShadColors.textMuted,
+          fontSize: 11, color: enabled ? (active ? Lx.ink : Lx.muted) : Lx.faint,
         )),
       ),
     );
