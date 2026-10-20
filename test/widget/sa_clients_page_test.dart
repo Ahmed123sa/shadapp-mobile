@@ -50,7 +50,7 @@ void main() {
 
     expect(find.text('Acme Co'), findsOneWidget);
     expect(find.text('Sara'), findsOneWidget);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('0500000000'), findsOneWidget); // "contact · phone" line
   });
 
   testWidgets('shows the empty state when there are no clients', (tester) async {

@@ -70,13 +70,12 @@ void main() {
 
     await pumpPage(tester, provider);
 
-    expect(find.text('2'), findsOneWidget); // total badge
-    expect(find.textContaining('Approve Contract'), findsOneWidget);
-    expect(find.textContaining('Approve Payment'), findsOneWidget);
-    // client_type travelled through from the endpoint (pending-approvals-plan.md
-    // ك5's backend prerequisite) and renders the same badge every other
-    // client-linked list item shows.
-    expect(find.text('Company'), findsWidgets);
+    // Mockup apprCard: contract title / "Payment proof · amount", and the
+    // status of each — both wait on the company here.
+    expect(find.text('MSA'), findsOneWidget);
+    expect(find.text('Payment proof · 500 SAR'), findsOneWidget);
+    expect(find.text('Company approval'), findsOneWidget);
+    expect(find.text('Needs your review'), findsOneWidget);
   });
 
   testWidgets('shows the empty state when nothing is pending', (tester) async {
@@ -104,7 +103,6 @@ void main() {
     await pumpPage(tester, provider);
 
     expect(find.text('No pending approvals'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget); // total badge
   });
 
   testWidgets('tapping a contract navigates to its workspace route', (tester) async {
@@ -128,7 +126,7 @@ void main() {
     final provider = DashboardStatsProvider(repository: DashboardStatsRepository(api: api));
 
     await pumpPage(tester, provider);
-    await tester.tap(find.textContaining('Approve Contract'));
+    await tester.tap(find.text('MSA'));
     await tester.pumpAndSettle();
 
     expect(find.text('WORKSPACE_PAGE'), findsOneWidget);
@@ -161,9 +159,10 @@ void main() {
 
     await pumpPage(tester, provider);
 
-    expect(find.textContaining('Approvals (1)'), findsOneWidget);
-    expect(find.textContaining('Awaiting Client'), findsOneWidget);
-    expect(find.textContaining('Design Mockup'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('approvals-chip-3')));
+    await tester.pumpAndSettle();
+    expect(find.text('Design Mockup'), findsOneWidget);
+    expect(find.text('Awaiting client'), findsOneWidget);
     expect(find.text('Acme'), findsOneWidget); // company from the nested client
   });
 
@@ -206,9 +205,9 @@ void main() {
 
     await pumpPage(tester, provider);
 
-    // 1 pending contract + 1 pending approval = 2 — what amCounts()/counts.total
-    // report for the same data.
-    expect(find.text('2'), findsOneWidget);
+    // 1 pending contract + 1 pending approval — both listed under "All".
+    expect(find.text('Retainer'), findsOneWidget);
+    expect(find.text('Design Mockup'), findsOneWidget);
   });
 
   testWidgets('tapping an approval navigates to its workspace route', (tester) async {
@@ -229,7 +228,7 @@ void main() {
     final provider = DashboardStatsProvider(repository: DashboardStatsRepository(api: api));
 
     await pumpPage(tester, provider);
-    await tester.tap(find.textContaining('Awaiting Client'));
+    await tester.tap(find.text('Design Mockup'));
     await tester.pumpAndSettle();
 
     expect(find.text('WORKSPACE_PAGE'), findsOneWidget);

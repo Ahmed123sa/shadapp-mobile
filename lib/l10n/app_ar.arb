@@ -1926,5 +1926,9 @@
   "amAgeMin": "{n} د",
   "amAgeHour": "{n} س",
   "amAgeToday": "النهارده",
-  "amClientsCount": "{count} عملاء"
+  "amClientsCount": "{count} عملاء",
+  "approvalsEyebrow": "الوارد",
+  "amNewClient": "عميل جديد",
+  "clientsEyebrowSa": "الدليل",
+  "clientsEyebrowAm": "عملاءك"
 }

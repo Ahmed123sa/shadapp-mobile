@@ -5908,4 +5908,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String amClientsCount(int count) {
     return '$count عملاء';
   }
+
+  @override
+  String get approvalsEyebrow => 'الوارد';
+
+  @override
+  String get amNewClient => 'عميل جديد';
+
+  @override
+  String get clientsEyebrowSa => 'الدليل';
+
+  @override
+  String get clientsEyebrowAm => 'عملاءك';
 }

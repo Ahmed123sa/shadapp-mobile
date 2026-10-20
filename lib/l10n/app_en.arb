@@ -2026,5 +2026,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "approvalsEyebrow": "Inbox",
+  "amNewClient": "New client",
+  "clientsEyebrowSa": "Directory",
+  "clientsEyebrowAm": "Your book"
 }

@@ -11399,6 +11399,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} clients'**
   String amClientsCount(int count);
+
+  /// No description provided for @approvalsEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get approvalsEyebrow;
+
+  /// No description provided for @amNewClient.
+  ///
+  /// In en, this message translates to:
+  /// **'New client'**
+  String get amNewClient;
+
+  /// No description provided for @clientsEyebrowSa.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get clientsEyebrowSa;
+
+  /// No description provided for @clientsEyebrowAm.
+  ///
+  /// In en, this message translates to:
+  /// **'Your book'**
+  String get clientsEyebrowAm;
 }
 
 class _AppLocalizationsDelegate

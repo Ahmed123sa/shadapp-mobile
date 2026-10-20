@@ -4,7 +4,6 @@ import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
-import '../../../core/widgets/client_type_badge.dart';
 import '../../../data/dashboard_stats_repository.dart';
 import '../../../providers/dashboard_stats_provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -65,11 +64,13 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
       // (awaiting_you) from a 'sent' one (awaiting_client) even before this
       // migration, see saApprovalsContractApprovalTitle below — so they're
       // merged back into one flat list here, same as the old loop produced.
+      // Kept as one flat list, but each item now remembers its group so the
+      // card can show the mockup's status: company approval vs awaiting client.
       _contracts = [
+        ..._mapItems(safeList(awaitingYou['contracts']), 'contract', awaitingYou: true),
         ..._mapItems(safeList(awaitingClient['contracts']), 'contract'),
-        ..._mapItems(safeList(awaitingYou['contracts']), 'contract'),
       ];
-      _payments = _mapItems(safeList(awaitingYou['payments']), 'payment');
+      _payments = _mapItems(safeList(awaitingYou['payments']), 'payment', awaitingYou: true);
       _approvals = _mapItems(safeList(awaitingClient['approvals']), 'approval');
     } catch (e, s) {
       AppLog.error('sa_approvals_page._load', e, s);
@@ -87,7 +88,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   // shape _approvalCard expects: same fields plus a top-level 'company'
   // (read off the nested client) and a 'type' tag, matching the shape the
   // old per-source fetch methods used to build by hand.
-  List<Map<String, dynamic>> _mapItems(List<dynamic> raw, String type) {
+  List<Map<String, dynamic>> _mapItems(List<dynamic> raw, String type, {bool awaitingYou = false}) {
     return raw.whereType<Map>().map((i) {
       final item = Map<String, dynamic>.from(i);
       final client = item['client'] is Map ? Map<String, dynamic>.from(item['client'] as Map) : null;
@@ -96,6 +97,7 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
         'company': client?['company_name'] ?? '',
         'client': client,
         'type': type,
+        'awaiting_you': awaitingYou,
       };
     }).toList();
   }
@@ -112,29 +114,33 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final total = _contracts.length + _payments.length + _approvals.length;
+    final title = Lx.display(context, size: 28).copyWith(height: 1.2);
     return RefreshIndicator(
       onRefresh: _load,
       color: Lx.crimsonInk,
       child: _loading
           ? const Center(child: CircularProgressIndicator(color: Lx.crimsonInk))
           : ListView(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 18),
               children: [
-                // Mockup `.ph`: eyebrow + serif h1 (+ the total count).
+                // Mockup head('Inbox', 'Approvals'): `.ph` 6 0 14, eyebrow
+                // 10.5 (.26em) faint, h1.h serif 28 + crimson ".".
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 6, 0, 14),
-                  child: Row(children: [
-                    Expanded(child: LuxePageTitle(l10n.amStatPendingApprovals)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: const Color(0x59941414))),
-                      child: Text('$total', style: Lx.display(context, size: 14, color: Lx.crimsonInk)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(l10n.approvalsEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+                    const SizedBox(height: 6),
+                    Text.rich(
+                      TextSpan(children: [
+                        TextSpan(text: l10n.amNavApprovals),
+                        TextSpan(text: '.', style: title.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+                      ]),
+                      key: const ValueKey('lx-page-title'),
+                      style: title,
                     ),
                   ]),
                 ),
-                _buildPillsFilter(total),
-                const SizedBox(height: 14),
+                _buildPillsFilter(),
                 if (_filteredItems.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
@@ -147,63 +153,72 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
     );
   }
 
-  /// Mockup `.chips` / `.chip.on`.
-  Widget _buildPillsFilter(int total) {
+  /// Mockup `.chips` (gap 8, margin-bottom 14) / `.chip` (6 14, 12px muted,
+  /// line-2 border) / `.chip.on` (#F0F0F0 fill, #111 text). No counts.
+  Widget _buildPillsFilter() {
     final l10n = AppLocalizations.of(context)!;
-    final filters = [
-      (l10n.all, total),
-      (l10n.saApprovalsContracts, _contracts.length),
-      (l10n.saApprovalsPayments, _payments.length),
-      (l10n.approvals, _approvals.length),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters.asMap().entries.map((entry) {
-          final i = entry.key;
-          final (label, count) = entry.value;
-          final active = _filterIndex == i;
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8),
-            child: GestureDetector(
-              key: ValueKey('approvals-chip-$i'),
-              onTap: () => setState(() => _filterIndex = i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: active ? const Color(0xFFF0F0F0) : null,
-                  borderRadius: BorderRadius.circular(Lx.rPill),
-                  border: Border.all(color: active ? const Color(0xFFF0F0F0) : Lx.line2),
+    final filters = [l10n.all, l10n.saApprovalsContracts, l10n.saApprovalsPayments, l10n.approvals];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < filters.length; i++)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: GestureDetector(
+                  key: ValueKey('approvals-chip-$i'),
+                  onTap: () => setState(() => _filterIndex = i),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _filterIndex == i ? const Color(0xFFF0F0F0) : null,
+                      borderRadius: BorderRadius.circular(Lx.rPill),
+                      border: Border.all(color: _filterIndex == i ? const Color(0xFFF0F0F0) : Lx.line2),
+                    ),
+                    child: Text(filters[i], style: Lx.text(context, size: 12, color: _filterIndex == i ? const Color(0xFF111111) : Lx.muted)),
+                  ),
                 ),
-                child: Text('$label ($count)', style: Lx.text(context, size: 12, color: active ? const Color(0xFF111111) : Lx.muted)),
               ),
-            ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
 
-  /// Mockup `apprCard`.
+  String _age(String? iso) {
+    final l10n = AppLocalizations.of(context)!;
+    final t = DateTime.tryParse(iso ?? '')?.toLocal();
+    if (t == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(t);
+    if (diff.inMinutes < 60) return l10n.amAgeMin(diff.inMinutes < 1 ? 1 : diff.inMinutes);
+    if (t.year == now.year && t.month == now.month && t.day == now.day) {
+      return diff.inHours < 6 ? l10n.amAgeHour(diff.inHours) : l10n.amAgeToday;
+    }
+    final y = now.subtract(const Duration(days: 1));
+    if (t.year == y.year && t.month == y.month && t.day == y.day) return l10n.chatYesterday;
+    return '${t.day}/${t.month}';
+  }
+
+  /// Mockup `apprCard`: `.card` (`.ap` when it waits on the company), kind,
+  /// title 16 (margin 4 0 2), sub 12.5 "client · age", then status + Open.
   Widget _approvalCard(Map<String, dynamic> item) {
     final l10n = AppLocalizations.of(context)!;
     final type = item['type'] as String?;
     final isContract = type == 'contract';
     final isApproval = type == 'approval';
-    // 23 Sept 2026 — a third item type (pending Approval records, previously
-    // missing from this list entirely — see _fetchApprovals above) alongside
-    // the existing contract/payment two-way split.
-    final typeLabel = isContract ? l10n.saApprovalsContractLabel : (isApproval ? l10n.saApprovalsApprovalLabel : l10n.saApprovalsPaymentLabel);
-    final title = isContract
-        ? l10n.saApprovalsContractApprovalTitle(item['title'].toString())
-        : isApproval
-            ? l10n.saApprovalsApprovalPendingTitle(item['title'].toString())
-            : l10n.saApprovalsPaymentApprovalTitle(item['company']?.toString() ?? '');
-    final subtitle = isContract
-        ? '${item['company']} • ${double.tryParse(item['value']?.toString() ?? '') != null ? lxFormatMoney(double.parse(item['value'].toString())) : '0'} ${item['currency'] ?? ''}'
-        : isApproval
-            ? '${item['company'] ?? ''}'
-            : '${lxFormatMoney(double.tryParse(item['amount']?.toString() ?? '') ?? 0)} ${item['currency'] ?? ''}';
+    final awaitingYou = item['awaiting_you'] == true;
+    final kind = isContract ? l10n.saApprovalsContractLabel : (isApproval ? l10n.saApprovalsApprovalLabel : l10n.saApprovalsPaymentLabel);
+    final title = isContract || isApproval
+        ? '${item['title'] ?? ''}'
+        : '${l10n.amPaymentProof} · ${lxFormatMoney(double.tryParse(item['amount']?.toString() ?? '') ?? 0)} ${item['currency'] ?? ''}'.trim();
+    final sub = [
+      '${item['company'] ?? ''}',
+      _age((item['updated_at'] ?? item['created_at'])?.toString()),
+    ].where((e) => e.isNotEmpty).join(' · ');
+    final status = !awaitingYou ? l10n.amStAwaitingClient : (isContract ? l10n.amStCompanyApproval : l10n.amStNeedsReview);
     void open() {
       final wsId = item['workspace_id'];
       if (wsId == null) return;
@@ -212,22 +227,21 @@ class _SaApprovalsPageState extends State<SaApprovalsPage> {
     }
 
     return LuxeCard(
-      attention: !isApproval,
+      attention: awaitingYou,
       onTap: open,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        LuxeKind(typeLabel),
-        const SizedBox(height: 4),
-        Text(title, style: Lx.text(context, size: 16)),
-        const SizedBox(height: 2),
-        Text(subtitle, style: Lx.text(context, size: 12.5, color: Lx.muted)),
-        const SizedBox(height: 4),
-        ClientTypeBadge(clientType: (item['client'] as Map<String, dynamic>?)?['client_type'] as String?, compact: true),
+        LuxeKind(kind),
+        Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 2),
+          child: Text(title, style: Lx.text(context, size: 16)),
+        ),
+        if (sub.isNotEmpty) Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            LuxeStatusDot(status: isApproval ? LxStatus.wait : LxStatus.bad),
+            LuxeStatusDot(status: awaitingYou ? LxStatus.bad : LxStatus.wait),
             const SizedBox(width: 7),
-            Text(l10n.amStatusPending, style: Lx.text(context, size: 12, color: Lx.ink2)),
+            Text(status, style: Lx.text(context, size: 12, color: Lx.ink2)),
           ]),
           LuxeButton(label: l10n.amOpen, size: LuxeButtonSize.sm, onPressed: open),
         ]),

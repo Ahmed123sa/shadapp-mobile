@@ -5937,4 +5937,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String amClientsCount(int count) {
     return '$count clients';
   }
+
+  @override
+  String get approvalsEyebrow => 'Inbox';
+
+  @override
+  String get amNewClient => 'New client';
+
+  @override
+  String get clientsEyebrowSa => 'Directory';
+
+  @override
+  String get clientsEyebrowAm => 'Your book';
 }
