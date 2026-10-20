@@ -47,4 +47,36 @@ flutter:
   assets:
     - assets/images/
     - assets/env.txt
+  # Luxe fonts (Plan 1). Registered under Lx* names on purpose: the old
+  # 'PlayfairDisplay'/'Archivo' strings scattered in the code must keep
+  # resolving exactly as before until each screen is migrated.
+  fonts:
+    - family: LxSerif
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay_400Regular.ttf
+        - asset: assets/fonts/PlayfairDisplay_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlayfairDisplay_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlayfairDisplay_400Regular_Italic.ttf
+          style: italic
+        - asset: assets/fonts/PlayfairDisplay_500Medium_Italic.ttf
+          weight: 500
+          style: italic
+    - family: LxSans
+      fonts:
+        - asset: assets/fonts/Archivo_400Regular.ttf
+        - asset: assets/fonts/Archivo_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Archivo_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Archivo_700Bold.ttf
+          weight: 700
+    - family: LxArabic
+      fonts:
+        - asset: assets/fonts/Tajawal_400Regular.ttf
+        - asset: assets/fonts/Tajawal_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal_700Bold.ttf
+          weight: 700
 
