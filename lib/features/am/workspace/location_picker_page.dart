@@ -4,7 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 
 /// Result returned by [LocationPickerPage] when the manager confirms a pin.
 class PickedLocation {
@@ -130,13 +130,13 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
           icon: const Icon(Icons.arrow_forward_ios, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(l10n.locationPickerTitle, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(l10n.locationPickerTitle, style: const TextStyle(fontFamily: Lx.serif, fontSize: 16, fontWeight: FontWeight.w700)),
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text(l10n.locationPickerHint, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+            child: Text(l10n.locationPickerHint, style: const TextStyle(fontSize: 11, color: Lx.muted)),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -163,7 +163,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
           if (_searchError != null)
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 6),
-              child: Align(alignment: AlignmentDirectional.centerStart, child: Text(_searchError!, style: const TextStyle(fontSize: 11, color: ShadColors.error))),
+              child: Align(alignment: AlignmentDirectional.centerStart, child: Text(_searchError!, style: const TextStyle(fontSize: 11, color: Lx.danger))),
             ),
           const SizedBox(height: 10),
           Expanded(
@@ -189,7 +189,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                           point: _selected!,
                           width: 40,
                           height: 40,
-                          child: const Icon(Icons.location_on, color: ShadColors.crimson, size: 40),
+                          child: const Icon(Icons.location_on, color: Lx.crimson, size: 40),
                         ),
                       ]),
                   ],

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -176,8 +177,8 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                   if (_isAM && _clientId != null)
                     TextButton.icon(
                       onPressed: () => context.push('/am/clients/$_clientId'),
-                      icon: const Icon(Icons.edit_outlined, size: 16, color: ShadColors.gold),
-                      label: Text(l10n.clientProfileEdit, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
+                      icon: const Icon(Icons.edit_outlined, size: 16, color: Lx.wait),
+                      label: Text(l10n.clientProfileEdit, style: const TextStyle(fontSize: 12, color: Lx.wait)),
                     ),
                 ]),
                 const Divider(height: 20),
@@ -204,7 +205,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  const Icon(Icons.location_on_outlined, size: 18, color: ShadColors.crimson),
+                  const Icon(Icons.location_on_outlined, size: 18, color: Lx.crimson),
                   const SizedBox(width: 6),
                   Expanded(child: Text(l10n.clientProfileLocation, style: ShadTypography.sectionHeader)),
                   if (_isAM && _clientId != null) ...[
@@ -219,7 +220,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                       onPressed: _checkingIn ? null : () => _checkIn(l10n),
                       style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                       icon: _checkingIn
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: ShadColors.textOnCrimson))
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Lx.ink))
                           : const Icon(Icons.my_location, size: 14),
                       label: Text(l10n.clientProfileCheckIn, style: const TextStyle(fontSize: 11)),
                     ),
@@ -232,7 +233,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Text('${_location['address']}', style: ShadTypography.cardSubtitle),
                     ),
-                  Text('${l10n.clientProfileLastUpdated}: ${_formatDate(_location['updated_at'], l10n)}', style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
+                  Text('${l10n.clientProfileLastUpdated}: ${_formatDate(_location['updated_at'], l10n)}', style: ShadTypography.caption.copyWith(color: Lx.muted)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: () => _openMaps(_location['maps_url'] as String?),
@@ -240,14 +241,14 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.map_outlined, size: 16, color: ShadColors.gold),
+                        const Icon(Icons.map_outlined, size: 16, color: Lx.wait),
                         const SizedBox(width: 6),
-                        Text(l10n.clientProfileOpenMaps, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
+                        Text(l10n.clientProfileOpenMaps, style: const TextStyle(fontSize: 12, color: Lx.wait)),
                       ]),
                     ),
                   ),
                 ] else
-                  Text(l10n.clientProfileNotSet, style: ShadTypography.body.copyWith(color: ShadColors.textSecondary)),
+                  Text(l10n.clientProfileNotSet, style: ShadTypography.body.copyWith(color: Lx.muted)),
               ]),
             ),
           ),
@@ -259,14 +260,14 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
   Widget _statCard(String label, String value, String sub) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: ShadColors.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: ShadColors.cardBorder)),
+      decoration: BoxDecoration(color: Lx.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Lx.line2)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
+        Text(label, style: ShadTypography.caption.copyWith(color: Lx.muted)),
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, height: 1.2)),
         if (sub.isNotEmpty) ...[
           const SizedBox(height: 2),
-          Text(sub, style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
+          Text(sub, style: ShadTypography.caption.copyWith(color: Lx.muted)),
         ],
       ]),
     );
@@ -276,7 +277,7 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(width: 120, child: Text(label, style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary))),
+        SizedBox(width: 120, child: Text(label, style: ShadTypography.caption.copyWith(color: Lx.muted))),
         Expanded(child: DefaultTextStyle.merge(style: ShadTypography.cardBody, child: value)),
       ]),
     );

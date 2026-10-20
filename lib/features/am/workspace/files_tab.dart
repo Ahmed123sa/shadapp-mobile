@@ -4,9 +4,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/loading_state.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../providers/file_provider.dart';
 
@@ -135,7 +137,7 @@ class _FilesTabState extends State<FilesTab> {
           content: Text(l10n.filesDeleteDefinitionConfirm),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: Text(l10n.delete)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white), child: Text(l10n.delete)),
           ],
         );
       },
@@ -205,131 +207,161 @@ class _FilesTabState extends State<FilesTab> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Add definition button
-            if (!isSA)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: OutlinedButton.icon(
-                  onPressed: _addDefinition,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(l10n.filesAddDefinitionTitle),
-                ),
-              ),
-            if (_definitions.isNotEmpty) ...[
-              Text(l10n.filesRequiredDefinitions, style: ShadTypography.sectionHeader),
-              const SizedBox(height: 8),
-              ..._definitions.map((d) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.description, color: ShadColors.primary),
-                  title: Text(d['name'] ?? '', style: ShadTypography.cardTitle),
-                  subtitle: d['description'] != null ? Text(d['description'], style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)) : null,
-                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (d['is_required'] == true)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: ShadColors.errorLight, borderRadius: BorderRadius.circular(12)),
-                        child: Text(l10n.filesRequired, style: ShadTypography.caption.copyWith(color: ShadColors.error)),
-                      ),
-                    if (!isSA) ...[
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18, color: ShadColors.error),
-                        onPressed: () => _deleteDefinition(d['id']),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ]),
-                ),
-              )),
-              const SizedBox(height: 16),
-            ],
-            // Filter chips
-            Row(children: [
-              _filterChip(l10n.all, 'all'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.pending, 'pending'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.approved, 'approved'),
-              const SizedBox(width: 6),
-              _filterChip(l10n.rejected, 'rejected'),
-            ]),
-            const SizedBox(height: 12),
-            Text(l10n.filesUploaded, style: ShadTypography.sectionHeader),
-            const SizedBox(height: 8),
-            if (filtered.isEmpty)
-              EmptyState(icon: Icons.folder_outlined, title: l10n.filesEmpty)
-            else
-              ...filtered.map((f) {
-                final statusColors = {'pending': ShadColors.warning, 'approved': ShadColors.success, 'rejected': ShadColors.error};
-                final sc = statusColors[f['status']] ?? ShadColors.textDisabled;
-                final fileSize = _formatFileSize(f['file_size']);
-                final fileType = (f['file_type'] as String? ?? '').toUpperCase();
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    onTap: f['file_url'] != null ? () async {
-                      final url = _api.resolveFileUrl(f['file_url'] as String);
-                      final uri = Uri.tryParse(url);
-                      if (uri != null && await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      } else {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesFileOpenFailed)));
-                      }
-                    } : null,
-                    leading: const Icon(Icons.attach_file, color: ShadColors.primary),
-                    title: Text(f['name'] ?? '', style: ShadTypography.cardTitle, overflow: TextOverflow.ellipsis),
-                    subtitle: Row(children: [
-                      if (fileType.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 8),
-                          child: Text(fileType, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
-                        ),
-                      if (fileSize.isNotEmpty)
-                        Text(fileSize, style: ShadTypography.caption.copyWith(color: ShadColors.textDisabled, fontSize: 10)),
-                      if (f['status'] != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: sc.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-                          child: Text(
-                            statusLabels(AppLocalizations.of(context)!)[f['status']] ?? f['status'],
-                            style: ShadTypography.caption.copyWith(color: sc, fontSize: 10),
-                          ),
-                        ),
-                      ],
-                    ]),
-                    trailing: f['status'] == 'pending' && canReviewFile(f)
-                      ? Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(
-                            icon: const Icon(Icons.check, color: ShadColors.success),
-                            onPressed: () => _reviewFile(f['id'], 'approved'),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, color: ShadColors.error),
-                            onPressed: () => _reviewFile(f['id'], 'rejected'),
-                          ),
-                        ])
-                      : null,
+      backgroundColor: Colors.transparent,
+      body: LuxeFormTheme(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          color: Lx.crimsonInk,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+            children: [
+              // Mockup: primary full-width upload button (not for super admin).
+              if (!isSA)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: LuxeButton(
+                      key: const ValueKey('files-upload'),
+                      label: l10n.files_uploadFile,
+                      lxIcon: 'up',
+                      kind: LuxeButtonKind.primary,
+                      size: LuxeButtonSize.lg,
+                      onPressed: _uploadFile,
+                    ),
                   ),
-                );
-              }),
-          ],
+                ),
+              if (!isSA)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: _addDefinition,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(l10n.filesAddDefinitionTitle),
+                  ),
+                ),
+              if (_definitions.isNotEmpty) ...[
+                LuxeKind(l10n.filesRequiredDefinitions),
+                const SizedBox(height: 8),
+                ..._definitions.map((d) => LuxeCard(
+                      child: Row(children: [
+                        const LxIcon('doc', size: 20, color: Lx.ink2),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(d['name'] ?? '', style: Lx.text(context, size: 14)),
+                            if (d['description'] != null) Text(d['description'], style: Lx.text(context, size: 12, color: Lx.muted)),
+                          ]),
+                        ),
+                        if (d['is_required'] == true)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: const Color(0x80941414))),
+                            child: Text(l10n.filesRequired, style: Lx.text(context, size: 10.5, color: Lx.crimsonInk)),
+                          ),
+                        if (!isSA) ...[
+                          const SizedBox(width: 6),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 18, color: Lx.danger),
+                            onPressed: () => _deleteDefinition(d['id']),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ]),
+                    )),
+                const SizedBox(height: 14),
+              ],
+              // Filter chips (mockup `.chip`)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  _filterChip(l10n.all, 'all'),
+                  const SizedBox(width: 8),
+                  _filterChip(l10n.pending, 'pending'),
+                  const SizedBox(width: 8),
+                  _filterChip(l10n.approved, 'approved'),
+                  const SizedBox(width: 8),
+                  _filterChip(l10n.rejected, 'rejected'),
+                ]),
+              ),
+              const SizedBox(height: 14),
+              LuxeKind(l10n.filesUploaded),
+              const SizedBox(height: 8),
+              if (filtered.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: Text(l10n.filesEmpty, style: Lx.text(context, size: 14, color: Lx.muted))),
+                )
+              else
+                ...filtered.map((f) {
+                  final status = f['status'] as String? ?? '';
+                  final dot = status == 'approved' ? LxStatus.ok : status == 'rejected' ? LxStatus.bad : LxStatus.wait;
+                  final fileSize = _formatFileSize(f['file_size']);
+                  final fileType = (f['file_type'] as String? ?? '').toUpperCase();
+                  final name = f['name'] ?? '';
+                  Future<void> open() async {
+                    if (f['file_url'] == null) return;
+                    final uri = Uri.tryParse(_api.resolveFileUrl(f['file_url'] as String));
+                    if (uri != null && await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesFileOpenFailed)));
+                    }
+                  }
+
+                  return LuxeCard(
+                    key: ValueKey('file-card-${f['id']}'),
+                    onTap: f['file_url'] != null ? open : null,
+                    child: Row(children: [
+                      // Mockup `.fic`
+                      Container(
+                        width: 34,
+                        height: 42,
+                        padding: const EdgeInsets.only(bottom: 5),
+                        alignment: Alignment.bottomCenter,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Lx.line2)),
+                        child: Text(fileType.isEmpty ? 'FILE' : (fileType.length > 4 ? fileType.substring(0, 4) : fileType), style: Lx.text(context, size: 8.5, color: Lx.muted).copyWith(letterSpacing: 0.9)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('$name', style: Lx.text(context, size: 13.5), overflow: TextOverflow.ellipsis),
+                          if (fileSize.isNotEmpty) Text(fileSize, style: Lx.text(context, size: 11, color: Lx.faint)),
+                          if (status.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                LuxeStatusDot(status: dot),
+                                const SizedBox(width: 7),
+                                Text(statusLabels(AppLocalizations.of(context)!)[status] ?? status, style: Lx.text(context, size: 11.5, color: Lx.ink2)),
+                              ]),
+                            ),
+                        ]),
+                      ),
+                      if (f['status'] == 'pending' && canReviewFile(f)) ...[
+                        IconButton(
+                          icon: const Icon(Icons.check, color: Lx.ok),
+                          onPressed: () => _reviewFile(f['id'], 'approved'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Lx.danger),
+                          onPressed: () => _reviewFile(f['id'], 'rejected'),
+                        ),
+                      ] else if (f['file_url'] != null)
+                        InkResponse(
+                          onTap: open,
+                          radius: 20,
+                          child: const SizedBox(width: 38, height: 38, child: Center(child: LxIcon('down', size: 19, color: Lx.muted))),
+                        ),
+                    ]),
+                  );
+                }),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: isSA
-        ? null
-        : FloatingActionButton(
-            onPressed: _uploadFile,
-            child: const Icon(Icons.upload_file),
-          ),
     );
   }
 
@@ -338,13 +370,13 @@ class _FilesTabState extends State<FilesTab> {
     return GestureDetector(
       onTap: () => setState(() => _filter = value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ShadColors.primary : ShadColors.card,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? ShadColors.primary : ShadColors.cardBorder),
+          color: selected ? const Color(0xFFF0F0F0) : null,
+          borderRadius: BorderRadius.circular(Lx.rPill),
+          border: Border.all(color: selected ? const Color(0xFFF0F0F0) : Lx.line2),
         ),
-        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: selected ? Colors.white : ShadColors.textSecondary)),
+        child: Text(label, style: Lx.text(context, size: 12, color: selected ? const Color(0xFF111111) : Lx.muted)),
       ),
     );
   }

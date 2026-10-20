@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../data/staff_permissions.dart';
 import '../../../data/staff_repository.dart';
@@ -156,7 +156,7 @@ class _TeamTabState extends State<TeamTab> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(_isManager ? l10n.teamTabHintManager : l10n.teamTabHint, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+          Text(_isManager ? l10n.teamTabHintManager : l10n.teamTabHint, style: const TextStyle(fontSize: 12, color: Lx.muted)),
           if (_isManager)
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -168,16 +168,16 @@ class _TeamTabState extends State<TeamTab> {
             ),
           const SizedBox(height: 12),
           if (_loadFailed)
-            Text(l10n.teamTabLoadFailed, style: const TextStyle(fontSize: 13, color: ShadColors.crimson)),
+            Text(l10n.teamTabLoadFailed, style: const TextStyle(fontSize: 13, color: Lx.crimson)),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(_error!, style: const TextStyle(fontSize: 13, color: ShadColors.crimson)),
+              child: Text(_error!, style: const TextStyle(fontSize: 13, color: Lx.crimson)),
             ),
           if (!_loadFailed && _staff.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: Text(_isManager ? l10n.teamTabEmptyManager : l10n.teamTabEmpty, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled))),
+              child: Center(child: Text(_isManager ? l10n.teamTabEmptyManager : l10n.teamTabEmpty, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Lx.faint))),
             ),
           for (final m in regular) _row(m, l10n),
           for (final m in outsiders) _outsiderRow(m, l10n),
@@ -193,15 +193,15 @@ class _TeamTabState extends State<TeamTab> {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: ShadColors.crimson.withAlpha(40),
+          backgroundColor: Lx.crimson.withAlpha(40),
           backgroundImage: (m['avatar_url'] as String?)?.isNotEmpty == true ? NetworkImage(_api.resolveFileUrl(m['avatar_url'] as String)) : null,
           child: (m['avatar_url'] as String?)?.isNotEmpty == true
               ? null
-              : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: ShadColors.crimson, fontWeight: FontWeight.w700)),
+              : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Lx.crimson, fontWeight: FontWeight.w700)),
         ),
         title: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: Lx.muted)),
           if (assigned && m['permissions'] != null) ...[
             const SizedBox(height: 4),
             PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
@@ -220,8 +220,8 @@ class _TeamTabState extends State<TeamTab> {
           key: ValueKey('team-toggle-${m['id']}'),
           onPressed: _busyId == m['id'] ? null : () => _toggle(m),
           style: OutlinedButton.styleFrom(
-            foregroundColor: assigned ? ShadColors.crimson : ShadColors.success,
-            side: BorderSide(color: (assigned ? ShadColors.crimson : ShadColors.success).withAlpha(120)),
+            foregroundColor: assigned ? Lx.crimson : Lx.ok,
+            side: BorderSide(color: (assigned ? Lx.crimson : Lx.ok).withAlpha(120)),
           ),
           child: Text(assigned ? l10n.teamTabUnassign : l10n.teamTabAssign, style: const TextStyle(fontSize: 12)),
         ),
@@ -236,15 +236,15 @@ class _TeamTabState extends State<TeamTab> {
     return Card(
       key: ValueKey('team-outsider-${m['id']}'),
       margin: const EdgeInsets.only(bottom: 8),
-      color: ShadColors.gold.withAlpha(14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: ShadColors.gold.withAlpha(90))),
+      color: Lx.wait.withAlpha(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Lx.wait.withAlpha(90))),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: Lx.muted)),
           const SizedBox(height: 4),
-          Text('${l10n.mtNotMine} — ${l10n.mtNotMineHint}', style: const TextStyle(fontSize: 11, color: ShadColors.gold)),
+          Text('${l10n.mtNotMine} — ${l10n.mtNotMineHint}', style: const TextStyle(fontSize: 11, color: Lx.wait)),
           if (m['permissions'] != null) ...[
             const SizedBox(height: 6),
             PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
@@ -259,7 +259,7 @@ class _TeamTabState extends State<TeamTab> {
             OutlinedButton(
               key: ValueKey('team-toggle-${m['id']}'),
               onPressed: _busyId == m['id'] ? null : () => _toggle(m),
-              style: OutlinedButton.styleFrom(foregroundColor: ShadColors.crimson, side: BorderSide(color: ShadColors.crimson.withAlpha(120))),
+              style: OutlinedButton.styleFrom(foregroundColor: Lx.crimson, side: BorderSide(color: Lx.crimson.withAlpha(120))),
               child: Text(l10n.teamTabUnassign, style: const TextStyle(fontSize: 12)),
             ),
           ]),

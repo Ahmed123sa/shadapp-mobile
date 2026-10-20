@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../models/client.dart';
 import '../../../models/manager.dart';
@@ -20,7 +21,7 @@ double _toDouble(dynamic value) => num.tryParse(value?.toString() ?? '')?.toDoub
 
 Widget reportsEmptyChart() {
   return const Center(
-    child: Icon(Icons.bar_chart, color: ShadColors.textDisabled, size: 36),
+    child: Icon(Icons.bar_chart, color: Lx.faint, size: 36),
   );
 }
 
@@ -34,10 +35,10 @@ Widget buildRevenueLineChart(BuildContext context, Map<String, dynamic> data, St
 
   return LineChart(LineChartData(
     lineBarsData: [LineChartBarData(
-      spots: flatSpots, isCurved: true, color: ShadColors.crimson, barWidth: 2, curveSmoothness: 0.4,
-      belowBarData: BarAreaData(show: true, color: ShadColors.crimson.withAlpha(20)),
+      spots: flatSpots, isCurved: true, color: Lx.crimson, barWidth: 2, curveSmoothness: 0.4,
+      belowBarData: BarAreaData(show: true, color: Lx.crimson.withAlpha(20)),
       dotData: FlDotData(show: true, getDotPainter: (_, __, ___, ____) =>
-        FlDotCirclePainter(radius: 3, color: ShadColors.gold, strokeWidth: 0)),
+        FlDotCirclePainter(radius: 3, color: Lx.wait, strokeWidth: 0)),
     )],
     titlesData: FlTitlesData(
       show: true,
@@ -52,12 +53,12 @@ Widget buildRevenueLineChart(BuildContext context, Map<String, dynamic> data, St
           final name = monthNames[m - 1];
           return Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(name.length <= 2 ? name : name.substring(0, 2), style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)),
+            child: Text(name.length <= 2 ? name : name.substring(0, 2), style: const TextStyle(color: Lx.faint, fontSize: 9)),
           );
         },
       )),
       leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32,
-        getTitlesWidget: (v, _) => Text('${v.toInt() ~/ 1000}k', style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)))),
+        getTitlesWidget: (v, _) => Text('${v.toInt() ~/ 1000}k', style: const TextStyle(color: Lx.faint, fontSize: 9)))),
       topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
     ),
@@ -73,14 +74,14 @@ Widget buildContractsChartBody(BuildContext context, Map<String, dynamic> contra
   final total = entries.fold<double>(0, (s, e) => s + e.value);
 
   final contractColors = {
-    'completed': ShadColors.success,
+    'completed': Lx.ok,
     'sent': ShadColors.blue,
-    'client_approved': ShadColors.gold,
+    'client_approved': Lx.wait,
     'company_approved': ShadColors.purple,
-    'draft': ShadColors.textMuted,
+    'draft': Lx.faint,
     'archived': ShadColors.orange,
-    'client_rejected': ShadColors.error,
-    'edit_requested': ShadColors.warning,
+    'client_rejected': Lx.danger,
+    'edit_requested': Lx.wait,
   };
 
   return Column(
@@ -94,7 +95,7 @@ Widget buildContractsChartBody(BuildContext context, Map<String, dynamic> contra
                 centerSpaceRadius: 44,
                 sections: entries.asMap().entries.map((e) => PieChartSectionData(
                   value: e.value.value,
-                  color: contractColors[e.value.key] ?? ShadColors.textMuted,
+                  color: contractColors[e.value.key] ?? Lx.faint,
                   radius: 40,
                   title: '${(e.value.value / total * 100).toInt()}%',
                   titleStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
@@ -117,10 +118,10 @@ Widget buildContractsChartBody(BuildContext context, Map<String, dynamic> contra
           };
           return Row(children: [
             Container(width: 8, height: 8, decoration: BoxDecoration(
-              color: contractColors[e.key] ?? ShadColors.textMuted, shape: BoxShape.circle,
+              color: contractColors[e.key] ?? Lx.faint, shape: BoxShape.circle,
             )),
             const SizedBox(width: 5),
-            Text('${labelMap[e.key] ?? e.key} (${e.value.toInt()})', style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary)),
+            Text('${labelMap[e.key] ?? e.key} (${e.value.toInt()})', style: const TextStyle(fontSize: 9.5, color: Lx.muted)),
           ]);
         }).toList(),
       ),
@@ -135,7 +136,7 @@ Widget? buildApprovalsChartBody(BuildContext context, Map<String, dynamic> appro
   final l10n = AppLocalizations.of(context)!;
   final labels = ['approved', 'rejected', 'pending'];
   final displayLabels = [l10n.approved, l10n.rejected, l10n.pending];
-  final colors = [ShadColors.success, ShadColors.error, ShadColors.gold];
+  final colors = [Lx.ok, Lx.danger, Lx.wait];
   final data = labels.map((k) => _toDouble(approvalStats[k])).toList();
   if (data.every((v) => v == 0)) return null;
 
@@ -154,11 +155,11 @@ Widget? buildApprovalsChartBody(BuildContext context, Map<String, dynamic> appro
           showTitles: true, getTitlesWidget: (v, _) {
             final idx = v.toInt();
             if (idx < 0 || idx >= displayLabels.length) return const SizedBox();
-            return Padding(padding: const EdgeInsets.only(top: 4), child: Text(displayLabels[idx], style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)));
+            return Padding(padding: const EdgeInsets.only(top: 4), child: Text(displayLabels[idx], style: const TextStyle(color: Lx.faint, fontSize: 9)));
           }, reservedSize: 24,
         )),
         leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 24,
-          getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(color: ShadColors.textMuted, fontSize: 9)))),
+          getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(color: Lx.faint, fontSize: 9)))),
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
@@ -178,27 +179,27 @@ Widget buildReportKpiCard((String, String, String, Color, String, bool) k) {
     margin: const EdgeInsetsDirectional.only(end: 10),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: ShadColors.card,
+      color: Lx.surface,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: ShadColors.cardBorder),
+      border: Border.all(color: Lx.line2),
     ),
     child: Stack(
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary)),
+            Text(label, style: const TextStyle(fontSize: 9.5, color: Lx.muted)),
             const SizedBox(height: 5),
             Text(value, style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: kind == 'revenue' ? 16 : 20,
               fontWeight: FontWeight.w700,
-              color: kind == 'pending' ? ShadColors.error : ShadColors.textPrimary,
+              color: kind == 'pending' ? Lx.danger : Lx.ink,
             )),
             const SizedBox(height: 4),
             Text(delta, style: TextStyle(
               fontSize: 9,
-              color: isUp ? ShadColors.success : ShadColors.error,
+              color: isUp ? Lx.ok : Lx.danger,
             )),
           ],
         ),
@@ -235,7 +236,7 @@ Widget buildReportsCustomFilterPanel({
   return Container(
     padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
     decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: ShadColors.divider)),
+      border: Border(bottom: BorderSide(color: Lx.line2)),
     ),
     child: Column(
       children: [
@@ -249,11 +250,11 @@ Widget buildReportsCustomFilterPanel({
             child: Container(
               width: 32, height: 32,
               decoration: BoxDecoration(
-                color: ShadColors.crimsonSoft,
+                color: Lx.crimson.withAlpha(46),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ShadColors.crimsonBorder),
+                border: Border.all(color: Lx.crimson.withAlpha(82)),
               ),
-              child: const Icon(Icons.check, size: 14, color: ShadColors.crimson),
+              child: const Icon(Icons.check, size: 14, color: Lx.crimson),
             ),
           ),
         ]),
@@ -285,9 +286,9 @@ Widget buildReportsCustomFilterPanel({
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: ShadColors.borderLight),
+                border: Border.all(color: Lx.line2),
               ),
-              child: Text(l10n.reportsReset, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+              child: Text(l10n.reportsReset, style: const TextStyle(fontSize: 10, color: Lx.muted)),
             ),
           ),
         ]),
@@ -306,7 +307,7 @@ Widget _dateChip(BuildContext context, String label, DateTime? value, void Funct
           firstDate: DateTime(2020),
           lastDate: DateTime.now(),
           builder: (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: ShadColors.gold)),
+            data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: Lx.wait)),
             child: child!,
           ),
         );
@@ -315,16 +316,16 @@ Widget _dateChip(BuildContext context, String label, DateTime? value, void Funct
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: ShadColors.surfaceDarker,
+          color: Lx.page,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: ShadColors.borderLight),
+          border: Border.all(color: Lx.line2),
         ),
         child: Row(children: [
-          const Icon(Icons.calendar_today, size: 12, color: ShadColors.textSecondary),
+          const Icon(Icons.calendar_today, size: 12, color: Lx.muted),
           const SizedBox(width: 6),
           Text(
             value != null ? '${value.day}/${value.month}/${value.year}' : label,
-            style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary),
+            style: const TextStyle(fontSize: 11, color: Lx.muted),
           ),
         ]),
       ),
@@ -337,20 +338,21 @@ Widget _dropdown(BuildContext context, dynamic selected, String label, String hi
     onTap: () {
       showModalBottomSheet(
         context: context,
+        backgroundColor: Lx.sheet,
         builder: (ctx) => SafeArea(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Padding(
               padding: const EdgeInsets.all(14),
-              child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+              child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Lx.ink)),
             ),
             ListTile(
               title: Text(hint, style: const TextStyle(fontSize: 12)),
-              trailing: selected == null ? const Icon(Icons.check, size: 16, color: ShadColors.gold) : null,
+              trailing: selected == null ? const Icon(Icons.check, size: 16, color: Lx.wait) : null,
               onTap: () { onSelect(null); Navigator.pop(ctx); },
             ),
             ...items.map((e) => ListTile(
               title: Text(e.value, style: const TextStyle(fontSize: 12)),
-              trailing: selected == e.key ? const Icon(Icons.check, size: 16, color: ShadColors.gold) : null,
+              trailing: selected == e.key ? const Icon(Icons.check, size: 16, color: Lx.wait) : null,
               onTap: () { onSelect(e.key); Navigator.pop(ctx); },
             )),
           ]),
@@ -360,23 +362,23 @@ Widget _dropdown(BuildContext context, dynamic selected, String label, String hi
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: ShadColors.surfaceDarker,
+        color: Lx.page,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ShadColors.borderLight),
+        border: Border.all(color: Lx.line2),
       ),
       child: Row(children: [
-        Icon(Icons.person, size: 12, color: ShadColors.textSecondary),
+        Icon(Icons.person, size: 12, color: Lx.muted),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             selected != null
                 ? items.firstWhere((e) => e.key == selected, orElse: () => MapEntry(null, selected.toString())).value
                 : hint,
-            style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary),
+            style: const TextStyle(fontSize: 10, color: Lx.muted),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const Icon(Icons.arrow_drop_down, size: 16, color: ShadColors.textSecondary),
+        const Icon(Icons.arrow_drop_down, size: 16, color: Lx.muted),
       ]),
     ),
   );
@@ -388,13 +390,13 @@ Widget _typeChip(String label, String? value, bool active, VoidCallback onTap) {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: active ? ShadColors.goldSoft : Colors.transparent,
+        color: active ? Lx.wait.withAlpha(35) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
+        border: Border.all(color: active ? Lx.wait : Lx.line2),
       ),
       child: Text(label, style: TextStyle(
         fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-        color: active ? ShadColors.gold : ShadColors.textSecondary,
+        color: active ? Lx.wait : Lx.muted,
       )),
     ),
   );

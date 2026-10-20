@@ -102,7 +102,7 @@ void main() {
     // client info — a pre-existing duplication, not asserting an exact
     // count here.
     expect(find.text('Ali'), findsWidgets);
-    expect(find.byIcon(Icons.keyboard_arrow_left), findsOneWidget);
+    expect(find.byKey(const ValueKey('ws-back')), findsOneWidget);
   });
   testWidgets('an assistant has no Payments tab and the rest still load', (tester) async {
     final httpClient = MockHttpClient();

@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -210,16 +211,16 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
             ..._approvals.map((a) {
               final hasCertificate = a.hasCertificate;
               final status = a.status;
-              final accentColor = status == 'approved' ? ShadColors.success :
-                  status == 'rejected' || status == 'edit_requested' ? ShadColors.error : ShadColors.gold;
+              final accentColor = status == 'approved' ? Lx.ok :
+                  status == 'rejected' || status == 'edit_requested' ? Lx.danger : Lx.wait;
               final createdAt = a.createdAt;
               final requestedByName = a.requestedByName ?? '';
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: ShadColors.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: ShadColors.cardBorder),
+                  color: Lx.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Lx.line2),
                 ),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Container(
@@ -239,24 +240,24 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(
                             a.title,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif),
                           ),
                           if (a.description != null && a.description!.isNotEmpty) ...[
                             const SizedBox(height: 6),
-                            Text(a.description!, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(a.description!, style: const TextStyle(fontSize: 12, color: Lx.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
                           ],
                           const SizedBox(height: 8),
                           Row(children: [
                             if (requestedByName.isNotEmpty) ...[
-                              Icon(Icons.person_outline, size: 13, color: ShadColors.textSecondary),
+                              Icon(Icons.person_outline, size: 13, color: Lx.muted),
                               const SizedBox(width: 4),
-                              Text(requestedByName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: ShadColors.textSecondary)),
+                              Text(requestedByName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Lx.muted)),
                               const SizedBox(width: 12),
                             ],
                             if (createdAt != null) ...[
-                              Icon(Icons.access_time, size: 13, color: ShadColors.textSecondary),
+                              Icon(Icons.access_time, size: 13, color: Lx.muted),
                               const SizedBox(width: 4),
-                              Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                              Text(createdAt.split('T')[0], style: const TextStyle(fontSize: 12, color: Lx.muted)),
                             ],
                           ]),
                           if (a.referenceNo != null) ...[
@@ -264,10 +265,10 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: ShadColors.gold.withAlpha(20),
+                                color: Lx.wait.withAlpha(20),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('${l10n.approvalReference}: ${a.referenceNo}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ShadColors.gold)),
+                              child: Text('${l10n.approvalReference}: ${a.referenceNo}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Lx.wait)),
                             ),
                           ],
                         ])),
@@ -291,14 +292,14 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: ShadColors.gold.withAlpha(15),
+                                color: Lx.wait.withAlpha(15),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: ShadColors.gold.withAlpha(40)),
+                                border: Border.all(color: Lx.wait.withAlpha(40)),
                               ),
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                const Icon(Icons.picture_as_pdf, size: 18, color: ShadColors.gold),
+                                const Icon(Icons.picture_as_pdf, size: 18, color: Lx.wait),
                                 const SizedBox(width: 8),
-                                Text(l10n.approvalCertificate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                                Text(l10n.approvalCertificate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Lx.wait)),
                               ]),
                             ),
                           ),
@@ -308,21 +309,21 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: a.actionResult == 'approved' ? ShadColors.successLight : ShadColors.errorLight,
+                            color: a.actionResult == 'approved' ? Lx.ok.withAlpha(30) : Lx.danger.withAlpha(30),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: a.actionResult == 'approved' ? ShadColors.success.withAlpha(40) : ShadColors.error.withAlpha(40),
+                              color: a.actionResult == 'approved' ? Lx.ok.withAlpha(40) : Lx.danger.withAlpha(40),
                             ),
                           ),
                           child: Row(children: [
                             Icon(
                               a.actionResult == 'approved' ? Icons.check_circle : Icons.cancel,
-                              size: 18, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error,
+                              size: 18, color: a.actionResult == 'approved' ? Lx.ok : Lx.danger,
                             ),
                             const SizedBox(width: 8),
                             Expanded(child: Text(
                               a.actionResult == 'approved' ? l10n.approvalApproved : l10n.approvalEditRequested,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a.actionResult == 'approved' ? ShadColors.success : ShadColors.error),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: a.actionResult == 'approved' ? Lx.ok : Lx.danger),
                             )),
                           ]),
                         ),
@@ -333,14 +334,14 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: ShadColors.gold.withAlpha(20),
+                            color: Lx.wait.withAlpha(20),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: ShadColors.gold.withAlpha(40)),
+                            border: Border.all(color: Lx.wait.withAlpha(40)),
                           ),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(l10n.approvalEditReasonLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                            Text(l10n.approvalEditReasonLabel, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Lx.wait)),
                             const SizedBox(height: 4),
-                            Text(a.reason!, style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
+                            Text(a.reason!, style: const TextStyle(fontSize: 12, color: Lx.ink)),
                           ]),
                         ),
                       ],
@@ -354,7 +355,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                                 icon: const Icon(Icons.check, size: 15),
                                 label: Text(l10n.approve, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: ShadColors.success,
+                                  backgroundColor: Lx.ok,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

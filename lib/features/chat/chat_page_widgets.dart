@@ -394,7 +394,10 @@ Widget _buildTextBubble(
 class LxMeetingBanner extends StatelessWidget {
   final Map<String, dynamic> meeting;
   final bool canJoin;
-  const LxMeetingBanner({super.key, required this.meeting, required this.canJoin});
+  /// Staff enter through the backend (so the manager becomes host) instead of
+  /// opening the participant link; null falls back to opening the link.
+  final VoidCallback? onTap;
+  const LxMeetingBanner({super.key, required this.meeting, required this.canJoin, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +415,7 @@ class LxMeetingBanner extends StatelessWidget {
     } catch (_) {}
     return GestureDetector(
       key: const ValueKey('chat-meeting-banner'),
-      onTap: link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null,
+      onTap: onTap ?? (link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),

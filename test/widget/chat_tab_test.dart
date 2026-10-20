@@ -177,7 +177,7 @@ void main() {
 
     await pumpTab(tester, api);
     await tester.enterText(find.byType(TextField), 'a plain message');
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'a plain message'});
@@ -200,7 +200,7 @@ void main() {
     await tester.tap(find.text('Request Client Approval'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'please approve this');
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'please approve this', 'requires_action': true});
@@ -225,7 +225,7 @@ void main() {
     await tester.tap(find.text('Reply'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'replying now');
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'replying now', 'reply_to_id': 1});
@@ -249,7 +249,7 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'edited AM message');
-    await tester.tap(find.byIcon(Icons.check));
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
     await tester.pumpAndSettle();
 
     expect(sentBody, {'message': 'edited AM message'});
@@ -290,7 +290,7 @@ void main() {
     ]);
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.copy_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-contracts')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/contracts'))),
@@ -306,7 +306,7 @@ void main() {
     stubDefaultGets(httpClient, contracts: []);
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.copy_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-contracts')));
     await tester.pumpAndSettle();
 
     expect(find.text('No contracts'), findsOneWidget);
@@ -320,7 +320,7 @@ void main() {
     stubDefaultGets(httpClient, meetings: []);
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.videocam_outlined));
+    await tester.tap(find.byKey(const ValueKey('chat-zoom')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/meetings'))),

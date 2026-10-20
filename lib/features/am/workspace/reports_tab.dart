@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -194,9 +195,9 @@ class _ReportsTabState extends State<ReportsTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: ShadColors.error, size: 48),
+            Icon(Icons.error_outline, color: Lx.danger, size: 48),
             const SizedBox(height: 12),
-            Text(_error!, style: ShadTypography.cardBody.copyWith(color: ShadColors.error)),
+            Text(_error!, style: ShadTypography.cardBody.copyWith(color: Lx.danger)),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context)!.retry)),
           ],
@@ -216,7 +217,7 @@ class _ReportsTabState extends State<ReportsTab> {
               padding: EdgeInsets.zero,
               children: [
                 _buildKpiScroll(),
-                const Divider(height: 1, color: ShadColors.divider),
+                const Divider(height: 1, color: Lx.line2),
                 _buildRevenueChart(),
                 _buildContractsChart(),
                 _buildApprovalsChart(),
@@ -235,31 +236,31 @@ class _ReportsTabState extends State<ReportsTab> {
     return Container(
       padding: const EdgeInsetsDirectional.only(start: 6, end: 14, top: 10, bottom: 10),
       decoration: const BoxDecoration(
-        color: ShadColors.surfaceDarker,
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        color: Lx.page,
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: Row(
           children: [
             GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back_ios, size: 16, color: ShadColors.textSecondary),
+              child: const Icon(Icons.arrow_back_ios, size: 16, color: Lx.muted),
             ),
             const SizedBox(width: 4),
           const Text('d', style: TextStyle(
-            fontFamily: 'Playfair Display', fontSize: 15, fontStyle: FontStyle.italic, color: ShadColors.textPrimary,
+            fontFamily: 'Playfair Display', fontSize: 15, fontStyle: FontStyle.italic, color: Lx.ink,
           )),
           Container(
             width: 4, height: 4,
             margin: const EdgeInsetsDirectional.only(bottom: 1, start: 4),
-            decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)!.reports, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ShadColors.textPrimary)),
-                Text(AppLocalizations.of(context)!.reportsLast30Days, style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
+                Text(AppLocalizations.of(context)!.reports, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Lx.ink)),
+                Text(AppLocalizations.of(context)!.reportsLast30Days, style: const TextStyle(fontSize: 9, color: Lx.muted)),
               ],
             ),
           ),
@@ -281,7 +282,7 @@ class _ReportsTabState extends State<ReportsTab> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.divider)),
+        border: Border(bottom: BorderSide(color: Lx.line2)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -308,13 +309,13 @@ class _ReportsTabState extends State<ReportsTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 margin: const EdgeInsetsDirectional.only(end: 6),
                 decoration: BoxDecoration(
-                  color: active ? ShadColors.crimsonSoft : Colors.transparent,
+                  color: active ? Lx.crimson.withAlpha(46) : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: active ? ShadColors.crimsonBorder : ShadColors.borderLight),
+                  border: Border.all(color: active ? Lx.crimson.withAlpha(82) : Lx.line2),
                 ),
                 child: Text(p.$2, style: TextStyle(
                   fontSize: 11, fontWeight: FontWeight.w600,
-                  color: active ? ShadColors.textPrimary : ShadColors.textSecondary,
+                  color: active ? Lx.ink : Lx.muted,
                 )),
               ),
             );
@@ -364,10 +365,10 @@ class _ReportsTabState extends State<ReportsTab> {
     final activeWorkspaces = '${c?['active_workspaces'] ?? 0}';
 
     final kpis = [
-      _kpiData('clients', l10n.reportsClients, totalClients, ShadColors.success, l10n.reportsDeltaNew, true),
-      _kpiData('revenue', l10n.reportsRevenue, revenueValue, ShadColors.gold, l10n.reportsDeltaMonth, true),
+      _kpiData('clients', l10n.reportsClients, totalClients, Lx.ok, l10n.reportsDeltaNew, true),
+      _kpiData('revenue', l10n.reportsRevenue, revenueValue, Lx.wait, l10n.reportsDeltaMonth, true),
       _kpiData('contracts', l10n.reportsContracts, totalContracts, ShadColors.blue, l10n.reportsDeltaActive, true),
-      _kpiData('pending', l10n.reportsPending, pendingApprovals, ShadColors.error, l10n.reportsNeedsAction, false),
+      _kpiData('pending', l10n.reportsPending, pendingApprovals, Lx.danger, l10n.reportsNeedsAction, false),
       _kpiData('workspaces', l10n.reportsWorkspaces, activeWorkspaces, ShadColors.purple, l10n.reportsDeltaActivated, true),
     ];
 
@@ -440,13 +441,13 @@ class _ReportsTabState extends State<ReportsTab> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
         decoration: BoxDecoration(
-          color: active ? ShadColors.goldSoft : Colors.transparent,
+          color: active ? Lx.wait.withAlpha(35) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: active ? ShadColors.gold : ShadColors.borderLight),
+          border: Border.all(color: active ? Lx.wait : Lx.line2),
         ),
         child: Text(cur, style: TextStyle(
           fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-          color: active ? ShadColors.gold : ShadColors.textSecondary,
+          color: active ? Lx.wait : Lx.muted,
         )),
       ),
     );
@@ -491,9 +492,9 @@ class _ReportsTabState extends State<ReportsTab> {
       icon: '🏆',
       child: Container(
         decoration: BoxDecoration(
-          color: ShadColors.card,
+          color: Lx.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ShadColors.cardBorder),
+          border: Border.all(color: Lx.line2),
         ),
         child: Column(
           children: List.generate(items.length > 3 ? 3 : items.length, (i) {
@@ -515,17 +516,17 @@ class _ReportsTabState extends State<ReportsTab> {
                 ? (_toDouble(item['revenue']) / topRevenue * 100).clamp(10, 100)
                 : 10.0;
             final rankColors = [
-              (ShadColors.goldSoft, ShadColors.gold, ShadColors.gold),
+              (Lx.wait.withAlpha(35), Lx.wait, Lx.wait),
               (ShadColors.silverSoft, ShadColors.silver, ShadColors.silver),
               (ShadColors.bronzeSoft, ShadColors.bronze, ShadColors.bronze),
             ];
-            final (bgColor, borderColor, textColor) = i < 3 ? rankColors[i] : (ShadColors.cardBorder, ShadColors.cardBorder, ShadColors.textSecondary);
+            final (bgColor, borderColor, textColor) = i < 3 ? rankColors[i] : (Lx.line2, Lx.line2, Lx.muted);
             final isLast = i == (items.length > 3 ? 2 : items.length - 1);
 
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                border: isLast ? null : const Border(bottom: BorderSide(color: ShadColors.cardBorder)),
+                border: isLast ? null : const Border(bottom: BorderSide(color: Lx.line2)),
               ),
               child: Row(children: [
                 Container(
@@ -541,27 +542,27 @@ class _ReportsTabState extends State<ReportsTab> {
                 Container(
                   width: 28, height: 28,
                   decoration: BoxDecoration(
-                    color: ShadColors.crimsonSoft,
+                    color: Lx.crimson.withAlpha(46),
                     shape: BoxShape.circle,
-                    border: Border.all(color: ShadColors.crimsonBorder),
+                    border: Border.all(color: Lx.crimson.withAlpha(82)),
                   ),
-                  child: Center(child: Text(initials, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: ShadColors.gold))),
+                  child: Center(child: Text(initials, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Lx.wait))),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                      Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink)),
                       const SizedBox(height: 4),
                       Container(height: 3, decoration: BoxDecoration(
-                        color: ShadColors.cardBorder,
+                        color: Lx.line2,
                         borderRadius: BorderRadius.circular(2),
                       ), child: FractionallySizedBox(
                         widthFactor: pct / 100,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: i == 0 ? ShadColors.crimson : (i == 1 ? ShadColors.purple : ShadColors.blue),
+                            color: i == 0 ? Lx.crimson : (i == 1 ? ShadColors.purple : ShadColors.blue),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -570,7 +571,7 @@ class _ReportsTabState extends State<ReportsTab> {
                   ),
                 ),
                 Text(revenue, style: const TextStyle(
-                  fontFamily: 'Playfair Display', fontSize: 12, color: ShadColors.gold, fontWeight: FontWeight.w600,
+                  fontFamily: 'Playfair Display', fontSize: 12, color: Lx.wait, fontWeight: FontWeight.w600,
                 )),
               ]),
             );
@@ -592,9 +593,9 @@ class _ReportsTabState extends State<ReportsTab> {
       extra: periodTabs ? _buildChartTabs() : null,
       child: Container(
         decoration: BoxDecoration(
-          color: ShadColors.card,
+          color: Lx.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ShadColors.cardBorder),
+          border: Border.all(color: Lx.line2),
         ),
         padding: const EdgeInsets.all(12),
         child: child,
@@ -621,12 +622,12 @@ class _ReportsTabState extends State<ReportsTab> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: active ? ShadColors.crimsonSoft : Colors.transparent,
+          color: active ? Lx.crimson.withAlpha(46) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? ShadColors.crimsonBorder : ShadColors.borderLight),
+          border: Border.all(color: active ? Lx.crimson.withAlpha(82) : Lx.line2),
         ),
         child: Text(label, style: TextStyle(
-          fontSize: 9.5, color: active ? ShadColors.textPrimary : ShadColors.textSecondary,
+          fontSize: 9.5, color: active ? Lx.ink : Lx.muted,
         )),
       ),
     );
@@ -651,11 +652,11 @@ class _ReportsTabState extends State<ReportsTab> {
                 const SizedBox(width: 6),
               ],
               Text(title, style: const TextStyle(
-                fontFamily: 'Playfair Display', fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.textPrimary,
+                fontFamily: 'Playfair Display', fontSize: 14, fontWeight: FontWeight.w700, color: Lx.ink,
               )),
               if (subtitle != null) ...[
                 const SizedBox(width: 6),
-                Text(subtitle, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
+                Text(subtitle, style: const TextStyle(fontSize: 10, color: Lx.muted)),
               ],
               const Spacer(),
               if (extra != null) extra,
@@ -681,30 +682,30 @@ class _ReportsTabState extends State<ReportsTab> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: ShadColors.card,
+            color: Lx.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: ShadColors.cardBorder),
+            border: Border.all(color: Lx.line2),
           ),
           child: Row(
             children: [
-              const Icon(Icons.history, size: 16, color: ShadColors.gold),
+              const Icon(Icons.history, size: 16, color: Lx.wait),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(AppLocalizations.of(context)!.auditLogTitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+                child: Text(AppLocalizations.of(context)!.auditLogTitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Lx.ink)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: ShadColors.crimsonSoft,
+                  color: Lx.crimson.withAlpha(46),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: ShadColors.crimsonBorder),
+                  border: Border.all(color: Lx.crimson.withAlpha(82)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(AppLocalizations.of(context)!.amViewAll, style: const TextStyle(fontSize: 10, color: ShadColors.textPrimary)),
+                    Text(AppLocalizations.of(context)!.amViewAll, style: const TextStyle(fontSize: 10, color: Lx.ink)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward_ios, size: 8, color: ShadColors.textPrimary),
+                    const Icon(Icons.arrow_forward_ios, size: 8, color: Lx.ink),
                   ],
                 ),
               ),

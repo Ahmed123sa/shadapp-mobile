@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../providers/contract_provider.dart';
 import '../widgets/contract_builder.dart';
 
@@ -203,7 +203,7 @@ class _ContractsTabState extends State<ContractsTab> {
                       },
                       icon: const Icon(Icons.picture_as_pdf, size: 18),
                       label: Text(l10n.contractDownloadPdf),
-                      style: ElevatedButton.styleFrom(backgroundColor: ShadColors.crimson, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 12), shape: const StadiumBorder()),
                     ),
                   ),
                 ],
@@ -224,7 +224,7 @@ class _ContractsTabState extends State<ContractsTab> {
         content: Text(l10n.contractDeleteConfirmMsg),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: Text(l10n.delete)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white), child: Text(l10n.delete)),
         ],
       ),
     );
@@ -386,17 +386,44 @@ class _ContractsTabState extends State<ContractsTab> {
     if (_loading) return const LoadingState(itemCount: 3);
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
 
-    return Stack(children: [
-      if (_contracts.isEmpty)
-        Center(child: EmptyState(icon: Icons.description_outlined, title: l10n.noContracts, subtitle: l10n.noContractsSubtitle))
-      else
-        RefreshIndicator(
-          onRefresh: _load,
-          child: ListView.builder(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 80),
-            itemCount: _contracts.length,
-            itemBuilder: (_, i) {
-              final c = _contracts[i];
+    final newBtn = (_api.role != 'super_admin' && canManage)
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: LuxeButton(
+                key: const ValueKey('contracts-new'),
+                label: _wsStatus == 'active' ? l10n.contractExtraService : l10n.contractCreateMain,
+                lxIcon: 'plus',
+                kind: LuxeButtonKind.primary,
+                size: LuxeButtonSize.lg,
+                onPressed: () {
+                  final isActive = _wsStatus == 'active';
+                  ContractBuilder.show(context, isAdditional: isActive, onCreated: _load, api: _api, contractProvider: _contractProvider);
+                },
+              ),
+            ),
+          )
+        : const SizedBox.shrink();
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: Lx.crimsonInk,
+      child: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 24),
+        children: [
+          newBtn,
+          if (_contracts.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Column(children: [
+                Text(l10n.noContracts, style: Lx.display(context, size: 20)),
+                const SizedBox(height: 8),
+                Text(l10n.noContractsSubtitle, textAlign: TextAlign.center, style: Lx.text(context, size: 13.5, color: Lx.muted)),
+              ]),
+            )
+          else
+            ..._contracts.map((c) {
               final rawActions = actionsForStatus[c['status']] ?? [];
               final actions = rawActions.where((a) {
                 if (isSA) return a == 'company-approve' || a == 'complete';
@@ -404,148 +431,105 @@ class _ContractsTabState extends State<ContractsTab> {
                 return canManage;
               }).toList();
               final editable = c['status'] == 'draft' || c['status'] == 'edit_requested';
-              return GestureDetector(
+              final status = c['status'] as String? ?? '';
+              final dot = (status == 'company_approved' || status == 'completed')
+                  ? LxStatus.ok
+                  : (status == 'rejected' || status == 'cancelled')
+                      ? LxStatus.bad
+                      : (status == 'sent' || status == 'client_approved')
+                          ? LxStatus.wait
+                          : LxStatus.off;
+              final amt = num.tryParse('${c['value'] ?? 0}');
+              return LuxeCard(
+                key: ValueKey('contract-card-${c['id']}'),
+                attention: status == 'client_approved',
                 onTap: () => editable ? _editContract(c) : _showContractDetail(c),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsetsDirectional.fromSTEB(13, 11, 13, 11),
-                  decoration: BoxDecoration(
-                    color: ShadColors.card,
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: ShadColors.cardBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(c['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay')),
-                          const SizedBox(height: 4),
-                          Text(_formatDate(c['created_at'] ?? c['start_date']),
-                            style: TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                        ])),
-                        StatusBadge(status: c['status'] ?? ''),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert, size: 18),
-                          onSelected: (action) {
-                            if (action == 'edit') _editContract(c);
-                            if (action == 'view') _showContractDetail(c);
-                            if (action == 'delete') _deleteContract(c['id']);
-                            if (action == 'archive') _action(c['id'], 'archive', destructive: true);
-                          },
-                          itemBuilder: (_) {
-                            final l10n = AppLocalizations.of(context)!;
-                            final items = <PopupMenuEntry<String>>[];
-                            if (c['status'] == 'draft' || c['status'] == 'edit_requested') {
-                              items.add(PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit, size: 18), title: Text(l10n.edit), dense: true)));
-                              items.add(PopupMenuItem(value: 'delete', child: ListTile(leading: const Icon(Icons.delete, size: 18, color: ShadColors.error), title: Text(l10n.delete, style: const TextStyle(color: ShadColors.error)), dense: true)));
-                            } else {
-                              items.add(PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.visibility, size: 18), title: Text(l10n.contractViewDetails), dense: true)));
-                            }
-                            if (c['status'] == 'company_approved') {
-                              items.add(PopupMenuItem(value: 'archive', child: ListTile(leading: const Icon(Icons.archive, size: 18), title: Text(l10n.archive), dense: true)));
-                            }
-                            return items;
-                          },
-                        ),
-                      ]),
-                      const SizedBox(height: 6),
-                      Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'PlayfairDisplay', color: ShadColors.gold)),
-                      if (_clientType == 'business')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(l10n.contractValueExclVat, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-                        ),
-                      if (actions.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.only(top: 8),
-                          decoration: const BoxDecoration(
-                            border: Border(top: BorderSide(color: ShadColors.cardBorder)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        LuxeKind(statusLabels(l10n)[status] ?? status),
+                        const SizedBox(height: 4),
+                        Text(c['title'] ?? '', style: Lx.text(context, size: 16)),
+                        Text(_formatDate(c['created_at'] ?? c['start_date']), style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                      ])),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 18, color: Lx.faint),
+                        color: Lx.sheet,
+                        onSelected: (action) {
+                          if (action == 'edit') _editContract(c);
+                          if (action == 'view') _showContractDetail(c);
+                          if (action == 'delete') _deleteContract(c['id']);
+                          if (action == 'archive') _action(c['id'], 'archive', destructive: true);
+                        },
+                        itemBuilder: (_) {
+                          final l10n = AppLocalizations.of(context)!;
+                          final items = <PopupMenuEntry<String>>[];
+                          if (c['status'] == 'draft' || c['status'] == 'edit_requested') {
+                            items.add(PopupMenuItem(value: 'edit', child: ListTile(leading: const Icon(Icons.edit, size: 18), title: Text(l10n.edit), dense: true)));
+                            items.add(PopupMenuItem(value: 'delete', child: ListTile(leading: const Icon(Icons.delete, size: 18, color: Lx.danger), title: Text(l10n.delete, style: const TextStyle(color: Lx.danger)), dense: true)));
+                          } else {
+                            items.add(PopupMenuItem(value: 'view', child: ListTile(leading: const Icon(Icons.visibility, size: 18), title: Text(l10n.contractViewDetails), dense: true)));
+                          }
+                          if (c['status'] == 'company_approved') {
+                            items.add(PopupMenuItem(value: 'archive', child: ListTile(leading: const Icon(Icons.archive, size: 18), title: Text(l10n.archive), dense: true)));
+                          }
+                          return items;
+                        },
+                      ),
+                    ]),
+                    const SizedBox(height: 8),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text.rich(TextSpan(children: [
+                        TextSpan(text: amt != null ? lxFormatMoney(amt) : '${c['value'] ?? 0}', style: Lx.display(context, size: 20)),
+                        TextSpan(text: ' ${c['currency'] as String? ?? 'SAR'}', style: Lx.text(context, size: 11, color: Lx.muted)),
+                      ])),
+                    ),
+                    if (_clientType == 'business')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(l10n.contractValueExclVat, style: Lx.text(context, size: 10.5, color: Lx.faint)),
+                      ),
+                    const SizedBox(height: 8),
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      LuxeStatusDot(status: dot),
+                      const SizedBox(width: 7),
+                      Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                    ]),
+                    if (actions.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: actions.map((a) {
+                        final isDestructive = a == 'archive' || a == 'complete';
+                        final isApprove = a == 'company-approve';
+                        final isSend = a == 'send';
+                        final label = isApprove
+                            ? AppLocalizations.of(context)!.companyApprove
+                            : isSend
+                                ? AppLocalizations.of(context)!.send
+                                : (isDestructive
+                                    ? (a == 'archive' ? AppLocalizations.of(context)!.archive : AppLocalizations.of(context)!.completeComplete)
+                                    : a);
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: LuxeButton(
+                              label: label,
+                              size: LuxeButtonSize.sm,
+                              kind: (isApprove || isSend) ? LuxeButtonKind.primary : LuxeButtonKind.outline,
+                              onPressed: isApprove ? () => _companyApproveWithSignature(c) : () => _action(c['id'], a, destructive: isDestructive),
+                            ),
                           ),
-                          child: Row(children: actions.map((a) {
-                            final isDestructive = a == 'archive' || a == 'complete';
-                            final isGold = a == 'company-approve';
-                            final isCrimson = a == 'send';
-                            String label;
-                            Color bgColor;
-                            Color textColor;
-                            Color borderColor;
-                            if (isGold) {
-                              label = AppLocalizations.of(context)!.companyApprove;
-                              bgColor = ShadColors.goldSoft;
-                              textColor = ShadColors.gold;
-                              borderColor = ShadColors.goldBorder;
-                            } else if (isCrimson) {
-                              label = AppLocalizations.of(context)!.send;
-                              bgColor = ShadColors.crimson;
-                              textColor = Colors.white;
-                              borderColor = ShadColors.crimson;
-                            } else {
-                              label = isDestructive
-                                ? (a == 'archive' ? AppLocalizations.of(context)!.archive : AppLocalizations.of(context)!.completeComplete)
-                                : a;
-                              bgColor = Colors.white.withAlpha(10);
-                              textColor = ShadColors.textSecondary;
-                              borderColor = ShadColors.inputBorder;
-                            }
-                            return Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2.5),
-                                child: GestureDetector(
-                                  onTap: isGold
-                                    ? () => _companyApproveWithSignature(c)
-                                    : () => _action(c['id'], a, destructive: isDestructive),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: bgColor,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: borderColor),
-                                    ),
-                                    child: Center(child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: textColor))),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList()),
-                        ),
-                      ],
+                        );
+                      }).toList()),
                     ],
-                  ),
+                  ],
                 ),
               );
-            },
-          ),
-        ),
-      if (_api.role != 'super_admin' && canManage)
-        Positioned(
-          bottom: 16,
-          left: 16,
-          right: 16,
-          child: GestureDetector(
-            onTap: () {
-              final isActive = _wsStatus == 'active';
-              ContractBuilder.show(context, isAdditional: isActive, onCreated: _load, api: _api, contractProvider: _contractProvider);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: ShadColors.crimson,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.add, size: 18, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  _wsStatus == 'active' ? l10n.contractExtraService : l10n.contractCreateMain,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
-                ),
-              ]),
-            ),
-          ),
-        ),
-    ]);
+            }),
+        ],
+      ),
+    );
   }
 }

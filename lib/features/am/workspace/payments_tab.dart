@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -185,7 +185,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
+              style: ElevatedButton.styleFrom(backgroundColor: Lx.danger),
               child: Text(l10n.reject),
             ),
           ],
@@ -203,7 +203,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: ShadColors.success),
+              style: ElevatedButton.styleFrom(backgroundColor: Lx.ok),
               child: Text(l10n.confirm),
             ),
           ],
@@ -247,15 +247,15 @@ class _PaymentsTabState extends State<PaymentsTab> {
           FloatingActionButton.small(
             heroTag: 'request',
             onPressed: _showRequestPaymentSheet,
-            backgroundColor: ShadColors.gold,
-            child: const Icon(Icons.request_quote, color: Colors.black, size: 20),
+            backgroundColor: Lx.crimson,
+            child: const Icon(Icons.request_quote, color: Colors.white, size: 20),
           ),
           const SizedBox(height: 8),
           FloatingActionButton(
             heroTag: 'schedule',
             onPressed: _showScheduleSheet,
-            backgroundColor: ShadColors.gold,
-            child: const Icon(Icons.add, color: Colors.black),
+            backgroundColor: Lx.crimson,
+            child: const Icon(Icons.add, color: Colors.white),
           ),
         ],
       ) : null,
@@ -274,23 +274,23 @@ class _PaymentsTabState extends State<PaymentsTab> {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: ShadColors.surfaceDarker,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: ShadColors.cardBorder),
+                color: Lx.page,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Lx.line2),
               ),
               child: Column(children: [
                 if (isFullyPaid) ...[
-                  const Icon(Icons.check_circle, size: 28, color: ShadColors.success),
+                  const Icon(Icons.check_circle, size: 28, color: Lx.ok),
                   const SizedBox(height: 6),
-                  Text(l10n.paymentsPaidInFull, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.success)),
+                  Text(l10n.paymentsPaidInFull, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Lx.ok)),
                   const SizedBox(height: 4),
-                  Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
+                  Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif)),
                 ] else ...[
-                  Text(l10n.paymentsTotalPaid, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
+                  Text(l10n.paymentsTotalPaid, style: const TextStyle(fontSize: 12, color: Lx.wait)),
                   const SizedBox(height: 6),
-                  Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
+                  Text('${_totalPaid.toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif)),
                   const SizedBox(height: 4),
-                  Text(l10n.paymentsRemainingSummary(grandTotal.toStringAsFixed(2), contractCur, (grandTotal - _totalPaid).toStringAsFixed(2)), style: const TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+                  Text(l10n.paymentsRemainingSummary(grandTotal.toStringAsFixed(2), contractCur, (grandTotal - _totalPaid).toStringAsFixed(2)), style: const TextStyle(fontSize: 11, color: Lx.faint)),
                 ],
                 const SizedBox(height: 10),
                 ClipRRect(
@@ -298,8 +298,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 6,
-                    backgroundColor: ShadColors.cardBorder,
-                    valueColor: AlwaysStoppedAnimation(isFullyPaid ? ShadColors.success : ShadColors.gold),
+                    backgroundColor: Lx.line2,
+                    valueColor: AlwaysStoppedAnimation(isFullyPaid ? Lx.ok : Lx.wait),
                   ),
                 ),
                 if (_taxSummary != null && _taxNum(_taxSummary!['tax_percentage']) > 0) ...[
@@ -308,21 +308,21 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: Colors.white.withAlpha(8), borderRadius: BorderRadius.circular(8)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.paymentsTaxDetails, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                      Text(l10n.paymentsTaxDetails, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Lx.wait)),
                       const SizedBox(height: 6),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(l10n.paymentsContractsValue, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                        Text(l10n.paymentsContractsValue, style: const TextStyle(fontSize: 11, color: Lx.muted)),
                         Text('${_taxNum(_taxSummary!['contracts_total']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 2),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])), style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                        Text('${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                        Text(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])), style: const TextStyle(fontSize: 11, color: Lx.muted)),
+                        Text('${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Lx.wait)),
                       ]),
-                      const Divider(height: 10, color: ShadColors.cardBorder),
+                      const Divider(height: 10, color: Lx.line2),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Text(l10n.paymentsTotalRow, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        Text('${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)),
+                        Text('${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $contractCur', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait)),
                       ]),
                     ]),
                   ),
@@ -338,7 +338,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
           final isOverdue = p['status'] == 'overdue';
           final isRejected = p['status'] == 'rejected';
           final isManagerScheduled = p['requested_by_manager'] == true;
-          final statusColor = isApproved ? ShadColors.success : isPending ? ShadColors.gold : isOverdue ? ShadColors.error : isRejected ? ShadColors.error : isScheduled ? ShadColors.gold : ShadColors.textDisabled;
+          final statusColor = isApproved ? Lx.ok : isPending ? Lx.wait : isOverdue ? Lx.danger : isRejected ? Lx.danger : isScheduled ? Lx.wait : Lx.faint;
           final statusText = isApproved ? l10n.paymentsStatusApproved : isPending ? l10n.paymentsStatusPending : isOverdue ? l10n.paymentsStatusOverdue : isRejected ? l10n.paymentsStatusRejected : isScheduled ? l10n.paymentsStatusScheduled : p['status'] ?? '';
 
           final methodLabels = {'bank_transfer': l10n.paymentsMethodBankTransfer, 'swift': l10n.paymentsMethodSwift, 'corporate_account': l10n.paymentsMethodCorporateAccount, 'instapay': l10n.paymentsMethodInstapay, 'vodafone_cash': l10n.paymentsMethodVodafoneCash, 'mobile_wallet': l10n.paymentsMethodMobileWallet, 'cheque': l10n.paymentsMethodCheque};
@@ -346,9 +346,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: ShadColors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isPending ? ShadColors.gold : isRejected ? ShadColors.error.withAlpha(100) : ShadColors.cardBorder, width: isPending ? 1.5 : 0.5),
+              color: Lx.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isPending ? Lx.wait : isRejected ? Lx.danger.withAlpha(100) : Lx.line2, width: isPending ? 1.5 : 0.5),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,10 +361,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
                       _formatDate(p['created_at'] as String?).isNotEmpty
                           ? '${_installmentLabel(_payments.length - i, l10n)}  •  ${_formatDate(p['created_at'] as String?)}'
                           : _installmentLabel(_payments.length - i, l10n),
-                      style: TextStyle(fontSize: 11, color: ShadColors.gold, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 11, color: Lx.wait, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
-                    Text('${p['amount'] ?? 0} ${p['currency'] as String? ?? 'SAR'}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
+                    Text('${p['amount'] ?? 0} ${p['currency'] as String? ?? 'SAR'}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif)),
                     const SizedBox(height: 4),
                     Row(children: [
                       Container(width: 6, height: 6, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
@@ -374,10 +374,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     if (p['due_date'] != null) ...[
                       const SizedBox(height: 4),
                       Row(children: [
-                        Icon(Icons.calendar_today, size: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary),
+                        Icon(Icons.calendar_today, size: 11, color: isOverdue ? Lx.danger : Lx.muted),
                         const SizedBox(width: 4),
                         Text(l10n.paymentsDueDateFormat(_formatDate(p['due_date'])),
-                          style: TextStyle(fontSize: 11, color: isOverdue ? ShadColors.error : ShadColors.textSecondary)),
+                          style: TextStyle(fontSize: 11, color: isOverdue ? Lx.danger : Lx.muted)),
                       ]),
                     ],
                     // payments-fixes-2-plan.md ت٢ — rejection_reason (why the
@@ -390,13 +390,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: ShadColors.error.withAlpha(20),
+                          color: Lx.danger.withAlpha(20),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: ShadColors.error.withAlpha(50)),
+                          border: Border.all(color: Lx.danger.withAlpha(50)),
                         ),
                         child: Text(
                           '${l10n.paymentsRejectionReason}: ${p['rejection_reason']}',
-                          style: const TextStyle(fontSize: 11, color: ShadColors.error),
+                          style: const TextStyle(fontSize: 11, color: Lx.danger),
                         ),
                       ),
                     ],
@@ -405,13 +405,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: ShadColors.card,
+                          color: Lx.surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: ShadColors.cardBorder),
+                          border: Border.all(color: Lx.line2),
                         ),
                         child: Text(
                           '${l10n.paymentDetail_notes}: ${p['notes']}',
-                          style: TextStyle(fontSize: 11, color: ShadColors.textSecondary),
+                          style: TextStyle(fontSize: 11, color: Lx.muted),
                         ),
                       ),
                     ],
@@ -419,7 +419,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 ),
 
                 // ── Divider ──
-                Divider(height: 1, color: ShadColors.cardBorder),
+                Divider(height: 1, color: Lx.line2),
 
                 // ── Bottom section ──
                 Padding(
@@ -430,7 +430,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(children: [
                           Text('💳 ', style: TextStyle(fontSize: 12)),
-                          Text(methodLabels[p['method_type']] ?? p['method_type'] ?? '', style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                          Text(methodLabels[p['method_type']] ?? p['method_type'] ?? '', style: TextStyle(fontSize: 12, color: Lx.muted)),
                         ]),
                       ),
                     if (p['contract'] is Map && p['contract']['title'] != null)
@@ -438,7 +438,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(children: [
                           Text('📄 ', style: TextStyle(fontSize: 12)),
-                          Text(p['contract']['title'], style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+                          Text(p['contract']['title'], style: TextStyle(fontSize: 12, color: Lx.muted)),
                         ]),
                       ),
                     if (p['proof_file_url'] != null)
@@ -459,7 +459,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                             },
                             child: Row(children: [
                               Text('📎 ', style: TextStyle(fontSize: 12)),
-                              Text(l10n.paymentsViewProof, style: TextStyle(fontSize: 12, color: ShadColors.gold)),
+                              Text(l10n.paymentsViewProof, style: TextStyle(fontSize: 12, color: Lx.wait)),
                             ]),
                           ),
                         ));
@@ -471,7 +471,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => _review(p['id'], 'approved'),
-                            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.success),
+                            style: ElevatedButton.styleFrom(backgroundColor: Lx.ok),
                             child: Text(l10n.approve),
                           ),
                         ),
@@ -479,7 +479,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => _review(p['id'], 'rejected'),
-                            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
+                            style: ElevatedButton.styleFrom(backgroundColor: Lx.danger),
                             child: Text(l10n.reject),
                           ),
                         ),
@@ -494,7 +494,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                             onPressed: () => _showEditScheduleSheet(p),
                             icon: const Icon(Icons.edit, size: 14),
                             label: Text(l10n.edit),
-                            style: OutlinedButton.styleFrom(foregroundColor: ShadColors.gold),
+                            style: OutlinedButton.styleFrom(foregroundColor: Lx.ink2),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -503,7 +503,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                             onPressed: () => _deleteSchedule(p['id']),
                             icon: const Icon(Icons.delete, size: 14),
                             label: Text(l10n.paymentsClear),
-                            style: OutlinedButton.styleFrom(foregroundColor: ShadColors.error),
+                            style: OutlinedButton.styleFrom(foregroundColor: Lx.danger),
                           ),
                         ),
                       ]),
@@ -534,8 +534,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
           final sheetL10n = AppLocalizations.of(ctx)!;
@@ -550,7 +551,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(sheetL10n.paymentsScheduleTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+                Text(sheetL10n.paymentsScheduleTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Lx.ink)),
                 const Spacer(),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
               ]),
@@ -564,7 +565,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
               if (hasSingleCurrency)
                 InputDecorator(
                   decoration: InputDecoration(labelText: sheetL10n.paymentsCurrency),
-                  child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                  child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.wait)),
                 )
               else ...[
                 DropdownButtonFormField<int>(
@@ -580,7 +581,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                   onChanged: (v) => setSheetState(() => selectedContractId = v),
                 ),
                 const SizedBox(height: 4),
-                Text(sheetL10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+                Text(sheetL10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: Lx.muted)),
               ],
               const SizedBox(height: 8),
               TextField(
@@ -640,7 +641,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                         dense: true,
                         contentPadding: EdgeInsets.zero,
                         leading: IconButton(
-                          icon: const Icon(Icons.delete, size: 18, color: ShadColors.error),
+                          icon: const Icon(Icons.delete, size: 18, color: Lx.danger),
                           onPressed: () => setSheetState(() => installments.removeAt(i)),
                         ),
                         title: Text(inst['installment_label'] ?? '', style: const TextStyle(fontSize: 12)),
@@ -658,8 +659,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     Navigator.pop(ctx);
                     await _schedulePayments(installments);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: ShadColors.gold),
-                  child: Text(sheetL10n.paymentsScheduleCount(installments.length), style: const TextStyle(color: Colors.black)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson),
+                  child: Text(sheetL10n.paymentsScheduleCount(installments.length), style: const TextStyle(color: Colors.white)),
                 ),
               ),
             ]),
@@ -710,7 +711,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
         content: Text(l10n.paymentsClearInstallmentConfirm),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error), child: Text(l10n.paymentsClear)),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), style: ElevatedButton.styleFrom(backgroundColor: Lx.danger), child: Text(l10n.paymentsClear)),
         ],
       ),
     );
@@ -735,13 +736,14 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l10n.paymentsEditInstallmentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+            Text(l10n.paymentsEditInstallmentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Lx.ink)),
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
@@ -784,8 +786,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     'installment_label': labelCtrl.text,
                   });
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: ShadColors.gold),
-                child: Text(l10n.saveChanges, style: const TextStyle(color: Colors.black)),
+                style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson),
+                child: Text(l10n.saveChanges, style: const TextStyle(color: Colors.white)),
               ),
             ),
           ]),
@@ -808,8 +810,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
@@ -818,12 +821,12 @@ class _PaymentsTabState extends State<PaymentsTab> {
           child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Text(l10n.paymentsRequestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
+              Text(l10n.paymentsRequestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Lx.ink)),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
             const SizedBox(height: 4),
-            Text(l10n.paymentsRequestHint, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+            Text(l10n.paymentsRequestHint, style: const TextStyle(fontSize: 12, color: Lx.muted)),
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
@@ -834,7 +837,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
             if (hasSingleCurrency)
               InputDecorator(
                 decoration: InputDecoration(labelText: l10n.paymentsCurrency),
-                child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+                child: Text(singleCurrency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.wait)),
               )
             else ...[
               DropdownButtonFormField<int>(
@@ -850,7 +853,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 onChanged: (v) => setSheetState(() => selectedContractId = v),
               ),
               const SizedBox(height: 4),
-              Text(l10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
+              Text(l10n.paymentsMultiCurrencyContractHint, style: const TextStyle(fontSize: 11, color: Lx.muted)),
             ],
             const SizedBox(height: 8),
             TextField(
@@ -867,8 +870,8 @@ class _PaymentsTabState extends State<PaymentsTab> {
                   Navigator.pop(ctx);
                   await _requestPayment(amount, _resolvedCurrencyFor(selectedContractId), noteCtrl.text, contractId: selectedContractId);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: ShadColors.gold),
-                child: Text(l10n.paymentsSendRequest, style: const TextStyle(color: Colors.black)),
+                style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson),
+                child: Text(l10n.paymentsSendRequest, style: const TextStyle(color: Colors.white)),
               ),
             ),
           ]),

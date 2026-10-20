@@ -6,16 +6,17 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/reverb_service.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/helpers/realtime_poller.dart';
-import '../../../core/widgets/client_type_badge.dart';
-import '../../../core/widgets/payment_banner.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/meeting_provider.dart';
+import '../../chat/chat_page_widgets.dart' show LxMeetingBanner, LxPaymentBanner;
 import '../../chat/chat_shared.dart';
 import 'chat_tab_widgets.dart';
 
@@ -281,6 +282,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final alreadyRequested = m['requires_action'] == true;
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet))),
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return SafeArea(
@@ -309,7 +312,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               ),
             if (!alreadyRequested && !isSA && _api.canDo('can_manage_approvals'))
               ListTile(
-                leading: const Icon(Icons.how_to_reg, color: ShadColors.primary),
+                leading: const Icon(Icons.how_to_reg, color: Lx.crimsonInk),
                 title: Text(l10n.chatRequestClientApproval),
                 subtitle: Text(l10n.chatApprovalRequestedHint),
                 onTap: () {
@@ -319,11 +322,11 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               )
             else if (alreadyRequested)
               ListTile(
-                leading: const Icon(Icons.check_circle, color: ShadColors.success),
+                leading: const Icon(Icons.check_circle, color: Lx.ok),
                 title: Text(l10n.chatApprovalAlreadyRequested),
               ),
             ListTile(
-              leading: const Icon(Icons.info_outline, color: ShadColors.textSecondary),
+              leading: const Icon(Icons.info_outline, color: Lx.muted),
               title: Text(l10n.chatMessageDetails),
               subtitle: Text('${m['message'] ?? l10n.chatNoText}'),
               onTap: () => Navigator.pop(ctx),
@@ -359,7 +362,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        backgroundColor: Lx.sheet,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet))),
         builder: (_) => ContractsSheet(contracts: contracts),
       );
     } catch (e, s) {
@@ -471,7 +475,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     final l10n = AppLocalizations.of(context)!;
     final isSA = _api.role == 'super_admin';
     final clientName = _workspaceData?['client']?['contact_person'] as String? ?? l10n.chatClient;
-    final clientAvatarUrl = _workspaceData?['client']?['avatar_url'] as String?;
     final clientOnline = chatIsOnline(_workspaceData?['client']);
     final wsActive = widget.wsStatus == 'active';
 
@@ -482,10 +485,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock, size: 48, color: ShadColors.textDisabled),
+              const LxIcon('lock', size: 44, color: Lx.faint),
               const SizedBox(height: 16),
               Text(l10n.chatWorkspaceLocked,
-                style: const TextStyle(fontSize: 14, color: ShadColors.textSecondary),
+                style: Lx.text(context, size: 14, color: Lx.muted),
                 textAlign: TextAlign.center),
             ],
           ),
@@ -493,259 +496,197 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       );
     }
 
+    Widget headerBtn(String key, IconData icon, VoidCallback onTap) => InkResponse(
+          key: ValueKey(key),
+          onTap: onTap,
+          radius: 20,
+          child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 18, color: Lx.muted)),
+        );
+
     return Column(children: [
-      // Chat Header
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: const BoxDecoration(
-          color: ShadColors.chatHeaderBg,
-          border: Border(bottom: BorderSide(color: ShadColors.cardBorder)),
-        ),
+      // Slim header (the mockup has none; kept so the contracts list and the
+      // latest meeting link stay reachable).
+      Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 10, 6),
         child: Row(children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: ShadColors.goldSoft,
-                backgroundImage: clientAvatarUrl != null ? NetworkImage(_api.resolveFileUrl(clientAvatarUrl)) : null,
-                child: clientAvatarUrl == null ? Text(chatInitials(clientName),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold)) : null,
-              ),
-              Positioned(
-                bottom: 0, right: 0,
-                  child: Container(
-                    width: 9, height: 9,
-                    decoration: BoxDecoration(
-                      color: clientOnline ? ShadColors.online : ShadColors.textDisabled,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: ShadColors.chatHeaderBg, width: 1.5),
-                    ),
-                  ),
-              ),
-            ],
+          LuxeStatusDot(status: clientOnline ? LxStatus.ok : LxStatus.off),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: clientName, style: Lx.text(context, size: 13, weight: FontWeight.w500)),
+                TextSpan(text: '  ${clientOnline ? l10n.chatOnline : l10n.chatOffline}', style: Lx.text(context, size: 11, color: Lx.faint)),
+              ]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Flexible(child: Text(clientName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary))),
-              const SizedBox(width: 6),
-              ClientTypeBadge(clientType: _workspaceData?['client']?['client_type'] as String?, compact: true),
-            ]),
-            const SizedBox(height: 1),
-            Text(clientOnline ? l10n.chatOnline : l10n.chatOffline,
-              style: TextStyle(fontSize: 10, color: clientOnline ? ShadColors.online : ShadColors.textDisabled)),
-          ])),
           // Staff may not read contracts (the backend refuses), so no button.
-          if (!_api.isStaffMember) ...[
-            chatHeaderIconBtn(Icons.copy_outlined, _openContracts),
-            const SizedBox(width: 6),
-          ],
-          chatHeaderIconBtn(Icons.videocam_outlined, _openLatestZoomLink),
+          if (!_api.isStaffMember) headerBtn('chat-contracts', Icons.copy_outlined, _openContracts),
+          headerBtn('chat-zoom', Icons.videocam_outlined, _openLatestZoomLink),
         ]),
       ),
-      // Upcoming Meeting Banner
-      if (_nextMeeting != null) chatUpcomingMeetingBanner(
-        meeting: _nextMeeting!,
-        fallbackTitle: l10n.chatUpcomingMeeting,
-        inMinutesLabel: l10n.chatInMinutes,
-        inHoursLabel: l10n.chatInHours,
-        inDaysLabel: l10n.chatInDays,
-        joinLabel: l10n.chatJoin,
-        onTap: () => _enterMeeting(_nextMeeting!),
-      ),
-      // Upcoming Payment Banner
-      if (_nextPayment != null)
-        PaymentBanner(
-          payment: _nextPayment!,
-          onTap: () => _onPaymentBannerTap(_nextPayment!),
-        ),
       // Messages
       Expanded(
         child: _loading
-          ? ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: 4,
-              itemBuilder: (_, __) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: 200,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: ShadColors.chatBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: ShadColors.cardBorder, width: 0.5)),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Container(height: 14, width: 140, decoration: BoxDecoration(color: ShadColors.cardBorder, borderRadius: BorderRadius.circular(6))),
-                      const SizedBox(height: 8),
-                      Container(height: 12, width: 100, decoration: BoxDecoration(color: ShadColors.cardBorder, borderRadius: BorderRadius.circular(6))),
-                    ]),
-                  ),
-                ),
-              ),
-            )
-          : _messages.isEmpty
-              ? Center(child: Text(AppLocalizations.of(context)!.noMessagesYet, style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)))
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(14),
-                  itemCount: _buildMessageList().length,
-                  itemBuilder: (_, i) => _buildMessageList()[i],
-                ),
+          ? const Center(child: CircularProgressIndicator(color: Lx.crimsonInk))
+          : ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+              itemCount: _messages.isEmpty ? 1 : _buildMessageList().length,
+              itemBuilder: (_, i) {
+                if (_messages.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 60),
+                    child: Center(child: Text(AppLocalizations.of(context)!.noMessagesYet, style: Lx.text(context, size: 14, color: Lx.muted))),
+                  );
+                }
+                return _buildMessageList()[i];
+              },
+            ),
       ),
-      // SA Read-Only Indicator
+      // Banners sit above the composer so the stream keeps the room.
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(children: [
+          if (_nextMeeting != null)
+            LxMeetingBanner(meeting: _nextMeeting!, canJoin: !isSA, onTap: () => _enterMeeting(_nextMeeting!)),
+          if (_nextPayment != null)
+            LxPaymentBanner(payment: _nextPayment!, onTap: () => _onPaymentBannerTap(_nextPayment!)),
+        ]),
+      ),
+      // SA Read-Only Indicator (mockup `.viewonly`)
       if (isSA)
         Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            color: ShadColors.chatHeaderBg,
-            border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.visibility, size: 14, color: ShadColors.textSecondary),
+            const LxIcon('lock', size: 14, color: Lx.faint),
             const SizedBox(width: 8),
-            Text(l10n.chatReadOnly, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+            Text(l10n.chatReadOnly, style: Lx.text(context, size: 12.5, color: Lx.faint)),
           ]),
         ),
       // Input Bar (AM, or an assistant with can_chat)
       if (!isSA && _api.canDo('can_chat'))
         Container(
-          decoration: const BoxDecoration(
-            color: ShadColors.chatHeaderBg,
-            border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-          ),
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
+            // Mockup `.rq`: ring + "request client approval".
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _requestApproval = !_requestApproval),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 2),
                 child: Row(children: [
-                  Icon(
-                    _requestApproval ? Icons.check_circle : Icons.circle_outlined,
-                    size: 16,
-                    color: _requestApproval ? ShadColors.gold : ShadColors.textSecondary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.chatRequestClientApproval,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: _requestApproval ? FontWeight.w700 : FontWeight.w400,
-                      color: _requestApproval ? ShadColors.gold : ShadColors.textSecondary,
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _requestApproval ? Lx.crimson : null,
+                      border: Border.all(color: _requestApproval ? Lx.crimson : Lx.faint, width: 1.5),
                     ),
+                    child: _requestApproval ? const Icon(Icons.check, size: 11, color: Colors.white) : null,
                   ),
+                  const SizedBox(width: 8),
+                  Text(l10n.chatRequestClientApproval, style: Lx.text(context, size: 12, color: _requestApproval ? Lx.ink : Lx.muted)),
                 ]),
               ),
             ),
             if (_replyTo != null)
-              Container(
-                padding: const EdgeInsetsDirectional.fromSTEB(14, 7, 14, 7),
-                decoration: const BoxDecoration(
-                  color: ShadColors.chatHeaderBg,
-                  border: Border(top: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-                ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 7, 16, 7),
                 child: Row(children: [
-                  Container(width: 2.5, height: 26, decoration: BoxDecoration(
-                    color: ShadColors.crimson, borderRadius: BorderRadius.circular(2),
-                  )),
+                  Container(width: 2.5, height: 28, decoration: BoxDecoration(color: Lx.crimsonInk, borderRadius: BorderRadius.circular(2))),
                   const SizedBox(width: 8),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_replyTo!['sender']?['name'] ?? l10n.chatMessage, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: ShadColors.crimson)),
-                    Text(_replyTo!['message'] ?? '', style: const TextStyle(fontSize: 9.5, color: ShadColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(_replyTo!['sender']?['name'] ?? l10n.chatMessage, style: Lx.text(context, size: 10.5, color: Lx.crimsonInk, weight: FontWeight.w500)),
+                    Text(_replyTo!['message'] ?? '', style: Lx.text(context, size: 11, color: Lx.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ])),
                   GestureDetector(
                     onTap: () => setState(() => _replyTo = null),
-                    child: const Text('✕', style: TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
+                    child: const Icon(Icons.close, size: 16, color: Lx.faint),
                   ),
                 ]),
               ),
             if (_editingMessage != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(children: [
-                  const Icon(Icons.edit, size: 14, color: ShadColors.gold),
+                  const Icon(Icons.edit, size: 14, color: Lx.crimsonInk),
                   const SizedBox(width: 6),
-                  Text(l10n.chatEditMessage, style: const TextStyle(fontSize: 12, color: ShadColors.gold)),
+                  Text(l10n.chatEditMessage, style: Lx.text(context, size: 12, color: Lx.crimsonInk)),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => setState(() { _editingMessage = null; _controller.clear(); }),
-                    child: const Icon(Icons.close, size: 16, color: ShadColors.textSecondary),
+                    child: const Icon(Icons.close, size: 16, color: Lx.faint),
                   ),
                 ]),
               ),
             // Staff without "send" on this client can read but not write (PLAN_2 ق٣).
             if (!_api.staffCan('can_send_chat'))
               Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(13, 6, 13, 12),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 16, 14),
                 child: Text(
                   l10n.chatStaffReadOnly,
                   key: const ValueKey('chat-read-only'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary),
+                  style: Lx.text(context, size: 12.5, color: Lx.faint),
                 ),
               )
             else
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(13, 0, 13, 9),
-              child: Row(children: [
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color: ShadColors.overlayFaint,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: ShadColors.cardBorder, width: 0.5),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 16, 10),
+                child: Row(children: [
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                      child: Row(children: [
+                        InkResponse(
+                          key: const ValueKey('chat-attach'),
+                          radius: 18,
+                          onTap: _editingMessage != null ? null : _sendWithAttachment,
+                          child: const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: LxIcon('clip', size: 18, color: Lx.faint)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            style: Lx.text(context, size: 14),
+                            cursorColor: Lx.crimsonInk,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                              hintText: _editingMessage != null ? l10n.chatEditYourMessage : l10n.typeMessage,
+                              hintStyle: Lx.text(context, size: 14, color: Lx.faint),
+                            ),
+                            onSubmitted: (_) => _editingMessage != null ? _saveEdit() : _send(),
+                          ),
+                        ),
+                      ]),
+                    ),
                   ),
-                  child: IconButton(
-                    icon: const Icon(Icons.attach_file, size: 14),
-                    onPressed: _editingMessage != null ? null : _sendWithAttachment,
-                    color: ShadColors.textSecondary,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
-                    decoration: InputDecoration(
-                      hintText: _editingMessage != null ? l10n.chatEditYourMessage : l10n.typeMessage,
-                      hintStyle: const TextStyle(fontSize: 12, color: ShadColors.textDim),
-                      filled: true,
-                      fillColor: ShadColors.chatInputFill,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: ShadColors.overlaySoft, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: ShadColors.gold, width: 1),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    key: const ValueKey('chat-send'),
+                    onTap: _editingMessage != null ? _saveEdit : _send,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
+                      child: Center(
+                        child: _editingMessage != null
+                            ? const Icon(Icons.check, size: 18, color: Colors.white)
+                            : const LxIcon('send', size: 18, color: Colors.white),
                       ),
                     ),
-                    onSubmitted: (_) => _editingMessage != null ? _saveEdit() : _send(),
                   ),
-                ),
-                const SizedBox(width: 7),
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color: _editingMessage != null ? ShadColors.gold : ShadColors.crimson,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _editingMessage != null ? Icons.check : Icons.send_rounded,
-                      color: Colors.white, size: 14,
-                    ),
-                    onPressed: _editingMessage != null ? _saveEdit : _send,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ]),
-            ),
+                ]),
+              ),
           ]),
         ),
     ]);

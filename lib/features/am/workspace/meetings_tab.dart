@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -55,8 +56,9 @@ class _MeetingsTabState extends State<MeetingsTab> {
   void _showCreateSheet() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _CreateMeetingForm(
         workspaceId: widget.workspaceId,
         onCreated: _load,
@@ -69,8 +71,9 @@ class _MeetingsTabState extends State<MeetingsTab> {
   void _showEditSheet(dynamic m) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Lx.sheet,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _EditMeetingForm(
         meeting: m,
         workspaceId: widget.workspaceId,
@@ -91,7 +94,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.meetingKeep)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: Lx.danger),
             child: Text(l10n.meetingCancelTitle, style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -120,7 +123,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.meetingBack)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.success),
+            style: ElevatedButton.styleFrom(backgroundColor: Lx.ok),
             child: Text(l10n.meetingCompleteConfirm, style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -233,48 +236,48 @@ class _MeetingsTabState extends State<MeetingsTab> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.videocam, size: 20, color: ShadColors.primary),
+            const Icon(Icons.videocam, size: 20, color: Lx.crimson),
             const SizedBox(width: 8),
             Expanded(child: Text(m['title'] ?? '', style: ShadTypography.cardTitle)),
             if (m['status'] != null) StatusBadge(status: m['status']),
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            const Icon(Icons.schedule, size: 14, color: ShadColors.textSecondary),
+            const Icon(Icons.schedule, size: 14, color: Lx.muted),
             const SizedBox(width: 4),
-            Text(_formatDate(m['scheduled_at']), style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+            Text(_formatDate(m['scheduled_at']), style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
             if (m['duration_minutes'] != null) ...[
               const SizedBox(width: 12),
-              const Icon(Icons.timer, size: 14, color: ShadColors.textSecondary),
+              const Icon(Icons.timer, size: 14, color: Lx.muted),
               const SizedBox(width: 4),
-              Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+              Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
             ],
           ]),
           if (m['notes'] != null) ...[
             const SizedBox(height: 6),
-            Text(m['notes'], style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+            Text(m['notes'], style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
           ],
           if (m['contract'] != null) ...[
             const SizedBox(height: 8),
             Row(children: [
-              const Icon(Icons.description, size: 14, color: ShadColors.textSecondary),
+              const Icon(Icons.description, size: 14, color: Lx.muted),
               const SizedBox(width: 4),
-              Text('${l10n.meetingContract}: ${m['contract']['title'] ?? m['contract']['reference_no'] ?? ''}', style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+              Text('${l10n.meetingContract}: ${m['contract']['title'] ?? m['contract']['reference_no'] ?? ''}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
             ]),
           ],
           if (m['passcode'] != null) ...[
             const SizedBox(height: 6),
             Row(children: [
-              const Icon(Icons.lock, size: 14, color: ShadColors.textSecondary),
+              const Icon(Icons.lock, size: 14, color: Lx.muted),
               const SizedBox(width: 4),
-              Text('${l10n.meetingPasscode}: ${m['passcode']}', style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+              Text('${l10n.meetingPasscode}: ${m['passcode']}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
               const SizedBox(width: 6),
               InkWell(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: m['passcode']));
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.meetingPasscodeCopied)])));
                 },
-                child: const Icon(Icons.copy, size: 14, color: ShadColors.primary),
+                child: const Icon(Icons.copy, size: 14, color: Lx.crimson),
               ),
             ]),
           ],
@@ -370,8 +373,8 @@ class _MeetingsTabState extends State<MeetingsTab> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _completeMeeting(m),
-                  icon: const Icon(Icons.check_circle_outline, size: 15, color: ShadColors.success),
-                  label: Text(l10n.meetingDone, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ShadColors.success)),
+                  icon: const Icon(Icons.check_circle_outline, size: 15, color: Lx.ok),
+                  label: Text(l10n.meetingDone, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Lx.ok)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -382,8 +385,8 @@ class _MeetingsTabState extends State<MeetingsTab> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _cancelMeeting(m),
-                  icon: const Icon(Icons.cancel_outlined, size: 15, color: ShadColors.error),
-                  label: Text(l10n.cancel, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ShadColors.error)),
+                  icon: const Icon(Icons.cancel_outlined, size: 15, color: Lx.danger),
+                  label: Text(l10n.cancel, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Lx.danger)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

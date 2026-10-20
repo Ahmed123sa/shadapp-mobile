@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -185,13 +186,13 @@ class _CalendarTabState extends State<CalendarTab> {
 
   Color _eventColor(dynamic e) {
     switch (e['type']) {
-      case 'meeting': return ShadColors.primary;
-      case 'contract_start': return ShadColors.success;
-      case 'contract_deadline': return ShadColors.error;
+      case 'meeting': return Lx.crimson;
+      case 'contract_start': return Lx.ok;
+      case 'contract_deadline': return Lx.danger;
       case 'contract': return ShadColors.sent;
       case 'approval': return ShadColors.calendarMeeting;
-      case 'payment': return ShadColors.gold;
-      default: return ShadColors.textSecondary;
+      case 'payment': return Lx.wait;
+      default: return Lx.muted;
     }
   }
 
@@ -233,13 +234,13 @@ class _CalendarTabState extends State<CalendarTab> {
       Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
         child: Row(children: [
-          _legendDot(ShadColors.primary, l10n.calendarMeeting),
+          _legendDot(Lx.crimson, l10n.calendarMeeting),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.success, l10n.calendarContractStartLegend),
+          _legendDot(Lx.ok, l10n.calendarContractStartLegend),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.error, l10n.calendarContractEndLegend),
+          _legendDot(Lx.danger, l10n.calendarContractEndLegend),
           const SizedBox(width: 12),
-          _legendDot(ShadColors.gold, l10n.calendarPayment),
+          _legendDot(Lx.wait, l10n.calendarPayment),
           const SizedBox(width: 12),
           _legendDot(ShadColors.calendarMeeting, l10n.calendarApproval),
         ]),
@@ -247,7 +248,7 @@ class _CalendarTabState extends State<CalendarTab> {
       Expanded(
         child: _events.isEmpty
           ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.calendar_month_outlined, size: 56, color: ShadColors.textDisabled),
+              const Icon(Icons.calendar_month_outlined, size: 56, color: Lx.faint),
               const SizedBox(height: 12),
               Text(l10n.calendarEmpty, style: ShadTypography.emptyTitle),
             ]))
@@ -267,7 +268,7 @@ class _CalendarTabState extends State<CalendarTab> {
                           child: Icon(_eventIcon(e), size: 18, color: _eventColor(e)),
                         ),
                         title: Text(e['title'] ?? '', style: ShadTypography.cardTitle),
-                        subtitle: Text(_formatDate(e['date'], l10n), style: ShadTypography.caption.copyWith(color: ShadColors.textSecondary)),
+                        subtitle: Text(_formatDate(e['date'], l10n), style: ShadTypography.caption.copyWith(color: Lx.muted)),
                       ),
                     )),
                     const SizedBox(height: 12),
@@ -283,7 +284,7 @@ class _CalendarTabState extends State<CalendarTab> {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+      Text(label, style: TextStyle(fontSize: 10, color: Lx.muted, fontFamily: Lx.sans)),
     ]);
   }
 

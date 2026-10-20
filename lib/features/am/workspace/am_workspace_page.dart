@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/reverb_service.dart';
 import '../../../data/staff_permissions.dart';
@@ -172,102 +174,107 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
     // SafeArea(top: false): keeps the chat composer (and every tab's bottom
     // controls) above the Android gesture bar / iOS home indicator.
     return Scaffold(
-      body: SafeArea(top: false, child: Column(children: [
-        // ── Compact Header ──
-        Container(
-          color: ShadColors.surfaceDarker,
-          padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 8),
-          child: Row(children: [
-            Stack(clipBehavior: Clip.none, children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: ShadColors.crimson.withAlpha(40),
-                backgroundImage: _clientAvatar != null && _clientAvatar!.isNotEmpty ? NetworkImage(_clientAvatar!) : null,
-                child: _clientAvatar == null || _clientAvatar!.isEmpty
-                    ? Text((_wsContactPerson ?? '?').substring(0, 1), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.crimson))
-                    : null,
+      backgroundColor: Lx.page,
+      body: SafeArea(top: false, child: LuxeGlow(child: Column(children: [
+        // ── Header (mockup `.wsh`) ──
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 14, 10),
+            child: Row(children: [
+              InkResponse(
+                key: const ValueKey('ws-back'),
+                onTap: () => Navigator.pop(context),
+                radius: 22,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+                  child: const Center(child: LxIcon('back', size: 16, color: Lx.muted)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (_clientAvatar != null && _clientAvatar!.isNotEmpty)
+                CircleAvatar(radius: 16, backgroundImage: NetworkImage(_clientAvatar!))
+              else
+                LuxeAvatar(initial: (_wsName ?? _wsContactPerson ?? '?').isEmpty ? '?' : (_wsName ?? _wsContactPerson ?? '?').substring(0, 1).toUpperCase()),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Flexible(child: Text(_wsName ?? 'Workspace', maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.display(context, size: 16))),
+                    const SizedBox(width: 6),
+                    ClientTypeBadge(clientType: _clientType, compact: true),
+                  ]),
+                  if (_wsContactPerson != null)
+                    Text(_wsContactPerson!, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                ]),
+              ),
+              Container(
+                key: const ValueKey('ws-status'),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Lx.rPill),
+                  border: Border.all(color: isActive ? const Color(0x668FB98B) : Lx.line2),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  LuxeStatusDot(status: isActive ? LxStatus.ok : LxStatus.off),
+                  const SizedBox(width: 6),
+                  Text(isActive ? l10n.amStatusActive : l10n.amStatusInactive, style: Lx.text(context, size: 11, color: Lx.ink2)),
+                ]),
               ),
             ]),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Flexible(child: Text(_wsName ?? 'Workspace', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, fontFamily: 'PlayfairDisplay'))),
-                  const SizedBox(width: 6),
-                  ClientTypeBadge(clientType: _clientType, compact: true),
-                ]),
-                if (_wsContactPerson != null)
-                  Text(_wsContactPerson!, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
-              ]),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-              decoration: BoxDecoration(
-                color: isActive ? ShadColors.success.withAlpha(25) : ShadColors.crimson.withAlpha(25),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isActive ? ShadColors.success.withAlpha(80) : ShadColors.crimson.withAlpha(80)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: isActive ? ShadColors.success : ShadColors.crimson, shape: BoxShape.circle)),
-                const SizedBox(width: 4),
-                Text(isActive ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isActive ? ShadColors.success : ShadColors.crimson)),
-              ]),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(color: ShadColors.card, borderRadius: BorderRadius.circular(8), border: Border.all(color: ShadColors.cardBorder)),
-                child: const Icon(Icons.keyboard_arrow_left, size: 20, color: ShadColors.textSecondary),
-              ),
-            ),
-          ]),
-        ),
-        // ── Tab Bar ──
-        if (_visibleTabs.isNotEmpty)
-        Container(
-          color: ShadColors.surfaceDarker,
-          child: TabBar(
-            controller: _tabController,
-            // Nine tabs (account manager / super admin) no longer fit on one
-            // line; the shorter sets keep the evenly-spread layout.
-            isScrollable: _visibleTabs.length > 8,
-            tabAlignment: _visibleTabs.length > 8 ? TabAlignment.start : null,
-            indicatorColor: ShadColors.gold,
-            indicatorWeight: 2.5,
-            labelColor: ShadColors.textPrimary,
-            unselectedLabelColor: ShadColors.textSecondary,
-            labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontSize: 11),
-            tabs: [
-              for (final i in _visibleTabs)
-                Tab(text: [
-                  l10n.workspaceTabChat,
-                  l10n.workspaceTabFiles,
-                  l10n.workspaceTabContracts,
-                  l10n.workspaceTabPayments,
-                  l10n.workspaceTabApprovals,
-                  l10n.workspaceTabMeetings,
-                  l10n.workspaceTabLog,
-                  l10n.workspaceTabClientProfile,
-                  l10n.workspaceTabTeam,
-                ][i]),
-            ],
           ),
         ),
+        // ── Tab Bar (mockup `.tabsx`) ──
+        if (_visibleTabs.isNotEmpty)
+          Container(
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line))),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+              indicatorColor: Lx.crimsonInk,
+              indicatorWeight: 2,
+              indicatorSize: TabBarIndicatorSize.label,
+              dividerColor: Colors.transparent,
+              overlayColor: WidgetStateProperty.all(Colors.transparent),
+              labelColor: Lx.ink,
+              unselectedLabelColor: Lx.muted,
+              labelStyle: Lx.text(context, size: 12.5),
+              unselectedLabelStyle: Lx.text(context, size: 12.5),
+              tabs: [
+                for (final i in _visibleTabs)
+                  Tab(
+                    height: 40,
+                    text: [
+                      l10n.workspaceTabChat,
+                      l10n.workspaceTabFiles,
+                      l10n.workspaceTabContracts,
+                      l10n.workspaceTabPayments,
+                      l10n.workspaceTabApprovals,
+                      l10n.workspaceTabMeetings,
+                      l10n.workspaceTabLog,
+                      l10n.workspaceTabClientProfile,
+                      l10n.workspaceTabTeam,
+                    ][i],
+                  ),
+              ],
+            ),
+          ),
         // ── Tab Content ──
         Expanded(
           child: _visibleTabs.isEmpty
               // A staff member with nothing viewable on this client.
-              ? Center(child: Text(l10n.mtNone, key: const ValueKey('workspace-no-access'), style: const TextStyle(color: ShadColors.textSecondary)))
+              ? Center(child: Text(l10n.mtNone, key: const ValueKey('workspace-no-access'), style: Lx.text(context, size: 14, color: Lx.muted)))
               : IndexedStack(
                   index: _tabController.index,
                   children: [for (final i in _visibleTabs) _tabChild(i)],
                 ),
         ),
-      ])),
+      ]))),
     );
   }
 
