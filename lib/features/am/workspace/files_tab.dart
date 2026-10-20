@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -234,10 +235,16 @@ class _FilesTabState extends State<FilesTab> {
               if (!isSA)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: OutlinedButton.icon(
-                    onPressed: _addDefinition,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(l10n.filesAddDefinitionTitle),
+                  // Not in the mockup (required-document definitions are a
+                  // real feature); styled as the mockup's outline `.btn.lg`.
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: LuxeButton(
+                      label: l10n.filesAddDefinitionTitle,
+                      lxIcon: 'plus',
+                      size: LuxeButtonSize.lg,
+                      onPressed: _addDefinition,
+                    ),
                   ),
                 ),
               if (_definitions.isNotEmpty) ...[
@@ -261,11 +268,11 @@ class _FilesTabState extends State<FilesTab> {
                           ),
                         if (!isSA) ...[
                           const SizedBox(width: 6),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 18, color: Lx.danger),
-                            onPressed: () => _deleteDefinition(d['id']),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                          InkResponse(
+                            key: ValueKey('file-def-delete-${d['id']}'),
+                            onTap: () => _deleteDefinition(d['id']),
+                            radius: 18,
+                            child: const SizedBox(width: 32, height: 32, child: Center(child: LxIcon('trash', size: 17, color: Lx.danger))),
                           ),
                         ],
                       ]),
@@ -300,6 +307,11 @@ class _FilesTabState extends State<FilesTab> {
                   final fileSize = _formatFileSize(f['file_size']);
                   final fileType = (f['file_type'] as String? ?? '').toUpperCase();
                   final name = f['name'] ?? '';
+                  // Mockup `.fs`: "uploader · date · size".
+                  final uploader = f['uploaded_by'] is Map ? (f['uploaded_by'] as Map)['name']?.toString() : null;
+                  final created = DateTime.tryParse(f['created_at']?.toString() ?? '')?.toLocal();
+                  final dateText = created == null ? null : DateFormat('d MMM', Localizations.localeOf(context).toString()).format(created);
+                  final meta = [uploader, dateText, fileSize].where((e) => e != null && e.isNotEmpty).join(' · ');
                   Future<void> open() async {
                     if (f['file_url'] == null) return;
                     final uri = Uri.tryParse(_api.resolveFileUrl(f['file_url'] as String));
@@ -328,7 +340,7 @@ class _FilesTabState extends State<FilesTab> {
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('$name', style: Lx.text(context, size: 13.5), overflow: TextOverflow.ellipsis),
-                          if (fileSize.isNotEmpty) Text(fileSize, style: Lx.text(context, size: 11, color: Lx.faint)),
+                          if (meta.isNotEmpty) Text(meta, style: Lx.text(context, size: 11, color: Lx.faint)),
                           if (status.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
@@ -341,19 +353,23 @@ class _FilesTabState extends State<FilesTab> {
                         ]),
                       ),
                       if (f['status'] == 'pending' && canReviewFile(f)) ...[
-                        IconButton(
-                          icon: const Icon(Icons.check, color: Lx.ok),
-                          onPressed: () => _reviewFile(f['id'], 'approved'),
+                        InkResponse(
+                          key: ValueKey('file-approve-${f['id']}'),
+                          onTap: () => _reviewFile(f['id'], 'approved'),
+                          radius: 20,
+                          child: const SizedBox(width: 38, height: 38, child: Center(child: Icon(Icons.check, size: 18, color: Lx.ok))),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Lx.danger),
-                          onPressed: () => _reviewFile(f['id'], 'rejected'),
+                        InkResponse(
+                          key: ValueKey('file-reject-${f['id']}'),
+                          onTap: () => _reviewFile(f['id'], 'rejected'),
+                          radius: 20,
+                          child: const SizedBox(width: 38, height: 38, child: Center(child: Icon(Icons.close, size: 18, color: Lx.danger))),
                         ),
                       ] else if (f['file_url'] != null)
                         InkResponse(
                           onTap: open,
                           radius: 20,
-                          child: const SizedBox(width: 38, height: 38, child: Center(child: LxIcon('down', size: 19, color: Lx.muted))),
+                          child: const SizedBox(width: 38, height: 38, child: Center(child: LxIcon('down', size: 18, color: Lx.muted))),
                         ),
                     ]),
                   );

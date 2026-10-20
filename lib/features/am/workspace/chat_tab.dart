@@ -8,9 +8,7 @@ import '../../../core/app_log.dart';
 import '../../../core/reverb_service.dart';
 import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
-import '../../../core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/helpers/realtime_poller.dart';
 import '../../../core/widgets/payment_detail_sheet.dart';
 import '../../../providers/chat_provider.dart';
@@ -62,7 +60,6 @@ class ChatTab extends StatefulWidget {
 class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
-  late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
@@ -81,7 +78,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   });
   int _pollTick = 0;
-  Map<String, dynamic>? _workspaceData;
   Map<String, dynamic>? _nextMeeting;
   Map<String, dynamic>? _nextPayment;
   Map<int, int?> _hostByMeetingId = {};
@@ -162,7 +158,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       final np = data['nextPayment'] as Map<String, dynamic>?;
       if (mounted) {
         setState(() {
-          _workspaceData = data['workspace'] as Map<String, dynamic>?;
           _nextMeeting = nm;
           _nextPayment = np;
         });
@@ -353,24 +348,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _openContracts() async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    try {
-      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
-      if (!mounted) return;
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Lx.sheet,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet))),
-        builder: (_) => ContractsSheet(contracts: contracts),
-      );
-    } catch (e, s) {
-      AppLog.error('chat_tab._openContracts', e, s);
-    }
-  }
-
   Future<void> _enterMeetingById(int meetingId) async {
     try {
       final res = await _meetingProvider.enterMeeting(meetingId);
@@ -400,39 +377,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       if (uri != null && await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    }
-  }
-
-  Future<void> _openLatestZoomLink() async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    try {
-      final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
-      if (!mounted) return;
-      Map<String, dynamic>? targetMeeting;
-      for (final m in meetings.reversed) {
-        final link = m['link'] as String?;
-        final status = m['status'] as String?;
-        if (link != null && status == 'scheduled') {
-          targetMeeting = m is Map<String, dynamic> ? m : Map<String, dynamic>.from(m);
-          break;
-        }
-      }
-      if (targetMeeting == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatNoActiveMeeting)));
-        return;
-      }
-      final scheduledAt = targetMeeting['scheduled_at'] as String?;
-      if (scheduledAt != null) {
-        final joinStatus = getMeetingJoinStatus(scheduledAt, AppLocalizations.of(context)!);
-        if (!joinStatus.canJoin) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(joinStatus.label)));
-          return;
-        }
-      }
-      await _enterMeeting(targetMeeting);
-    } catch (e, s) {
-      AppLog.error('chat_tab._openLatestZoomLink', e, s);
     }
   }
 
@@ -474,8 +418,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isSA = _api.role == 'super_admin';
-    final clientName = _workspaceData?['client']?['contact_person'] as String? ?? l10n.chatClient;
-    final clientOnline = chatIsOnline(_workspaceData?['client']);
     final wsActive = widget.wsStatus == 'active';
 
     if (!wsActive) {
@@ -496,36 +438,19 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       );
     }
 
-    Widget headerBtn(String key, IconData icon, VoidCallback onTap) => InkResponse(
-          key: ValueKey(key),
-          onTap: onTap,
-          radius: 20,
-          child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 18, color: Lx.muted)),
-        );
-
     return Column(children: [
-      // Slim header (the mockup has none; kept so the contracts list and the
-      // latest meeting link stay reachable).
-      Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 10, 6),
-        child: Row(children: [
-          LuxeStatusDot(status: clientOnline ? LxStatus.ok : LxStatus.off),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text.rich(
-              TextSpan(children: [
-                TextSpan(text: clientName, style: Lx.text(context, size: 13, weight: FontWeight.w500)),
-                TextSpan(text: '  ${clientOnline ? l10n.chatOnline : l10n.chatOffline}', style: Lx.text(context, size: 11, color: Lx.faint)),
-              ]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Staff may not read contracts (the backend refuses), so no button.
-          if (!_api.isStaffMember) headerBtn('chat-contracts', Icons.copy_outlined, _openContracts),
-          headerBtn('chat-zoom', Icons.videocam_outlined, _openLatestZoomLink),
-        ]),
-      ),
+      // Mockup wsChat: banners first, then the stream (no header row — the
+      // contracts live in their own tab and the meeting banner has "Join").
+      if (_nextMeeting != null || _nextPayment != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Column(children: [
+            if (_nextMeeting != null)
+              LxMeetingBanner(meeting: _nextMeeting!, canJoin: !isSA, onTap: () => _enterMeeting(_nextMeeting!)),
+            if (_nextPayment != null)
+              LxPaymentBanner(payment: _nextPayment!, onTap: () => _onPaymentBannerTap(_nextPayment!)),
+          ]),
+        ),
       // Messages
       Expanded(
         child: _loading
@@ -545,32 +470,20 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
               },
             ),
       ),
-      // Banners sit above the composer so the stream keeps the room.
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(children: [
-          if (_nextMeeting != null)
-            LxMeetingBanner(meeting: _nextMeeting!, canJoin: !isSA, onTap: () => _enterMeeting(_nextMeeting!)),
-          if (_nextPayment != null)
-            LxPaymentBanner(payment: _nextPayment!, onTap: () => _onPaymentBannerTap(_nextPayment!)),
-        ]),
-      ),
       // SA Read-Only Indicator (mockup `.viewonly`)
       if (isSA)
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 26),
           decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const LxIcon('lock', size: 14, color: Lx.faint),
+            const LxIcon('lock', size: 18, color: Lx.faint),
             const SizedBox(width: 8),
             Text(l10n.chatReadOnly, style: Lx.text(context, size: 12.5, color: Lx.faint)),
           ]),
         ),
       // Input Bar (AM, or an assistant with can_chat)
       if (!isSA && _api.canDo('can_chat'))
-        Container(
-          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Column(mainAxisSize: MainAxisSize.min, children: [
             // Mockup `.rq`: ring + "request client approval".
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -635,8 +548,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ),
               )
             else
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 16, 10),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(0, 10, 0, 26),
+                decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
                 child: Row(children: [
                   Expanded(
                     child: Container(
@@ -688,7 +603,6 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ]),
               ),
           ]),
-        ),
     ]);
   }
 

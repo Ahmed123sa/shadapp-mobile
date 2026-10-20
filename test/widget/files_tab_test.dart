@@ -92,7 +92,7 @@ void main() {
     await pumpPage(tester, provider, api);
     expect(find.text('Passport'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.tap(find.byKey(const ValueKey('file-def-delete-2')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
     await tester.pumpAndSettle();
