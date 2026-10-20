@@ -1981,7 +1981,7 @@
   "reportsEyebrow": "Insight",
   "amKpiRevenue": "Revenue",
   "amKpiUnreadMessages": "Unread messages",
-  "amKpiAcrossManagers": "across {count} managers",
+  "amKpiAcrossManagers": "{count, plural, =1{1 manager} other{across {count} managers}}",
   "@amKpiAcrossManagers": {
     "placeholders": {
       "count": {
@@ -2019,7 +2019,7 @@
     }
   },
   "amAgeToday": "Today",
-  "amClientsCount": "{count} clients",
+  "amClientsCount": "{count, plural, =1{1 client} other{{count} clients}}",
   "@amClientsCount": {
     "placeholders": {
       "count": {
@@ -2033,5 +2033,28 @@
   "clientsEyebrowAm": "Your book",
   "contractStepClientApproved": "Client approved",
   "contractKindMain": "Main",
-  "contractKindAdditional": "Additional"
+  "contractKindAdditional": "Additional",
+  "teamEyebrow": "Team",
+  "amNewManager": "New manager",
+  "amCanApproveContracts": "Can approve contracts",
+  "amDeactivate": "Deactivate",
+  "amDeactivateConfirm": "Deactivate {name}? They will be signed out everywhere.",
+  "@amDeactivateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "amAssignedClients": "{count, plural, =1{1 assigned client} other{{count} assigned clients}}",
+  "@amAssignedClients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staffNewMember": "New team member",
+  "staffPasswordShort": "Password",
+  "financeEyebrow": "Money"
 }

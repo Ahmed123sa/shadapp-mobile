@@ -5868,7 +5868,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String amKpiAcrossManagers(int count) {
-    return 'على $count مديرين';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'على $count مدير',
+      few: 'على $count مديرين',
+      two: 'على مديرين',
+      one: 'مدير واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5906,7 +5914,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String amClientsCount(int count) {
-    return '$count عملاء';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عميل',
+      few: '$count عملاء',
+      two: 'عميلين',
+      one: 'عميل واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5929,4 +5945,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get contractKindAdditional => 'إضافي';
+
+  @override
+  String get teamEyebrow => 'الفريق';
+
+  @override
+  String get amNewManager => 'مدير جديد';
+
+  @override
+  String get amCanApproveContracts => 'يقدر يوافق على العقود';
+
+  @override
+  String get amDeactivate => 'إيقاف';
+
+  @override
+  String amDeactivateConfirm(String name) {
+    return 'إيقاف $name؟ هيتعمله تسجيل خروج من كل الأجهزة.';
+  }
+
+  @override
+  String amAssignedClients(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عميل',
+      few: '$count عملاء',
+      two: 'عميلين',
+      one: 'عميل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get staffNewMember => 'عضو فريق جديد';
+
+  @override
+  String get staffPasswordShort => 'كلمة السر';
+
+  @override
+  String get financeEyebrow => 'الفلوس';
 }

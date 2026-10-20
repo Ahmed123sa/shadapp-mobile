@@ -41,4 +41,6 @@ class ManagerProvider {
 
   Future<Map<String, dynamic>> updateManager(int id, Map<String, dynamic> body) => _repo.update(id, body);
 
+  Future<Map<String, dynamic>> deactivateManager(int id) => _repo.deactivate(id);
+
 }

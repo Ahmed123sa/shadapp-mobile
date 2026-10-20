@@ -6,10 +6,31 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/client_type_badge.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../providers/meeting_provider.dart';
+
+/// Mockup sheet header: `.grab` (38×4, margin-bottom 16) + h3 serif 22.
+Widget _sheetHead(BuildContext context, String title, {Widget? trailing}) => Column(children: [
+      Center(
+        child: Container(
+          width: 38,
+          height: 4,
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(color: Lx.line2, borderRadius: BorderRadius.circular(2)),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(children: [
+          Expanded(child: Text(title, style: Lx.display(context, size: 22))),
+          if (trailing != null) trailing,
+        ]),
+      ),
+    ]);
 
 class ManagerClientsSheet extends StatelessWidget {
   final String managerName;
@@ -21,50 +42,49 @@ class ManagerClientsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 28),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text('${l10n.amClients} $managerName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
+        _sheetHead(context, managerName),
         if (clients.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: Text(l10n.amNoClientsAvailable, style: const TextStyle(color: ShadColors.textSecondary))),
+            child: Center(child: Text(l10n.amNoClientsAvailable, style: Lx.text(context, size: 13.5, color: Lx.faint))),
           )
         else
-          Container(
+          ConstrainedBox(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-            child: ListView.separated(
+            child: ListView.builder(
               shrinkWrap: true,
               itemCount: clients.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (_, i) {
                 final c = clients[i];
                 final ws = c['workspace'] as Map<String, dynamic>?;
-                return ListTile(
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: ShadColors.cardBorder,
-                    child: Text((c['company_name'] as String? ?? '')[0].toUpperCase(), style: const TextStyle(color: ShadColors.textSecondary)),
-                  ),
-                  title: Row(children: [
-                    Flexible(child: Text(c['company_name'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-                    const SizedBox(width: 6),
-                    ClientTypeBadge(clientType: c['client_type'] as String?, compact: true),
-                  ]),
-                  subtitle: Text(c['contact_person'] ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: ws?['status'] == 'active' ? ShadColors.success.withAlpha(25) : ShadColors.cardBorder,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(ws?['status'] == 'active' ? l10n.amStatusActive : l10n.amStatusInactive, style: TextStyle(fontSize: 10, color: ws?['status'] == 'active' ? ShadColors.success : ShadColors.textSecondary)),
-                  ),
+                final active = ws?['status'] == 'active';
+                final name = c['company_name'] as String? ?? '';
+                // Mockup `.doc` row.
+                return InkWell(
                   onTap: () => onClientTap(c),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(border: i == clients.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+                    child: Row(children: [
+                      LuxeAvatar(initial: name.isEmpty ? '?' : name[0].toUpperCase(), size: 28),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
+                            Flexible(child: Text(name, style: Lx.text(context, size: 13.5))),
+                            const SizedBox(width: 6),
+                            ClientTypeBadge(clientType: c['client_type'] as String?, compact: true),
+                          ]),
+                          Text(c['contact_person'] ?? '', style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                        ]),
+                      ),
+                      LuxeStatusDot(status: active ? LxStatus.ok : LxStatus.off),
+                      const SizedBox(width: 7),
+                      Text(active ? l10n.amStatusActive : l10n.amStatusInactive, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                    ]),
+                  ),
                 );
               },
             ),
@@ -82,106 +102,81 @@ class AllMeetingsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
-      maxChildSize: 0.85,
+      maxChildSize: 0.88,
       minChildSize: 0.3,
       expand: false,
       builder: (_, scrollController) => Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: ShadColors.cardBorder, borderRadius: BorderRadius.circular(2)),
-            ),
+          _sheetHead(
+            context,
+            l10n.amStatMeetings,
+            trailing: onCreate == null
+                ? null
+                : LuxeButton(
+                    label: l10n.createMeeting,
+                    lxIcon: 'plus',
+                    size: LuxeButtonSize.sm,
+                    kind: LuxeButtonKind.primary,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      onCreate?.call();
+                    },
+                  ),
           ),
-          const SizedBox(height: 12),
-          Row(children: [
-            Text(l10n.amStatMeetings, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: ShadColors.crimson.withAlpha(30), borderRadius: BorderRadius.circular(10)),
-              child: Text('${meetings.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
-            ),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close, size: 20, color: ShadColors.textSecondary), onPressed: () => Navigator.pop(context)),
-          ]),
-          const SizedBox(height: 8),
           Expanded(
             child: meetings.isEmpty
-                ? Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text(l10n.amNoMeetings, style: const TextStyle(fontSize: 13, color: ShadColors.textDisabled, fontFamily: 'Archivo')),
-                      if (onCreate != null) ...[
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () { Navigator.pop(context); onCreate?.call(); },
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(l10n.createMeeting),
-                        ),
-                      ],
-                    ]),
-                  )
-                : ListView.separated(
+                ? Center(child: Text(l10n.amNoMeetings, style: Lx.text(context, size: 13.5, color: Lx.faint)))
+                : ListView.builder(
                     controller: scrollController,
+                    padding: const EdgeInsets.only(bottom: 28),
                     itemCount: meetings.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final m = meetings[i];
                       final client = m['workspace']?['client'] as Map<String, dynamic>?;
                       final status = m['status'] as String? ?? '';
-                      final statusColor = status == 'completed' ? ShadColors.success : status == 'scheduled' ? ShadColors.sent : ShadColors.textSecondary;
                       final statusLabel = status == 'scheduled' ? l10n.scheduled : status == 'completed' ? l10n.completed : status == 'cancelled' ? l10n.cancelled : status;
-                      String? dateStr;
-                      try {
-                        final dt = DateTime.parse(m['scheduled_at'] ?? '');
-                        dateStr = '${dt.year}/${dt.month}/${dt.day}';
-                      } catch (_) {
-                        // A meeting with no/invalid date just renders without
-                        // one. Not reported: this is normal for drafts, and
-                        // it runs inside a list builder, so a bad record
-                        // would report on every rebuild.
-                      }
+                      final dt = DateTime.tryParse(m['scheduled_at']?.toString() ?? '')?.toLocal();
                       final wsId = m['workspace_id'] ?? m['workspace']?['id'];
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
+                      final sub = [
+                        '${client?['company_name'] ?? ''}',
+                        if (dt != null) DateFormat('EEE d MMM · h:mm a', locale).format(dt),
+                      ].where((e) => e.isNotEmpty).join(' · ');
+                      // Mockup meeting card: `.meet` (`.cal` month + day) and
+                      // title / sub, then the status (`.st2`).
+                      return LuxeCard(
                         onTap: () {
                           Navigator.pop(context);
                           if (wsId != null) context.push('/am/workspace/$wsId?tab=5');
                         },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: ShadColors.card,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: ShadColors.cardBorder),
+                        child: Row(children: [
+                          Container(
+                            width: 46,
+                            padding: const EdgeInsetsDirectional.only(end: 12),
+                            decoration: const BoxDecoration(border: BorderDirectional(end: BorderSide(color: Lx.line))),
+                            child: Column(children: [
+                              Text(dt == null ? '—' : DateFormat.MMM(locale).format(dt).toUpperCase(),
+                                  style: Lx.text(context, size: 9.5, color: Lx.crimsonInk).copyWith(letterSpacing: 1.9)),
+                              Text(dt == null ? '' : '${dt.day}', style: Lx.display(context, size: 26).copyWith(height: 1.1)),
+                            ]),
                           ),
-                          child: Row(children: [
-                            Container(
-                              width: 36, height: 36,
-                              decoration: BoxDecoration(color: ShadColors.gold.withAlpha(20), borderRadius: BorderRadius.circular(8)),
-                              child: const Icon(Icons.videocam, size: 18, color: ShadColors.gold),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(m['title'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-                                const SizedBox(height: 2),
-                                Text('${client?['company_name'] ?? ''} • ${dateStr ?? ''}', style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(m['title'] ?? '', style: Lx.text(context, size: 16)),
+                              if (sub.isNotEmpty) Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                              const SizedBox(height: 6),
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                LuxeStatusDot(status: status == 'completed' ? LxStatus.ok : status == 'cancelled' ? LxStatus.off : LxStatus.wait),
+                                const SizedBox(width: 7),
+                                Text(statusLabel, style: Lx.text(context, size: 12, color: Lx.ink2)),
                               ]),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: statusColor.withAlpha(20),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(statusLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Archivo')),
-                            ),
-                          ]),
-                        ),
+                            ]),
+                          ),
+                        ]),
                       );
                     },
                   ),
@@ -255,15 +250,10 @@ class _CreateMeetingSheetState extends State<CreateMeetingSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+      padding: EdgeInsetsDirectional.fromSTEB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 28),
       child: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(l10n.createMeeting, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-        ]),
-        const Divider(),
+        child: LuxeFormTheme(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _sheetHead(context, l10n.createMeeting),
         DropdownButtonFormField(
           decoration: InputDecoration(labelText: l10n.amClientRequired),
           items: widget.clients.map((c) => DropdownMenuItem(
@@ -321,15 +311,15 @@ class _CreateMeetingSheetState extends State<CreateMeetingSheet> {
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: LuxeButton(
+            label: l10n.createMeeting,
+            kind: LuxeButtonKind.primary,
+            size: LuxeButtonSize.lg,
             onPressed: _saving ? null : _save,
-            child: _saving
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-              : Text(l10n.createMeeting),
           ),
         ),
         ],
-      ),
+      )),
       ),
     );
   }

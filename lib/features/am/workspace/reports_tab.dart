@@ -377,9 +377,19 @@ class _ReportsTabState extends State<ReportsTab> {
     final Map<String, dynamic> chartData = activeRevenueCurrency != null
         ? {for (final e in byMonth.entries) e.key: e.value[activeRevenueCurrency] ?? 0}
         : payments;
-    final entries = chartData.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    // Mockup chart: one bar per month for the whole window (6 or 12), the
+    // current month last — months with no payments are short bars, not
+    // missing. One month of data used to fill the whole card with one bar.
     final take = _chartPeriod == '6m' ? 6 : 12;
-    final shown = entries.length > take ? entries.sublist(entries.length - take) : entries;
+    final now = DateTime.now();
+    final shown = [
+      for (var i = take - 1; i >= 0; i--)
+        () {
+          final d = DateTime(now.year, now.month - i);
+          final key = '${d.year}-${d.month.toString().padLeft(2, '0')}';
+          return MapEntry<String, dynamic>(key, chartData[key] ?? 0);
+        }(),
+    ];
     final maxV = shown.fold<double>(0, (m, e) => _toDouble(e.value) > m ? _toDouble(e.value) : m);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -405,7 +415,7 @@ class _ReportsTabState extends State<ReportsTab> {
         ],
         SizedBox(
           height: 140,
-          child: shown.isEmpty || maxV <= 0
+          child: maxV <= 0
               ? Center(child: Text(l10n.managerDetailNoData, style: Lx.text(context, size: 12.5, color: Lx.faint)))
               : Padding(
                   padding: const EdgeInsets.only(top: 12),

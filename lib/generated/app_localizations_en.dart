@@ -5897,7 +5897,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String amKpiAcrossManagers(int count) {
-    return 'across $count managers';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'across $count managers',
+      one: '1 manager',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5935,7 +5941,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String amClientsCount(int count) {
-    return '$count clients';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count clients',
+      one: '1 client',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5958,4 +5970,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contractKindAdditional => 'Additional';
+
+  @override
+  String get teamEyebrow => 'Team';
+
+  @override
+  String get amNewManager => 'New manager';
+
+  @override
+  String get amCanApproveContracts => 'Can approve contracts';
+
+  @override
+  String get amDeactivate => 'Deactivate';
+
+  @override
+  String amDeactivateConfirm(String name) {
+    return 'Deactivate $name? They will be signed out everywhere.';
+  }
+
+  @override
+  String amAssignedClients(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assigned clients',
+      one: '1 assigned client',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get staffNewMember => 'New team member';
+
+  @override
+  String get staffPasswordShort => 'Password';
+
+  @override
+  String get financeEyebrow => 'Money';
 }

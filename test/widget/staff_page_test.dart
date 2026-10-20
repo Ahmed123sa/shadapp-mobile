@@ -44,7 +44,7 @@ void main() {
 
     expect(find.text('Nour Staff'), findsOneWidget);
     expect(find.text('nour@example.com'), findsOneWidget);
-    expect(find.text('Clients: 2'), findsOneWidget);
+    expect(find.text('2 assigned clients'), findsOneWidget); // mockup pTeams
   });
 
   testWidgets('shows which managers\' teams a member is in', (tester) async {

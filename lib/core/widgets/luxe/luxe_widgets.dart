@@ -356,6 +356,53 @@ class LuxeBottomNav extends StatelessWidget {
   }
 }
 
+/// Mockup `.sw2`: 38×22 track (r12, #2a2a2a / crimson when on), 16px knob
+/// (#777 / white) at 3px, sliding to 19px.
+class LuxeToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  const LuxeToggle({super.key, required this.value, this.onChanged});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        child: Opacity(
+          opacity: onChanged == null ? 0.38 : 1,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 38,
+            height: 22,
+            decoration: BoxDecoration(color: value ? Lx.crimson : const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 200),
+              alignment: value ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Container(width: 16, height: 16, decoration: BoxDecoration(color: value ? Colors.white : const Color(0xFF777777), shape: BoxShape.circle)),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Mockup `.opt`: label + control, padding 11 0, bottom hairline, 13.5px.
+class LuxeOptRow extends StatelessWidget {
+  final String label;
+  final Widget trailing;
+  final bool last;
+  const LuxeOptRow({super.key, required this.label, required this.trailing, this.last = false});
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+        child: Row(children: [
+          Expanded(child: Text(label, style: Lx.text(context, size: 13.5))),
+          trailing,
+        ]),
+      );
+}
+
 // ── Bottom sheet ──
 Future<T?> showLuxeSheet<T>(BuildContext context, {required WidgetBuilder builder}) {
   return showModalBottomSheet<T>(

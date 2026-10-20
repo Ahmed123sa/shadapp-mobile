@@ -12,7 +12,7 @@ import '../../../core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import 'sa_approvals_page.dart';
 import 'sa_clients_page.dart';
-import 'sa_team_page.dart';
+import '../managers/account_managers_page.dart';
 import '../settings/admin_settings_page.dart';
 import '../../../data/client_repository.dart';
 import '../../../data/dashboard_repository.dart';
@@ -323,7 +323,13 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     }
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      isScrollControlled: true,
+      backgroundColor: Lx.sheet,
+      barrierColor: const Color(0x8C000000),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet)),
+        side: BorderSide(color: Lx.line2),
+      ),
       builder: (ctx) => CreateMeetingSheet(clients: clients, meetingProvider: _meetingProvider, onCreated: () {
         Navigator.pop(ctx);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.amMeetingCreated)])));
@@ -488,7 +494,8 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                                 ),
                                 SaApprovalsPage(dashboardStatsProvider: _dashboardStatsProvider),
                                 SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
-                                SaTeamPage(managerProvider: _childManagerProvider, api: _api),
+                                // Mockup pManagers (the old SaTeamPage was the pre-redesign screen).
+                                AccountManagersPage(managerProvider: _childManagerProvider, embedded: true),
                                 AdminSettingsPage(api: _api),
                               ]
                             : [

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../providers/payment_provider.dart';
@@ -164,30 +166,45 @@ class _FinancePageState extends State<FinancePage> {
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 28),
           children: [
-            LuxePageTitle(l10n.financeTitle),
+            // Mockup pFinance: head('Money', 'Finance').
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 6, 0, 14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l10n.financeEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+                const SizedBox(height: 6),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: l10n.financeTitle),
+                    TextSpan(text: '.', style: Lx.display(context, size: 28).copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+                  ]),
+                  key: const ValueKey('lx-page-title'),
+                  style: Lx.display(context, size: 28).copyWith(height: 1.2),
+                ),
+              ]),
+            ),
             if (_failed)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Center(child: Text(l10n.financeFailed, style: Lx.text(context, size: 14, color: Lx.muted))),
               )
             else ...[
-              Row(children: [
+              IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Expanded(child: _kpi(l10n.financeApprovedTotal, lxFormatMoney(topVal), topCur)),
                 const SizedBox(width: 10),
                 Expanded(child: _kpi(l10n.financePendingCount, '${_n(_stats['pending_count']).toInt()}', '', act: true)),
-              ]),
+              ])),
               const SizedBox(height: 10),
-              Row(children: [
+              IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Expanded(child: _kpi(l10n.financeApprovedCount, '${_n(_stats['approved_count']).toInt()}', '')),
                 const SizedBox(width: 10),
                 Expanded(child: _kpi(l10n.financeAllCount, '${_n(_stats['total_count']).toInt()}', '')),
-              ]),
+              ])),
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line)),
                 child: Row(children: [
-                  const Icon(Icons.search, size: 18, color: Lx.faint),
+                  const LxIcon('search', size: 18, color: Lx.faint),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -284,7 +301,9 @@ class _FinancePageState extends State<FinancePage> {
       'cheque': l10n.payments_methodCheque,
     };
     final method = methods['${p['method_type']}'] ?? '${p['method_type'] ?? ''}';
-    final date = '${p['created_at'] ?? ''}'.split('T').first;
+    // Mockup card sub: "manager · 16 Oct".
+    final created = DateTime.tryParse('${p['created_at'] ?? ''}')?.toLocal();
+    final date = created == null ? '' : DateFormat('d MMM', Localizations.localeOf(context).toString()).format(created);
     final sub = [if ('${manager['name'] ?? ''}'.isNotEmpty) '${manager['name']}', if (date.isNotEmpty) date].join(' · ');
     final dot = status == 'approved'
         ? LxStatus.ok

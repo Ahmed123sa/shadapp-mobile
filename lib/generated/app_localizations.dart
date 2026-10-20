@@ -11337,7 +11337,7 @@ abstract class AppLocalizations {
   /// No description provided for @amKpiAcrossManagers.
   ///
   /// In en, this message translates to:
-  /// **'across {count} managers'**
+  /// **'{count, plural, =1{1 manager} other{across {count} managers}}'**
   String amKpiAcrossManagers(int count);
 
   /// No description provided for @amKpiAwaitingApproval.
@@ -11397,7 +11397,7 @@ abstract class AppLocalizations {
   /// No description provided for @amClientsCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} clients'**
+  /// **'{count, plural, =1{1 client} other{{count} clients}}'**
   String amClientsCount(int count);
 
   /// No description provided for @approvalsEyebrow.
@@ -11441,6 +11441,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Additional'**
   String get contractKindAdditional;
+
+  /// No description provided for @teamEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get teamEyebrow;
+
+  /// No description provided for @amNewManager.
+  ///
+  /// In en, this message translates to:
+  /// **'New manager'**
+  String get amNewManager;
+
+  /// No description provided for @amCanApproveContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Can approve contracts'**
+  String get amCanApproveContracts;
+
+  /// No description provided for @amDeactivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate'**
+  String get amDeactivate;
+
+  /// No description provided for @amDeactivateConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate {name}? They will be signed out everywhere.'**
+  String amDeactivateConfirm(String name);
+
+  /// No description provided for @amAssignedClients.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 assigned client} other{{count} assigned clients}}'**
+  String amAssignedClients(int count);
+
+  /// No description provided for @staffNewMember.
+  ///
+  /// In en, this message translates to:
+  /// **'New team member'**
+  String get staffNewMember;
+
+  /// No description provided for @staffPasswordShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get staffPasswordShort;
+
+  /// No description provided for @financeEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Money'**
+  String get financeEyebrow;
 }
 
 class _AppLocalizationsDelegate

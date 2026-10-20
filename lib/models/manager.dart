@@ -9,6 +9,7 @@ class Manager {
   final String? avatarUrl;
   final String? dateOfBirth;
   final int managedClientsCount;
+  final bool canApproveContracts;
 
   const Manager({
     required this.id,
@@ -18,6 +19,7 @@ class Manager {
     this.avatarUrl,
     this.dateOfBirth,
     this.managedClientsCount = 0,
+    this.canApproveContracts = false,
   });
 
   factory Manager.fromJson(Map<String, dynamic> json) => Manager(
@@ -28,6 +30,7 @@ class Manager {
         avatarUrl: _str(json['avatar_url']),
         dateOfBirth: _str(json['date_of_birth']),
         managedClientsCount: _int(json['managed_clients_count']) ?? 0,
+        canApproveContracts: json['can_approve_contracts'] == true || json['can_approve_contracts'] == 1,
       );
 }
 

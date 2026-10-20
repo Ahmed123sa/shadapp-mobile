@@ -41,4 +41,7 @@ class ManagerRepository {
 
   Future<Map<String, dynamic>> update(int id, Map<String, dynamic> body) =>
       _api.put('/account-managers/$id', body);
+
+  /// The backend refuses (422 + message) while the manager still has clients.
+  Future<Map<String, dynamic>> deactivate(int id) => _api.post('/account-managers/$id/deactivate', {});
 }

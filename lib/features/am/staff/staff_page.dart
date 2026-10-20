@@ -3,11 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
-import '../../../core/widgets/loading_state.dart';
 import '../../../data/staff_repository.dart';
 
 /// Company staff, managed by the super admin (STAFF_TEAMS_PLAN.md ف٦): list,
@@ -154,116 +153,142 @@ class _StaffPageState extends State<StaffPage> {
         title: const SizedBox.shrink(),
         leading: BackButton(onPressed: () => context.pop()),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('staff-add'),
-        backgroundColor: Lx.crimson,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        onPressed: () => _openForm(),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.staffAdd),
+      body: LuxeFormTheme(child: _body(l10n)),
+    );
+  }
+
+  /// Mockup pTeams: head('Team', 'Teams'), primary "New team member", then
+  /// one card per staff member.
+  Widget _body(AppLocalizations l10n) {
+    final h1 = Lx.display(context, size: 28).copyWith(height: 1.2);
+    final header = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(0, 6, 0, 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.teamEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+          const SizedBox(height: 6),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: l10n.staffNavTitle),
+              TextSpan(text: '.', style: h1.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+            ]),
+            key: const ValueKey('lx-page-title'),
+            style: h1,
+          ),
+        ]),
       ),
-      body: LuxeFormTheme(child: Column(children: [
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-            child: LuxePageTitle(l10n.staffNavTitle),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: SizedBox(
+          width: double.infinity,
+          child: LuxeButton(
+            key: const ValueKey('staff-add'),
+            label: l10n.staffNewMember,
+            lxIcon: 'plus',
+            kind: LuxeButtonKind.primary,
+            size: LuxeButtonSize.lg,
+            onPressed: () => _openForm(),
           ),
         ),
-        SwitchListTile(
-          key: const ValueKey('staff-show-archived'),
-          dense: true,
-          title: Text(l10n.staffShowArchived, style: Lx.text(context, size: 13)),
-          value: _includeArchived,
-          onChanged: (v) {
-            setState(() => _includeArchived = v);
-            _load();
-          },
-        ),
-        Expanded(child: _body(l10n)),
-      ])),
-    );
-  }
-
-  Widget _body(AppLocalizations l10n) {
-    if (_loading) return const LoadingState();
-    if (_failed) return ErrorState(message: l10n.staffLoadFailed, onRetry: _load);
-    if (_staff.isEmpty) return EmptyState(icon: Icons.badge_outlined, title: l10n.staffEmpty);
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
-        children: [for (final m in _staff) _card(m, l10n)],
       ),
-    );
+      // Not in the mockup: archived members are hidden unless asked for.
+      GestureDetector(
+        key: const ValueKey('staff-show-archived'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          setState(() => _includeArchived = !_includeArchived);
+          _load();
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: LuxeOptRow(
+            label: l10n.staffShowArchived,
+            last: true,
+            trailing: IgnorePointer(child: LuxeToggle(value: _includeArchived, onChanged: (_) {})),
+          ),
+        ),
+      ),
+    ];
+    Widget list(List<Widget> rest) => RefreshIndicator(
+          onRefresh: _load,
+          color: Lx.crimsonInk,
+          child: ListView(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 18),
+            children: [...header, ...rest],
+          ),
+        );
+    if (_loading) return list([const Padding(padding: EdgeInsets.only(top: 40), child: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)))]);
+    if (_failed) return list([SizedBox(height: 320, child: ErrorState(message: l10n.staffLoadFailed, onRetry: _load))]);
+    if (_staff.isEmpty) {
+      return list([
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(child: Text(l10n.staffEmpty, style: Lx.text(context, size: 13.5, color: Lx.faint))),
+        ),
+      ]);
+    }
+    return list([for (final m in _staff) _card(m, l10n)]);
   }
 
+  /// Mockup pTeams card: `.mgr` (av, name serif 16, email) + `.tagr` when
+  /// archived; "N assigned clients" (margin-top 8, opens the client list);
+  /// `.acts`: Edit · Password (quiet) · Archive (quiet danger) / Restore.
   Widget _card(Map<String, dynamic> m, AppLocalizations l10n) {
     final archived = m['archived_at'] != null;
     final name = (m['name'] as String?) ?? '';
-    final count = m['assigned_clients_count'] ?? 0;
+    final count = int.tryParse('${m['assigned_clients_count'] ?? 0}') ?? 0;
     final busy = _busyId == m['id'];
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            CircleAvatar(
-              backgroundColor: Lx.crimson.withAlpha(40),
-              backgroundImage: (m['avatar_url'] as String?)?.isNotEmpty == true ? NetworkImage(ApiClient().resolveFileUrl(m['avatar_url'] as String)) : null,
-              child: (m['avatar_url'] as String?)?.isNotEmpty == true
-                  ? null
-                  : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Lx.crimson, fontWeight: FontWeight.w700)),
+    final avatar = (m['avatar_url'] as String?) ?? '';
+    final teams = safeList(m['teams']).map((t) => t is Map ? '${t['name']}' : '').where((n) => n.isNotEmpty).join('، ');
+    return LuxeCard(
+      key: ValueKey('staff-card-${m['id']}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          if (avatar.isNotEmpty)
+            CircleAvatar(radius: 16, backgroundImage: NetworkImage(ApiClient().resolveFileUrl(avatar)))
+          else
+            LuxeAvatar(initial: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: Lx.display(context, size: 16)),
+              Text('${m['email'] ?? ''}', style: Lx.text(context, size: 12.5, color: Lx.muted)),
+            ]),
+          ),
+          if (archived)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line2)),
+              child: Text(l10n.staffArchivedBadge, style: Lx.text(context, size: 9.5, color: Lx.muted)),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Flexible(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
-                  if (archived) ...[
-                    const SizedBox(width: 6),
-                    Text(l10n.staffArchivedBadge, style: const TextStyle(fontSize: 10, color: Lx.faint)),
-                  ],
-                ]),
-                Text('${m['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: Lx.muted)),
-                Text('${l10n.staffClientsLabel}: $count', style: const TextStyle(fontSize: 11, color: Lx.muted)),
-                if (safeList(m['teams']).isNotEmpty)
-                  Text(
-                    l10n.mtInTeams(safeList(m['teams']).map((t) => t is Map ? '${t['name']}' : '').where((n) => n.isNotEmpty).join('، ')),
-                    key: ValueKey('staff-teams-${m['id']}'),
-                    style: const TextStyle(fontSize: 11, color: Lx.muted),
-                  ),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 4, children: [
-            _action(l10n.staffClientsLabel, () => _openClients(m), key: 'staff-clients-${m['id']}'),
-            _action(l10n.staffEditAction, () => _openForm(m), key: 'staff-edit-${m['id']}'),
-            _action(l10n.staffChangePassword, () => _openPassword(m), key: 'staff-password-${m['id']}'),
-            _action(
-              archived ? l10n.staffUnarchiveAction : l10n.staffArchiveAction,
-              busy ? null : () => _toggleArchive(m),
-              key: 'staff-archive-${m['id']}',
-              color: archived ? Lx.ok : Lx.crimson,
-            ),
-          ]),
         ]),
-      ),
-    );
-  }
-
-  Widget _action(String label, VoidCallback? onTap, {required String key, Color? color}) {
-    return OutlinedButton(
-      key: ValueKey(key),
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        visualDensity: VisualDensity.compact,
-        foregroundColor: color,
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 11)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          key: ValueKey('staff-clients-${m['id']}'),
+          onTap: () => _openClients(m),
+          child: Text(l10n.amAssignedClients(count), style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        ),
+        if (teams.isNotEmpty)
+          Text(l10n.mtInTeams(teams), key: ValueKey('staff-teams-${m['id']}'), style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: Row(children: [
+            Expanded(child: LuxeButton(key: ValueKey('staff-edit-${m['id']}'), label: l10n.staffEditAction, size: LuxeButtonSize.sm, onPressed: () => _openForm(m))),
+            const SizedBox(width: 8),
+            Expanded(child: LuxeButton(key: ValueKey('staff-password-${m['id']}'), label: l10n.staffPasswordShort, size: LuxeButtonSize.sm, kind: LuxeButtonKind.quiet, onPressed: () => _openPassword(m))),
+            const SizedBox(width: 8),
+            Expanded(
+              child: LuxeButton(
+                key: ValueKey('staff-archive-${m['id']}'),
+                label: archived ? l10n.staffUnarchiveAction : l10n.staffArchiveAction,
+                size: LuxeButtonSize.sm,
+                kind: archived ? LuxeButtonKind.quiet : LuxeButtonKind.danger,
+                onPressed: busy ? null : () => _toggleArchive(m),
+              ),
+            ),
+          ]),
+        ),
+      ]),
     );
   }
 }
@@ -358,7 +383,7 @@ class _StaffFormState extends State<_StaffForm> {
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(_editing ? l10n.staffEditAction : l10n.staffAdd, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(_editing ? l10n.staffEditAction : l10n.staffAdd, style: Lx.display(context, size: 22)),
           const SizedBox(height: 12),
           if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: Lx.crimson, fontSize: 13))),
           TextField(key: const ValueKey('staff-form-name'), controller: _name, decoration: InputDecoration(labelText: l10n.staffFieldName)),
@@ -366,23 +391,34 @@ class _StaffFormState extends State<_StaffForm> {
           TextField(key: const ValueKey('staff-form-email'), controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l10n.staffFieldEmail)),
           const SizedBox(height: 8),
           TextField(key: const ValueKey('staff-form-phone'), controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l10n.staffFieldPhone)),
-          ListTile(
+          // Mockup `.f2`: 12px muted label, then the value on a line-2 underline.
+          GestureDetector(
             key: const ValueKey('staff-form-dob'),
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.staffFieldDob),
-            subtitle: Text(_dob ?? '—'),
-            trailing: const Icon(Icons.calendar_today_outlined, size: 18),
+            behavior: HitTestBehavior.opaque,
             onTap: _pickDob,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14, bottom: 6),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l10n.staffFieldDob, style: Lx.text(context, size: 12, color: Lx.muted)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                  child: Row(children: [
+                    Expanded(child: Text(_dob ?? '—', style: Lx.text(context, size: 15, color: _dob == null ? Lx.faint : Lx.ink))),
+                    const LxIcon('cal', size: 18, color: Lx.muted),
+                  ]),
+                ),
+              ]),
+            ),
           ),
           if (!_editing) ...[
             TextField(key: const ValueKey('staff-form-password'), controller: _password, obscureText: true, decoration: InputDecoration(labelText: l10n.staffFieldPassword)),
-            CheckboxListTile(
+            LuxeOptRow(
               key: const ValueKey('staff-form-send-email'),
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text(l10n.staffSendEmail, style: const TextStyle(fontSize: 13)),
-              value: _sendEmail,
-              onChanged: (v) => setState(() => _sendEmail = v ?? true),
+              label: l10n.staffSendEmail,
+              last: true,
+              trailing: LuxeToggle(value: _sendEmail, onChanged: (v) => setState(() => _sendEmail = v)),
             ),
           ],
           const SizedBox(height: 8),
@@ -443,7 +479,7 @@ class _PasswordFormState extends State<_PasswordForm> {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('${l10n.staffChangePassword} — ${widget.member['name'] ?? ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        Text('${l10n.staffChangePassword} — ${widget.member['name'] ?? ''}', style: Lx.display(context, size: 22)),
         const SizedBox(height: 12),
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_error!, style: const TextStyle(color: Lx.crimson, fontSize: 13))),
         TextField(key: const ValueKey('staff-password-field'), controller: _password, obscureText: true, decoration: InputDecoration(labelText: l10n.staffFieldPassword)),
@@ -493,7 +529,7 @@ class _ClientsSheetState extends State<_ClientsSheet> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${l10n.staffClientsLabel} — ${widget.member['name'] ?? ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        Text('${l10n.staffClientsLabel} — ${widget.member['name'] ?? ''}', style: Lx.display(context, size: 22)),
         const SizedBox(height: 12),
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
