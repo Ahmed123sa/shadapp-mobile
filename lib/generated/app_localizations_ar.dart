@@ -2657,6 +2657,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_signNow => 'وقع الآن';
 
   @override
+  String get onboardingNextStepsTitle => 'الخطوات الجاية';
+
+  @override
   String get onboarding_contactSupport => 'اتصل بالدعم';
 
   @override

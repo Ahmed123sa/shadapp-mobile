@@ -2665,6 +2665,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_signNow => 'Sign Now';
 
   @override
+  String get onboardingNextStepsTitle => 'Next steps';
+
+  @override
   String get onboarding_contactSupport => 'Contact Support';
 
   @override

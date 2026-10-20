@@ -6,7 +6,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import 'package:provider/provider.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/helpers/required_documents_dialog.dart';
 import '../../core/locale_provider.dart';
@@ -304,6 +306,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             _buildOnboardingProgress(stage),
             const SizedBox(height: 8),
             Expanded(child: _buildStageScreen(stage)),
+            _buildSupportBar(),
           ],
         ),
       ),
@@ -336,65 +339,61 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     );
   }
 
+  List<String> _stageLabels(AppLocalizations l10n) => [
+        l10n.onboarding_signStage,
+        l10n.onboarding_receiveContractStage,
+        l10n.onboarding_yourApprovalStage,
+        l10n.onboarding_companyApprovalStage,
+        l10n.onboarding_paymentProofStage,
+        l10n.onboarding_activateStage,
+      ];
+
+  /// "Edit requested" (stage 6) sits at the contract-review step visually.
+  int _visualStage(int stage) => stage >= 6 ? 2 : stage;
+
   Widget _buildOnboardingProgress(int stage) {
-    final labels = [
-      AppLocalizations.of(context)!.onboarding_signStage,
-      AppLocalizations.of(context)!.onboarding_receiveContractStage,
-      AppLocalizations.of(context)!.onboarding_yourApprovalStage,
-      AppLocalizations.of(context)!.onboarding_companyApprovalStage,
-      AppLocalizations.of(context)!.onboarding_paymentProofStage,
-      AppLocalizations.of(context)!.onboarding_activateStage,
-    ];
+    final l10n = AppLocalizations.of(context)!;
+    final labels = _stageLabels(l10n);
+    final v = _visualStage(stage);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: List.generate(6, (i) {
-              final done = i < stage;
-              final current = i == stage;
-              return Expanded(
-                child: Container(
-                  height: 5,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: done
-                        ? ShadColors.crimson
-                        : current
-                            ? ShadColors.gold
-                            : ShadColors.cardBorder,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: List.generate(6, (i) {
-              final done = i < stage;
-              final current = i == stage;
-              return Expanded(
-                child: Text(
-                  labels[i],
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: done
-                        ? ShadColors.crimson
-                        : current
-                            ? ShadColors.gold
-                            : ShadColors.textDisabled,
-                    fontWeight: current ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }),
+          LuxeStepperBars(total: 6, current: v + 1),
+          const SizedBox(height: 8),
+          Text(
+            '${v + 1} / 6 · ${labels[v]}',
+            key: const ValueKey('onboarding-stage-name'),
+            style: Lx.text(context, size: 12, color: Lx.ink2),
           ),
         ],
       ),
     );
+  }
+
+  /// Support is always one tap away, pinned under every stage.
+  Widget _buildSupportBar() {
+    return Container(
+      decoration: const BoxDecoration(color: Lx.rail, border: Border(top: BorderSide(color: Lx.line))),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: TextButton.icon(
+          key: const ValueKey('onboarding-support'),
+          onPressed: _contactSupport,
+          icon: const Icon(Icons.headset_mic, size: 18),
+          label: Text(AppLocalizations.of(context)!.onboarding_contactSupport),
+          style: TextButton.styleFrom(foregroundColor: Lx.ink2, minimumSize: const Size.fromHeight(44)),
+        ),
+      ),
+    );
+  }
+
+  List<String> _nextAfter(int stage) {
+    final labels = _stageLabels(AppLocalizations.of(context)!);
+    final v = _visualStage(stage);
+    return labels.sublist((v + 1).clamp(0, labels.length));
   }
 
   Widget _buildStageScreen(int stage) {
@@ -415,7 +414,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.sent,
           title: AppLocalizations.of(context)!.onboarding_waitingContract,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingContractSendMsg,
-          onContactSupport: _contactSupport,
+          nextSteps: _nextAfter(stage),
+          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
         );
       case 2:
         return buildContractReviewStage(
@@ -431,7 +431,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.companyApproved,
           title: AppLocalizations.of(context)!.onboarding_waitingCompanyApproval,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingCompanyReviewMsg,
-          onContactSupport: _contactSupport,
+          nextSteps: _nextAfter(stage),
+          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
         );
       case 4:
         return buildPaymentStage(
@@ -448,7 +449,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.warning,
           title: AppLocalizations.of(context)!.onboarding_reviewingPayment,
           subtitle: AppLocalizations.of(context)!.onboarding_waitingActivation,
-          onContactSupport: _contactSupport,
+          nextSteps: _nextAfter(stage),
+          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
         );
       case 6:
         return buildWaitingStage(
@@ -457,7 +459,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           iconColor: ShadColors.warning,
           title: AppLocalizations.of(context)!.onboardingWaitingEditContract,
           subtitle: AppLocalizations.of(context)!.onboardingWaitingEditContractMsg,
-          onContactSupport: _contactSupport,
+          nextSteps: _nextAfter(stage),
+          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
         );
       default:
         return buildSignatureStage(

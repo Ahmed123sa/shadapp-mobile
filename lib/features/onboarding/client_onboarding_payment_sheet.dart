@@ -15,6 +15,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/helpers/proof_image_picker.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
 import '../../providers/payment_provider.dart';
 
@@ -51,14 +52,26 @@ void showOnboardingPaymentSheet({
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    backgroundColor: Lx.sheet,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet)),
+      side: BorderSide(color: Lx.line2),
+    ),
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSheetState) => Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
+        padding: EdgeInsetsDirectional.fromSTEB(24, 10, 24, MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).viewPadding.bottom + 16),
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(
+              child: Container(
+                key: const ValueKey('lx-sheet-handle'),
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(color: Lx.line2, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
             Row(children: [
-              Text(AppLocalizations.of(ctx)!.onboarding_requestPaymentTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
+              Text(AppLocalizations.of(ctx)!.onboarding_requestPaymentTitle, style: Lx.display(ctx, size: 20)),
               const Spacer(),
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
@@ -175,9 +188,17 @@ void showOnboardingPaymentSheet({
               valueListenable: errorNotifier,
               builder: (_, err, __) => err == null
                   ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
+                  : Container(
+                      key: const ValueKey('payment-sheet-error'),
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: ShadColors.crimson.withAlpha(30),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: ShadColors.crimson.withAlpha(50)),
+                      ),
+                      child: Text(err, style: Lx.text(ctx, size: 12.5, color: Lx.danger)),
                     ),
             ),
             const SizedBox(height: 20),
@@ -186,6 +207,12 @@ void showOnboardingPaymentSheet({
               builder: (_, uploading, __) => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Lx.crimson,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   onPressed: uploading ? null : () => _submitPaymentOnboarding(
                     ctx, setSheetState, uploadingNotifier, errorNotifier, workspaceId,
                     amountCtrl, currency, selectedMethod.value, proofFiles,

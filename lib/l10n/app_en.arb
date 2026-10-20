@@ -888,6 +888,7 @@
   "onboarding_welcome": "Welcome!",
   "onboarding_addSignature": "Add Your Signature",
   "onboarding_signNow": "Sign Now",
+  "onboardingNextStepsTitle": "Next steps",
   "onboarding_contactSupport": "Contact Support",
   "onboarding_contractReceived": "Contract Received",
   "onboarding_reviewContract": "Review Contract",

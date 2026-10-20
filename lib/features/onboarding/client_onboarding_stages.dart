@@ -7,7 +7,29 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
+
+Widget _stageIcon(IconData icon, Color color) => Container(
+      key: const ValueKey('stage-icon'),
+      width: 72, height: 72,
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withAlpha(60)),
+      ),
+      child: Icon(icon, size: 32, color: color),
+    );
+
+ButtonStyle _primaryStyle() => ElevatedButton.styleFrom(
+      backgroundColor: Lx.crimson,
+      foregroundColor: Colors.white,
+      minimumSize: const Size.fromHeight(48),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      disabledBackgroundColor: ShadColors.cardBorder,
+      disabledForegroundColor: ShadColors.textDisabled,
+    );
 
 Widget buildSignatureStage({
   required BuildContext context,
@@ -19,18 +41,11 @@ Widget buildSignatureStage({
     child: Column(
       children: [
         const SizedBox(height: 40),
-        Container(
-          width: 80, height: 80,
-          decoration: BoxDecoration(
-            color: ShadColors.gold.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(Icons.auto_fix_high, size: 36, color: ShadColors.gold),
-        ),
+        _stageIcon(Icons.auto_fix_high, ShadColors.gold),
         const SizedBox(height: 24),
         Text(
           AppLocalizations.of(context)!.onboarding_welcomeName(client?['contact_person'] ?? ''),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
         ),
         const SizedBox(height: 12),
         Text(
@@ -44,12 +59,7 @@ Widget buildSignatureStage({
             onPressed: onSign,
             icon: const Icon(Icons.draw, size: 20),
             label: Text(AppLocalizations.of(context)!.onboarding_signNow),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShadColors.crimson,
-              foregroundColor: ShadColors.textOnCrimson,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: _primaryStyle(),
           ),
         ),
       ],
@@ -63,46 +73,51 @@ Widget buildWaitingStage({
   required Color iconColor,
   required String title,
   required String subtitle,
-  VoidCallback? onContactSupport,
+  /// Names of the stages still ahead ("What's next"). Empty hides the list.
+  List<String> nextSteps = const [],
+  /// Heading for [nextSteps]; the screen passes its localized string.
+  String? nextStepsTitle,
 }) {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 80, height: 80,
-          decoration: BoxDecoration(
-            color: iconColor.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Icon(icon, size: 36, color: iconColor),
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(24),
+    child: Column(children: [
+      const SizedBox(height: 24),
+      LuxeCard(
+        key: const ValueKey('waiting-card'),
+        padding: const EdgeInsets.all(24),
+        child: Column(children: [
+          _stageIcon(icon, iconColor),
+          const SizedBox(height: 20),
+          Text(title, style: Lx.display(context, size: 20), textAlign: TextAlign.center),
+          const SizedBox(height: 10),
+          Text(subtitle, style: Lx.text(context, size: 13.5, color: Lx.ink2, height: 1.6), textAlign: TextAlign.center),
+          const SizedBox(height: 22),
+          const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5)),
+        ]),
+      ),
+      if (nextSteps.isNotEmpty) ...[
+        LuxeSectionHeader(title: nextStepsTitle ?? ''),
+        LuxeCard(
+          key: const ValueKey('next-steps-card'),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (var i = 0; i < nextSteps.length; i++)
+              Padding(
+                padding: EdgeInsets.only(bottom: i == nextSteps.length - 1 ? 0 : 10),
+                child: Row(children: [
+                  Container(
+                    width: 22, height: 22,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+                    child: Text('${i + 1}', style: Lx.text(context, size: 11, color: Lx.muted)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(nextSteps[i], style: Lx.text(context, size: 13, color: Lx.ink2))),
+                ]),
+              ),
+          ]),
         ),
-        const SizedBox(height: 24),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-        const SizedBox(
-          width: 40, height: 40,
-          child: CircularProgressIndicator(strokeWidth: 3),
-        ),
-        const SizedBox(height: 32),
-        TextButton.icon(
-          onPressed: onContactSupport,
-          icon: const Icon(Icons.headset_mic, size: 18),
-          label: Text(AppLocalizations.of(context)!.onboarding_contactSupport),
-          style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),
-        ),
-      ]),
-    ),
+      ],
+    ]),
   );
 }
 
@@ -135,18 +150,11 @@ Widget buildContractReviewStage({
     child: Column(
       children: [
         const SizedBox(height: 40),
-        Container(
-          width: 80, height: 80,
-          decoration: BoxDecoration(
-            color: ShadColors.approved.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(Icons.description, size: 36, color: ShadColors.approved),
-        ),
+        _stageIcon(Icons.description, Lx.ok),
         const SizedBox(height: 24),
         Text(
           l10n.onboarding_contractReceived,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
         ),
         const SizedBox(height: 12),
         Text(
@@ -187,14 +195,7 @@ Widget buildContractReviewStage({
             onPressed: hasMissingDocs ? null : () => onRespond('approved'),
             icon: const Icon(Icons.thumb_up, size: 20),
             label: Text(l10n.onboarding_approve),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShadColors.crimson,
-              foregroundColor: ShadColors.textOnCrimson,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              disabledBackgroundColor: ShadColors.cardBorder,
-              disabledForegroundColor: ShadColors.textDisabled,
-            ),
+            style: _primaryStyle(),
           ),
         ),
         const SizedBox(height: 12),
@@ -268,16 +269,16 @@ Widget buildPaymentStage({
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ShadColors.error.withAlpha(25),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ShadColors.error.withAlpha(80)),
+              gradient: Lx.cardApGradient,
+              borderRadius: BorderRadius.circular(Lx.rCard),
+              border: Border.all(color: Lx.cardApBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.error_outline, color: ShadColors.error, size: 20),
+                    const Icon(Icons.error_outline, color: Lx.crimsonInk, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -285,7 +286,7 @@ Widget buildPaymentStage({
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: ShadColors.error,
+                          color: Lx.crimsonInk,
                         ),
                       ),
                     ),
@@ -313,18 +314,11 @@ Widget buildPaymentStage({
           ),
         ],
         const SizedBox(height: 12),
-        Container(
-          width: 80, height: 80,
-          decoration: BoxDecoration(
-            color: ShadColors.warning.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(Icons.payment, size: 36, color: ShadColors.warning),
-        ),
+        _stageIcon(Icons.payment, Lx.wait),
         const SizedBox(height: 20),
         Text(
           AppLocalizations.of(context)!.onboarding_completePayment,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay'),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
         ),
         const SizedBox(height: 8),
         Text(
@@ -334,45 +328,30 @@ Widget buildPaymentStage({
         const SizedBox(height: 24),
 
         // Progress card
-        Container(
-          width: double.infinity,
+        LuxeCard(
+          key: const ValueKey('payment-progress-card'),
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: ShadColors.surfaceDarker,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: ShadColors.cardBorder),
-          ),
           child: Column(children: [
-            Text('${paidAmount.toStringAsFixed(2)} $currency', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
+            Text('${paidAmount.toStringAsFixed(2)} $currency', style: Lx.display(context, size: 28)),
             const SizedBox(height: 4),
-            Text(AppLocalizations.of(context)!.payments_remainingSummary(currency, remaining.toStringAsFixed(2), grandTotal.toStringAsFixed(2)), style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+            Text(AppLocalizations.of(context)!.payments_remainingSummary(currency, remaining.toStringAsFixed(2), grandTotal.toStringAsFixed(2)), style: Lx.text(context, size: 11, color: Lx.muted)),
             if (taxAmount > 0) ...[
               const SizedBox(height: 4),
-              Text(AppLocalizations.of(context)!.payments_taxSummary(taxAmount.toStringAsFixed(2), currency, taxPercentage, totalAmount.toStringAsFixed(2)), style: TextStyle(fontSize: 10, color: ShadColors.textDisabled)),
+              Text(AppLocalizations.of(context)!.payments_taxSummary(taxAmount.toStringAsFixed(2), currency, taxPercentage, totalAmount.toStringAsFixed(2)), style: Lx.text(context, size: 10, color: Lx.muted)),
             ],
             const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: ShadColors.cardBorder,
-                valueColor: const AlwaysStoppedAnimation(ShadColors.gold),
-              ),
-            ),
+            LuxeProgressSplit(fraction: progress),
           ]),
         ),
-        const SizedBox(height: 16),
-
         // Contract details
         if (startDate != null || endDate != null)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ShadColors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ShadColors.cardBorder),
+              gradient: Lx.cardGradient,
+              borderRadius: BorderRadius.circular(Lx.rCard),
+              border: Border.all(color: Lx.cardBorder),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(AppLocalizations.of(context)!.onboarding_contractDetails, style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
@@ -424,12 +403,7 @@ Widget buildPaymentStage({
             onPressed: () => onSendPayment(remaining > 0 ? remaining : grandTotal, ws?['id'], currency),
             icon: const Icon(Icons.add_circle_outline, size: 20),
             label: Text(AppLocalizations.of(context)!.onboarding_sendPayment),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShadColors.crimson,
-              foregroundColor: ShadColors.textOnCrimson,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: _primaryStyle(),
           ),
         ),
       ],
@@ -441,14 +415,14 @@ Widget _paymentInfoTile(String label, String value, Color valueColor) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
-      color: ShadColors.card,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
+      gradient: Lx.cardGradient,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Lx.cardBorder),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
       const SizedBox(height: 4),
-      Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: valueColor, fontFamily: 'PlayfairDisplay')),
+      Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: valueColor, fontFamily: Lx.serif)),
     ]),
   );
 }

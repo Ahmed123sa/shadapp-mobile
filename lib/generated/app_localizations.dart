@@ -5264,6 +5264,12 @@ abstract class AppLocalizations {
   /// **'Sign Now'**
   String get onboarding_signNow;
 
+  /// No description provided for @onboardingNextStepsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Next steps'**
+  String get onboardingNextStepsTitle;
+
   /// No description provided for @onboarding_contactSupport.
   ///
   /// In en, this message translates to:
