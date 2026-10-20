@@ -5784,4 +5784,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatStaffReadOnly => 'You can read this chat but not write in it.';
+
+  @override
+  String get amRoleSuperAdmin => 'Super admin';
+
+  @override
+  String get amRoleManager => 'Account manager';
+
+  @override
+  String get amRoleAssistant => 'Manager assistant';
+
+  @override
+  String get amGreetMorning => 'Good morning';
+
+  @override
+  String get amGreetAfternoon => 'Good afternoon';
+
+  @override
+  String get amGreetEvening => 'Good evening';
+
+  @override
+  String get amHomeSubSa => 'The agency today.';
+
+  @override
+  String get amHomeSubAm => 'Here is what needs you today.';
+
+  @override
+  String get amKpiNeedAction => 'need your action';
+
+  @override
+  String get amOpen => 'Open';
+
+  @override
+  String get amWaitingOnYou => 'Waiting on you';
+
+  @override
+  String get financeTitle => 'Finance';
+
+  @override
+  String get financeApprovedTotal => 'Approved total';
+
+  @override
+  String get financePendingCount => 'Pending';
+
+  @override
+  String get financeApprovedCount => 'Approved';
+
+  @override
+  String get financeAllCount => 'All payments';
+
+  @override
+  String financePaymentsHint(int count) {
+    return '$count payments';
+  }
+
+  @override
+  String get financeSearchHint => 'Search clients, contracts or amounts';
+
+  @override
+  String get financeLoadMore => 'Load more';
+
+  @override
+  String get financeFailed => 'Failed to load payments';
 }

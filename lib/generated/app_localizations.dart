@@ -11123,6 +11123,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can read this chat but not write in it.'**
   String get chatStaffReadOnly;
+
+  /// No description provided for @amRoleSuperAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Super admin'**
+  String get amRoleSuperAdmin;
+
+  /// No description provided for @amRoleManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Account manager'**
+  String get amRoleManager;
+
+  /// No description provided for @amRoleAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager assistant'**
+  String get amRoleAssistant;
+
+  /// No description provided for @amGreetMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get amGreetMorning;
+
+  /// No description provided for @amGreetAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get amGreetAfternoon;
+
+  /// No description provided for @amGreetEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get amGreetEvening;
+
+  /// No description provided for @amHomeSubSa.
+  ///
+  /// In en, this message translates to:
+  /// **'The agency today.'**
+  String get amHomeSubSa;
+
+  /// No description provided for @amHomeSubAm.
+  ///
+  /// In en, this message translates to:
+  /// **'Here is what needs you today.'**
+  String get amHomeSubAm;
+
+  /// No description provided for @amKpiNeedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'need your action'**
+  String get amKpiNeedAction;
+
+  /// No description provided for @amOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get amOpen;
+
+  /// No description provided for @amWaitingOnYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on you'**
+  String get amWaitingOnYou;
+
+  /// No description provided for @financeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get financeTitle;
+
+  /// No description provided for @financeApprovedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved total'**
+  String get financeApprovedTotal;
+
+  /// No description provided for @financePendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get financePendingCount;
+
+  /// No description provided for @financeApprovedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get financeApprovedCount;
+
+  /// No description provided for @financeAllCount.
+  ///
+  /// In en, this message translates to:
+  /// **'All payments'**
+  String get financeAllCount;
+
+  /// No description provided for @financePaymentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} payments'**
+  String financePaymentsHint(int count);
+
+  /// No description provided for @financeSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search clients, contracts or amounts'**
+  String get financeSearchHint;
+
+  /// No description provided for @financeLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get financeLoadMore;
+
+  /// No description provided for @financeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load payments'**
+  String get financeFailed;
 }
 
 class _AppLocalizationsDelegate

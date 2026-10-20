@@ -15,6 +15,16 @@ class PaymentRepository {
   final ApiClient _api;
   PaymentRepository({ApiClient? api}) : _api = api ?? ApiClient();
 
+  /// Cross-workspace payments for the finance screen (`GET /all-payments`):
+  /// a paginated `payments` envelope plus `stats`, same query params the web
+  /// dashboard's Finance page uses.
+  Future<Map<String, dynamic>> fetchAll({int page = 1, String search = '', String status = ''}) {
+    final q = <String, String>{'page': '$page', 'per_page': '25'};
+    if (search.trim().isNotEmpty) q['search'] = search.trim();
+    if (status.isNotEmpty) q['status'] = status;
+    return _api.get('/all-payments?${Uri(queryParameters: q).query}');
+  }
+
   Future<List<dynamic>> fetchForWorkspace(int workspaceId) async {
     final res = await _api.get('/workspaces/$workspaceId/payments');
     return safeList(res['payments']);

@@ -26,11 +26,146 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
-import '../../../core/helpers/client_status.dart';
-import '../../../core/theme.dart';
-import '../../../core/widgets/client_type_badge.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
+
+// ── Staff mockup `pHome` pieces ──
+
+Widget _head(BuildContext context, ApiClient api) {
+  final l10n = AppLocalizations.of(context)!;
+  final now = DateTime.now();
+  final greet = now.hour < 12 ? l10n.amGreetMorning : now.hour < 18 ? l10n.amGreetAfternoon : l10n.amGreetEvening;
+  final locale = Localizations.localeOf(context).toString();
+  final isSA = api.role == 'super_admin';
+  final name = isSA ? '' : (api.userName ?? '').trim().split(RegExp(r'\s+')).first;
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(0, 6, 0, 14),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(DateFormat.yMMMMEEEEd(locale).format(now).toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.6)),
+      const SizedBox(height: 4),
+      Text.rich(
+        TextSpan(children: [
+          TextSpan(text: name.isEmpty ? greet : '$greet, $name'),
+          const TextSpan(text: '.', style: TextStyle(color: Lx.crimsonInk)),
+        ]),
+        style: Lx.display(context, size: 30),
+      ),
+      const SizedBox(height: 6),
+      Text(isSA ? l10n.amHomeSubSa : l10n.amHomeSubAm, style: Lx.text(context, size: 13, color: Lx.muted)),
+    ]),
+  );
+}
+
+/// Mockup `.kpi`.
+Widget _kpi(BuildContext context, String label, String value, String hint, {bool act = false}) {
+  return Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      gradient: Lx.cardGradient,
+      borderRadius: BorderRadius.circular(Lx.rCard),
+      border: Border.all(color: act ? const Color(0x59941414) : Lx.line),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 1.6)),
+      const SizedBox(height: 4),
+      Text(value, style: Lx.display(context, size: 26)),
+      const SizedBox(height: 2),
+      Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 11.5, color: act ? Lx.crimsonInk : Lx.muted)),
+    ]),
+  );
+}
+
+Widget _kpiGrid(List<Widget> tiles) {
+  final rows = <Widget>[];
+  for (var i = 0; i < tiles.length; i += 2) {
+    rows.add(Row(children: [
+      Expanded(child: tiles[i]),
+      const SizedBox(width: 10),
+      Expanded(child: i + 1 < tiles.length ? tiles[i + 1] : const SizedBox()),
+    ]));
+    if (i + 2 < tiles.length) rows.add(const SizedBox(height: 10));
+  }
+  return Column(children: rows);
+}
+
+/// Mockup `.sh`: serif section title + "View all" link.
+Widget _sectionHead(BuildContext context, String title, {String? link, VoidCallback? onLink}) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(0, 20, 0, 10),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(title, style: Lx.display(context, size: 19)),
+      if (link != null)
+        GestureDetector(
+          onTap: onLink,
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 1),
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+            child: Text(link, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+          ),
+        ),
+    ]),
+  );
+}
+
+Widget _waitingList(BuildContext context, List<Map<String, dynamic>> pendingContracts, List<dynamic> pendingPayments, VoidCallback onOpen) {
+  final l10n = AppLocalizations.of(context)!;
+  Widget card({required String kind, required String title, required String sub}) => LuxeCard(
+        attention: true,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          LuxeKind(kind),
+          const SizedBox(height: 4),
+          Text(title, style: Lx.text(context, size: 16)),
+          if (sub.isNotEmpty) Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+          const SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              const LuxeStatusDot(status: LxStatus.bad),
+              const SizedBox(width: 7),
+              Text(l10n.amStatusPending, style: Lx.text(context, size: 12, color: Lx.ink2)),
+            ]),
+            LuxeButton(label: l10n.amOpen, size: LuxeButtonSize.sm, onPressed: onOpen),
+          ]),
+        ]),
+      );
+
+  if (pendingContracts.isEmpty && pendingPayments.isEmpty) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(child: Text(l10n.amNoPendingApprovals, style: Lx.text(context, size: 12.5, color: Lx.faint))),
+    );
+  }
+  return Column(children: [
+    ...pendingContracts.take(2).map((c) => card(
+          kind: l10n.amContractApproval,
+          title: '${c['title'] ?? ''}',
+          sub: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '') != null ? lxFormatMoney(double.parse(c['value'].toString())) : '0'} ${c['currency'] ?? ''}',
+        )),
+    ...pendingPayments.take(2).map((p) {
+      final client = p['workspace']?['client'] as Map<String, dynamic>?;
+      final amt = double.tryParse(p['amount']?.toString() ?? '') ?? 0;
+      return card(
+        kind: l10n.amPaymentApproval,
+        title: '${client?['company_name'] ?? ''}',
+        sub: '${lxFormatMoney(amt)} ${p['currency'] ?? ''}',
+      );
+    }),
+  ]);
+}
+
+Widget _meetingsLink(BuildContext context, VoidCallback onTap) {
+  final l10n = AppLocalizations.of(context)!;
+  return Padding(
+    padding: const EdgeInsets.only(top: 6),
+    child: SizedBox(
+      width: double.infinity,
+      child: LuxeButton(key: const ValueKey('home-meetings'), label: l10n.amStatMeetings, lxIcon: 'video', onPressed: onTap),
+    ),
+  );
+}
 
 Widget buildAmHomeTab({
   required BuildContext context,
@@ -50,75 +185,28 @@ Widget buildAmHomeTab({
 }) {
   final l10n = AppLocalizations.of(context)!;
   return ListView(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
     children: [
-      Row(children: [
-        Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$clientsTotal', Icons.people, ShadColors.sent)),
-        const SizedBox(width: 8),
-        Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$contractsActive', Icons.description, ShadColors.gold)),
-      ]),
-      const SizedBox(height: 8),
-      Row(children: [
+      _head(context, api),
+      _kpiGrid([
+        _kpi(context, l10n.amStatTotalClients, '$clientsTotal', ''),
+        _kpi(context, l10n.amStatActiveContracts, '$contractsActive', ''),
         // Money is off-limits for manager assistants.
-        if (!api.isAssistant) ...[
-          Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '$paymentsPending', Icons.payments, ShadColors.warning)),
-          const SizedBox(width: 8),
-        ],
-        Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$approvalsTotal', Icons.pending_actions, ShadColors.crimson)),
+        if (!api.isAssistant) _kpi(context, l10n.amStatPendingPayments, '$paymentsPending', ''),
+        _kpi(context, l10n.amStatPendingApprovals, '$approvalsTotal', l10n.amKpiNeedAction, act: true),
       ]),
-      const SizedBox(height: 8),
-      Row(children: [
-        if (isSA)
-          Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
-        if (isSA) const SizedBox(width: 8),
-        Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: onShowAllMeetings)),
-      ]),
-      const SizedBox(height: 20),
-      Row(children: [
-        Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => onSelectTab(1),
-          child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-        ),
-      ]),
-      const SizedBox(height: 8),
-      if (pendingContracts.isEmpty && pendingPayments.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
-        )
-      else ...[
-        if (pendingContracts.isNotEmpty)
-          ...pendingContracts.take(2).map((c) => _approvalItem(
-            title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
-            subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
-            isContract: true,
-          )),
-        if (pendingPayments.isNotEmpty)
-          ...pendingPayments.take(2).map((p) {
-            final client = p['workspace']?['client'] as Map<String, dynamic>?;
-            return _approvalItem(
-              title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
-              subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
-              isContract: false,
-            );
-          }),
-      ],
-      const SizedBox(height: 20),
-      Row(children: [
-        Text(l10n.amClients, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => onSelectTab(2),
-          child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-        ),
-      ]),
-      const SizedBox(height: 8),
+      _meetingsLink(context, onShowAllMeetings),
+      _sectionHead(context, l10n.amWaitingOnYou, link: l10n.amViewAll, onLink: () => onSelectTab(1)),
+      _waitingList(context, pendingContracts, pendingPayments, () => onSelectTab(1)),
+      _sectionHead(context, l10n.amClients, link: l10n.amViewAll, onLink: () => onSelectTab(2)),
       if (allClients.isNotEmpty)
-        ...allClients.take(3).map((c) => _clientCard(context, api, c, onOpenClient)),
-      if (allClients.isEmpty)
-        _buildEmptyState(context, api, load),
+        LuxeCard(
+          child: Column(children: [
+            for (var i = 0; i < allClients.take(3).length; i++)
+              _clientRow(context, allClients[i] as Map<String, dynamic>, onOpenClient, last: i == allClients.take(3).length - 1),
+          ]),
+        ),
+      if (allClients.isEmpty) _buildEmptyState(context, api, load),
     ],
   );
 }
@@ -140,265 +228,84 @@ Widget buildHomeTab({
 }) {
   final l10n = AppLocalizations.of(context)!;
   return ListView(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
     children: [
-      // Stats Grid 3x2
-      Row(children: [
-        Expanded(child: _homeStatCard(l10n.amStatTotalClients, '$clientsTotal', Icons.people, ShadColors.sent)),
-        const SizedBox(width: 8),
-        Expanded(child: _homeStatCard(l10n.amStatActiveContracts, '$contractsActive', Icons.description, ShadColors.gold)),
+      _head(context, api),
+      _kpiGrid([
+        _kpi(context, l10n.amStatTotalClients, '$clientsTotal', ''),
+        _kpi(context, l10n.amStatActiveContracts, '$contractsActive', ''),
+        _kpi(context, l10n.amStatPendingPayments, '$paymentsPending', ''),
+        _kpi(context, l10n.amStatPendingApprovals, '$approvalsTotal', l10n.amKpiNeedAction, act: true),
       ]),
-      const SizedBox(height: 8),
-      Row(children: [
-        Expanded(child: _homeStatCard(l10n.amStatPendingPayments, '$paymentsPending', Icons.payments, ShadColors.warning)),
-        const SizedBox(width: 8),
-        Expanded(child: _homeStatCard(l10n.amStatPendingApprovals, '$approvalsTotal', Icons.pending_actions, ShadColors.crimson)),
-      ]),
-      const SizedBox(height: 8),
-      Row(children: [
-        Expanded(child: _homeStatCard(l10n.amStatReports, '', Icons.bar_chart, ShadColors.gold, onTap: () => context.push('/am/reports'))),
-        const SizedBox(width: 8),
-        Expanded(child: _homeStatCard(l10n.amStatMeetings, '', Icons.videocam, ShadColors.sent, onTap: onShowAllMeetings)),
-      ]),
-      const SizedBox(height: 20),
-      // Latest Pending Approvals
-      Row(children: [
-        Text(l10n.amRecentApprovals, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => onSelectTab(1),
-          child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-        ),
-      ]),
-      const SizedBox(height: 8),
-      if (pendingContracts.isEmpty && pendingPayments.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(child: Text(l10n.amNoPendingApprovals, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled, fontFamily: 'Archivo'))),
-        )
-      else ...[
-        if (pendingContracts.isNotEmpty)
-          ...pendingContracts.take(2).map((c) => _approvalItem(
-            title: '${l10n.amContractApproval} — ${c['title'] ?? ''}',
-            subtitle: '${c['company'] ?? ''} • ${double.tryParse(c['value']?.toString() ?? '')?.toStringAsFixed(0) ?? '0'} ${c['currency'] ?? ''}',
-            isContract: true,
-          )),
-        if (pendingPayments.isNotEmpty)
-          ...pendingPayments.take(2).map((p) {
-            final client = p['workspace']?['client'] as Map<String, dynamic>?;
-            return _approvalItem(
-              title: '${l10n.amPaymentApproval} — ${client?['company_name'] ?? ''}',
-              subtitle: '${p['currency'] ?? ''} ${(double.tryParse(p['amount']?.toString() ?? '') ?? 0).toStringAsFixed(0)}',
-              isContract: false,
-            );
-          }),
-      ],
-      const SizedBox(height: 20),
-      // Team Section
-      Row(children: [
-        Text(l10n.amNavTeam, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => onSelectTab(3),
-          child: Text(l10n.amViewAll, style: const TextStyle(fontSize: 11, color: ShadColors.gold, fontFamily: 'Archivo')),
-        ),
-      ]),
-      const SizedBox(height: 8),
+      _meetingsLink(context, onShowAllMeetings),
+      _sectionHead(context, l10n.amWaitingOnYou, link: l10n.amViewAll, onLink: () => onSelectTab(1)),
+      _waitingList(context, pendingContracts, pendingPayments, () => onSelectTab(1)),
+      _sectionHead(context, l10n.accountManagers_title, link: l10n.amViewAll, onLink: () => onSelectTab(3)),
       if (allManagers.isNotEmpty)
-        ...allManagers.take(3).map((m) => _managerCard(context, api, m, onManagerTap)),
-      if (allManagers.isEmpty)
-        _buildEmptyState(context, api, load),
+        LuxeCard(
+          child: Column(children: [
+            for (var i = 0; i < allManagers.take(3).length; i++)
+              _managerRow(context, allManagers[i] as Map<String, dynamic>, onManagerTap, last: i == allManagers.take(3).length - 1),
+          ]),
+        ),
+      if (allManagers.isEmpty) _buildEmptyState(context, api, load),
     ],
   );
 }
 
-Widget _homeStatCard(String label, String value, IconData icon, Color color, {VoidCallback? onTap}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: ShadColors.card,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Icon(icon, size: 16, color: color),
-        const Spacer(),
-        if (value.isNotEmpty) Text(value, style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600, color: color, fontFamily: 'PlayfairDisplay')),
-      ]),
-      const SizedBox(height: 4),
-      Text(label, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-    ]),
-  ),
-  );
-}
-
-Widget _approvalItem({required String title, required String subtitle, required bool isContract}) {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      color: ShadColors.card,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
-    ),
-    child: Row(children: [
-      Container(width: 3, height: 48, decoration: BoxDecoration(color: isContract ? ShadColors.gold : ShadColors.sent, borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)))),
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-            const SizedBox(height: 2),
-            Text(subtitle, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-          ]),
-        ),
-      ),
-    ]),
-  );
-}
-
-Widget _managerCard(BuildContext context, ApiClient api, Map<String, dynamic> manager, void Function(Map<String, dynamic>) onTap) {
+/// Mockup `.doc` row: avatar + name/sub on one side, count/status on the other.
+Widget _managerRow(BuildContext context, Map<String, dynamic> manager, void Function(Map<String, dynamic>) onTap, {bool last = false}) {
+  final l10n = AppLocalizations.of(context)!;
   final name = manager['name'] as String? ?? '';
   final email = manager['email'] as String? ?? '';
   final clientCount = int.tryParse(manager['managed_clients_count']?.toString() ?? '') ?? 0;
-  final avatarUrl = manager['avatar_url'] as String?;
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      color: ShadColors.card,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => onTap(manager),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: ShadColors.cardBorder,
-            backgroundImage: avatarUrl != null ? NetworkImage(api.resolveFileUrl(avatarUrl)) : null,
-            child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 18, color: ShadColors.textSecondary)) : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
-              const SizedBox(height: 2),
-              Text(email, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-            ]),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: ShadColors.sent.withAlpha(25),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text('$clientCount', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: ShadColors.sent, fontFamily: 'PlayfairDisplay')),
-          ),
-        ]),
-      ),
+  return InkWell(
+    onTap: () => onTap(manager),
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+      child: Row(children: [
+        LuxeAvatar(initial: name.isNotEmpty ? name[0].toUpperCase() : '?', size: 28),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: Lx.text(context, size: 13.5)),
+            Text(email, style: Lx.text(context, size: 12, color: Lx.muted)),
+          ]),
+        ),
+        Text('$clientCount', style: Lx.display(context, size: 15)),
+        const SizedBox(width: 4),
+        Text(l10n.amClients, style: Lx.text(context, size: 10, color: Lx.muted)),
+      ]),
     ),
   );
 }
 
-Widget _clientCard(BuildContext context, ApiClient api, Map<String, dynamic> client, void Function(Map<String, dynamic>) onTap) {
+Widget _clientRow(BuildContext context, Map<String, dynamic> client, void Function(Map<String, dynamic>) onTap, {bool last = false}) {
   final l10n = AppLocalizations.of(context)!;
   final ws = client['workspace'] as Map<String, dynamic>?;
-  final wsStatus = ws?['status'] as String? ?? 'inactive';
-  final wsActive = wsStatus == 'active';
+  final wsActive = (ws?['status'] as String? ?? 'inactive') == 'active';
   final name = client['company_name'] as String? ?? '';
   final person = client['contact_person'] as String? ?? '';
-  final paymentStatus = client['payment_status'] as String?;
-  final contracted = clientHasSignedContract(client);
-
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      color: ShadColors.card,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: ShadColors.cardBorder),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => onTap(client),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
-        child: Column(children: [
-          Row(children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: ShadColors.crimson,
-              backgroundImage: (client['avatar_url'] as String?)?.isNotEmpty == true
-                  ? NetworkImage(api.resolveFileUrl(client['avatar_url']))
-                  : null,
-              child: (client['avatar_url'] as String?)?.isNotEmpty != true
-                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: ShadColors.gold, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Archivo'))
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Flexible(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo'))),
-                  const SizedBox(width: 6),
-                  ClientTypeBadge(clientType: client['client_type'] as String?, compact: true),
-                ]),
-                const SizedBox(height: 2),
-                Text(person, style: TextStyle(fontSize: 11, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
-              ]),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: (wsActive ? ShadColors.success : ShadColors.textDisabled).withAlpha(25),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                wsActive ? l10n.amStatusActive : l10n.amStatusInactive,
-                style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3,
-                  color: wsActive ? ShadColors.success : ShadColors.textDisabled,
-                  fontFamily: 'Archivo',
-                ),
-              ),
-            ),
+  return InkWell(
+    onTap: () => onTap(client),
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: Lx.text(context, size: 13.5)),
+            Text(person, style: Lx.text(context, size: 12, color: Lx.muted)),
           ]),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              _statusChip(Icons.description_outlined, contracted ? l10n.amStatusContracted : l10n.amStatusNotContracted, contracted ? ShadColors.success : ShadColors.textDisabled),
-              _statusChip(Icons.payment, paymentStatus == 'approved' ? l10n.amStatusPaid : paymentStatus == 'pending' ? l10n.amStatusPending : '—',
-                paymentStatus == 'approved' ? ShadColors.success : paymentStatus == 'pending' ? ShadColors.warning : ShadColors.textDisabled),
-              _statusChip(wsActive ? Icons.check_circle : Icons.schedule, wsActive ? l10n.amStatusActive : l10n.amStatusPending,
-                wsActive ? ShadColors.success : ShadColors.textDisabled),
-            ],
-          ),
+        ),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          LuxeStatusDot(status: wsActive ? LxStatus.ok : LxStatus.off),
+          const SizedBox(width: 7),
+          Text(wsActive ? l10n.amStatusActive : l10n.amStatusInactive, style: Lx.text(context, size: 12, color: Lx.ink2)),
         ]),
-      ),
+      ]),
     ),
-  );
-}
-
-Widget _statusChip(IconData icon, String label, Color color) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-    decoration: BoxDecoration(
-      color: color.withAlpha(25),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: color.withAlpha(60)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 11, color: color),
-      const SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500, fontFamily: 'Archivo')),
-    ]),
   );
 }
 
@@ -406,19 +313,23 @@ Widget _buildEmptyState(BuildContext context, ApiClient api, Future<void> Functi
   final loc2 = AppLocalizations.of(context)!;
   final isSA = api.role == 'super_admin';
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 48),
+    padding: const EdgeInsets.symmetric(vertical: 40),
     child: Column(children: [
-      const Icon(Icons.people_outline, size: 56, color: ShadColors.textDisabled),
+      const LxIcon('users', size: 44, color: Lx.faint),
       const SizedBox(height: 16),
-      Text(loc2.noClients, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Archivo')),
+      Text(loc2.noClients, style: Lx.display(context, size: 20)),
       const SizedBox(height: 8),
-      Text(loc2.noClientsSubtitle, style: TextStyle(fontSize: 14, color: ShadColors.textSecondary, fontFamily: 'Archivo')),
+      Text(loc2.noClientsSubtitle, style: Lx.text(context, size: 13.5, color: Lx.muted)),
       const SizedBox(height: 24),
       if (!isSA && !api.isAssistant)
-        ElevatedButton.icon(
-          onPressed: () async { final created = await context.push<bool>('/am/clients/create'); if (created == true) load(); },
-          icon: const Icon(Icons.person_add, size: 18),
-          label: Text(loc2.createClient),
+        LuxeButton(
+          label: loc2.createClient,
+          lxIcon: 'plus',
+          kind: LuxeButtonKind.primary,
+          onPressed: () async {
+            final created = await context.push<bool>('/am/clients/create');
+            if (created == true) load();
+          },
         ),
     ]),
   );

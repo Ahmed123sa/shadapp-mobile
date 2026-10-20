@@ -49,6 +49,11 @@ class PaymentProvider {
   /// load, so this pass-through doesn't touch [_payments]/[_isLoading].
   Future<Map<String, dynamic>> fetchWorkspaceEnvelope(int workspaceId) => _repo.fetchForWorkspaceEnvelope(workspaceId);
 
+  /// See [PaymentRepository.fetchAll]. Pass-through: the finance screen owns
+  /// its own paging/filter state.
+  Future<Map<String, dynamic>> fetchAllPayments({int page = 1, String search = '', String status = ''}) =>
+      _repo.fetchAll(page: page, search: search, status: status);
+
   Future<void> fetchForWorkspace(int workspaceId) async {
     _isLoading = true;
     _error = null;

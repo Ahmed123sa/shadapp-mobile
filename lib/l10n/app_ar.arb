@@ -1,6 +1,5 @@
 {
   "@@locale": "ar",
-
   "appTitle": "ShadApp",
   "chat": "المحادثة",
   "contracts": "العقود",
@@ -129,7 +128,6 @@
   "editRequestedStatus": "طلب تعديل",
   "pending": "قيد الانتظار",
   "noData": "لا توجد بيانات",
-
   "sessionExpired": "انتهت الجلسة",
   "invalidCredentials": "بيانات الدخول غير صحيحة",
   "serverError": "خطأ في الخادم",
@@ -147,7 +145,6 @@
   "create": "إنشاء",
   "update": "تحديث",
   "saveChanges": "حفظ التغييرات",
-
   "loginTitle": "تسجيل الدخول",
   "emailLabel": "البريد الإلكتروني",
   "passwordLabel": "كلمة المرور",
@@ -160,7 +157,6 @@
   "connectionFailedMessage": "تعذّر الوصول إلى الخادم. تأكد من اتصالك ومن أن الخادم يعمل.",
   "tooManyAttemptsMessage": "محاولات تسجيل دخول كثيرة. انتظر دقيقة ثم حاول مرة أخرى.",
   "loginSuccess": "تم تسجيل الدخول بنجاح",
-
   "scheduled": "مجدول",
   "cancelled": "ملغي",
   "paid": "مدفوع",
@@ -169,7 +165,6 @@
   "underReview": "قيد المراجعة",
   "approved_status": "معتمد",
   "rejected_status": "مرفوض",
-
   "chatContractCard_fileOpenFailed": "فشل فتح الملف",
   "contractValueExclVat": "قيمة العقد (غير شامل ضريبة)",
   "contractApprovedUploadPayment": "تم اعتماد العقد! يرجى رفع إثبات الدفع.",
@@ -208,7 +203,6 @@
   "paymentBanner_tomorrow": "مستحق غداً",
   "paymentBanner_daysOverdue": "متأخر {days} أيام",
   "paymentBanner_daysAhead": "متبقي {days} أيام",
-
   "chat_editFailed": "فشل تعديل الرسالة",
   "chat_attachFailed": "فشل إرفاق الملف",
   "chat_editRequested": "طلب تعديل",
@@ -241,7 +235,6 @@
   "chat_replyAction": "رد",
   "chat_contracts": "العقود",
   "chat_noContracts": "لا توجد عقود متاحة",
-
   "contract_all": "الكل",
   "contract_uploaded": "تم الرفع",
   "contract_uploadFailed": "فشل الرفع",
@@ -308,7 +301,6 @@
   "contract_requiredDocsLabel": "المستندات المطلوبة",
   "contract_docInputHint": "اضغط لاختيار الملفات",
   "contract_noContracts": "لا توجد عقود متاحة",
-
   "dashboard_failedToLoad": "فشل تحميل البيانات",
   "dashboard_retry": "إعادة المحاولة",
   "dashboard_newNotification": "إشعار جديد",
@@ -343,7 +335,6 @@
   "dashboard_notifications_minutesAgo": "منذ {minutes} دقيقة",
   "dashboard_notifications_hoursAgo": "منذ {hours} ساعة",
   "dashboard_notifications_daysAgo": "منذ {days} أيام",
-
   "files_chooseDocType": "اختيار نوع المستند",
   "files_chooseAndUpload": "اختيار ورفع",
   "files_uploadFailed": "فشل رفع الملف",
@@ -354,7 +345,6 @@
   "files_deleted": "تم حذف الملف بنجاح",
   "files_deleteFailed": "فشل حذف الملف",
   "files_docDefinitions": "تعريفات المستندات",
-
   "meetings_noMeetings": "لا توجد اجتماعات",
   "meetings_upcoming": "القادمة",
   "meetings_previous": "السابقة",
@@ -363,14 +353,12 @@
   "meetings_minutesLeft": "متبقي {minutes} دقيقة",
   "meetings_hoursLeft": "متبقي {hours} ساعة",
   "meetings_daysLeft": "متبقي {days} أيام",
-
   "notifications_title": "الإشعارات",
   "notifications_markAllRead": "تحديد الكل كمقروء",
   "notifications_empty": "لا توجد إشعارات",
   "notifications_minutesAgo": "منذ {minutes} دقيقة",
   "notifications_hoursAgo": "منذ {hours} ساعة",
   "notifications_daysAgo": "منذ {days} أيام",
-
   "settings_title": "الإعدادات",
   "settings_profilePicture": "الصورة الشخصية",
   "settings_changePicture": "تغيير الصورة الشخصية",
@@ -390,7 +378,6 @@
   "settings_imageChangeFailed": "فشل تحديث الصورة الشخصية",
   "settings_saved": "تم حفظ الإعدادات بنجاح",
   "settings_saveFailed": "فشل حفظ الإعدادات",
-
   "signature_deleted": "تم حذف التوقيع",
   "signature_deleteFailed": "فشل حذف التوقيع",
   "signature_saved": "تم حفظ التوقيع",
@@ -410,7 +397,6 @@
   "signature_saved_willReturn": "تم حفظ التوقيع. سيتم إعادتك.",
   "signature_fileReadFailed": "فشل قراءة ملف التوقيع",
   "signature_renderFailed": "فشل عرض التوقيع",
-
   "subusers_permission_chat": "المحادثة",
   "subusers_permission_viewContracts": "عرض العقود",
   "subusers_permission_approveContracts": "اعتماد العقود",
@@ -439,13 +425,11 @@
   "subusers_edit": "تعديل",
   "subusers_phone": "رقم الهاتف",
   "subusers_save": "حفظ",
-  "subusers_cancel": "إلغاء",
   "subusers_setPassword": "تعيين كلمة مرور جديدة",
   "subusers_newPasswordHint": "كلمة المرور الجديدة",
   "subusers_passwordChanged": "تم تغيير كلمة المرور، وتم تسجيل خروج المستخدم من كل الأجهزة",
   "subusers_passwordChangeFailed": "فشل تغيير كلمة المرور",
   "subusers_permissionsCount": "{count} صلاحية",
-
   "approvals_noWorkspace": "لم يتم تحديد مساحة عمل",
   "approvals_failedToLoad": "فشل تحميل الموافقات",
   "approvals_editRequested": "طلب تعديل",
@@ -470,7 +454,6 @@
   "approvals_editReasonLabel": "سبب التعديل",
   "approvals_approveButton": "اعتماد",
   "approvals_requestEditButton": "طلب تعديل",
-
   "payments_installmentLabel": "قسط",
   "payments_failedToLoad": "فشل تحميل المدفوعات",
   "payments_paidInFull": "مدفوع بالكامل",
@@ -515,7 +498,6 @@
   "payments_proofSendFailed": "فشل إرسال إثبات الدفع",
   "payments_scheduledLabel": "مجدول",
   "payments_overdueLabel": "متأخر",
-
   "profile_imageChanged": "تم تحديث الصورة الشخصية",
   "profile_imageChangeFailed": "فشل تحديث الصورة الشخصية",
   "profile_saved": "تم حفظ الملف الشخصي",
@@ -525,7 +507,6 @@
   "profile_displayName": "الاسم المعروض",
   "profile_displayNameHint": "أدخل اسمك المعروض",
   "profile_save": "حفظ",
-
   "am_newNotification": "إشعار جديد",
   "am_workspaceCreateFailed": "فشل إنشاء مساحة العمل",
   "am_noClientsAvailable": "لا توجد عملاء متاحين",
@@ -591,7 +572,6 @@
   "am_meeting_minutes": "دقيقة",
   "am_meeting_notes": "ملاحظات",
   "am_meeting_create": "إنشاء",
-
   "sa_team_title": "إدارة الفريق",
   "sa_team_manage": "إدارة مدراء الحسابات",
   "sa_team_noManagers": "لا يوجد مدراء حسابات",
@@ -611,7 +591,6 @@
   "sa_clients_selectManager": "اختيار مدير",
   "sa_clients_allManagers": "جميع المدراء",
   "sa_clients_managerLabel": "مدير",
-
   "clientDetail_imageChanged": "تم تحديث الصورة الشخصية",
   "clientDetail_imageChangeFailed": "فشل تحديث الصورة الشخصية",
   "clientDetail_saved": "تم حفظ بيانات العميل",
@@ -641,7 +620,6 @@
   "clientDetail_subUsers": "المستخدمون الفرعيون",
   "clientDetail_saveChanges": "حفظ التغييرات",
   "clientDetail_cancel": "إلغاء",
-
   "createClient_success": "تم إنشاء العميل بنجاح",
   "createClient_email": "البريد الإلكتروني",
   "createClient_emailCopied": "تم نسخ البريد الإلكتروني",
@@ -667,7 +645,6 @@
   "createClient_notesHint": "ملاحظات إضافية...",
   "createClient_createButton": "إنشاء العميل",
   "createClient_cancel": "إلغاء",
-
   "managerDetail_failedToLoad": "فشل تحميل تفاصيل المدير",
   "managerDetail_retry": "إعادة المحاولة",
   "managerDetail_stats": "الإحصائيات",
@@ -728,7 +705,6 @@
   "accountManagers_emptyHint": "سيظهر مدراء الحسابات هنا",
   "accountManagers_addButton": "إضافة مدير",
   "accountManagers_clientCount": "{count} عميل",
-
   "adminSettings_saved": "تم حفظ الإعدادات",
   "adminSettings_saveFailed": "فشل حفظ الإعدادات",
   "adminSettings_enterValidPercentage": "يرجى إدخال نسبة صحيحة (0-100)",
@@ -789,7 +765,6 @@
   "adminSettings_clauseSaveOrder": "حفظ الترتيب",
   "adminSettings_clausesEmpty": "لا توجد بنود بعد — أضف أول بند.",
   "adminSettings_clausesLoadFailed": "فشل تحميل البنود",
-
   "auditLog_noEvents": "لا توجد أحداث",
   "auditLog_noActivities": "لا توجد أنشطة",
   "auditLog_retry": "إعادة المحاولة",
@@ -843,7 +818,6 @@
   "auditLog_action_updateMeeting": "تم تحديث الاجتماع",
   "auditLog_action_createClient": "تم إنشاء عميل",
   "auditLog_action_deleteClient": "تم حذف عميل",
-
   "contractBuilder_currencySAR": "ريال",
   "contractBuilder_currencyUSD": "دولار",
   "contractBuilder_currencyEUR": "يورو",
@@ -866,7 +840,6 @@
   "contractBuilder_editTitle": "تعديل العقد",
   "contractBuilder_createExtraTitle": "إنشاء خدمة إضافية",
   "contractBuilder_createNewTitle": "إنشاء عقد جديد",
-
   "onboarding_newNotification": "إشعار جديد",
   "onboarding_spaceActivated": "مساحة العمل الخاصة بك نشطة الآن!",
   "onboarding_failedToLoad": "فشل تحميل بيانات الإعداد",
@@ -968,9 +941,7 @@
   "currency_qar": "ريال قطري",
   "currency_bhd": "دينار بحريني",
   "currency_omr": "ريال عماني",
-
   "dashboard_tabLockedMessage": "هذا التبويب مقفول — يجب إكمال مرحلة \"{stage}\" أولاً",
-
   "payments_methodBankTransfer": "تحويل بنكي",
   "payments_methodSwift": "تحويل SWIFT",
   "payments_methodCorporateAccount": "حساب شركة",
@@ -994,16 +965,13 @@
   "payments_installmentFormat": "دفعة {ordinal}",
   "payments_installmentFormatNumbered": "دفعة {number}",
   "payments_payScheduled": "دفع {label}",
-
   "files_uploadedFiles": "الملفات المرفوعة",
   "files_uploading": "جاري الرفع...",
   "files_uploadFile": "رفع ملف",
   "files_noFiles": "لا توجد ملفات",
   "files_paymentProofs": "إثباتات الدفع",
   "files_paymentProof": "إثبات الدفع",
-
   "subusers_noSubUsers": "لا يوجد مستخدمون تابعون",
-
   "preview_vibeTitle": "معاينة السمة",
   "preview_bestFor": "مناسب لـ",
   "preview_colors": "الألوان",
@@ -1024,7 +992,6 @@
   "preview_headings": "العناوين",
   "preview_headingSample": "العناوين بـ {font} نص عادي",
   "preview_chooseDirection": "اختيار الاتجاه",
-
   "online": "متصل الآن",
   "offline": "غير متصل",
   "upcomingMeeting": "اجتماع قادم",
@@ -1078,7 +1045,7 @@
   "contractCompleted": "العقد مكتمل",
   "invalidFileUrl": "رابط الملف غير صالح",
   "deleteFile": "حذف الملف",
-  "deleteFileConfirmation": "هل تريد حذف \"{name}\"؟",
+  "deleteFileConfirmation": "هل تريد حذف \"{name}\"?",
   "fileDeleted": "تم حذف الملف",
   "fileDeleteFailed": "فشل حذف الملف: {error}",
   "allContracts": "كل العقود",
@@ -1131,7 +1098,6 @@
   "completedStatus": "العقد مكتمل",
   "editReasonTitle": "سبب التعديل",
   "deleteFileTitle": "حذف الملف",
-  "deleteFileConfirmation": "هل تريد حذف \"{name}\"?",
   "@deleteFileConfirmation": {
     "placeholders": {
       "name": {}
@@ -1783,7 +1749,9 @@
   "contractUploadRequiredFirstWithDocs": "ارفع المستندات المطلوبة الأول: {docs}",
   "@contractUploadRequiredFirstWithDocs": {
     "placeholders": {
-      "docs": { "type": "String" }
+      "docs": {
+        "type": "String"
+      }
     }
   },
   "settingManagersCanReviewFiles": "صلاحية مراجعة ملفات العميل",
@@ -1842,9 +1810,19 @@
   "mtCompanyStaffTitle": "موظفو الشركة",
   "mtNotInAnyTeam": "ليس في أي فريق",
   "mtInTeams": "في فريق: {names}",
-  "@mtInTeams": {"placeholders": {"names": {}}},
+  "@mtInTeams": {
+    "placeholders": {
+      "names": {}
+    }
+  },
   "mtAddN": "إضافة {n} لفريقي",
-  "@mtAddN": {"placeholders": {"n": {"type": "int"}}},
+  "@mtAddN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "mtMyTeam": "فريقي",
   "mtLinkClient": "ربط بعميل",
   "mtRemoveFromTeam": "إزالة من الفريق",
@@ -1873,7 +1851,14 @@
   "mtNone": "بلا صلاحيات",
   "mtRemoveTitle": "إزالة من فريقك؟",
   "mtRemoveBody": "سيُلغى تعيينه من {count} من عملائك: {names}. فرق المديرين الآخرين لا تتأثر.",
-  "@mtRemoveBody": {"placeholders": {"count": {"type": "int"}, "names": {}}},
+  "@mtRemoveBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {}
+    }
+  },
   "mtRemoveBodyNone": "غير معيَّن على أي من عملائك.",
   "mtRemoveConfirm": "إزالة",
   "mtLoadFailed": "تعذّر تحميل الفريق.",
@@ -1888,5 +1873,32 @@
   "mtNoOtherStaff": "لا يوجد موظفو شركة آخرون للإضافة.",
   "teamTabHintManager": "أعضاء فريقك. عيّن أو ألغِ التعيين من هنا — الصلاحيات تُحدَّد من صفحة الفريق.",
   "teamTabEmptyManager": "لا أحد في فريقك بعد. أضف أشخاصًا من صفحة الفريق.",
-  "chatStaffReadOnly": "يمكنك قراءة هذه المحادثة دون الكتابة فيها."
+  "chatStaffReadOnly": "يمكنك قراءة هذه المحادثة دون الكتابة فيها.",
+  "amRoleSuperAdmin": "سوبر أدمن",
+  "amRoleManager": "مدير حساب",
+  "amRoleAssistant": "مساعد مدير",
+  "amGreetMorning": "صباح الخير",
+  "amGreetAfternoon": "نهارك سعيد",
+  "amGreetEvening": "مساء الخير",
+  "amHomeSubSa": "الوكالة اليوم.",
+  "amHomeSubAm": "ده اللي محتاجك النهاردة.",
+  "amKpiNeedAction": "محتاجة إجراء منك",
+  "amOpen": "فتح",
+  "amWaitingOnYou": "مستنيين ردّك",
+  "financeTitle": "المالية",
+  "financeApprovedTotal": "إجمالي المعتمد",
+  "financePendingCount": "قيد المراجعة",
+  "financeApprovedCount": "معتمدة",
+  "financeAllCount": "كل المدفوعات",
+  "financePaymentsHint": "{count} مدفوعة",
+  "financeSearchHint": "ابحث بالعميل أو العقد أو المبلغ",
+  "financeLoadMore": "عرض المزيد",
+  "financeFailed": "تعذّر تحميل المدفوعات",
+  "@financePaymentsHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

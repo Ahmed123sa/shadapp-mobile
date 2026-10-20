@@ -100,6 +100,12 @@ void main() {
         GoRoute(path: '/login', builder: (_, __) => const Scaffold(body: Text('LOGIN_PAGE'))),
       ],
     );
+    // The Luxe home is taller than the default 800x600 test surface and its
+    // ListView builds lazily, so give it a phone-sized-and-then-some canvas.
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp.router(
       routerConfig: router,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -130,7 +136,7 @@ void main() {
   // plans/notifications-badges-toasts-plan.md ن12 — this badge was missing
   // the 99+ cap every other badge in the app already had. No tap involved:
   // just confirms the cap renders on initial load.
-  testWidgets('caps the unread badge at 99+', (tester) async {
+  testWidgets('shows the bell pip when there are unread notifications', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
     api.role = 'account_manager';
@@ -140,7 +146,8 @@ void main() {
 
     await pumpPage(tester, api);
 
-    expect(find.text('99+'), findsOneWidget);
+    // The mockup shows a pip on the bell, not a count (so no 99+ cap needed).
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsOneWidget);
     expect(find.text('150'), findsNothing);
   });
 
@@ -183,17 +190,17 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('3'), findsOneWidget);
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsOneWidget);
 
     unread = 0;
-    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await tester.tap(find.byKey(const ValueKey('lx-bell')));
     await tester.pumpAndSettle();
     expect(find.text('BACK'), findsOneWidget);
 
     await tester.tap(find.text('BACK'));
     await tester.pumpAndSettle();
 
-    expect(find.text('3'), findsNothing);
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsNothing);
   });
 
   // server-side-stats-plan.md, Stage 3 (M1) — the whole point of this stage:
@@ -306,7 +313,7 @@ void main() {
             ));
 
     await pumpPage(tester, api);
-    await tester.tap(find.byIcon(Icons.videocam));
+    await tester.tap(find.byKey(const ValueKey('home-meetings')));
     await tester.pumpAndSettle();
 
     expect(find.text('Kickoff'), findsOneWidget);

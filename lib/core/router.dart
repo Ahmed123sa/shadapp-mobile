@@ -10,6 +10,7 @@ import '../features/am/managers/account_managers_page.dart';
 import '../features/am/managers/create_manager_page.dart';
 import '../features/am/managers/manager_detail_page.dart';
 import '../features/am/workspace/am_workspace_page.dart';
+import '../features/am/finance/finance_page.dart';
 import '../features/am/reports/reports_page.dart';
 import '../features/am/settings/admin_settings_page.dart';
 import '../features/signature/signature_page.dart';
@@ -131,6 +132,7 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
         final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '');
         return AmWorkspacePage(workspaceId: wsId, initialTabIndex: tab ?? 0);
       }),
+      GoRoute(path: '/am/finance', builder: (_, __) => const FinancePage()),
       GoRoute(path: '/am/reports', builder: (_, __) => const ReportsPage()),
       GoRoute(path: '/am/audit-logs', builder: (_, __) => const AuditLogPage()),
       GoRoute(path: '/staff/dashboard', builder: (_, __) => const StaffDashboardPage()),

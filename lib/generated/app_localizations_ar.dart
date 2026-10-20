@@ -5755,4 +5755,66 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatStaffReadOnly => 'يمكنك قراءة هذه المحادثة دون الكتابة فيها.';
+
+  @override
+  String get amRoleSuperAdmin => 'سوبر أدمن';
+
+  @override
+  String get amRoleManager => 'مدير حساب';
+
+  @override
+  String get amRoleAssistant => 'مساعد مدير';
+
+  @override
+  String get amGreetMorning => 'صباح الخير';
+
+  @override
+  String get amGreetAfternoon => 'نهارك سعيد';
+
+  @override
+  String get amGreetEvening => 'مساء الخير';
+
+  @override
+  String get amHomeSubSa => 'الوكالة اليوم.';
+
+  @override
+  String get amHomeSubAm => 'ده اللي محتاجك النهاردة.';
+
+  @override
+  String get amKpiNeedAction => 'محتاجة إجراء منك';
+
+  @override
+  String get amOpen => 'فتح';
+
+  @override
+  String get amWaitingOnYou => 'مستنيين ردّك';
+
+  @override
+  String get financeTitle => 'المالية';
+
+  @override
+  String get financeApprovedTotal => 'إجمالي المعتمد';
+
+  @override
+  String get financePendingCount => 'قيد المراجعة';
+
+  @override
+  String get financeApprovedCount => 'معتمدة';
+
+  @override
+  String get financeAllCount => 'كل المدفوعات';
+
+  @override
+  String financePaymentsHint(int count) {
+    return '$count مدفوعة';
+  }
+
+  @override
+  String get financeSearchHint => 'ابحث بالعميل أو العقد أو المبلغ';
+
+  @override
+  String get financeLoadMore => 'عرض المزيد';
+
+  @override
+  String get financeFailed => 'تعذّر تحميل المدفوعات';
 }
