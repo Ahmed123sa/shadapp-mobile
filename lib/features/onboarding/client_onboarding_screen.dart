@@ -89,6 +89,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   Map<String, dynamic>? _taxSettings;
   bool _loading = true;
   String? _error;
+  int _unreadNotifs = 0;
   int _lastStage = 0;
   bool _autoAdvancing = false;
   String _prevWsStatus = '';
@@ -118,6 +119,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   void initState() {
     super.initState();
     _loadClientData();
+    _loadUnread();
     _setupRealtimeNotifications();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -145,6 +147,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     _reverb.connectForClient(cid);
     _reverbUnsubscribers.add(_reverb.addNotificationReceivedListener((payload) {
       _loadClientData();
+      _loadUnread();
       _contractRefreshNotifier.value++;
       if (!mounted) return;
       final dynamic rawData = payload['data'];
@@ -344,49 +347,80 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     );
   }
 
-  Widget _buildHeader(int stage) {
+  // Mockup top bar (same as the workspace): brand + company, the bell with a
+  // pip when something is unread, and the avatar that opens the "More" sheet.
+  Future<void> _loadUnread() async {
+    try {
+      final res = await _api.get('/notifications');
+      final n = int.tryParse(res['unread_count']?.toString() ?? '') ?? 0;
+      if (mounted) setState(() => _unreadNotifs = n);
+    } catch (e, s) {
+      AppLog.error('client_onboarding._loadUnread', e, s);
+    }
+  }
+
+  String _avatarInitial() {
+    final name = (_api.userName ?? _client?['contact_person'] ?? _client?['company_name'] ?? '').toString().trim();
+    return name.isEmpty ? '' : String.fromCharCode(name.runes.first);
+  }
+
+  /// The mockup's "More" sheet, trimmed to what exists during onboarding:
+  /// who you are, language, logout.
+  void _showMoreSheet() {
     final l10n = AppLocalizations.of(context)!;
-    final company = (_client?['company_name'] ?? _client?['contact_person'] ?? '').toString();
-    Widget iconBtn(String icon, VoidCallback onTap, {String? tooltip, Key? key}) => SizedBox(
-          width: 38, height: 38,
-          child: IconButton(
-            key: key,
-            padding: EdgeInsets.zero,
-            icon: LxIcon(icon, size: 18, color: Lx.muted),
-            onPressed: onTap,
-            tooltip: tooltip,
-          ),
-        );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      child: Row(
-        children: [
-          Container(
-            key: const ValueKey('onboarding-logo'),
-            width: 30, height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: const Color(0xFF161616), borderRadius: BorderRadius.circular(8), border: Border.all(color: Lx.line)),
-            child: const Text.rich(
-              TextSpan(children: [
-                TextSpan(text: 'd'),
-                TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final name = (_api.userName ?? _client?['contact_person'] ?? '').toString();
+    final isSub = _api.role == 'sub_user';
+    showLuxeSheet<void>(context, builder: (ctx) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(children: [
+            LuxeAvatar(initial: _avatarInitial()),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, key: const ValueKey('onboarding-more-name'), style: Lx.display(ctx, size: 16)),
+                Text(
+                  (isSub ? l10n.dashboardRoleAssistant : l10n.dashboardRoleOwner).toUpperCase(),
+                  style: Lx.text(ctx, size: 11, color: Lx.faint).copyWith(letterSpacing: 1.1),
+                ),
               ]),
-              style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 19, height: 1, color: Lx.ink),
             ),
-          ),
-          if (company.isNotEmpty)
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(start: 10),
-                child: Text(company, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.faint)),
-              ),
-            ),
-          const Spacer(),
-          iconBtn('bell', () => context.push('/notifications'), key: const ValueKey('onboarding-notifications')),
-          iconBtn('lang', () => context.read<LocaleProvider>().toggle(), tooltip: l10n.onboarding_changeLanguage),
-          iconBtn('out', _logout, tooltip: l10n.onboarding_logout),
-        ],
-      ),
+          ]),
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('onboarding-more-language'),
+          lxIcon: 'lang',
+          label: isAr ? 'English' : 'العربية',
+          onTap: () {
+            Navigator.pop(ctx);
+            context.read<LocaleProvider>().toggle();
+          },
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('onboarding-more-logout'),
+          lxIcon: 'out',
+          label: l10n.onboarding_logout,
+          danger: true,
+          last: true,
+          onTap: () {
+            Navigator.pop(ctx);
+            _logout();
+          },
+        ),
+      ]);
+    });
+  }
+
+  Widget _buildHeader(int stage) {
+    final company = (_client?['company_name'] ?? _client?['contact_person'] ?? '').toString();
+    return LuxeTopBar(
+      company: company,
+      avatarInitial: _avatarInitial(),
+      unread: _unreadNotifs > 0,
+      onBell: () => context.push('/notifications').then((_) => _loadUnread()),
+      onAvatar: _showMoreSheet,
     );
   }
 
