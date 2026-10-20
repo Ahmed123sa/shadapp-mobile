@@ -223,7 +223,8 @@ void main() {
 
     expect(find.text('57'), findsOneWidget); // Total Clients — not "1" (the fetched list's length)
     expect(find.text('40'), findsOneWidget); // Active Contracts
-    expect(find.text('9'), findsOneWidget); // Pending Payments
+    // Pending Payments is no longer a home KPI (staff mockup kAM shows
+    // Unread messages instead); approvals.total still is.
     expect(find.text('13'), findsOneWidget); // Pending Approvals — approvals.total, not just contracts+payments
   });
 
@@ -239,7 +240,8 @@ void main() {
     await pumpPage(tester, api);
 
     expect(find.text('Sara Manager'), findsOneWidget);
-    expect(find.text('sara@x.com'), findsOneWidget);
+    // Mockup managers card: "N clients" under the name, not the email.
+    expect(find.text('4 clients'), findsOneWidget);
   });
 
   // server-side-stats-plan.md, Stage 3 (M5) — the SA home tab used to sum
@@ -313,6 +315,9 @@ void main() {
             ));
 
     await pumpPage(tester, api);
+    // Meetings moved off the home tab into the More sheet (mockup pHome).
+    await tester.tap(find.byKey(const ValueKey('lx-nav-more')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('home-meetings')));
     await tester.pumpAndSettle();
 

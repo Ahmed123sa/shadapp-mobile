@@ -7027,7 +7027,7 @@ abstract class AppLocalizations {
   /// No description provided for @amViewAll.
   ///
   /// In en, this message translates to:
-  /// **'View All'**
+  /// **'View all'**
   String get amViewAll;
 
   /// No description provided for @amWorkspaceCreateFailed.
@@ -11321,6 +11321,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insight'**
   String get reportsEyebrow;
+
+  /// No description provided for @amKpiRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get amKpiRevenue;
+
+  /// No description provided for @amKpiUnreadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread messages'**
+  String get amKpiUnreadMessages;
+
+  /// No description provided for @amKpiAcrossManagers.
+  ///
+  /// In en, this message translates to:
+  /// **'across {count} managers'**
+  String amKpiAcrossManagers(int count);
+
+  /// No description provided for @amKpiAwaitingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} awaiting approval'**
+  String amKpiAwaitingApproval(int count);
+
+  /// No description provided for @amRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get amRecentActivity;
+
+  /// No description provided for @amStNeedsReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs your review'**
+  String get amStNeedsReview;
+
+  /// No description provided for @amStCompanyApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Company approval'**
+  String get amStCompanyApproval;
+
+  /// No description provided for @amStAwaitingClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting client'**
+  String get amStAwaitingClient;
+
+  /// No description provided for @amPaymentProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment proof'**
+  String get amPaymentProof;
+
+  /// No description provided for @amAgeMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} min'**
+  String amAgeMin(int n);
+
+  /// No description provided for @amAgeHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} h'**
+  String amAgeHour(int n);
+
+  /// No description provided for @amAgeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get amAgeToday;
+
+  /// No description provided for @amClientsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} clients'**
+  String amClientsCount(int count);
 }
 
 class _AppLocalizationsDelegate

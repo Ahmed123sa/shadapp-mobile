@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../models/app_notification.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/api_client.dart';
@@ -100,6 +101,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   int _unreadNotifs = 0;
   int _selectedIndex = 0;
   int _badgeApprovals = 0;
+  int _badgeChat = 0;
+  // Latest notifications, shown as the home tab's "Recent activity" card
+  // (staff mockup pHome). Comes from the same /notifications call as the bell.
+  List<AppNotification> _recentActivity = [];
   Timer? _pollTimer;
   int _pollTick = 0;
 
@@ -221,12 +226,15 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     try {
       final data = await _notificationProvider.fetchRaw();
       _unreadNotifs = int.tryParse(data['unread_count']?.toString() ?? '') ?? 0;
+      final raw = (data['notifications'] ?? data['data']) as List<dynamic>? ?? const [];
+      _recentActivity = raw.whereType<Map<String, dynamic>>().take(4).map(AppNotification.fromJson).toList();
     } catch (e, s) {
       AppLog.error('am_dashboard._loadNotifs(unread)', e, s);
     }
     try {
       final data = await _dashboardProvider.fetchBadgeCounts();
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
+      _badgeChat = int.tryParse(data['chat']?.toString() ?? '') ?? 0;
     } catch (e, s) {
       AppLog.error('am_dashboard._loadNotifs(badges)', e, s);
     }
@@ -296,6 +304,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
             'company': client?['company_name'] ?? '',
             'client': client,
             'workspace_id': ws?['id'],
+            'status': c['status'],
+            'created_at': c['created_at'],
+            'manager': ((ws?['account_manager'] ?? client?['account_manager']) as Map?)?['name'],
           };
         })
         .toList();
@@ -369,6 +380,17 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
             LuxeMoreRow(key: const ValueKey('more-audit'), lxIcon: 'list', label: loc.auditLogs, onTap: () => open('/am/audit-logs')),
           LuxeMoreRow(key: const ValueKey('more-settings'), lxIcon: 'gear', label: loc.amNavSettings, onTap: () => go(3)),
         ],
+        // Not in the mockup's home; kept here so the all-meetings sheet
+        // (and creating a meeting) stays reachable.
+        LuxeMoreRow(
+          key: const ValueKey('home-meetings'),
+          lxIcon: 'video',
+          label: loc.amStatMeetings,
+          onTap: () {
+            Navigator.pop(ctx);
+            _showAllMeetings();
+          },
+        ),
         LuxeMoreRow(
           key: const ValueKey('more-language'),
           lxIcon: 'lang',
@@ -461,6 +483,8 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                                   contractsActive: _statInt('contracts', 'active'),
                                   paymentsPending: _statInt('payments', 'pending'),
                                   approvalsTotal: _statInt('approvals', 'total'),
+                                  revenueThisMonth: _stats?['revenue_this_month'] is Map ? Map<String, dynamic>.from(_stats!['revenue_this_month'] as Map) : null,
+                                  recentActivity: _recentActivity,
                                 ),
                                 SaApprovalsPage(dashboardStatsProvider: _dashboardStatsProvider),
                                 SaClientsPage(clientProvider: _childClientProvider, managerProvider: _childManagerProvider, api: _api),
@@ -483,6 +507,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
                                   contractsActive: _statInt('contracts', 'active'),
                                   paymentsPending: _statInt('payments', 'pending'),
                                   approvalsTotal: _statInt('approvals', 'total'),
+                                  contractsAwaiting: _statInt('contracts', 'awaiting_client'),
+                                  unreadMessages: _badgeChat,
+                                  recentActivity: _recentActivity,
                                 ),
                                 SaApprovalsPage(dashboardStatsProvider: _dashboardStatsProvider),
                                 _buildAmClientsTab(),

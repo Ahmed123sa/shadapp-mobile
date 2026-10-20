@@ -5859,4 +5859,53 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reportsEyebrow => 'نظرة عامة';
+
+  @override
+  String get amKpiRevenue => 'الإيراد';
+
+  @override
+  String get amKpiUnreadMessages => 'رسائل غير مقروءة';
+
+  @override
+  String amKpiAcrossManagers(int count) {
+    return 'على $count مديرين';
+  }
+
+  @override
+  String amKpiAwaitingApproval(int count) {
+    return '$count في انتظار الموافقة';
+  }
+
+  @override
+  String get amRecentActivity => 'آخر النشاط';
+
+  @override
+  String get amStNeedsReview => 'محتاج مراجعتك';
+
+  @override
+  String get amStCompanyApproval => 'موافقة الشركة';
+
+  @override
+  String get amStAwaitingClient => 'في انتظار العميل';
+
+  @override
+  String get amPaymentProof => 'إثبات دفع';
+
+  @override
+  String amAgeMin(int n) {
+    return '$n د';
+  }
+
+  @override
+  String amAgeHour(int n) {
+    return '$n س';
+  }
+
+  @override
+  String get amAgeToday => 'النهارده';
+
+  @override
+  String amClientsCount(int count) {
+    return '$count عملاء';
+  }
 }

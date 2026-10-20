@@ -3631,7 +3631,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get amTime => 'Time';
 
   @override
-  String get amViewAll => 'View All';
+  String get amViewAll => 'View all';
 
   @override
   String get amWorkspaceCreateFailed => 'Failed to create workspace';
@@ -5888,4 +5888,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportsEyebrow => 'Insight';
+
+  @override
+  String get amKpiRevenue => 'Revenue';
+
+  @override
+  String get amKpiUnreadMessages => 'Unread messages';
+
+  @override
+  String amKpiAcrossManagers(int count) {
+    return 'across $count managers';
+  }
+
+  @override
+  String amKpiAwaitingApproval(int count) {
+    return '$count awaiting approval';
+  }
+
+  @override
+  String get amRecentActivity => 'Recent activity';
+
+  @override
+  String get amStNeedsReview => 'Needs your review';
+
+  @override
+  String get amStCompanyApproval => 'Company approval';
+
+  @override
+  String get amStAwaitingClient => 'Awaiting client';
+
+  @override
+  String get amPaymentProof => 'Payment proof';
+
+  @override
+  String amAgeMin(int n) {
+    return '$n min';
+  }
+
+  @override
+  String amAgeHour(int n) {
+    return '$n h';
+  }
+
+  @override
+  String get amAgeToday => 'Today';
+
+  @override
+  String amClientsCount(int count) {
+    return '$count clients';
+  }
 }

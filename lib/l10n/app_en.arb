@@ -1222,7 +1222,7 @@
   "amStatusPaid": "Paid",
   "amStatusPending": "Pending",
   "amTime": "Time",
-  "amViewAll": "View All",
+  "amViewAll": "View all",
   "amWorkspaceCreateFailed": "Failed to create workspace",
   "approvalActionFailed": "Action failed",
   "approvalApproved": "Approved",
@@ -1978,5 +1978,53 @@
   "notificationsGroupWeek": "Earlier this week",
   "paymentsSummaryContracted": "Contracted",
   "paymentsSummaryRemaining": "Remaining",
-  "reportsEyebrow": "Insight"
+  "reportsEyebrow": "Insight",
+  "amKpiRevenue": "Revenue",
+  "amKpiUnreadMessages": "Unread messages",
+  "amKpiAcrossManagers": "across {count} managers",
+  "@amKpiAcrossManagers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "amKpiAwaitingApproval": "{count} awaiting approval",
+  "@amKpiAwaitingApproval": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "amRecentActivity": "Recent activity",
+  "amStNeedsReview": "Needs your review",
+  "amStCompanyApproval": "Company approval",
+  "amStAwaitingClient": "Awaiting client",
+  "amPaymentProof": "Payment proof",
+  "amAgeMin": "{n} min",
+  "@amAgeMin": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "amAgeHour": "{n} h",
+  "@amAgeHour": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "amAgeToday": "Today",
+  "amClientsCount": "{count} clients",
+  "@amClientsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

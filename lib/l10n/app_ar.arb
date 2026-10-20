@@ -1913,5 +1913,18 @@
   "notificationsGroupWeek": "الأسبوع ده",
   "paymentsSummaryContracted": "قيمة العقود",
   "paymentsSummaryRemaining": "المتبقي",
-  "reportsEyebrow": "نظرة عامة"
+  "reportsEyebrow": "نظرة عامة",
+  "amKpiRevenue": "الإيراد",
+  "amKpiUnreadMessages": "رسائل غير مقروءة",
+  "amKpiAcrossManagers": "على {count} مديرين",
+  "amKpiAwaitingApproval": "{count} في انتظار الموافقة",
+  "amRecentActivity": "آخر النشاط",
+  "amStNeedsReview": "محتاج مراجعتك",
+  "amStCompanyApproval": "موافقة الشركة",
+  "amStAwaitingClient": "في انتظار العميل",
+  "amPaymentProof": "إثبات دفع",
+  "amAgeMin": "{n} د",
+  "amAgeHour": "{n} س",
+  "amAgeToday": "النهارده",
+  "amClientsCount": "{count} عملاء"
 }
