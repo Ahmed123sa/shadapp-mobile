@@ -8,7 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'core/theme.dart';
+import 'core/luxe/luxe_theme.dart';
 import 'core/api_client.dart';
 import 'core/router.dart';
 import 'core/locale_provider.dart';
@@ -150,7 +150,7 @@ class _ShadAppState extends State<ShadApp> {
       builder: (context, _) => MaterialApp.router(
         title: 'ShadApp',
         debugShowCheckedModeBanner: false,
-        theme: shadTheme(),
+        theme: luxeTheme(arabic: widget.localeProvider.locale.languageCode == 'ar'),
         locale: widget.localeProvider.locale,
         localizationsDelegates: const [
           AppLocalizations.delegate,

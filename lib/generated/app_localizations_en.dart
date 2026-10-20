@@ -5885,4 +5885,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentsSummaryRemaining => 'Remaining';
+
+  @override
+  String get reportsEyebrow => 'Insight';
 }

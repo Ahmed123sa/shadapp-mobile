@@ -533,8 +533,11 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
   List<Widget> _pageNumbers() {
     final widgets = <Widget>[];
-    final start = (_page - 1).clamp(0, _totalPages - 3);
-    final end = (start + 3).clamp(0, _totalPages);
+    // With fewer than 3 pages `clamp(0, totalPages - 3)` has its bounds
+    // reversed and throws "Invalid argument: 0" (the red error screen).
+    final maxStart = _totalPages > 3 ? _totalPages - 3 : 0;
+    final start = (_page - 1).clamp(0, maxStart);
+    final end = (start + 3).clamp(0, _totalPages < 0 ? 0 : _totalPages);
     for (int i = start; i < end; i++) {
       final p = i + 1;
       widgets.add(Padding(

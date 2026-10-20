@@ -100,7 +100,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
   int _unreadNotifs = 0;
   int _selectedIndex = 0;
   int _badgeApprovals = 0;
-  int _badgeChat = 0;
   Timer? _pollTimer;
   int _pollTick = 0;
 
@@ -228,7 +227,6 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     try {
       final data = await _dashboardProvider.fetchBadgeCounts();
       _badgeApprovals = int.tryParse(data['approvals']?.toString() ?? '') ?? 0;
-      _badgeChat = int.tryParse(data['chat']?.toString() ?? '') ?? 0;
     } catch (e, s) {
       AppLog.error('am_dashboard._loadNotifs(badges)', e, s);
     }
@@ -359,16 +357,16 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
       final rows = <Widget>[
         if (_isSA) ...[
           LuxeMoreRow(key: const ValueKey('more-finance'), lxIcon: 'wallet', label: loc.financeTitle, onTap: () => open('/am/finance')),
-          LuxeMoreRow(key: const ValueKey('more-reports'), lxIcon: 'scroll', label: loc.amStatReports, onTap: () => open('/am/reports')),
-          LuxeMoreRow(key: const ValueKey('more-audit'), lxIcon: 'doc', label: loc.auditLogs, onTap: () => open('/am/audit-logs')),
-          LuxeMoreRow(key: const ValueKey('more-managers'), lxIcon: 'users', label: loc.accountManagers_title, onTap: () => go(3)),
-          LuxeMoreRow(key: const ValueKey('more-teams'), lxIcon: 'users', label: loc.staffNavTitle, onTap: () => open('/am/staff')),
+          LuxeMoreRow(key: const ValueKey('more-reports'), lxIcon: 'chart', label: loc.amStatReports, onTap: () => open('/am/reports')),
+          LuxeMoreRow(key: const ValueKey('more-audit'), lxIcon: 'list', label: loc.auditLogs, onTap: () => open('/am/audit-logs')),
+          LuxeMoreRow(key: const ValueKey('more-managers'), lxIcon: 'key', label: loc.accountManagers_title, onTap: () => go(3)),
+          LuxeMoreRow(key: const ValueKey('more-teams'), lxIcon: 'layers', label: loc.staffNavTitle, onTap: () => open('/am/staff')),
           LuxeMoreRow(key: const ValueKey('more-settings'), lxIcon: 'gear', label: loc.amNavSettings, onTap: () => go(4)),
         ] else ...[
           if (_api.role == 'account_manager')
             LuxeMoreRow(key: const ValueKey('more-myteam'), lxIcon: 'users', label: loc.mtTitle, onTap: () => open('/am/my-team')),
           if (!_isAssistant)
-            LuxeMoreRow(key: const ValueKey('more-audit'), lxIcon: 'doc', label: loc.auditLogs, onTap: () => open('/am/audit-logs')),
+            LuxeMoreRow(key: const ValueKey('more-audit'), lxIcon: 'list', label: loc.auditLogs, onTap: () => open('/am/audit-logs')),
           LuxeMoreRow(key: const ValueKey('more-settings'), lxIcon: 'gear', label: loc.amNavSettings, onTap: () => go(3)),
         ],
         LuxeMoreRow(
@@ -416,9 +414,9 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
     final loc = AppLocalizations.of(context)!;
     final moreIndex = 3;
     final navItems = <LuxeNavItem>[
-      LuxeNavItem(id: 'home', lxIcon: 'home', label: loc.amNavHome, badge: _badgeChat),
+      LuxeNavItem(id: 'home', lxIcon: 'home', label: loc.amNavHome),
       LuxeNavItem(id: 'approvals', lxIcon: 'check', label: loc.amNavApprovals, badge: _badgeApprovals),
-      LuxeNavItem(id: 'clients', lxIcon: 'users', label: loc.amNavClients),
+      LuxeNavItem(id: 'clients', lxIcon: 'users', label: _isSA ? loc.amNavClients : loc.staffMyClientsTitle),
       LuxeNavItem(id: 'more', lxIcon: 'more', label: loc.dashboard_more),
     ];
 

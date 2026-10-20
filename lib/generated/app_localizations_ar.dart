@@ -5856,4 +5856,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentsSummaryRemaining => 'المتبقي';
+
+  @override
+  String get reportsEyebrow => 'نظرة عامة';
 }

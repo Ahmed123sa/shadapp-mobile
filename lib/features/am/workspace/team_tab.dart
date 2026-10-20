@@ -4,6 +4,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../data/staff_permissions.dart';
 import '../../../data/staff_repository.dart';
@@ -153,17 +154,20 @@ class _TeamTabState extends State<TeamTab> {
 
     return RefreshIndicator(
       onRefresh: _load,
+      color: Lx.crimsonInk,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 28),
         children: [
-          Text(_isManager ? l10n.teamTabHintManager : l10n.teamTabHint, style: const TextStyle(fontSize: 12, color: Lx.muted)),
+          Text(_isManager ? l10n.teamTabHintManager : l10n.teamTabHint, style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.5)),
           if (_isManager)
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
+              child: LuxeButton(
                 key: const ValueKey('team-open-page'),
+                label: l10n.mtOpenTeamPage,
+                size: LuxeButtonSize.sm,
+                kind: LuxeButtonKind.quiet,
                 onPressed: () => context.push('/am/my-team'),
-                child: Text(l10n.mtOpenTeamPage),
               ),
             ),
           const SizedBox(height: 12),
@@ -186,46 +190,53 @@ class _TeamTabState extends State<TeamTab> {
     );
   }
 
+  Widget _avatar(Map<String, dynamic> m) {
+    final name = (m['name'] as String?) ?? '';
+    final url = (m['avatar_url'] as String?) ?? '';
+    if (url.isNotEmpty) {
+      return CircleAvatar(radius: 20, backgroundImage: NetworkImage(_api.resolveFileUrl(url)));
+    }
+    return LuxeAvatar(initial: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(), size: 40);
+  }
+
   Widget _row(Map<String, dynamic> m, AppLocalizations l10n) {
     final assigned = m['assigned'] == true;
     final name = (m['name'] as String?) ?? '';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Lx.crimson.withAlpha(40),
-          backgroundImage: (m['avatar_url'] as String?)?.isNotEmpty == true ? NetworkImage(_api.resolveFileUrl(m['avatar_url'] as String)) : null,
-          child: (m['avatar_url'] as String?)?.isNotEmpty == true
-              ? null
-              : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Lx.crimson, fontWeight: FontWeight.w700)),
-        ),
-        title: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: Lx.muted)),
-          if (assigned && m['permissions'] != null) ...[
-            const SizedBox(height: 4),
-            PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
-          ],
-          if (assigned && _api.role == 'super_admin')
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                key: ValueKey('team-edit-${m['id']}'),
-                onPressed: () => _editPermissions(m),
-                child: Text(l10n.mtEditPerms, style: const TextStyle(fontSize: 11)),
-              ),
-            ),
-        ]),
-        trailing: OutlinedButton(
-          key: ValueKey('team-toggle-${m['id']}'),
-          onPressed: _busyId == m['id'] ? null : () => _toggle(m),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: assigned ? Lx.crimson : Lx.ok,
-            side: BorderSide(color: (assigned ? Lx.crimson : Lx.ok).withAlpha(120)),
+    return LuxeCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          _avatar(m),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: Lx.display(context, size: 16)),
+              Text((m['email'] as String?) ?? '', style: Lx.text(context, size: 12, color: Lx.muted)),
+            ]),
           ),
-          child: Text(assigned ? l10n.teamTabUnassign : l10n.teamTabAssign, style: const TextStyle(fontSize: 12)),
-        ),
-      ),
+          LuxeButton(
+            key: ValueKey('team-toggle-${m['id']}'),
+            label: assigned ? l10n.teamTabUnassign : l10n.teamTabAssign,
+            size: LuxeButtonSize.sm,
+            kind: assigned ? LuxeButtonKind.danger : LuxeButtonKind.outline,
+            onPressed: _busyId == m['id'] ? null : () => _toggle(m),
+          ),
+        ]),
+        if (assigned && m['permissions'] != null) ...[
+          const SizedBox(height: 10),
+          PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
+        ],
+        if (assigned && _api.role == 'super_admin')
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: LuxeButton(
+              key: ValueKey('team-edit-${m['id']}'),
+              label: l10n.mtEditPerms,
+              size: LuxeButtonSize.sm,
+              kind: LuxeButtonKind.quiet,
+              onPressed: () => _editPermissions(m),
+            ),
+          ),
+      ]),
     );
   }
 
@@ -233,38 +244,49 @@ class _TeamTabState extends State<TeamTab> {
   /// his team (PLAN_2 ق٤): shown apart, with "Add to my team" and "Remove".
   Widget _outsiderRow(Map<String, dynamic> m, AppLocalizations l10n) {
     final name = (m['name'] as String?) ?? '';
-    return Card(
+    return LuxeCard(
       key: ValueKey('team-outsider-${m['id']}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      color: Lx.wait.withAlpha(14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Lx.wait.withAlpha(90))),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          Text((m['email'] as String?) ?? '', style: const TextStyle(fontSize: 11, color: Lx.muted)),
-          const SizedBox(height: 4),
-          Text('${l10n.mtNotMine} — ${l10n.mtNotMineHint}', style: const TextStyle(fontSize: 11, color: Lx.wait)),
-          if (m['permissions'] != null) ...[
-            const SizedBox(height: 6),
-            PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
-          ],
-          const SizedBox(height: 6),
-          Wrap(spacing: 8, children: [
-            OutlinedButton(
-              key: ValueKey('team-add-mine-${m['id']}'),
-              onPressed: _busyId == m['id'] ? null : () => _addToMyTeam(m),
-              child: Text(l10n.mtAddMine, style: const TextStyle(fontSize: 12)),
-            ),
-            OutlinedButton(
-              key: ValueKey('team-toggle-${m['id']}'),
-              onPressed: _busyId == m['id'] ? null : () => _toggle(m),
-              style: OutlinedButton.styleFrom(foregroundColor: Lx.crimson, side: BorderSide(color: Lx.crimson.withAlpha(120))),
-              child: Text(l10n.teamTabUnassign, style: const TextStyle(fontSize: 12)),
-            ),
-          ]),
+      attention: true,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          _avatar(m),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: Lx.display(context, size: 16)),
+              Text((m['email'] as String?) ?? '', style: Lx.text(context, size: 12, color: Lx.muted)),
+            ]),
+          ),
         ]),
-      ),
+        const SizedBox(height: 8),
+        Text('${l10n.mtNotMine} — ${l10n.mtNotMineHint}', style: Lx.text(context, size: 12, color: Lx.wait)),
+        if (m['permissions'] != null) ...[
+          const SizedBox(height: 8),
+          PermissionChips(permissions: normalizeStaffPermissions(m['permissions'])),
+        ],
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: LuxeButton(
+              key: ValueKey('team-add-mine-${m['id']}'),
+              label: l10n.mtAddMine,
+              size: LuxeButtonSize.sm,
+              kind: LuxeButtonKind.outline,
+              onPressed: _busyId == m['id'] ? null : () => _addToMyTeam(m),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: LuxeButton(
+              key: ValueKey('team-toggle-${m['id']}'),
+              label: l10n.teamTabUnassign,
+              size: LuxeButtonSize.sm,
+              kind: LuxeButtonKind.danger,
+              onPressed: _busyId == m['id'] ? null : () => _toggle(m),
+            ),
+          ),
+        ]),
+      ]),
     );
   }
 }

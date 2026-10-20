@@ -6,7 +6,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/luxe/tokens.dart';
-import '../../../core/theme.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../providers/client_provider.dart';
@@ -150,135 +150,136 @@ class _ClientProfileTabState extends State<ClientProfileTab> {
 
     return RefreshIndicator(
       onRefresh: _load,
+      color: Lx.crimsonInk,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 28),
         children: [
           // ── Stats ──
           Row(children: [
             Expanded(child: _statCard(l10n.clientProfileContracts, '${_stats['total_contracts'] ?? 0}', '${_stats['draft_contracts'] ?? 0} ${l10n.clientProfileDraft} • ${_stats['sent_contracts'] ?? 0} ${l10n.clientProfileInProgress}')),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(child: _statCard(l10n.clientProfileCompleted, '${_stats['completed_contracts'] ?? 0}', '${_stats['meetings_count'] ?? 0} ${l10n.clientProfileMeetings} • ${_stats['approvals_count'] ?? 0} ${l10n.clientProfileApprovals}')),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(children: [
             Expanded(child: _statCard(l10n.clientProfileTotalValue, _fmt(_stats['total_contract_value']), '')),
-            const SizedBox(width: 10),
-            Expanded(child: _statCard(l10n.clientProfileTotalPaid, _fmt(_stats['total_paid']), '${l10n.clientProfilePending}: ${_fmt(_stats['pending_payments'])}')),
+            const SizedBox(width: 8),
+            Expanded(child: _statCard(l10n.clientProfileTotalPaid, _fmt(_stats['total_paid']), '${l10n.clientProfilePending}: ${_fmt(_stats['pending_payments'])}', hl: true)),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // ── Contact info ──
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(child: Text(l10n.clientProfileContactInfo, style: ShadTypography.sectionHeader)),
-                  if (_isAM && _clientId != null)
-                    TextButton.icon(
-                      onPressed: () => context.push('/am/clients/$_clientId'),
-                      icon: const Icon(Icons.edit_outlined, size: 16, color: Lx.wait),
-                      label: Text(l10n.clientProfileEdit, style: const TextStyle(fontSize: 12, color: Lx.wait)),
-                    ),
-                ]),
-                const Divider(height: 20),
-                _infoRow(l10n.clientProfileCompany, Row(mainAxisSize: MainAxisSize.min, children: [
-                  Flexible(child: Text('${_client['company_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
-                  if (_client['client_type'] != null) ...[
-                    const SizedBox(width: 6),
-                    ClientTypeBadge(clientType: _client['client_type'] as String?),
-                  ],
-                ])),
-                _infoRow(l10n.clientProfileContactPerson, Text('${_client['contact_person'] ?? '—'}')),
-                _infoRow(l10n.clientProfileEmail, Text('${_client['email'] ?? '—'}', textDirection: TextDirection.ltr)),
-                _infoRow(l10n.clientProfilePhone, Text('${_client['phone'] ?? '—'}', textDirection: TextDirection.ltr)),
-                _infoRow(l10n.clientProfileCountry, Text('${_client['country'] ?? '—'}')),
-                _infoRow(l10n.clientProfileIndustry, Text('${_client['industry'] ?? '—'}')),
+          // ── Contact info (mockup: kind label + `.doc` rows) ──
+          LuxeCard(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: LuxeKind(l10n.clientProfileContactInfo)),
+                if (_isAM && _clientId != null)
+                  LuxeButton(
+                    label: l10n.clientProfileEdit,
+                    size: LuxeButtonSize.sm,
+                    kind: LuxeButtonKind.quiet,
+                    onPressed: () => context.push('/am/clients/$_clientId'),
+                  ),
               ]),
-            ),
+              const SizedBox(height: 4),
+              _infoRow(l10n.clientProfileCompany, Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(child: Text('${_client['company_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
+                if (_client['client_type'] != null) ...[
+                  const SizedBox(width: 6),
+                  ClientTypeBadge(clientType: _client['client_type'] as String?),
+                ],
+              ])),
+              _infoRow(l10n.clientProfileContactPerson, Text('${_client['contact_person'] ?? '—'}')),
+              _infoRow(l10n.clientProfileEmail, Text('${_client['email'] ?? '—'}', textDirection: TextDirection.ltr)),
+              _infoRow(l10n.clientProfilePhone, Text('${_client['phone'] ?? '—'}', textDirection: TextDirection.ltr)),
+              _infoRow(l10n.clientProfileCountry, Text('${_client['country'] ?? '—'}')),
+              _infoRow(l10n.clientProfileIndustry, Text('${_client['industry'] ?? '—'}'), last: true),
+            ]),
           ),
-          const SizedBox(height: 12),
 
           // ── Location ──
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          LuxeCard(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              LuxeKind(l10n.clientProfileLocation),
+              const SizedBox(height: 10),
+              if (hasLocation) ...[
+                if ((_location['address'] as String?)?.isNotEmpty ?? false)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('${_location['address']}', style: Lx.text(context, size: 14)),
+                  ),
+                Text('${l10n.clientProfileLastUpdated}: ${_formatDate(_location['updated_at'], l10n)}', style: Lx.text(context, size: 12, color: Lx.muted)),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: LuxeButton(
+                    label: l10n.clientProfileOpenMaps,
+                    size: LuxeButtonSize.sm,
+                    kind: LuxeButtonKind.outline,
+                    onPressed: () => _openMaps(_location['maps_url'] as String?),
+                  ),
+                ),
+              ] else
+                Text(l10n.clientProfileNotSet, style: Lx.text(context, size: 13.5, color: Lx.muted)),
+              if (_isAM && _clientId != null) ...[
+                const SizedBox(height: 12),
                 Row(children: [
-                  const Icon(Icons.location_on_outlined, size: 18, color: Lx.crimson),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(l10n.clientProfileLocation, style: ShadTypography.sectionHeader)),
-                  if (_isAM && _clientId != null) ...[
-                    OutlinedButton.icon(
+                  Expanded(
+                    child: LuxeButton(
+                      label: l10n.clientProfilePickOnMap,
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.outline,
                       onPressed: () => _pickOnMap(l10n),
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                      icon: const Icon(Icons.map_outlined, size: 14),
-                      label: Text(l10n.clientProfilePickOnMap, style: const TextStyle(fontSize: 11)),
-                    ),
-                    const SizedBox(width: 6),
-                    FilledButton.icon(
-                      onPressed: _checkingIn ? null : () => _checkIn(l10n),
-                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                      icon: _checkingIn
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Lx.ink))
-                          : const Icon(Icons.my_location, size: 14),
-                      label: Text(l10n.clientProfileCheckIn, style: const TextStyle(fontSize: 11)),
-                    ),
-                  ],
-                ]),
-                const Divider(height: 20),
-                if (hasLocation) ...[
-                  if ((_location['address'] as String?)?.isNotEmpty ?? false)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text('${_location['address']}', style: ShadTypography.cardSubtitle),
-                    ),
-                  Text('${l10n.clientProfileLastUpdated}: ${_formatDate(_location['updated_at'], l10n)}', style: ShadTypography.caption.copyWith(color: Lx.muted)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => _openMaps(_location['maps_url'] as String?),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.map_outlined, size: 16, color: Lx.wait),
-                        const SizedBox(width: 6),
-                        Text(l10n.clientProfileOpenMaps, style: const TextStyle(fontSize: 12, color: Lx.wait)),
-                      ]),
                     ),
                   ),
-                ] else
-                  Text(l10n.clientProfileNotSet, style: ShadTypography.body.copyWith(color: Lx.muted)),
-              ]),
-            ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: LuxeButton(
+                      label: l10n.clientProfileCheckIn,
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.primary,
+                      onPressed: _checkingIn ? null : () => _checkIn(l10n),
+                    ),
+                  ),
+                ]),
+              ],
+            ]),
           ),
         ],
       ),
     );
   }
 
-  Widget _statCard(String label, String value, String sub) {
+  // Mockup `.sum` tile.
+  Widget _statCard(String label, String value, String sub, {bool hl = false}) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Lx.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Lx.line2)),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(border: Border.all(color: Lx.line), borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: ShadTypography.caption.copyWith(color: Lx.muted)),
+        Text(label.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 1.4)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, height: 1.2)),
+        Directionality(textDirection: TextDirection.ltr, child: Text(value, style: Lx.display(context, size: 20, color: hl ? Lx.ok : Lx.ink))),
         if (sub.isNotEmpty) ...[
           const SizedBox(height: 2),
-          Text(sub, style: ShadTypography.caption.copyWith(color: Lx.muted)),
+          Text(sub, style: Lx.text(context, size: 11, color: Lx.muted)),
         ],
       ]),
     );
   }
 
-  Widget _infoRow(String label, Widget value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  // Mockup `.doc` row: muted label on one side, value on the other.
+  Widget _infoRow(String label, Widget value, {bool last = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(width: 120, child: Text(label, style: ShadTypography.caption.copyWith(color: Lx.muted))),
-        Expanded(child: DefaultTextStyle.merge(style: ShadTypography.cardBody, child: value)),
+        SizedBox(width: 110, child: Text(label, style: Lx.text(context, size: 12.5, color: Lx.muted))),
+        Expanded(
+          child: Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: DefaultTextStyle.merge(style: Lx.text(context, size: 13.5), textAlign: TextAlign.end, child: value),
+          ),
+        ),
       ]),
     );
   }

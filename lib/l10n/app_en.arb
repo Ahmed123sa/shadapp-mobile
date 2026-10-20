@@ -1977,5 +1977,6 @@
   "notificationsGroupYesterday": "Yesterday",
   "notificationsGroupWeek": "Earlier this week",
   "paymentsSummaryContracted": "Contracted",
-  "paymentsSummaryRemaining": "Remaining"
+  "paymentsSummaryRemaining": "Remaining",
+  "reportsEyebrow": "Insight"
 }

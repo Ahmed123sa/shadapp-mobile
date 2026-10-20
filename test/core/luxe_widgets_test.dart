@@ -95,7 +95,8 @@ void main() {
     ));
     final navBottom = t.getBottomLeft(find.byType(LuxeBottomNav)).dy;
     final dotBottom = t.getBottomLeft(find.byKey(const ValueKey('lx-nav-active-dot'))).dy;
-    expect(navBottom - dotBottom, greaterThanOrEqualTo(34));
+    // Mockup: the dot sits 2px below the button, the nav pads by the inset.
+    expect(navBottom - dotBottom, greaterThanOrEqualTo(32));
   });
 
   testWidgets('sheet shows handle + content and is dismissible', (t) async {

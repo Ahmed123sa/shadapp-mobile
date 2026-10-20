@@ -284,67 +284,74 @@ class LuxeBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   const LuxeBottomNav({super.key, required this.items, required this.currentIndex, required this.onTap});
 
+  // Mockup `.nav`: padding 6px 4px 20px, rail background, top hairline.
+  // Each button: padding 6px 0, icon 18, gap 3, label 10.5px. The active dot
+  // is drawn *under* the button (bottom:-2px), outside the layout flow.
   @override
   Widget build(BuildContext context) {
+    final inset = MediaQuery.paddingOf(context).bottom;
     return Container(
       decoration: const BoxDecoration(color: Lx.rail, border: Border(top: BorderSide(color: Lx.line))),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
-          child: Row(children: [
-            for (var i = 0; i < items.length; i++)
-              Expanded(
-                child: InkWell(
-                  key: ValueKey('lx-nav-${items[i].id}'),
-                  onTap: () => onTap(i),
-                  child: LayoutBuilder(builder: (context, c) {
-                    final on = i == currentIndex;
-                    final color = on ? Lx.ink : Lx.muted;
-                    final it = items[i];
-                    return Stack(clipBehavior: Clip.none, children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: Center(
-                              child: it.lxIcon != null
-                                  ? LxIcon(it.lxIcon!, size: 18, color: color)
-                                  : Icon(it.icon, size: 18, color: color),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 10.5, color: color)),
-                          const SizedBox(height: 3),
-                          Container(
-                            key: on ? const ValueKey('lx-nav-active-dot') : null,
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(color: on ? Lx.crimsonInk : Colors.transparent, shape: BoxShape.circle),
-                          ),
-                        ]),
-                      ),
-                      if (it.badge > 0)
-                        PositionedDirectional(
-                          top: 2,
-                          start: c.maxWidth / 2 + 6,
-                          child: Container(
-                            key: ValueKey('lx-nav-badge-${it.id}'),
-                            constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(color: Lx.crimson, borderRadius: BorderRadius.circular(8)),
-                            alignment: Alignment.center,
-                            child: Text(it.badge > 99 ? '99+' : '${it.badge}', style: Lx.text(context, size: 9.5, color: Colors.white)),
-                          ),
+      padding: EdgeInsets.fromLTRB(4, 6, 4, inset > 20 ? inset : 20),
+      child: Row(children: [
+        for (var i = 0; i < items.length; i++)
+          Expanded(
+            child: GestureDetector(
+              key: ValueKey('lx-nav-${items[i].id}'),
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onTap(i),
+              child: LayoutBuilder(builder: (context, c) {
+                final on = i == currentIndex;
+                final color = on ? Lx.ink : Lx.muted;
+                final it = items[i];
+                return Stack(clipBehavior: Clip.none, children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: Center(
+                          child: it.lxIcon != null
+                              ? LxIcon(it.lxIcon!, size: 18, color: color)
+                              : Icon(it.icon, size: 18, color: color),
                         ),
-                    ]);
-                  }),
-                ),
-              ),
-          ]),
-        ),
-      ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 10.5, color: color, height: 1.5)),
+                    ]),
+                  ),
+                  if (on)
+                    Positioned(
+                      bottom: -2,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          key: const ValueKey('lx-nav-active-dot'),
+                          width: 5,
+                          height: 5,
+                          decoration: const BoxDecoration(color: Lx.crimsonInk, shape: BoxShape.circle),
+                        ),
+                      ),
+                    ),
+                  if (it.badge > 0)
+                    PositionedDirectional(
+                      top: 2,
+                      start: c.maxWidth / 2 + 6,
+                      child: Container(
+                        key: ValueKey('lx-nav-badge-${it.id}'),
+                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(color: Lx.crimson, borderRadius: BorderRadius.circular(8)),
+                        alignment: Alignment.center,
+                        child: Text(it.badge > 99 ? '99+' : '${it.badge}', style: Lx.text(context, size: 9.5, color: Colors.white, height: 1)),
+                      ),
+                    ),
+                ]);
+              }),
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -356,6 +363,8 @@ Future<T?> showLuxeSheet<T>(BuildContext context, {required WidgetBuilder builde
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Lx.sheet,
+    barrierColor: const Color(0x8C000000), // .scrim rgba(0,0,0,.55)
+    constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.88),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet)),
       side: BorderSide(color: Lx.line2),
@@ -364,14 +373,14 @@ Future<T?> showLuxeSheet<T>(BuildContext context, {required WidgetBuilder builde
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Center(
               child: Container(
                 key: const ValueKey('lx-sheet-handle'),
-                width: 40,
+                width: 38,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 14),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(color: Lx.line2, borderRadius: BorderRadius.circular(2)),
               ),
             ),
@@ -626,7 +635,7 @@ class LuxeMoreRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
         decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
         child: Row(children: [
-          LxIcon(lxIcon, size: 18, color: danger ? Lx.danger : Lx.muted),
+          LxIcon(lxIcon, size: 18, color: Lx.muted),
           const SizedBox(width: 14),
           Expanded(child: Text(label, style: Lx.text(context, size: 14.5, color: color))),
         ]),

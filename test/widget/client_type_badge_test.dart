@@ -18,15 +18,16 @@ void main() {
     expect(find.text('Individual'), findsNothing);
   });
 
-  testWidgets('shows "Company" with a business icon', (tester) async {
+  // Mockup `.tagr`: a plain outlined pill, text only (no icon).
+  testWidgets('shows "Company" as a text-only pill', (tester) async {
     await pumpWithLocalizations(tester, const ClientTypeBadge(clientType: 'business'));
     expect(find.text('Company'), findsOneWidget);
-    expect(find.byIcon(Icons.business), findsOneWidget);
+    expect(find.byType(Icon), findsNothing);
   });
 
-  testWidgets('shows "Individual" with a person icon for any other value', (tester) async {
+  testWidgets('shows "Individual" for any other value', (tester) async {
     await pumpWithLocalizations(tester, const ClientTypeBadge(clientType: 'individual'));
     expect(find.text('Individual'), findsOneWidget);
-    expect(find.byIcon(Icons.person), findsOneWidget);
+    expect(find.byType(Icon), findsNothing);
   });
 }

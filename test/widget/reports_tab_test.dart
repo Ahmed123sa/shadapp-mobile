@@ -45,7 +45,7 @@ void main() {
 
     await pumpTab(tester, httpClient);
 
-    expect(find.text('Clients'), findsOneWidget);
+    expect(find.text('CLIENTS'), findsOneWidget); // .kpi .l is uppercase
     expect(find.text('12'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
   });
@@ -121,7 +121,7 @@ void main() {
     await pumpTab(tester, httpClient);
 
     expect(find.text('Sara'), findsOneWidget);
-    expect(find.text('1500'), findsOneWidget);
+    expect(find.text('1,500'), findsOneWidget);
   });
 
   // When manager_stats is genuinely empty (no account managers on file), the
@@ -176,7 +176,7 @@ void main() {
         '{"total_clients":0,"contracts_by_status":{"draft":1},"pending_approvals":0,"active_workspaces":0,'
         '"payments_by_month_by_currency":{"2026-09":{"SAR":85000,"USD":6000}}}');
 
-    expect(find.textContaining('85.0K SAR'), findsOneWidget);
+    expect(find.textContaining('85,000 SAR'), findsOneWidget);
   });
 
   testWidgets('does not show currency chips above the chart when there is only one currency', (tester) async {
@@ -184,7 +184,7 @@ void main() {
         '{"total_clients":0,"contracts_by_status":{"draft":1},"pending_approvals":0,"active_workspaces":0,'
         '"payments_by_month_by_currency":{"2026-09":{"SAR":5000}}}');
 
-    // The KPI card's own text is "5.0K SAR" (one Text widget, not two), so
+    // The KPI card's own text is "5,000 SAR" (one Text widget, not two), so
     // an exact match on the bare code only finds something if a chip
     // rendered one.
     expect(find.text('SAR'), findsNothing);
@@ -197,7 +197,7 @@ void main() {
 
     // USD totals 10000 vs SAR's 3000, so USD is the KPI headline and starts
     // selected on the chart.
-    expect(find.textContaining('10.0K USD'), findsOneWidget);
+    expect(find.textContaining('10,000 USD'), findsOneWidget);
     expect(find.text('SAR'), findsOneWidget);
     expect(find.text('USD'), findsOneWidget);
 
@@ -206,6 +206,6 @@ void main() {
 
     // Switching the chart's currency doesn't change which currency the KPI
     // card headlines — that's always the biggest total overall.
-    expect(find.textContaining('10.0K USD'), findsOneWidget);
+    expect(find.textContaining('10,000 USD'), findsOneWidget);
   });
 }

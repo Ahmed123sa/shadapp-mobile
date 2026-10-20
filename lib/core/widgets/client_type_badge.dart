@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../theme.dart';
+import '../luxe/tokens.dart';
 
+/// Mockup `.tagr`: a small outlined pill (9.5px, muted, 1px line-2 border).
 class ClientTypeBadge extends StatelessWidget {
   final String? clientType;
   final bool compact;
@@ -16,30 +17,13 @@ class ClientTypeBadge extends StatelessWidget {
 
     final l10n = AppLocalizations.of(context)!;
     final label = _isBusiness ? l10n.clientTypeCompany : l10n.clientTypeIndividual;
-    final bg = _isBusiness
-        ? ShadColors.gold.withAlpha(38)
-        : ShadColors.textDisabled.withAlpha(38);
-    final fg = _isBusiness ? ShadColors.gold : ShadColors.textSecondary;
-
-    if (compact) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-        child: Text(label, style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w600)),
-      );
-    }
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_isBusiness ? Icons.business : Icons.person, size: 12, color: fg),
-          const SizedBox(width: 3),
-          Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Lx.rPill),
+        border: Border.all(color: Lx.line2),
       ),
+      child: Text(label, style: Lx.text(context, size: 9.5, color: Lx.muted)),
     );
   }
 }

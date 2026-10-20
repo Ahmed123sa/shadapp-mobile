@@ -11315,6 +11315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remaining'**
   String get paymentsSummaryRemaining;
+
+  /// No description provided for @reportsEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Insight'**
+  String get reportsEyebrow;
 }
 
 class _AppLocalizationsDelegate

@@ -48,6 +48,15 @@ const Map<String, String> _notifPaths = {
   'checks': '<path d="m3 12.500 4 4 7-8M11 16.500l1 1 8-9.500"/>',
 };
 
+/// Extra icons used only by the staff mockup's "More" sheet
+/// (design/mobile/staff-mobile-mockup.html, `NAV_ICON`).
+const Map<String, String> _staffPaths = {
+  'chart': '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
+  'list': '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  'key': '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6M15 13l5 5M18 16l1.5-1.5"/>',
+  'layers': '<path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/>',
+};
+
 /// Names available in [LxIcon].
 Iterable<String> get lxIconNames => _paths.keys;
 
@@ -65,7 +74,7 @@ class LxIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inner = _paths[name] ?? _notifPaths[name] ?? '';
+    final inner = _paths[name] ?? _notifPaths[name] ?? _staffPaths[name] ?? '';
     final c = color ?? IconTheme.of(context).color ?? Colors.white;
     final svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
         '<g fill="none" stroke="${_hex(c)}" stroke-opacity="${c.a.toStringAsFixed(3)}" stroke-width="1.4" '

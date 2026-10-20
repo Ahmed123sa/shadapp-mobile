@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/luxe/tokens.dart';
-import '../../../core/theme.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../providers/approval_provider.dart';
@@ -171,7 +171,8 @@ class _CalendarTabState extends State<CalendarTab> {
       final parsed = DateTime.parse(dt).toLocal();
       final weekdays = [l10n.weekdaySunday, l10n.weekdayMonday, l10n.weekdayTuesday, l10n.weekdayWednesday, l10n.weekdayThursday, l10n.weekdayFriday, l10n.weekdaySaturday];
       final wd = weekdays[parsed.weekday % 7];
-      return l10n.calendarDateFormat(wd, parsed.year, parsed.month, parsed.day);
+      // The generated signature is alphabetical: (day, month, weekday, year).
+      return l10n.calendarDateFormat(parsed.day, parsed.month, wd, parsed.year);
     } catch (_) { return dt; }
   }
 
@@ -186,25 +187,13 @@ class _CalendarTabState extends State<CalendarTab> {
 
   Color _eventColor(dynamic e) {
     switch (e['type']) {
-      case 'meeting': return Lx.crimson;
+      case 'meeting': return Lx.crimsonInk;
       case 'contract_start': return Lx.ok;
       case 'contract_deadline': return Lx.danger;
-      case 'contract': return ShadColors.sent;
-      case 'approval': return ShadColors.calendarMeeting;
+      case 'contract': return Lx.muted;
+      case 'approval': return Lx.tuscan;
       case 'payment': return Lx.wait;
       default: return Lx.muted;
-    }
-  }
-
-  IconData _eventIcon(dynamic e) {
-    switch (e['type']) {
-      case 'meeting': return Icons.videocam;
-      case 'contract_start': return Icons.play_circle;
-      case 'contract_deadline': return Icons.warning_rounded;
-      case 'contract': return Icons.description;
-      case 'approval': return Icons.check_circle;
-      case 'payment': return Icons.payments;
-      default: return Icons.event;
     }
   }
 
@@ -214,86 +203,87 @@ class _CalendarTabState extends State<CalendarTab> {
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
     final l10n = AppLocalizations.of(context)!;
 
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            _filterChip(l10n.calendarAllEvents, 'all'),
-            const SizedBox(width: 8),
-            _filterChip(l10n.calendarMeetings, 'meeting'),
-            const SizedBox(width: 8),
-            _filterChip(l10n.calendarPayments, 'payment'),
-            const SizedBox(width: 8),
-            _filterChip(l10n.calendarApprovals, 'approval'),
+    final groups = _groupedByDate(l10n).entries.toList();
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: Lx.crimsonInk,
+      child: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 28),
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              _filterChip(l10n.calendarAllEvents, 'all'),
+              _filterChip(l10n.calendarMeetings, 'meeting'),
+              _filterChip(l10n.calendarPayments, 'payment'),
+              _filterChip(l10n.calendarApprovals, 'approval'),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          Wrap(spacing: 14, runSpacing: 6, children: [
+            _legendDot(Lx.crimsonInk, l10n.calendarMeeting),
+            _legendDot(Lx.ok, l10n.calendarContractStartLegend),
+            _legendDot(Lx.danger, l10n.calendarContractEndLegend),
+            _legendDot(Lx.wait, l10n.calendarPayment),
+            _legendDot(Lx.tuscan, l10n.calendarApproval),
           ]),
-        ),
-      ),
-      // Legend
-      Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-        child: Row(children: [
-          _legendDot(Lx.crimson, l10n.calendarMeeting),
-          const SizedBox(width: 12),
-          _legendDot(Lx.ok, l10n.calendarContractStartLegend),
-          const SizedBox(width: 12),
-          _legendDot(Lx.danger, l10n.calendarContractEndLegend),
-          const SizedBox(width: 12),
-          _legendDot(Lx.wait, l10n.calendarPayment),
-          const SizedBox(width: 12),
-          _legendDot(ShadColors.calendarMeeting, l10n.calendarApproval),
-        ]),
-      ),
-      Expanded(
-        child: _events.isEmpty
-          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.calendar_month_outlined, size: 56, color: Lx.faint),
-              const SizedBox(height: 12),
-              Text(l10n.calendarEmpty, style: ShadTypography.emptyTitle),
-            ]))
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: _groupedByDate(l10n).entries.map((entry) {
-                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(entry.key, style: ShadTypography.sectionHeader),
-                    const SizedBox(height: 8),
-                    ...entry.value.map((e) => Card(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _eventColor(e).withAlpha(25),
-                          child: Icon(_eventIcon(e), size: 18, color: _eventColor(e)),
-                        ),
-                        title: Text(e['title'] ?? '', style: ShadTypography.cardTitle),
-                        subtitle: Text(_formatDate(e['date'], l10n), style: ShadTypography.caption.copyWith(color: Lx.muted)),
-                      ),
-                    )),
-                    const SizedBox(height: 12),
-                  ]);
-                }).toList(),
-              ),
+          const SizedBox(height: 14),
+          if (_events.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: Text(l10n.calendarEmpty, style: Lx.display(context, size: 20))),
             ),
+          for (final entry in groups) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6, bottom: 8),
+              child: LuxeKind(entry.key),
+            ),
+            for (final e in entry.value)
+              LuxeCard(
+                child: Row(children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: _eventColor(e), shape: BoxShape.circle)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${e['title'] ?? ''}', style: Lx.text(context, size: 15)),
+                      const SizedBox(height: 2),
+                      Text(_formatDate(e['date'], l10n), style: Lx.text(context, size: 12, color: Lx.muted)),
+                    ]),
+                  ),
+                ]),
+              ),
+          ],
+        ],
       ),
-    ]);
+    );
   }
 
   Widget _legendDot(Color color, String label) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 10, color: Lx.muted, fontFamily: Lx.sans)),
+      Container(width: 7, height: 7, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 5),
+      Text(label, style: Lx.text(context, size: 11, color: Lx.muted)),
     ]);
   }
 
+  // Mockup `.chip`: selected = light fill with dark text.
   Widget _filterChip(String label, String value) {
     final selected = _filter == value;
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => setState(() => _filter = value),
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Lx.rPill),
+        onTap: () => setState(() => _filter = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? Lx.ink : Colors.transparent,
+            borderRadius: BorderRadius.circular(Lx.rPill),
+            border: Border.all(color: selected ? Lx.ink : Lx.line2),
+          ),
+          child: Text(label, style: Lx.text(context, size: 12, color: selected ? const Color(0xFF111111) : Lx.muted)),
+        ),
+      ),
     );
   }
 }
