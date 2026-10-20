@@ -11243,6 +11243,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load payments'**
   String get financeFailed;
+
+  /// No description provided for @amRoleStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Team member'**
+  String get amRoleStaff;
 }
 
 class _AppLocalizationsDelegate

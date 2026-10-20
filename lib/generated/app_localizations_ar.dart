@@ -5817,4 +5817,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get financeFailed => 'تعذّر تحميل المدفوعات';
+
+  @override
+  String get amRoleStaff => 'عضو فريق';
 }

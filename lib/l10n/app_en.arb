@@ -1958,5 +1958,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "amRoleStaff": "Team member"
 }

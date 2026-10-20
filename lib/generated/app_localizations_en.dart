@@ -5846,4 +5846,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeFailed => 'Failed to load payments';
+
+  @override
+  String get amRoleStaff => 'Team member';
 }

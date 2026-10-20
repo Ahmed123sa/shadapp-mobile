@@ -7,11 +7,9 @@ import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
-import '../../core/theme.dart';
-import '../../core/widgets/client_type_badge.dart';
-import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/error_state.dart';
-import '../../core/widgets/loading_state.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/client_card.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/auth_provider.dart';
 
 /// A company staff member's home (STAFF_TEAMS_PLAN.md ف٦): just the clients
@@ -146,107 +144,174 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
     if (wsId != null) context.push('/am/workspace/$wsId');
   }
 
+  String _avatarInitial() {
+    final n = (_api.userName ?? '').trim();
+    return n.isEmpty ? '?' : n.substring(0, 1).toUpperCase();
+  }
+
+  void _showMenu() {
+    final loc = AppLocalizations.of(context)!;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    showLuxeSheet<void>(context, builder: (ctx) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(children: [
+            LuxeAvatar(initial: _avatarInitial()),
+            const SizedBox(width: 12),
+            Expanded(child: Text(_api.userName ?? '', style: Lx.display(context, size: 18))),
+          ]),
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('staff-profile'),
+          lxIcon: 'gear',
+          label: loc.amNavSettings,
+          onTap: () {
+            Navigator.pop(ctx);
+            context.push('/profile');
+          },
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('staff-language'),
+          lxIcon: 'lang',
+          label: isAr ? 'English' : 'العربية',
+          onTap: () {
+            Navigator.pop(ctx);
+            context.read<LocaleProvider>().toggle();
+          },
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('staff-logout'),
+          lxIcon: 'out',
+          label: loc.logout,
+          danger: true,
+          last: true,
+          onTap: () {
+            Navigator.pop(ctx);
+            _logout();
+          },
+        ),
+      ]);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.staffMyClientsTitle),
-        actions: [
-          Stack(children: [
-            IconButton(
-              key: const ValueKey('staff-bell'),
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () => context.push('/notifications').then((_) => _loadUnread()),
+      backgroundColor: Lx.page,
+      body: SafeArea(
+        bottom: false,
+        child: LuxeGlow(
+          child: Column(children: [
+            LuxeTopBar(
+              company: l10n.amRoleStaff,
+              avatarInitial: _avatarInitial(),
+              unread: _unread > 0,
+              onBell: () => context.push('/notifications').then((_) => _loadUnread()),
+              onAvatar: _showMenu,
             ),
-            if (_unread > 0)
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: ShadColors.crimson, shape: BoxShape.circle),
-                  child: Text(_unread > 99 ? '99+' : '$_unread', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
+            Expanded(child: _body(l10n)),
           ]),
-          IconButton(
-            key: const ValueKey('staff-profile'),
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push('/profile'),
-          ),
-          IconButton(icon: const Icon(Icons.language, size: 20), onPressed: () => context.read<LocaleProvider>().toggle()),
-          IconButton(key: const ValueKey('staff-logout'), icon: const Icon(Icons.logout_rounded), onPressed: _logout, tooltip: l10n.logout),
-        ],
+        ),
       ),
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      bottomNavigationBar: LuxeBottomNav(
+        items: [
+          LuxeNavItem(id: 'clients', lxIcon: 'users', label: l10n.staffMyClientsTitle),
+          LuxeNavItem(id: 'settings', lxIcon: 'gear', label: l10n.amNavSettings),
+        ],
+        currentIndex: 0,
+        onTap: (i) {
+          if (i == 1) context.push('/profile');
+        },
+      ),
+    );
+  }
+
+  Widget _search(AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line)),
+      child: Row(children: [
+        const Icon(Icons.search, size: 18, color: Lx.faint),
+        const SizedBox(width: 10),
+        Expanded(
           child: TextField(
             key: const ValueKey('staff-search'),
             controller: _searchController,
             onChanged: _onSearchChanged,
-            decoration: InputDecoration(prefixIcon: const Icon(Icons.search, size: 18), hintText: l10n.staffSearchHint),
+            style: Lx.text(context, size: 12.5),
+            cursorColor: Lx.crimsonInk,
+            decoration: InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              hintText: l10n.staffSearchHint,
+              hintStyle: Lx.text(context, size: 12.5, color: Lx.faint),
+            ),
           ),
         ),
-        Expanded(child: _body(l10n)),
       ]),
     );
   }
 
   Widget _body(AppLocalizations l10n) {
-    if (_loading) return const LoadingState();
-    if (_failed) return ErrorState(message: l10n.staffClientsLoadFailed, onRetry: _load);
-    if (_clients.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.6, child: EmptyState(icon: Icons.people_outline, title: l10n.staffMyClientsEmpty)),
+    final Widget content;
+    if (_loading) {
+      content = const Padding(padding: EdgeInsets.only(top: 60), child: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
+    } else if (_failed) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(children: [
+          Text(l10n.staffClientsLoadFailed, style: Lx.text(context, size: 14, color: Lx.muted)),
+          const SizedBox(height: 12),
+          LuxeFormTheme(child: ElevatedButton(onPressed: _load, child: Text(l10n.retry))),
         ]),
       );
+    } else if (_clients.isEmpty) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: Text(l10n.staffMyClientsEmpty, textAlign: TextAlign.center, style: Lx.text(context, size: 14, color: Lx.muted))),
+      );
+    } else {
+      content = Column(children: [
+        for (final c in _clients)
+          KeyedSubtree(
+            key: ValueKey('staff-client-${c['id']}'),
+            child: ClientCard(
+              companyName: (c['company_name'] as String?) ?? '',
+              contactPerson: (c['contact_person'] as String?) ?? '',
+              clientType: c['client_type'] as String?,
+              workspaceStatus: (c['workspace'] as Map?)?['status'] as String?,
+              onTap: () => _open(c),
+            ),
+          ),
+        if (_page < _lastPage)
+          Center(
+            child: LuxeButton(
+              key: const ValueKey('staff-load-more'),
+              label: l10n.auditLogNext,
+              kind: LuxeButtonKind.quiet,
+              size: LuxeButtonSize.sm,
+              onPressed: () => _load(page: _page + 1),
+            ),
+          ),
+      ]);
     }
     return RefreshIndicator(
       onRefresh: _load,
+      color: Lx.crimsonInk,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
         children: [
-          for (final c in _clients) _clientCard(c),
-          if (_page < _lastPage)
-            Center(
-              child: TextButton(
-                key: const ValueKey('staff-load-more'),
-                onPressed: () => _load(page: _page + 1),
-                child: Text(l10n.auditLogNext),
-              ),
-            ),
+          LuxePageTitle(l10n.staffMyClientsTitle),
+          _search(l10n),
+          content,
         ],
-      ),
-    );
-  }
-
-  Widget _clientCard(Map<String, dynamic> c) {
-    final name = (c['company_name'] as String?) ?? '';
-    final contact = (c['contact_person'] as String?) ?? '';
-    final avatar = c['avatar_url'] as String?;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        key: ValueKey('staff-client-${c['id']}'),
-        onTap: () => _open(c),
-        leading: CircleAvatar(
-          backgroundColor: ShadColors.crimson.withAlpha(40),
-          backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(_api.resolveFileUrl(avatar)) : null,
-          child: avatar != null && avatar.isNotEmpty
-              ? null
-              : Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: ShadColors.crimson, fontWeight: FontWeight.w700)),
-        ),
-        title: Row(children: [
-          Flexible(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
-          const SizedBox(width: 6),
-          ClientTypeBadge(clientType: c['client_type'] as String?, compact: true),
-        ]),
-        subtitle: Text(contact, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }

@@ -58,7 +58,7 @@ void main() {
 
     expect(find.text('Acme Corp'), findsOneWidget);
     expect(find.text('Ali'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
+    expect(find.byKey(const ValueKey('lx-bell-pip')), findsOneWidget);
   });
 
   testWidgets('tapping a client opens that client\'s workspace', (tester) async {
@@ -109,7 +109,7 @@ void main() {
     stub(httpClient);
 
     await pumpPage(tester, api);
-    await tester.tap(find.byKey(const ValueKey('staff-profile')));
+    await tester.tap(find.byKey(const ValueKey('lx-nav-settings')));
     await tester.pumpAndSettle();
     expect(find.text('PROFILE'), findsOneWidget);
   });
