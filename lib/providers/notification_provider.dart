@@ -13,10 +13,13 @@ class NotificationProvider {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
   int _serverUnreadCount = 0;
+  bool _listFailed = false;
 
   int get unreadCount => _unreadCount;
   List<AppNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
+  /// True when the last [fetchNotificationList] threw (drives the error card).
+  bool get listFailed => _listFailed;
   /// Server-declared unread count (only populated by [fetchNotificationList]).
   int get serverUnreadCount => _serverUnreadCount;
 
@@ -45,7 +48,9 @@ class NotificationProvider {
       final result = await _repo.fetchAll();
       _notifications = result.notifications;
       _serverUnreadCount = result.serverUnreadCount ?? 0;
+      _listFailed = false;
     } catch (e, s) {
+      _listFailed = true;
       AppLog.error('NotificationProvider.fetchNotificationList', e, s);
     } finally {
       _isLoading = false;

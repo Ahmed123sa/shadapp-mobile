@@ -5,11 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../models/approval.dart';
 import '../../../providers/approval_provider.dart';
 
@@ -144,7 +144,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
     final canWrite = !isSA && (_api.canDo('can_manage_approvals') || (_api.isStaffMember && _api.staffCan('can_request_approvals')));
     final l10n = AppLocalizations.of(context)!;
 
-    return RefreshIndicator(
+    return LuxeFormTheme(child: RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -155,7 +155,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(l10n.approvalCreateTitle, style: ShadTypography.cardTitle),
+                  Text(l10n.approvalCreateTitle, style: Lx.display(context, size: 18)),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _titleController,
@@ -203,7 +203,7 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                 ]),
               ),
             ),
-          Text(l10n.approvalPreviousRequests, style: ShadTypography.sectionHeader),
+          Text(l10n.approvalPreviousRequests, style: Lx.display(context, size: 19)),
           const SizedBox(height: 8),
           if (_approvals.isEmpty)
             EmptyState(icon: Icons.check_circle_outlined, title: l10n.approvalEmpty)
@@ -211,36 +211,18 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
             ..._approvals.map((a) {
               final hasCertificate = a.hasCertificate;
               final status = a.status;
-              final accentColor = status == 'approved' ? Lx.ok :
-                  status == 'rejected' || status == 'edit_requested' ? Lx.danger : Lx.wait;
               final createdAt = a.createdAt;
               final requestedByName = a.requestedByName ?? '';
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Lx.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Lx.line2),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Container(
-                    width: 5,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(12),
-                        bottomRight: Radius.circular(12),
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              final dot = status == 'approved' ? LxStatus.ok : (status == 'rejected' || status == 'edit_requested') ? LxStatus.bad : LxStatus.wait;
+              return LuxeCard(
+                key: ValueKey('ws-approval-${a.id}'),
+                attention: status == 'pending',
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(
                             a.title,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Lx.ink, fontFamily: Lx.serif),
+                            style: Lx.text(context, size: 16),
                           ),
                           if (a.description != null && a.description!.isNotEmpty) ...[
                             const SizedBox(height: 6),
@@ -273,7 +255,11 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           ],
                         ])),
                         const SizedBox(width: 10),
-                        StatusBadge(status: status),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          LuxeStatusDot(status: dot),
+                          const SizedBox(width: 7),
+                          Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                        ]),
                       ]),
                       if (hasCertificate)
                         Padding(
@@ -376,13 +362,11 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             ),
                           ]),
                         ),
-                    ]),
-                  )),
                 ]),
               );
             }),
         ],
       ),
-    );
+    ));
   }
 }

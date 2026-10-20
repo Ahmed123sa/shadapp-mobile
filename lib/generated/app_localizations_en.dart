@@ -5849,4 +5849,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get amRoleStaff => 'Team member';
+
+  @override
+  String notificationsUnreadCount(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notificationsAllRead => 'You’re all caught up';
+
+  @override
+  String get notificationsEmptyTitle => 'Nothing new.';
+
+  @override
+  String get notificationsEmptyHint =>
+      'When something happens on one of your clients, it shows up here.';
+
+  @override
+  String get notificationsLoadFailed => 'Couldn’t load your notifications.';
+
+  @override
+  String get notificationsDelete => 'Delete';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
+
+  @override
+  String get notificationsGroupWeek => 'Earlier this week';
+
+  @override
+  String get paymentsSummaryContracted => 'Contracted';
+
+  @override
+  String get paymentsSummaryRemaining => 'Remaining';
 }

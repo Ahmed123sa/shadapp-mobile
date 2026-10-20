@@ -30,6 +30,24 @@ const Map<String, String> _paths = {
   'back': '<path d="m15 5-7 7 7 7"/>',
 };
 
+/// Extra icons used only by the notifications mockup
+/// (design/mobile/notifications-mobile-mockup.html). Kept apart so
+/// [lxIconNames] stays the shared client/staff set.
+const Map<String, String> _notifPaths = {
+  'bellOff': '<path d="M6 16V11c0-1.2.3-2.300.9-3.200M18 11v5l1.500 2H8"/><path d="M10 20.500a2.200 2.200 0 0 0 4 0M4 4l16 16"/>',
+  'file': '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+  'verified': '<path d="m12 3 2.400 1.700 2.900-.1.900 2.800 2.300 1.800-.9 2.700.9 2.700-2.300 1.800-.9 2.800-2.900-.1L12 21l-2.400-1.700-2.900.1-.9-2.800-2.300-1.800.9-2.700-.9-2.700 2.300-1.800.9-2.800 2.900.1z"/><path d="m8.800 12 2.200 2.200 4.200-4.400"/>',
+  'clock': '<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>',
+  'cal': '<rect x="3.500" y="5" width="17" height="15" rx="2"/><path d="M3.500 10h17M8 3v4M16 3v4"/>',
+  'msg': '<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-5 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>',
+  'gift': '<rect x="4" y="9" width="16" height="11" rx="1.500"/><path d="M3 9h18M12 9v11M12 9c-3 0-4.500-1-4.500-2.500S9 4 10.500 5 12 9 12 9zm0 0c3 0 4.500-1 4.500-2.500S15 4 13.500 5 12 9 12 9z"/>',
+  'trash': '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+  'reply': '<path d="M9 7 4 12l5 5"/><path d="M4 12h9a6 6 0 0 1 6 6v1"/>',
+  'refresh': '<path d="M20 11a8 8 0 0 0-14-4.500L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.500L20 15M20 20v-5h-5"/>',
+  'alert': '<path d="M12 4 2.500 20h19z"/><path d="M12 10v4.500M12 17.500h.01"/>',
+  'checks': '<path d="m3 12.500 4 4 7-8M11 16.500l1 1 8-9.500"/>',
+};
+
 /// Names available in [LxIcon].
 Iterable<String> get lxIconNames => _paths.keys;
 
@@ -47,7 +65,7 @@ class LxIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inner = _paths[name] ?? '';
+    final inner = _paths[name] ?? _notifPaths[name] ?? '';
     final c = color ?? IconTheme.of(context).color ?? Colors.white;
     final svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
         '<g fill="none" stroke="${_hex(c)}" stroke-opacity="${c.a.toStringAsFixed(3)}" stroke-width="1.4" '

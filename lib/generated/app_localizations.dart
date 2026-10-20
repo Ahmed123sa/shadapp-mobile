@@ -11249,6 +11249,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team member'**
   String get amRoleStaff;
+
+  /// No description provided for @notificationsUnreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String notificationsUnreadCount(int count);
+
+  /// No description provided for @notificationsAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re all caught up'**
+  String get notificationsAllRead;
+
+  /// No description provided for @notificationsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new.'**
+  String get notificationsEmptyTitle;
+
+  /// No description provided for @notificationsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When something happens on one of your clients, it shows up here.'**
+  String get notificationsEmptyHint;
+
+  /// No description provided for @notificationsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load your notifications.'**
+  String get notificationsLoadFailed;
+
+  /// No description provided for @notificationsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get notificationsDelete;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
+
+  /// No description provided for @notificationsGroupWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier this week'**
+  String get notificationsGroupWeek;
+
+  /// No description provided for @paymentsSummaryContracted.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracted'**
+  String get paymentsSummaryContracted;
+
+  /// No description provided for @paymentsSummaryRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get paymentsSummaryRemaining;
 }
 
 class _AppLocalizationsDelegate

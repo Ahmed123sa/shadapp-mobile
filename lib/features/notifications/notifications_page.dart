@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/notification_routing.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../models/app_notification.dart';
 import '../../providers/notification_provider.dart';
 
@@ -28,6 +30,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<AppNotification> _notifications = [];
   int _unreadCount = 0;
   bool _loading = true;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     setState(() {
       _notifications = _notificationProvider.notifications;
       _unreadCount = _notificationProvider.serverUnreadCount;
+      _failed = _notificationProvider.listFailed;
       _loading = false;
     });
   }
@@ -87,143 +91,326 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (mounted) _load();
   }
 
-  Color _colorForType(String? type) {
+  // Mockup tones: ok = done/approved, wait = waiting, c = needs your action,
+  // '' = information.
+  String _toneForType(String? type) {
     switch (type) {
-      case 'contract_sent':
-      case 'contract_client_approved':
       case 'contract_company_approved':
       case 'contract_completed':
-        return Colors.blue;
-      case 'payment_created':
       case 'payment_reviewed':
+      case 'approval_responded':
+        return 'ok';
+      case 'contract_sent':
+      case 'contract_client_approved':
+      case 'payment_created':
       case 'payment_scheduled':
       case 'payment_reminder':
-        return Colors.green;
-      case 'payment_schedule_deleted':
-        return Colors.red;
       case 'payment_schedule_updated':
-        return Colors.blue;
+        return 'w';
       case 'approval_requested':
-      case 'approval_responded':
-        return Colors.orange;
+      case 'payment_schedule_deleted':
+        return 'c';
       default:
-        return Colors.grey;
+        return '';
     }
   }
 
-  IconData _iconForType(String? type) {
+  Color _toneColor(String tone) => switch (tone) {
+        'ok' => Lx.ok,
+        'w' => Lx.wait,
+        'c' => Lx.crimsonInk,
+        _ => Lx.muted,
+      };
+
+  String _iconForType(String? type) {
     switch (type) {
       case 'contract_sent':
-        return Icons.send;
+        return 'send';
       case 'contract_client_approved':
-        return Icons.person;
+        return 'users';
       case 'contract_company_approved':
-        return Icons.verified;
+        return 'verified';
       case 'contract_completed':
-        return Icons.check_circle;
+        return 'check';
       case 'payment_created':
-        return Icons.payment;
       case 'payment_reviewed':
-        return Icons.rate_review;
+        return 'wallet';
       case 'payment_scheduled':
-        return Icons.schedule;
+        return 'cal';
       case 'payment_reminder':
-        return Icons.notifications_active;
+        return 'clock';
       case 'payment_schedule_deleted':
-        return Icons.delete_outline;
+        return 'trash';
       case 'payment_schedule_updated':
-        return Icons.edit_calendar;
+        return 'refresh';
       case 'approval_requested':
-        return Icons.approval;
+        return 'check';
       case 'approval_responded':
-        return Icons.reply;
+        return 'reply';
       default:
-        return Icons.notifications;
+        return 'bell';
     }
+  }
+
+  // Groups by the day already on each notification: today, yesterday,
+  // earlier this week, then a plain date.
+  String _groupOf(String date, AppLocalizations l10n) {
+    final dt = DateTime.tryParse(date)?.toLocal();
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final days = DateTime(now.year, now.month, now.day).difference(DateTime(dt.year, dt.month, dt.day)).inDays;
+    if (days <= 0) return l10n.notificationsGroupToday;
+    if (days == 1) return l10n.notificationsGroupYesterday;
+    if (days < 7) return l10n.notificationsGroupWeek;
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  Widget _header(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Row(children: [
+        InkWell(
+          key: const ValueKey('notif-back'),
+          customBorder: const CircleBorder(),
+          onTap: () => Navigator.of(context).maybePop(),
+          child: Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+            child: Directionality.of(context) == TextDirection.rtl
+                ? Transform.flip(flipX: true, child: const LxIcon('back', size: 16, color: Lx.ink))
+                : const LxIcon('back', size: 16, color: Lx.ink),
+          ),
+        ),
+        const Spacer(),
+        if (_unreadCount > 0 && !_failed)
+          InkWell(
+            key: const ValueKey('notif-mark-all'),
+            onTap: _markAllAsRead,
+            child: Container(
+              padding: const EdgeInsets.only(bottom: 1),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const LxIcon('checks', size: 13, color: Lx.ink2),
+                const SizedBox(width: 6),
+                Text(l10n.notifications_markAllRead, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+              ]),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _title(AppLocalizations l10n, {bool withCount = false}) {
+    final style = Lx.display(context, size: 30);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(text: l10n.notifications_title),
+            TextSpan(text: '.', style: style.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+          ]),
+          style: style,
+        ),
+        if (withCount)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              _unreadCount > 0 ? l10n.notificationsUnreadCount(_unreadCount) : l10n.notificationsAllRead,
+              style: Lx.text(context, size: 12, color: Lx.muted),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _row(AppNotification notif) {
+    final tone = _toneForType(notif.type);
+    final color = _toneColor(tone);
+    final isUnread = notif.isUnread;
+    return Dismissible(
+      key: Key(notif.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _delete(notif.id),
+      background: Container(
+        color: Lx.page,
+        alignment: AlignmentDirectional.centerEnd,
+        padding: const EdgeInsetsDirectional.only(end: 20),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const LxIcon('trash', size: 15, color: Lx.danger),
+          const SizedBox(width: 8),
+          Text(AppLocalizations.of(context)!.notificationsDelete, style: Lx.text(context, size: 12, color: Lx.danger)),
+        ]),
+      ),
+      child: InkWell(
+        key: ValueKey('notif-${notif.id}'),
+        onTap: () {
+          if (isUnread) _markAsRead(notif.id);
+          _navigateToNotification(notif.workspaceId, notif.clientId, notif.type);
+        },
+        child: Container(
+          color: Lx.page,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Stack(clipBehavior: Clip.none, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: tone.isEmpty ? Lx.line2 : color.withAlpha(tone == 'c' ? 115 : 102)),
+                ),
+                child: LxIcon(_iconForType(notif.type), size: 16, color: color),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(notif.title, style: Lx.text(context, size: 14, weight: isUnread ? FontWeight.w500 : FontWeight.w400, color: isUnread ? Lx.ink : Lx.ink2)),
+                  if (notif.message.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(notif.message, style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.55)),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(_formatDate(notif.createdAt), style: Lx.text(context, size: 11, color: Lx.faint)),
+                    ),
+                  ),
+                ]),
+              ),
+            ]),
+            if (isUnread)
+              PositionedDirectional(
+                key: const ValueKey('notif-unread-dot'),
+                top: 7,
+                start: -9,
+                child: Container(width: 6, height: 6, decoration: const BoxDecoration(color: Lx.crimsonInk, shape: BoxShape.circle)),
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _groupLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+      child: Row(children: [
+        Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.4)),
+        const SizedBox(width: 12),
+        const Expanded(child: Divider(height: 1, color: Lx.line)),
+      ]),
+    );
+  }
+
+  Widget _empty(AppLocalizations l10n) {
+    return ListView(children: [
+      _title(l10n),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 90, 20, 0),
+        child: Column(children: [
+          Container(
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+            child: const LxIcon('bellOff', size: 26, color: Lx.faint),
+          ),
+          const SizedBox(height: 18),
+          Text(l10n.notificationsEmptyTitle, style: Lx.display(context, size: 22)),
+          const SizedBox(height: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 240),
+            child: Text(l10n.notificationsEmptyHint, textAlign: TextAlign.center, style: Lx.text(context, size: 13, color: Lx.muted)),
+          ),
+        ]),
+      ),
+    ]);
+  }
+
+  Widget _error(AppLocalizations l10n) {
+    return ListView(children: [
+      _title(l10n),
+      Container(
+        margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Lx.crimsonInk.withAlpha(89)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.notificationsLoadFailed, style: Lx.text(context, size: 13, color: Lx.ink2)),
+          const SizedBox(height: 12),
+          LuxeButton(
+            key: const ValueKey('notif-retry'),
+            label: l10n.retry,
+            size: LuxeButtonSize.sm,
+            kind: LuxeButtonKind.outline,
+            onPressed: () {
+              setState(() => _loading = true);
+              _load();
+            },
+          ),
+        ]),
+      ),
+    ]);
+  }
+
+  Widget _skeleton(AppLocalizations l10n) {
+    return ListView(children: [
+      _title(l10n),
+      for (var i = 0; i < 5; i++)
+        Container(
+          height: 64,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: const Color(0x0DFFFFFF)),
+        ),
+    ]);
+  }
+
+  Widget _list(AppLocalizations l10n) {
+    final children = <Widget>[_title(l10n, withCount: true)];
+    String? last;
+    for (final n in _notifications) {
+      final g = _groupOf(n.createdAt, l10n);
+      if (g != last) {
+        children.add(_groupLabel(g));
+        last = g;
+      }
+      children.add(_row(n));
+      children.add(const Divider(height: 1, indent: 16, endIndent: 16, color: Lx.line));
+    }
+    return ListView(children: children);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final Widget body;
+    if (_loading) {
+      body = _skeleton(l10n);
+    } else if (_failed && _notifications.isEmpty) {
+      body = _error(l10n);
+    } else if (_notifications.isEmpty) {
+      body = _empty(l10n);
+    } else {
+      body = _list(l10n);
+    }
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.notifications_title),
-        actions: [
-          if (_unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: Text(l10n.notifications_markAllRead),
-            ),
-        ],
+      backgroundColor: Lx.page,
+      body: SafeArea(
+        child: LuxeGlow(
+          child: Column(children: [
+            _header(l10n),
+            Expanded(child: RefreshIndicator(onRefresh: _load, color: Lx.crimsonInk, child: body)),
+          ]),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _notifications.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.notifications_off, size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text(l10n.notifications_empty, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final notif = _notifications[index];
-                      final type = notif.type;
-                      final title = notif.title;
-                      final message = notif.message;
-                      final isUnread = notif.isUnread;
-                      final id = notif.id;
-                      final createdAt = notif.createdAt;
-
-                      return Dismissible(
-                        key: Key(id),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) => _delete(id),
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsetsDirectional.only(end: 20),
-                          color: Colors.red,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        child: Card(
-                          color: isUnread ? ShadColors.primary.withAlpha(20) : null,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: _colorForType(type).withAlpha(30),
-                              child: Icon(_iconForType(type), color: _colorForType(type), size: 20),
-                            ),
-                            title: Text(title, style: TextStyle(fontWeight: isUnread ? FontWeight.bold : FontWeight.normal)),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Text(message),
-                                const SizedBox(height: 4),
-                                Text(_formatDate(createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                              ],
-                            ),
-                            trailing: isUnread
-                                ? Container(width: 10, height: 10, decoration: BoxDecoration(color: ShadColors.primary, shape: BoxShape.circle))
-                                : null,
-                            onTap: () {
-                              if (isUnread) _markAsRead(id);
-                              _navigateToNotification(notif.workspaceId, notif.clientId, notif.type);
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
     );
   }
 

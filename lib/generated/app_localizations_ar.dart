@@ -5820,4 +5820,40 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get amRoleStaff => 'عضو فريق';
+
+  @override
+  String notificationsUnreadCount(int count) {
+    return '$count غير مقروء';
+  }
+
+  @override
+  String get notificationsAllRead => 'مفيش جديد';
+
+  @override
+  String get notificationsEmptyTitle => 'مفيش جديد.';
+
+  @override
+  String get notificationsEmptyHint =>
+      'لما يحصل أي حاجة عند أحد عملائك هتظهر هنا.';
+
+  @override
+  String get notificationsLoadFailed => 'تعذّر تحميل إشعاراتك.';
+
+  @override
+  String get notificationsDelete => 'حذف';
+
+  @override
+  String get notificationsGroupToday => 'النهارده';
+
+  @override
+  String get notificationsGroupYesterday => 'إمبارح';
+
+  @override
+  String get notificationsGroupWeek => 'الأسبوع ده';
+
+  @override
+  String get paymentsSummaryContracted => 'قيمة العقود';
+
+  @override
+  String get paymentsSummaryRemaining => 'المتبقي';
 }

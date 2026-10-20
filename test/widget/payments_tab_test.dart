@@ -19,6 +19,10 @@ void main() {
   });
 
   Future<void> pumpTab(WidgetTester tester, dynamic api) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -172,7 +176,7 @@ void main() {
     });
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byKey(const ValueKey('payments-schedule')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '100');
     await tester.tap(find.widgetWithText(OutlinedButton, 'Add Installment'));
@@ -203,7 +207,7 @@ void main() {
     });
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.request_quote));
+    await tester.tap(find.byKey(const ValueKey('payments-request')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '250');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Request'));
@@ -238,7 +242,7 @@ void main() {
     });
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.request_quote));
+    await tester.tap(find.byKey(const ValueKey('payments-request')));
     await tester.pumpAndSettle();
 
     expect(find.byType(DropdownButtonFormField<int>), findsNothing);
@@ -266,7 +270,7 @@ void main() {
     });
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byKey(const ValueKey('payments-schedule')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '100');
     await tester.pumpAndSettle();
@@ -314,7 +318,7 @@ void main() {
     });
 
     await pumpTab(tester, api);
-    await tester.tap(find.byIcon(Icons.request_quote));
+    await tester.tap(find.byKey(const ValueKey('payments-request')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '250');
     await tester.pumpAndSettle();

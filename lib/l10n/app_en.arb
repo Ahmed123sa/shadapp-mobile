@@ -1959,5 +1959,23 @@
       }
     }
   },
-  "amRoleStaff": "Team member"
+  "amRoleStaff": "Team member",
+  "notificationsUnreadCount": "{count} unread",
+  "@notificationsUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationsAllRead": "You’re all caught up",
+  "notificationsEmptyTitle": "Nothing new.",
+  "notificationsEmptyHint": "When something happens on one of your clients, it shows up here.",
+  "notificationsLoadFailed": "Couldn’t load your notifications.",
+  "notificationsDelete": "Delete",
+  "notificationsGroupToday": "Today",
+  "notificationsGroupYesterday": "Yesterday",
+  "notificationsGroupWeek": "Earlier this week",
+  "paymentsSummaryContracted": "Contracted",
+  "paymentsSummaryRemaining": "Remaining"
 }

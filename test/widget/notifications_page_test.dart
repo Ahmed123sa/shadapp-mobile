@@ -60,7 +60,7 @@ void main() {
 
     await pumpPage(tester, provider);
 
-    expect(find.text('No notifications'), findsOneWidget);
+    expect(find.text('Nothing new.'), findsOneWidget);
   });
 
   testWidgets('the "mark all read" action only appears when there is an unread count', (tester) async {
@@ -145,6 +145,43 @@ void main() {
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/notifications/n1'))),
         headers: any(named: 'headers'))).called(1);
-    expect(find.text('No notifications'), findsOneWidget);
+    expect(find.text('Nothing new.'), findsOneWidget);
+  });
+
+  testWidgets('a failed load shows the error card, and Retry reloads', (tester) async {
+    final httpClient = MockHttpClient();
+    var call = 0;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async {
+      call++;
+      if (call == 1) return jsonResponse('{"message":"boom"}', 500);
+      return jsonResponse('{"notifications":[{"id":"n1","read_at":null,"created_at":"2026-01-01T00:00:00Z","data":{"type":"contract_sent","title":"New contract"}}],"unread_count":1}');
+    });
+    final provider = NotificationProvider(repository: NotificationRepository(api: buildTestApiClient(client: httpClient)));
+
+    await pumpPage(tester, provider);
+
+    expect(find.text('Couldn’t load your notifications.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('notif-retry')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New contract'), findsOneWidget);
+  });
+
+  testWidgets('unread rows get the red dot, read rows do not', (tester) async {
+    final httpClient = MockHttpClient();
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse(
+        '{"notifications":['
+        '{"id":"n1","read_at":null,"created_at":"2026-01-01T00:00:00Z","data":{"type":"contract_sent","title":"Unread one"}},'
+        '{"id":"n2","read_at":"2026-01-01T00:00:00Z","created_at":"2026-01-01T00:00:00Z","data":{"type":"contract_sent","title":"Read one"}}'
+        '],"unread_count":1}',
+      ),
+    );
+    final provider = NotificationProvider(repository: NotificationRepository(api: buildTestApiClient(client: httpClient)));
+
+    await pumpPage(tester, provider);
+
+    expect(find.byKey(const ValueKey('notif-unread-dot')), findsOneWidget);
+    expect(find.text('1 unread'), findsOneWidget);
   });
 }

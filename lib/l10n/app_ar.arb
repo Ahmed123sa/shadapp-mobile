@@ -1901,5 +1901,16 @@
       }
     }
   },
-  "amRoleStaff": "عضو فريق"
+  "amRoleStaff": "عضو فريق",
+  "notificationsUnreadCount": "{count} غير مقروء",
+  "notificationsAllRead": "مفيش جديد",
+  "notificationsEmptyTitle": "مفيش جديد.",
+  "notificationsEmptyHint": "لما يحصل أي حاجة عند أحد عملائك هتظهر هنا.",
+  "notificationsLoadFailed": "تعذّر تحميل إشعاراتك.",
+  "notificationsDelete": "حذف",
+  "notificationsGroupToday": "النهارده",
+  "notificationsGroupYesterday": "إمبارح",
+  "notificationsGroupWeek": "الأسبوع ده",
+  "paymentsSummaryContracted": "قيمة العقود",
+  "paymentsSummaryRemaining": "المتبقي"
 }

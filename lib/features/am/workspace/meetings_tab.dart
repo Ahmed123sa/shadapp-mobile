@@ -4,12 +4,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/theme.dart';
 import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/widgets/loading_state.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/meeting_provider.dart';
 
@@ -195,34 +194,48 @@ class _MeetingsTabState extends State<MeetingsTab> {
       } catch (_) { return false; }
     }).toList();
 
+    final canCreate = _api.role != 'super_admin' && _api.canDo('can_manage_meetings');
     return Scaffold(
-      body: RefreshIndicator(
+      backgroundColor: Colors.transparent,
+      body: LuxeFormTheme(
+      child: RefreshIndicator(
         onRefresh: _load,
-        child: _meetings.isEmpty
-          ? EmptyState(icon: Icons.videocam_outlined, title: l10n.amNoMeetings)
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (upcoming.isNotEmpty) ...[
-                  Text(l10n.meetingsUpcoming, style: ShadTypography.sectionHeader),
-                  const SizedBox(height: 8),
-                  ...upcoming.map(_meetingCard),
-                ],
-                if (past.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(l10n.meetingsPrevious, style: ShadTypography.sectionHeader),
-                  const SizedBox(height: 8),
-                  ...past.map(_meetingCard),
-                ],
-              ],
-            ),
+        color: Lx.crimsonInk,
+        child: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 28),
+          children: [
+            if (canCreate)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: LuxeButton(
+                    key: const ValueKey('meetings-new'),
+                    label: l10n.amMeetingCreateTitle,
+                    lxIcon: 'video',
+                    kind: LuxeButtonKind.primary,
+                    size: LuxeButtonSize.lg,
+                    onPressed: _showCreateSheet,
+                  ),
+                ),
+              ),
+            if (_meetings.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: Text(l10n.amNoMeetings, style: Lx.display(context, size: 20))),
+              ),
+            if (upcoming.isNotEmpty) ...[
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: LuxeKind(l10n.meetingsUpcoming)),
+              ...upcoming.map(_meetingCard),
+            ],
+            if (past.isNotEmpty) ...[
+              Padding(padding: const EdgeInsets.only(top: 8, bottom: 8), child: LuxeKind(l10n.meetingsPrevious)),
+              ...past.map(_meetingCard),
+            ],
+          ],
+        ),
       ),
-      floatingActionButton: (_api.role == 'super_admin' || !_api.canDo('can_manage_meetings'))
-          ? null
-          : FloatingActionButton(
-              onPressed: _showCreateSheet,
-              child: const Icon(Icons.add),
-            ),
+      ),
     );
   }
 
@@ -230,29 +243,49 @@ class _MeetingsTabState extends State<MeetingsTab> {
     final l10n = AppLocalizations.of(context)!;
     final isScheduled = m['status'] == 'scheduled';
     final isSA = _api.role == 'super_admin';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.videocam, size: 20, color: Lx.crimson),
-            const SizedBox(width: 8),
-            Expanded(child: Text(m['title'] ?? '', style: ShadTypography.cardTitle)),
-            if (m['status'] != null) StatusBadge(status: m['status']),
+    final when = DateTime.tryParse('${m['scheduled_at'] ?? ''}');
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    final statusKey = m['status'] as String?;
+    final dot = statusKey == 'completed' ? LxStatus.off : statusKey == 'cancelled' ? LxStatus.bad : LxStatus.wait;
+    return LuxeCard(
+      key: ValueKey('ws-meeting-${m['id']}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            if (when != null)
+              Container(
+                width: 46,
+                padding: const EdgeInsetsDirectional.only(end: 12),
+                margin: const EdgeInsetsDirectional.only(end: 12),
+                decoration: const BoxDecoration(border: BorderDirectional(end: BorderSide(color: Lx.line))),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(months[when.month - 1], style: Lx.text(context, size: 9.5, color: Lx.crimsonInk).copyWith(letterSpacing: 1.9)),
+                  Text('${when.day}', style: Lx.display(context, size: 26)),
+                ]),
+              ),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(m['title'] ?? '', style: Lx.text(context, size: 16)),
+                Row(children: [
+                  const Icon(Icons.schedule, size: 13, color: Lx.muted),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text(_formatDate(m['scheduled_at']), style: Lx.text(context, size: 12.5, color: Lx.muted))),
+                  if (m['duration_minutes'] != null) ...[
+                    const SizedBox(width: 10),
+                    Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                  ],
+                ]),
+              ]),
+            ),
           ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.schedule, size: 14, color: Lx.muted),
-            const SizedBox(width: 4),
-            Text(_formatDate(m['scheduled_at']), style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
-            if (m['duration_minutes'] != null) ...[
-              const SizedBox(width: 12),
-              const Icon(Icons.timer, size: 14, color: Lx.muted),
-              const SizedBox(width: 4),
-              Text('${m['duration_minutes']} ${l10n.amMeetingMinutes}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
-            ],
-          ]),
+          if (statusKey != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                LuxeStatusDot(status: dot),
+                const SizedBox(width: 7),
+                Text(statusLabels(l10n)[statusKey] ?? statusKey, style: Lx.text(context, size: 12, color: Lx.ink2)),
+              ]),
+            ),
           if (m['notes'] != null) ...[
             const SizedBox(height: 6),
             Text(m['notes'], style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
@@ -321,16 +354,16 @@ class _MeetingsTabState extends State<MeetingsTab> {
                         : Container(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: ShadColors.meetingBlueBg,
+                              color: Lx.wait.withAlpha(13),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: ShadColors.meetingBlueBorder.withAlpha(80)),
+                              border: Border.all(color: Lx.wait.withAlpha(90)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.schedule, size: 14, color: ShadColors.meetingBlue),
+                                Icon(Icons.schedule, size: 14, color: Lx.wait),
                                 const SizedBox(width: 6),
-                                Text(joinStatus.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
+                                Text(joinStatus.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.wait)),
                               ],
                             ),
                           ),
@@ -395,8 +428,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
               ),
             ]),
           ],
-        ]),
-      ),
+      ]),
     );
   }
 }

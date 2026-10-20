@@ -38,9 +38,9 @@ void main() {
 
     await pumpTab(tester, meetingProvider, contractProvider);
 
-    expect(find.text('Upcoming Meetings'), findsOneWidget);
+    expect(find.text('UPCOMING MEETINGS'), findsOneWidget);
     expect(find.text('Future Sync'), findsOneWidget);
-    expect(find.text('Previous Meetings'), findsOneWidget);
+    expect(find.text('PREVIOUS MEETINGS'), findsOneWidget);
     expect(find.text('Past Sync'), findsOneWidget);
   });
 
@@ -131,7 +131,7 @@ void main() {
     final contractProvider = ContractProvider(api: api);
 
     await pumpTab(tester, meetingProvider, contractProvider);
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byKey(const ValueKey('meetings-new')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Kickoff Call');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Meeting'));
@@ -165,7 +165,7 @@ void main() {
     final expected = DateTime(next.year, next.month, next.day, next.hour);
 
     await pumpTab(tester, meetingProvider, contractProvider);
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byKey(const ValueKey('meetings-new')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Quick Sync');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Create Meeting'));
