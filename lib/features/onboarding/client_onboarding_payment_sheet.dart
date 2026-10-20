@@ -15,7 +15,9 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/helpers/proof_image_picker.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/theme.dart';
 import '../../providers/payment_provider.dart';
 
@@ -76,113 +78,128 @@ void showOnboardingPaymentSheet({
               IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
             ]),
             const SizedBox(height: 16),
-            TextField(
-              controller: amountCtrl,
-              decoration: InputDecoration(labelText: '${AppLocalizations.of(ctx)!.onboarding_amountField} *', hintText: '0.00', prefixText: '$currency '),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            InputDecorator(
-              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_currencyField),
-              child: Text(currency, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
-            ),
-            const SizedBox(height: 12),
+            // Amount + (read-only) currency, underline fields like the mockup's .f2
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: TextField(
+                  key: const ValueKey('payment-amount'),
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  style: Lx.text(ctx, size: 15),
+                  decoration: InputDecoration(
+                    labelText: '${AppLocalizations.of(ctx)!.onboarding_amountField} *',
+                    hintText: '0.00',
+                    border: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 90,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(ctx)!.onboarding_currencyField,
+                    border: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+                  ),
+                  child: Text(currency, key: const ValueKey('payment-currency'), style: Lx.text(ctx, size: 15)),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 18),
+            Text(AppLocalizations.of(ctx)!.onboarding_paymentMethodField, style: Lx.text(ctx, size: 12, color: Lx.muted)),
+            const SizedBox(height: 8),
             ValueListenableBuilder<String>(
               valueListenable: selectedMethod,
-              builder: (_, val, __) => DropdownButtonFormField<String>(
-                initialValue: val,
-                decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.onboarding_paymentMethodField),
-                items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
-                onChanged: (v) { if (v != null) selectedMethod.value = v; },
+              builder: (_, val, __) => Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final e in methodLabels.entries)
+                    InkWell(
+                      key: ValueKey('pay-method-${e.key}'),
+                      borderRadius: BorderRadius.circular(Lx.rPill),
+                      onTap: () => selectedMethod.value = e.key,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: val == e.key ? const Color(0x33941414) : null,
+                          borderRadius: BorderRadius.circular(Lx.rPill),
+                          border: Border.all(color: val == e.key ? const Color(0x80941414) : Lx.line2),
+                        ),
+                        child: Text(e.value, style: Lx.text(ctx, size: 12, color: val == e.key ? Lx.ink : Lx.ink2)),
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
-            // Proof files section
-            Text(AppLocalizations.of(ctx)!.onboarding_proofField, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textSecondary)),
+            // Proof files: drop box + one pill per attached file
+            Text(AppLocalizations.of(ctx)!.onboarding_proofField, style: Lx.text(ctx, size: 12, color: Lx.muted)),
             const SizedBox(height: 8),
-
-            if (proofFiles.isNotEmpty) ...[
-              SizedBox(
-                height: 90,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: proofFiles.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final pf = proofFiles[i];
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: 80, height: 80,
-                          decoration: BoxDecoration(
-                            color: ShadColors.card,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: ShadColors.cardBorder),
-                          ),
-                          child: pf['bytes'] != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.memory(pf['bytes'] as Uint8List, fit: BoxFit.cover, width: 80, height: 80),
-                                )
-                              : Center(
-                                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                    const Icon(Icons.insert_drive_file, size: 24, color: ShadColors.textSecondary),
-                                    const SizedBox(height: 4),
-                                    Text(pf['name'] ?? '', style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled), overflow: TextOverflow.ellipsis, maxLines: 2, textAlign: TextAlign.center),
-                                  ]),
-                                ),
-                        ),
-                        Positioned(
-                          right: -6, top: -6,
-                          child: GestureDetector(
-                            onTap: () {
-                              setSheetState(() { proofFiles.removeAt(i); });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(color: ShadColors.error, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, size: 12, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+            InkWell(
+              key: const ValueKey('payment-attach'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final picked = await pickProofFromGallery(multiple: true);
+                if (picked.isNotEmpty) {
+                  setSheetState(() { proofFiles.addAll(picked); });
+                }
+              },
+              child: SizedBox(
+                width: double.infinity,
+                child: LuxeDashedBox(
+                  child: Column(children: [
+                    const LxIcon('up', size: 18, color: Lx.muted),
+                    const SizedBox(height: 6),
+                    Text(AppLocalizations.of(ctx)!.onboarding_attachFile, style: Lx.text(ctx, size: 12.5, color: Lx.muted)),
+                  ]),
                 ),
               ),
-              const SizedBox(height: 8),
-            ],
-            Row(children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final picked = await pickProofFromGallery(multiple: true);
-                    if (picked.isNotEmpty) {
-                      setSheetState(() { proofFiles.addAll(picked); });
-                    }
-                  },
-                  icon: const Icon(Icons.upload_file, size: 18),
-                  label: Text(AppLocalizations.of(ctx)!.onboarding_attachFile),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                key: const ValueKey('payment-camera'),
                 onPressed: () async {
                   final picked = await pickProofFromCamera();
                   if (picked != null) {
                     setSheetState(() { proofFiles.add(picked); });
                   }
                 },
-                icon: const Icon(Icons.camera_alt, size: 18),
+                icon: const LxIcon('plus', size: 16, color: Lx.ink2),
                 label: Text(AppLocalizations.of(ctx)!.onboarding_takePhoto),
+                style: TextButton.styleFrom(foregroundColor: Lx.ink2),
               ),
-            ]),
+            ),
             if (proofFiles.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(AppLocalizations.of(ctx)!.onboarding_filesAttached(proofFiles.length), style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var i = 0; i < proofFiles.length; i++)
+                    Container(
+                      key: ValueKey('payment-proof-$i'),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: Lx.line2)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const LxIcon('doc', size: 14, color: Lx.ink2),
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 170),
+                          child: Text('${proofFiles[i]['name'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(ctx, size: 12)),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          key: ValueKey('payment-proof-remove-$i'),
+                          onTap: () => setSheetState(() { proofFiles.removeAt(i); }),
+                          child: const Icon(Icons.close, size: 14, color: Lx.muted),
+                        ),
+                      ]),
+                    ),
+                ],
               ),
             ValueListenableBuilder<String?>(
               valueListenable: errorNotifier,

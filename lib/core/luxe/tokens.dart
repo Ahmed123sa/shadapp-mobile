@@ -69,7 +69,7 @@ class Lx {
       fontFamily: ar ? arabic : serif,
       fontFamilyFallback: const [arabic, serif],
       fontSize: size,
-      fontWeight: ar ? FontWeight.w700 : FontWeight.w500,
+      fontWeight: FontWeight.w500,
       color: color,
       height: 1.25,
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../luxe/lx_icons.dart';
 import '../../luxe/tokens.dart';
 
 /// Luxe widget library (Plan 1, س٠). Every widget takes an optional [key];
@@ -75,6 +76,8 @@ class LuxeButton extends StatelessWidget {
   final LuxeButtonKind kind;
   final LuxeButtonSize size;
   final IconData? icon;
+  /// Mockup icon name (see lx_icons.dart); wins over [icon].
+  final String? lxIcon;
   const LuxeButton({
     super.key,
     required this.label,
@@ -82,6 +85,7 @@ class LuxeButton extends StatelessWidget {
     this.kind = LuxeButtonKind.outline,
     this.size = LuxeButtonSize.md,
     this.icon,
+    this.lxIcon,
   });
 
   @override
@@ -107,7 +111,8 @@ class LuxeButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: pad),
             alignment: Alignment.center,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (icon != null) ...[Icon(icon, size: 15, color: fg), const SizedBox(width: 8)],
+              if (lxIcon != null) ...[LxIcon(lxIcon!, size: 15, color: fg), const SizedBox(width: 8)]
+              else if (icon != null) ...[Icon(icon, size: 15, color: fg), const SizedBox(width: 8)],
               Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: fs, color: fg))),
             ]),
           ),
@@ -179,10 +184,10 @@ class LuxeKpiTile extends StatelessWidget {
       );
 }
 
-// ── Stepper bars (n of total, filled to current) ──
+// ── Stepper bars: done = green, current = red, rest = line (client mockup .bars) ──
 class LuxeStepperBars extends StatelessWidget {
   final int total;
-  final int current; // 1-based; bars <= current are filled
+  final int current; // 1-based; bars before it are done, it is the current one
   const LuxeStepperBars({super.key, required this.total, required this.current});
   @override
   Widget build(BuildContext context) => Row(children: [
@@ -192,12 +197,12 @@ class LuxeStepperBars extends StatelessWidget {
               key: ValueKey('lx-step-$i'),
               height: 3,
               decoration: BoxDecoration(
-                color: i <= current ? Lx.crimsonInk : Lx.line2,
+                color: i < current ? Lx.ok : i == current ? Lx.crimsonInk : Lx.line2,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          if (i < total) const SizedBox(width: 4),
+          if (i < total) const SizedBox(width: 5),
         ],
       ]);
 }
@@ -362,4 +367,93 @@ Future<T?> showLuxeSheet<T>(BuildContext context, {required WidgetBuilder builde
       ),
     ),
   );
+}
+
+
+// ── Pulse dot (waiting states): a 12px dot with an expanding ring ──
+class LuxePulseDot extends StatefulWidget {
+  final Color color;
+  const LuxePulseDot({super.key, this.color = Lx.wait});
+  @override
+  State<LuxePulseDot> createState() => _LuxePulseDotState();
+}
+
+class _LuxePulseDotState extends State<LuxePulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 12,
+        height: 12,
+        child: AnimatedBuilder(
+          animation: _c,
+          builder: (_, __) {
+            final t = (_c.value / 0.7).clamp(0.0, 1.0); // ring grows over the first 70%
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                color: widget.color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withAlpha(((1 - t) * 128).round()),
+                    spreadRadius: 12 * t,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+}
+
+// ── Dashed-border box (the mockup's `.drop`: 1px dashed line2, radius 12) ──
+class LuxeDashedBox extends StatelessWidget {
+  final Widget child;
+  final double radius;
+  final EdgeInsetsGeometry padding;
+  final Color color;
+  const LuxeDashedBox({
+    super.key,
+    required this.child,
+    this.radius = 12,
+    this.padding = const EdgeInsets.all(18),
+    this.color = Lx.line2,
+  });
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _DashedRRectPainter(color: color, radius: radius),
+        child: Padding(padding: padding, child: child),
+      );
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  _DashedRRectPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final path = Path()..addRRect(RRect.fromRectAndRadius((Offset.zero & size).deflate(0.5), Radius.circular(radius)));
+    const dash = 4.0, gap = 3.0;
+    for (final m in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < m.length) {
+        canvas.drawPath(m.extractPath(d, (d + dash).clamp(0, m.length)), paint);
+        d += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter old) => old.color != color || old.radius != radius;
 }

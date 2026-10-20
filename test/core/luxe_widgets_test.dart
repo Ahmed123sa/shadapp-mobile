@@ -44,10 +44,10 @@ void main() {
     expect(n, 1);
   });
 
-  testWidgets('stepper bars fill up to current', (t) async {
+  testWidgets('stepper bars: done green, current red, rest line', (t) async {
     await t.pumpWidget(_host(const LuxeStepperBars(total: 4, current: 2)));
     Color c(int i) => (t.widget<Container>(find.byKey(ValueKey('lx-step-$i'))).decoration as BoxDecoration).color!;
-    expect(c(1), Lx.crimsonInk);
+    expect(c(1), Lx.ok);
     expect(c(2), Lx.crimsonInk);
     expect(c(3), Lx.line2);
     expect(c(4), Lx.line2);

@@ -2660,6 +2660,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboardingNextStepsTitle => 'الخطوات الجاية';
 
   @override
+  String get onboardingNotifyHint => 'هنبلّغك، مش محتاج تسيب التطبيق مفتوح.';
+
+  @override
+  String onboardingStepOf(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get onboardingAdditionalContract => 'عقد إضافي';
+
+  @override
+  String get onboardingDownloadPdf => 'تحميل PDF';
+
+  @override
+  String get onboardingPreviewShort => 'معاينة';
+
+  @override
+  String get onboardingDocUploaded => 'اترفع';
+
+  @override
+  String get onboardingDocMissing => 'ناقص';
+
+  @override
+  String get onboardingPaymentSent => 'الدفعة اتبعتت';
+
+  @override
+  String get onboardingUnderReview => 'قيد المراجعة';
+
+  @override
+  String onboardingClauseCount(int count) {
+    return '$count بنود';
+  }
+
+  @override
+  String get onboardingSigUpload => 'رفع';
+
+  @override
   String get onboarding_contactSupport => 'اتصل بالدعم';
 
   @override

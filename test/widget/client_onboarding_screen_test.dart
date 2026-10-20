@@ -101,7 +101,7 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/clients/10')), headers: any(named: 'headers'))).called(1);
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/settings')), headers: any(named: 'headers'))).called(1);
     expect(find.text('Welcome Ali'), findsOneWidget);
-    expect(find.text('Sign Now'), findsOneWidget);
+    expect(find.byKey(const ValueKey('onboarding-sign')), findsOneWidget);
   });
 
   testWidgets('approving a sent contract posts client-action', (tester) async {
@@ -138,7 +138,7 @@ void main() {
 
     await pumpScreen(tester, api);
 
-    expect(find.text('Sign Now'), findsOneWidget);
+    expect(find.byKey(const ValueKey('onboarding-sign')), findsOneWidget);
     expect(find.text('Approve'), findsNothing);
   });
 
@@ -217,11 +217,12 @@ void main() {
     await tester.tap(ctaButton);
     await tester.pumpAndSettle();
 
-    // Only the payment-method dropdown (bank_transfer/swift/...) remains —
-    // also a DropdownButtonFormField<String>, so we assert exactly one
-    // rather than none, and confirm the currency itself is shown as
-    // read-only text instead of a second dropdown.
-    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    // The payment methods are chips now (bank_transfer/swift/...); the
+    // currency is read-only text, never a dropdown.
+    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+    expect(find.byKey(const ValueKey('pay-method-bank_transfer')), findsOneWidget);
+    expect(find.byKey(const ValueKey('pay-method-cheque')), findsOneWidget);
+    expect(find.byKey(const ValueKey('payment-currency')), findsOneWidget);
     expect(find.text('EGP'), findsWidgets);
 
     final submitButton = find.widgetWithText(ElevatedButton, 'Send Payment').last;
@@ -383,7 +384,7 @@ void main() {
 
       // Should show the rejection banner and the send payment CTA (Stage 4), NOT stage 5
       expect(find.textContaining('صورة الإيصال غير مقروءة'), findsOneWidget);
-      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+      expect(find.byKey(const ValueKey('onboarding-send-payment')), findsOneWidget);
     });
 
     testWidgets('rejected payment without a reason does not show the request note as the reason', (tester) async {
@@ -399,7 +400,7 @@ void main() {
 
       // The request note must not be shown as the rejection reason, but Stage 4 CTA still appears
       expect(find.textContaining('القسط الأول'), findsNothing);
-      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+      expect(find.byKey(const ValueKey('onboarding-send-payment')), findsOneWidget);
     });
 
     testWidgets('scheduled payment without pending/approved stays in stage 4', (tester) async {
@@ -413,7 +414,7 @@ void main() {
       await pumpScreen(tester, api);
 
       // In stage 4
-      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+      expect(find.byKey(const ValueKey('onboarding-send-payment')), findsOneWidget);
     });
 
     testWidgets('disposing screen leaves workspace channel', (tester) async {

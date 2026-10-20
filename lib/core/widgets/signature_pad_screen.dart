@@ -60,7 +60,7 @@ class _SignaturePadScreenState extends State<SignaturePadScreen> {
 
     setState(() => _saving = true);
     try {
-      final pngBytes = await _renderCroppedTransparentPng(allStrokes);
+      final pngBytes = await renderSignaturePng(allStrokes);
       if (pngBytes != null && mounted) {
         Navigator.of(context).pop(pngBytes);
       }
@@ -69,65 +69,6 @@ class _SignaturePadScreenState extends State<SignaturePadScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  Future<Uint8List?> _renderCroppedTransparentPng(List<List<Offset>> allStrokes) async {
-    if (allStrokes.isEmpty) return null;
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (final stroke in allStrokes) {
-      for (final point in stroke) {
-        if (point.dx < minX) minX = point.dx;
-        if (point.dy < minY) minY = point.dy;
-        if (point.dx > maxX) maxX = point.dx;
-        if (point.dy > maxY) maxY = point.dy;
-      }
-    }
-
-    if (minX.isInfinite || maxX.isInfinite || minX > maxX || minY > maxY) return null;
-
-    const double padding = 24.0;
-    final double width = (maxX - minX) + padding * 2;
-    final double height = (maxY - minY) + padding * 2;
-
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-
-    // Translate coordinates to center within cropped bounding box
-    canvas.translate(-minX + padding, -minY + padding);
-
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 3.5
-      ..style = PaintingStyle.stroke;
-
-    for (final stroke in allStrokes) {
-      if (stroke.length < 2) {
-        if (stroke.isNotEmpty) {
-          canvas.drawCircle(stroke.first, 2.0, paint..style = PaintingStyle.fill);
-          paint.style = PaintingStyle.stroke;
-        }
-        continue;
-      }
-      final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
-      for (int i = 1; i < stroke.length; i++) {
-        path.lineTo(stroke[i].dx, stroke[i].dy);
-      }
-      canvas.drawPath(path, paint);
-    }
-
-    final picture = recorder.endRecording();
-    final img = await picture.toImage(
-      width.toInt().clamp(40, 4000),
-      height.toInt().clamp(30, 4000),
-    );
-    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    return byteData?.buffer.asUint8List();
   }
 
   @override
@@ -312,4 +253,64 @@ class _FullscreenSigPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _FullscreenSigPainter oldDelegate) => true;
+}
+
+/// Renders [allStrokes] as a black-on-transparent PNG cropped to the ink.
+Future<Uint8List?> renderSignaturePng(List<List<Offset>> allStrokes) async {
+  if (allStrokes.isEmpty) return null;
+  double minX = double.infinity;
+  double minY = double.infinity;
+  double maxX = double.negativeInfinity;
+  double maxY = double.negativeInfinity;
+
+  for (final stroke in allStrokes) {
+    for (final point in stroke) {
+      if (point.dx < minX) minX = point.dx;
+      if (point.dy < minY) minY = point.dy;
+      if (point.dx > maxX) maxX = point.dx;
+      if (point.dy > maxY) maxY = point.dy;
+    }
+  }
+
+  if (minX.isInfinite || maxX.isInfinite || minX > maxX || minY > maxY) return null;
+
+  const double padding = 24.0;
+  final double width = (maxX - minX) + padding * 2;
+  final double height = (maxY - minY) + padding * 2;
+
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+
+  // Translate coordinates to center within cropped bounding box
+  canvas.translate(-minX + padding, -minY + padding);
+
+  final paint = Paint()
+    ..color = Colors.black
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round
+    ..strokeWidth = 3.5
+    ..style = PaintingStyle.stroke;
+
+  for (final stroke in allStrokes) {
+    if (stroke.length < 2) {
+      if (stroke.isNotEmpty) {
+        canvas.drawCircle(stroke.first, 2.0, paint..style = PaintingStyle.fill);
+        paint.style = PaintingStyle.stroke;
+      }
+      continue;
+    }
+    final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
+    for (int i = 1; i < stroke.length; i++) {
+      path.lineTo(stroke[i].dx, stroke[i].dy);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  final picture = recorder.endRecording();
+  final img = await picture.toImage(
+    width.toInt().clamp(40, 4000),
+    height.toInt().clamp(30, 4000),
+  );
+  final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+  return byteData?.buffer.asUint8List();
 }

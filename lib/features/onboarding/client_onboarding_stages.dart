@@ -1,212 +1,393 @@
 // Extracted from client_onboarding_screen.dart as part of بند ٨ (file splitting).
-// Pure stage-screen widgets: the parent screen still owns all state (client,
-// workspace, taxSettings) and passes it in, and still owns every side-effecting
-// action (loading data, showing the contract modal, responding to a contract,
-// opening the payment sheet) via callbacks — these functions only build UI.
+// Pure stage widgets: the parent screen still owns all state (client,
+// workspace, taxSettings) and every side-effecting action; these functions
+// only build UI.
+//
+// Luxe layout (design/mobile/client-mobile-mockup.html, obStage/obSticky):
+// each stage is a heading + lead in the scroll body, and the stage's buttons
+// live in the screen's pinned bottom bar (buildXxxActions).
 
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
+import 'onboarding_signature_pad.dart';
 
-Widget _stageIcon(IconData icon, Color color) => Container(
-      key: const ValueKey('stage-icon'),
-      width: 72, height: 72,
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withAlpha(60)),
-      ),
-      child: Icon(icon, size: 32, color: color),
-    );
+// ── shared bits ──
+
+Widget _h2(BuildContext context, String text) =>
+    Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(text, style: Lx.display(context, size: 23)));
+
+Widget _lead(BuildContext context, String text) =>
+    Padding(padding: const EdgeInsets.only(bottom: 18), child: Text(text, style: Lx.text(context, size: 13.5, color: Lx.muted, height: 1.5)));
 
 ButtonStyle _primaryStyle() => ElevatedButton.styleFrom(
       backgroundColor: Lx.crimson,
       foregroundColor: Colors.white,
       minimumSize: const Size.fromHeight(48),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      disabledBackgroundColor: ShadColors.cardBorder,
-      disabledForegroundColor: ShadColors.textDisabled,
+      shape: const StadiumBorder(),
+      elevation: 0,
+      disabledBackgroundColor: const Color(0xFF2A2827),
+      disabledForegroundColor: Lx.faint,
     );
+
+ButtonStyle _outlineStyle() => OutlinedButton.styleFrom(
+      foregroundColor: Lx.ink2,
+      minimumSize: const Size.fromHeight(48),
+      shape: const StadiumBorder(),
+      side: const BorderSide(color: Lx.line2),
+    );
+
+// ── Stage 0: signature ──
 
 Widget buildSignatureStage({
   required BuildContext context,
   required Map<String, dynamic>? client,
-  required Future<void> Function() onSign,
+  required SignatureDraft draft,
+  required VoidCallback onPickImage,
+  required ValueChanged<bool> onDrawingChanged,
 }) {
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      children: [
-        const SizedBox(height: 40),
-        _stageIcon(Icons.auto_fix_high, ShadColors.gold),
-        const SizedBox(height: 24),
-        Text(
-          AppLocalizations.of(context)!.onboarding_welcomeName(client?['contact_person'] ?? ''),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
+  final l10n = AppLocalizations.of(context)!;
+  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _h2(context, l10n.onboarding_welcomeName(client?['contact_person'] ?? '')),
+    _lead(context, l10n.onboarding_addSignaturePrompt),
+    OnboardingSignaturePad(draft: draft, onPickImage: onPickImage, onDrawingChanged: onDrawingChanged),
+  ]);
+}
+
+List<Widget> buildSignatureActions({
+  required BuildContext context,
+  required SignatureDraft draft,
+  required bool saving,
+  required Future<void> Function() onSave,
+}) =>
+    [
+      ListenableBuilder(
+        listenable: draft,
+        builder: (ctx, _) => ElevatedButton(
+          key: const ValueKey('onboarding-sign'),
+          onPressed: (draft.canSave && !saving) ? onSave : null,
+          style: _primaryStyle(),
+          child: saving
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Text(AppLocalizations.of(ctx)!.signature_saveSignature),
         ),
-        const SizedBox(height: 12),
-        Text(
-          AppLocalizations.of(context)!.onboarding_addSignaturePrompt,
-          style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: onSign,
-            icon: const Icon(Icons.draw, size: 20),
-            label: Text(AppLocalizations.of(context)!.onboarding_signNow),
-            style: _primaryStyle(),
-          ),
-        ),
-      ],
+      ),
+    ];
+
+// ── Waiting stages (1, 3, 5, 6) ──
+
+/// [boxed] puts the message in a card (stages 1 and 3, like the mockup's
+/// waitBox); stages 5 and 6 are bare.
+Widget buildWaitingStage({
+  required BuildContext context,
+  required String title,
+  required String subtitle,
+  bool boxed = true,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final content = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    const Padding(padding: EdgeInsets.only(top: 8), child: LuxePulseDot(key: ValueKey('waiting-pulse'))),
+    const SizedBox(width: 14),
+    Expanded(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: Lx.display(context, size: 23)),
+        const SizedBox(height: 8),
+        Text(subtitle, style: Lx.text(context, size: 13.5, color: Lx.muted, height: 1.5)),
+        const SizedBox(height: 14),
+        Row(children: [
+          const LxIcon('bell', size: 14, color: Lx.faint),
+          const SizedBox(width: 8),
+          Expanded(child: Text(l10n.onboardingNotifyHint, style: Lx.text(context, size: 12, color: Lx.faint))),
+        ]),
+      ]),
     ),
+  ]);
+  return boxed
+      ? LuxeCard(key: const ValueKey('waiting-card'), child: content)
+      : Padding(key: const ValueKey('waiting-plain'), padding: const EdgeInsets.only(top: 8), child: content);
+}
+
+/// "What happens next": the stages still ahead, numbered 0N, as plain rows.
+Widget buildNextList({
+  required BuildContext context,
+  required String title,
+  required List<MapEntry<int, String>> steps, // index (0-based) → label
+}) {
+  if (steps.isEmpty) return const SizedBox.shrink();
+  return Column(
+    key: const ValueKey('next-steps'),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 6),
+        child: Text(title.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.6)),
+      ),
+      for (var i = 0; i < steps.length; i++)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(border: i == steps.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+          child: Row(children: [
+            Text('0${steps[i].key + 1}', style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 1)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(steps[i].value, style: Lx.text(context, size: 13.5))),
+          ]),
+        ),
+    ],
   );
 }
 
-Widget buildWaitingStage({
-  required BuildContext context,
-  required IconData icon,
-  required Color iconColor,
-  required String title,
-  required String subtitle,
-  /// Names of the stages still ahead ("What's next"). Empty hides the list.
-  List<String> nextSteps = const [],
-  /// Heading for [nextSteps]; the screen passes its localized string.
-  String? nextStepsTitle,
-}) {
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(children: [
-      const SizedBox(height: 24),
-      LuxeCard(
-        key: const ValueKey('waiting-card'),
-        padding: const EdgeInsets.all(24),
-        child: Column(children: [
-          _stageIcon(icon, iconColor),
-          const SizedBox(height: 20),
-          Text(title, style: Lx.display(context, size: 20), textAlign: TextAlign.center),
-          const SizedBox(height: 10),
-          Text(subtitle, style: Lx.text(context, size: 13.5, color: Lx.ink2, height: 1.6), textAlign: TextAlign.center),
-          const SizedBox(height: 22),
-          const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5)),
-        ]),
-      ),
-      if (nextSteps.isNotEmpty) ...[
-        LuxeSectionHeader(title: nextStepsTitle ?? ''),
-        LuxeCard(
-          key: const ValueKey('next-steps-card'),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            for (var i = 0; i < nextSteps.length; i++)
-              Padding(
-                padding: EdgeInsets.only(bottom: i == nextSteps.length - 1 ? 0 : 10),
-                child: Row(children: [
-                  Container(
-                    width: 22, height: 22,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
-                    child: Text('${i + 1}', style: Lx.text(context, size: 11, color: Lx.muted)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(nextSteps[i], style: Lx.text(context, size: 13, color: Lx.ink2))),
-                ]),
-              ),
-          ]),
-        ),
-      ],
-    ]),
-  );
+// ── Stage 2: contract review ──
+
+Map? _sentContract(Map<String, dynamic>? workspace) {
+  final contracts = workspace != null ? safeList(workspace['contracts']).whereType<Map>().toList() : <Map>[];
+  for (final c in contracts) {
+    if (c['status'] == 'sent') return c;
+  }
+  return contracts.isNotEmpty ? contracts.first : null;
+}
+
+bool _hasMissingDocs(Map? sentContract) {
+  final requiredDocs = sentContract != null ? safeList(sentContract['required_documents']) : [];
+  return requiredDocs.isNotEmpty &&
+      requiredDocs.any((d) {
+        if (d is! Map) return false;
+        final files = d['files'] as List<dynamic>?;
+        if (files != null && files.isNotEmpty) {
+          return !files.any((f) => f is Map && f['status'] != 'rejected');
+        }
+        return d['status'] != 'approved' && d['status'] != 'pending';
+      });
+}
+
+/// A required document is "uploaded" once it has a file that was not rejected
+/// (or, with no file list, a pending/approved status) — same rule as
+/// [_hasMissingDocs].
+bool _docUploaded(Map d) {
+  final files = d['files'] as List<dynamic>?;
+  if (files != null && files.isNotEmpty) {
+    return files.any((f) => f is Map && f['status'] != 'rejected');
+  }
+  return d['status'] == 'approved' || d['status'] == 'pending';
+}
+
+String? _docFileUrl(Map d) {
+  final files = d['files'] as List<dynamic>?;
+  if (files == null) return null;
+  for (final f in files) {
+    if (f is Map && f['status'] != 'rejected' && f['file_url'] != null) return f['file_url'] as String;
+  }
+  return null;
 }
 
 Widget buildContractReviewStage({
   required BuildContext context,
   required Map<String, dynamic>? workspace,
   required void Function(Map) onPreviewContract,
+  required int? uploadingDocId,
+  required void Function(int contractId, int docId) onUploadDocument,
+  required void Function(String url) onOpenFile,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final sent = _sentContract(workspace);
+  final requiredDocs = sent != null ? safeList(sent['required_documents']) : [];
+  final clauses = sent != null ? safeList(sent['clauses']) : [];
+  final value = sent != null ? double.tryParse((sent['value'] ?? '').toString()) : null;
+  final pdf = sent?['pdf_url'] as String?;
+  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    _h2(context, l10n.onboarding_contractReceived),
+    _lead(context, l10n.onboarding_reviewContractPrompt),
+    if (sent != null)
+      LuxeCard(
+        key: const ValueKey('onboarding-contract-card'),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text((sent['contract_type'] == 'additional' ? l10n.onboardingAdditionalContract : l10n.mainContract).toUpperCase(),
+              style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+          const SizedBox(height: 4),
+          Text('${sent['title'] ?? ''}', style: Lx.display(context, size: 19)),
+          if (clauses.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(l10n.onboardingClauseCount(clauses.length), style: Lx.text(context, size: 12, color: Lx.muted)),
+          ],
+          if (value != null) ...[
+            const SizedBox(height: 10),
+            Text.rich(TextSpan(children: [
+              TextSpan(text: _fmt(value), style: Lx.display(context, size: 20)),
+              TextSpan(text: '  ${sent['currency'] ?? ''}', style: Lx.text(context, size: 11, color: Lx.muted)),
+            ])),
+          ],
+          const SizedBox(height: 14),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            LuxeButton(
+              key: const ValueKey('onboarding-preview-contract'),
+              label: l10n.onboardingPreviewShort,
+              lxIcon: 'eye',
+              size: LuxeButtonSize.sm,
+              onPressed: () => onPreviewContract(sent),
+            ),
+            if (pdf != null)
+              LuxeButton(
+                key: const ValueKey('onboarding-download-pdf'),
+                label: l10n.onboardingDownloadPdf,
+                lxIcon: 'doc',
+                size: LuxeButtonSize.sm,
+                onPressed: () => onOpenFile(pdf),
+              ),
+          ]),
+        ]),
+      ),
+    if (requiredDocs.isNotEmpty)
+      LuxeCard(
+        key: const ValueKey('onboarding-docs-card'),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.requiredDocuments.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+          const SizedBox(height: 6),
+          for (var i = 0; i < requiredDocs.length; i++)
+            if (requiredDocs[i] is Map) ...[
+              Builder(builder: (_) {
+                final d = requiredDocs[i] as Map;
+                final up = _docUploaded(d);
+                final url = _docFileUrl(d);
+                final id = d['id'] as int?;
+                final busy = uploadingDocId != null && uploadingDocId == id;
+                return Container(
+                  key: ValueKey('onboarding-doc-$i'),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(border: i == requiredDocs.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+                  child: Row(children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${d['name'] ?? ''}', style: Lx.text(context, size: 13.5)),
+                        const SizedBox(height: 3),
+                        Row(children: [
+                          LuxeStatusDot(status: up ? LxStatus.ok : LxStatus.bad),
+                          const SizedBox(width: 7),
+                          Text(up ? l10n.onboardingDocUploaded : l10n.onboardingDocMissing, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                        ]),
+                        if ((d['rejection_reason'] ?? '').toString().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(l10n.rejectionReason('${d['rejection_reason']}'), style: Lx.text(context, size: 11, color: Lx.danger)),
+                          ),
+                      ]),
+                    ),
+                    if (up && url != null)
+                      InkWell(
+                        key: ValueKey('onboarding-doc-open-$i'),
+                        onTap: () => onOpenFile(url),
+                        child: Container(
+                          padding: const EdgeInsets.only(bottom: 1),
+                          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                          child: Text(l10n.onboardingPreviewShort, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+                        ),
+                      )
+                    else if (!up && id != null)
+                      LuxeButton(
+                        key: ValueKey('onboarding-doc-upload-$i'),
+                        label: busy ? l10n.uploading : l10n.uploadDocument,
+                        lxIcon: 'up',
+                        size: LuxeButtonSize.sm,
+                        onPressed: busy ? null : () => onUploadDocument(sent!['id'] as int, id),
+                      ),
+                  ]),
+                );
+              }),
+            ],
+        ]),
+      ),
+  ]);
+}
+
+List<Widget> buildContractReviewActions({
+  required BuildContext context,
+  required Map<String, dynamic>? workspace,
   required void Function(String) onRespond,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  final ws = workspace;
-  final contracts = ws != null ? safeList(ws['contracts']) : [];
-  final sentContract = contracts.firstWhere(
-    (c) => c is Map && c['status'] == 'sent',
-    orElse: () => contracts.isNotEmpty ? contracts.first : null,
-  ) as Map?;
-
-  final requiredDocs = sentContract != null ? safeList(sentContract['required_documents']) : [];
-  final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
-    if (d is! Map) return false;
-    final files = d['files'] as List<dynamic>?;
-    if (files != null && files.isNotEmpty) {
-      return !files.any((f) => f is Map && f['status'] != 'rejected');
-    }
-    return d['status'] != 'approved' && d['status'] != 'pending';
-  });
-
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      children: [
-        const SizedBox(height: 40),
-        _stageIcon(Icons.description, Lx.ok),
-        const SizedBox(height: 24),
-        Text(
-          l10n.onboarding_contractReceived,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          l10n.onboarding_reviewContractPrompt,
-          style: TextStyle(fontSize: 14, color: ShadColors.textSecondary),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              if (sentContract != null) {
-                onPreviewContract(sentContract);
-              }
-            },
-            icon: const Icon(Icons.visibility, size: 20),
-            label: Text(l10n.onboarding_previewContract),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ShadColors.gold,
-              side: const BorderSide(color: ShadColors.gold),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-        if (hasMissingDocs) ...[
-          const SizedBox(height: 12),
-          Text(
-            l10n.contractUploadRequiredFirst,
-            style: const TextStyle(fontSize: 12, color: ShadColors.warning, fontWeight: FontWeight.w500),
-            textAlign: TextAlign.center,
-          ),
-        ],
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: hasMissingDocs ? null : () => onRespond('approved'),
-            icon: const Icon(Icons.thumb_up, size: 20),
-            label: Text(l10n.onboarding_approve),
-            style: _primaryStyle(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          onPressed: () => onRespond('edit_requested'),
-          icon: const Icon(Icons.edit_note, size: 18),
-          label: Text(l10n.onboarding_requestEdit),
-          style: TextButton.styleFrom(foregroundColor: ShadColors.textSecondary),
-        ),
-      ],
+  final missing = _hasMissingDocs(_sentContract(workspace));
+  return [
+    ElevatedButton(
+      key: const ValueKey('onboarding-approve'),
+      onPressed: missing ? null : () => onRespond('approved'),
+      style: _primaryStyle(),
+      child: Text(l10n.onboarding_approve),
     ),
+    OutlinedButton(
+      key: const ValueKey('onboarding-request-edit'),
+      onPressed: () => onRespond('edit_requested'),
+      style: _outlineStyle(),
+      child: Text(l10n.onboarding_requestEdit),
+    ),
+    if (missing)
+      Row(key: const ValueKey('onboarding-docs-hint'), mainAxisAlignment: MainAxisAlignment.center, children: [
+        const LxIcon('lock', size: 14, color: Lx.faint),
+        const SizedBox(width: 8),
+        Flexible(child: Text(l10n.contractUploadRequiredFirst, textAlign: TextAlign.center, style: Lx.text(context, size: 11.5, color: Lx.faint))),
+      ]),
+  ];
+}
+
+// ── Stage 4: payment ──
+
+class _PaymentFigures {
+  double total = 0, paid = 0, tax = 0, taxPct = 0;
+  String currency = 'SAR';
+  String? startDate, endDate;
+  Map<String, dynamic>? lastRejected;
+  int? workspaceId;
+
+  double get grand => total + tax;
+  double get remaining => grand - paid;
+
+  _PaymentFigures(Map<String, dynamic>? ws, Map<String, dynamic>? client, Map<String, dynamic>? taxSettings) {
+    final isBusiness = (client?['client_type'] ?? '') == 'business';
+    if (isBusiness && taxSettings != null) {
+      taxPct = num.tryParse(taxSettings['corporate_tax_percentage']?['value']?.toString() ?? '')?.toDouble() ?? 0;
+    }
+    if (ws != null) {
+      workspaceId = ws['id'] as int?;
+      for (final c in safeList(ws['contracts'])) {
+        if (c is Map) {
+          total += double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          currency = (c['currency'] as String?) ?? currency;
+          if (c['start_date'] != null) startDate = (c['start_date'] as String).split('T')[0];
+          if (c['end_date'] != null) endDate = (c['end_date'] as String).split('T')[0];
+        }
+      }
+      for (final p in safeList(ws['payments'])) {
+        if (p is Map) {
+          if (p['status'] == 'approved') {
+            paid += double.tryParse((p['amount'] ?? '0').toString()) ?? 0.0;
+          } else if (p['status'] == 'rejected') {
+            lastRejected = p.cast<String, dynamic>();
+          }
+        }
+      }
+    }
+    if (isBusiness && taxPct > 0) tax = total * taxPct / 100;
+  }
+}
+
+String _fmt(double v) {
+  final s = v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2);
+  final parts = s.split('.');
+  final whole = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  return parts.length > 1 ? '$whole.${parts[1]}' : whole;
+}
+
+Widget _billRow(BuildContext context, String label, double value, String currency, {bool strong = false, bool last = false}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: Lx.text(context, size: 13, color: strong ? Lx.ink : Lx.muted)),
+      Text.rich(TextSpan(children: [
+        TextSpan(text: _fmt(value), style: Lx.display(context, size: 16)),
+        TextSpan(text: '  $currency', style: Lx.text(context, size: 10.5, color: Lx.muted)),
+      ])),
+    ]),
   );
 }
 
@@ -215,214 +396,127 @@ Widget buildPaymentStage({
   required Map<String, dynamic>? workspace,
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
-  required void Function(double suggestedAmount, int? workspaceId, String currency) onSendPayment,
 }) {
-  final ws = workspace;
-  double totalAmount = 0;
-  double paidAmount = 0;
-  double taxAmount = 0;
-  double taxPercentage = 0;
-  String currency = 'SAR';
-  String? startDate;
-  String? endDate;
-  final isBusiness = (client?['client_type'] ?? '') == 'business';
-  if (isBusiness && taxSettings != null) {
-    taxPercentage = num.tryParse(taxSettings['corporate_tax_percentage']?['value']?.toString() ?? '')?.toDouble() ?? 0;
-  }
-  Map<String, dynamic>? lastRejectedPayment;
-  if (ws != null) {
-    final contracts = safeList(ws['contracts']);
-    for (final c in contracts) {
-      if (c is Map) {
-        final cv = double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
-        totalAmount += cv;
-        currency = (c['currency'] as String?) ?? currency;
-        if (c['start_date'] != null) startDate = (c['start_date'] as String).split('T')[0];
-        if (c['end_date'] != null) endDate = (c['end_date'] as String).split('T')[0];
-      }
-    }
-    final payments = safeList(ws['payments']);
-    for (final p in payments) {
-      if (p is Map) {
-        if (p['status'] == 'approved') {
-          paidAmount += double.tryParse((p['amount'] ?? '0').toString()) ?? 0.0;
-        } else if (p['status'] == 'rejected') {
-          lastRejectedPayment = p.cast<String, dynamic>();
-        }
-      }
-    }
-  }
-  if (isBusiness && taxPercentage > 0) {
-    taxAmount = totalAmount * taxPercentage / 100;
-  }
-  final grandTotal = totalAmount + taxAmount;
-  final remaining = grandTotal - paidAmount;
-  final progress = grandTotal > 0 ? (paidAmount / grandTotal).clamp(0.0, 1.0) : 0.0;
-
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      children: [
-        if (lastRejectedPayment != null) ...[
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: Lx.cardApGradient,
-              borderRadius: BorderRadius.circular(Lx.rCard),
-              border: Border.all(color: Lx.cardApBorder),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: Lx.crimsonInk, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.onboarding_paymentRejectedTitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Lx.crimsonInk,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // payments-fixes-2-plan.md ت٢ — rejection_reason (why it
-                // was rejected) and notes (the manager's note from
-                // requesting it) are different things; falling back to
-                // notes whenever rejection_reason was empty mislabeled
-                // that note as a rejection reason.
-                if ((lastRejectedPayment['rejection_reason'] as String? ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '${AppLocalizations.of(context)!.onboarding_paymentRejectedReason}: ${lastRejectedPayment['rejection_reason']}',
-                    style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary),
-                  ),
-                ],
-                const SizedBox(height: 6),
-                Text(
-                  AppLocalizations.of(context)!.onboarding_paymentRejectedRetry,
-                  style: TextStyle(fontSize: 11, color: ShadColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        _stageIcon(Icons.payment, Lx.wait),
-        const SizedBox(height: 20),
-        Text(
-          AppLocalizations.of(context)!.onboarding_completePayment,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: Lx.serif),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          AppLocalizations.of(context)!.onboarding_confirmPaymentToActivate,
-          style: TextStyle(fontSize: 13, color: ShadColors.textSecondary),
-        ),
-        const SizedBox(height: 24),
-
-        // Progress card
-        LuxeCard(
-          key: const ValueKey('payment-progress-card'),
-          padding: const EdgeInsets.all(20),
-          child: Column(children: [
-            Text('${paidAmount.toStringAsFixed(2)} $currency', style: Lx.display(context, size: 28)),
-            const SizedBox(height: 4),
-            Text(AppLocalizations.of(context)!.payments_remainingSummary(currency, remaining.toStringAsFixed(2), grandTotal.toStringAsFixed(2)), style: Lx.text(context, size: 11, color: Lx.muted)),
-            if (taxAmount > 0) ...[
-              const SizedBox(height: 4),
-              Text(AppLocalizations.of(context)!.payments_taxSummary(taxAmount.toStringAsFixed(2), currency, taxPercentage, totalAmount.toStringAsFixed(2)), style: Lx.text(context, size: 10, color: Lx.muted)),
-            ],
-            const SizedBox(height: 14),
-            LuxeProgressSplit(fraction: progress),
+  final l10n = AppLocalizations.of(context)!;
+  final f = _PaymentFigures(workspace, client, taxSettings);
+  final rejected = f.lastRejected;
+  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    if (rejected != null)
+      LuxeCard(
+        key: const ValueKey('payment-rejected-card'),
+        attention: true,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.error_outline, color: Lx.crimsonInk, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(l10n.onboarding_paymentRejectedTitle, style: Lx.text(context, size: 14, weight: FontWeight.w700, color: Lx.crimsonInk))),
           ]),
-        ),
-        // Contract details
-        if (startDate != null || endDate != null)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: Lx.cardGradient,
-              borderRadius: BorderRadius.circular(Lx.rCard),
-              border: Border.all(color: Lx.cardBorder),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(AppLocalizations.of(context)!.onboarding_contractDetails, style: TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-              const SizedBox(height: 10),
-              if (startDate != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(children: [
-                    Icon(Icons.calendar_today, size: 14, color: ShadColors.textDisabled),
-                    const SizedBox(width: 8),
-                    Text('${AppLocalizations.of(context)!.onboarding_startDate}: $startDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
-                  ]),
-                ),
-              if (endDate != null)
-                Row(children: [
-                  Icon(Icons.calendar_today, size: 14, color: ShadColors.textDisabled),
-                  const SizedBox(width: 8),
-                  Text('${AppLocalizations.of(context)!.onboarding_endDate}: $endDate', style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary)),
-                ]),
-            ]),
-          ),
-        const SizedBox(height: 24),
-
-        // Payment info cards
-        Row(children: [
-          Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_amount, totalAmount.toStringAsFixed(0), ShadColors.gold)),
-          const SizedBox(width: 12),
-          Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_currency, currency, ShadColors.textPrimary)),
+          // payments-fixes-2-plan.md ت٢ — rejection_reason (why it was
+          // rejected) and notes (the manager's note from requesting it) are
+          // different things; notes must not stand in for the reason.
+          if ((rejected['rejection_reason'] as String? ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('${l10n.onboarding_paymentRejectedReason}: ${rejected['rejection_reason']}', style: Lx.text(context, size: 12)),
+          ],
+          const SizedBox(height: 6),
+          Text(l10n.onboarding_paymentRejectedRetry, style: Lx.text(context, size: 11, color: Lx.ink2)),
         ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          if (taxAmount > 0)
-            Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_tax, taxAmount.toStringAsFixed(0), ShadColors.error)),
-          if (taxAmount > 0) const SizedBox(width: 12),
-          Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_total, grandTotal.toStringAsFixed(0), ShadColors.gold)),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_paidAmount, paidAmount.toStringAsFixed(0), ShadColors.success)),
-          const SizedBox(width: 12),
-          Expanded(child: _paymentInfoTile(AppLocalizations.of(context)!.onboarding_remainingAmount2, remaining.toStringAsFixed(0), ShadColors.warning)),
-        ]),
-        const SizedBox(height: 28),
-
-        // CTA button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => onSendPayment(remaining > 0 ? remaining : grandTotal, ws?['id'], currency),
-            icon: const Icon(Icons.add_circle_outline, size: 20),
-            label: Text(AppLocalizations.of(context)!.onboarding_sendPayment),
-            style: _primaryStyle(),
-          ),
-        ),
-      ],
+      ),
+    _h2(context, l10n.onboarding_completePayment),
+    _lead(context, l10n.onboarding_confirmPaymentToActivate),
+    LuxeCard(
+      key: const ValueKey('payment-bill-card'),
+      child: Column(children: [
+        _billRow(context, l10n.onboarding_amount, f.total, f.currency),
+        if (f.tax > 0) _billRow(context, l10n.onboarding_tax, f.tax, f.currency),
+        _billRow(context, l10n.onboarding_total, f.grand, f.currency, strong: true),
+        _billRow(context, l10n.onboarding_paidAmount, f.paid, f.currency),
+        _billRow(context, l10n.onboarding_remainingAmount2, f.remaining, f.currency, last: true),
+      ]),
     ),
-  );
+    if (f.startDate != null || f.endDate != null)
+      LuxeCard(
+        key: const ValueKey('payment-dates-card'),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.onboarding_contractDetails, style: Lx.text(context, size: 12, color: Lx.muted)),
+          const SizedBox(height: 10),
+          if (f.startDate != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                const LxIcon('scroll', size: 14, color: Lx.faint),
+                const SizedBox(width: 8),
+                Text('${l10n.onboarding_startDate}: ${f.startDate}', style: Lx.text(context, size: 12)),
+              ]),
+            ),
+          if (f.endDate != null)
+            Row(children: [
+              const LxIcon('scroll', size: 14, color: Lx.faint),
+              const SizedBox(width: 8),
+              Text('${l10n.onboarding_endDate}: ${f.endDate}', style: Lx.text(context, size: 12)),
+            ]),
+        ]),
+      ),
+  ]);
 }
 
-Widget _paymentInfoTile(String label, String value, Color valueColor) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      gradient: Lx.cardGradient,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Lx.cardBorder),
+List<Widget> buildPaymentActions({
+  required BuildContext context,
+  required Map<String, dynamic>? workspace,
+  required Map<String, dynamic>? client,
+  required Map<String, dynamic>? taxSettings,
+  required void Function(double suggestedAmount, int? workspaceId, String currency) onSendPayment,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final f = _PaymentFigures(workspace, client, taxSettings);
+  return [
+    ElevatedButton(
+      key: const ValueKey('onboarding-send-payment'),
+      onPressed: () => onSendPayment(f.remaining > 0 ? f.remaining : f.grand, f.workspaceId, f.currency),
+      style: _primaryStyle(),
+      child: Text(l10n.onboarding_sendPayment),
     ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(fontSize: 11, color: ShadColors.textDisabled)),
-      const SizedBox(height: 4),
-      Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: valueColor, fontFamily: Lx.serif)),
+  ];
+}
+
+/// Stage 5: the payment that was just sent, waiting for review.
+Widget buildSentPaymentCard({required BuildContext context, required Map<String, dynamic>? workspace}) {
+  final l10n = AppLocalizations.of(context)!;
+  Map? pay;
+  for (final p in safeList(workspace?['payments'])) {
+    if (p is Map && p['status'] == 'pending') pay = p;
+  }
+  if (pay == null) return const SizedBox.shrink();
+  final methods = {
+    'bank_transfer': l10n.payments_methodBankTransfer,
+    'swift': l10n.payments_methodSwift,
+    'corporate_account': l10n.payments_methodCorporateAccount,
+    'instapay': l10n.payments_methodInstapay,
+    'vodafone_cash': l10n.payments_methodVodafoneCash,
+    'mobile_wallet': l10n.payments_methodMobileWallet,
+    'cheque': l10n.payments_methodCheque,
+  };
+  final amount = double.tryParse((pay['amount'] ?? '').toString());
+  final method = methods[pay['method_type']] ?? '${pay['method_type'] ?? ''}';
+  return LuxeCard(
+    key: const ValueKey('sent-payment-card'),
+    child: Row(children: [
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${l10n.onboardingPaymentSent} · $method', style: Lx.text(context, size: 13.5)),
+          const SizedBox(height: 3),
+          Row(children: [
+            const LuxeStatusDot(status: LxStatus.wait),
+            const SizedBox(width: 7),
+            Text(l10n.onboardingUnderReview, style: Lx.text(context, size: 12, color: Lx.ink2)),
+          ]),
+        ]),
+      ),
+      if (amount != null)
+        Text.rich(TextSpan(children: [
+          TextSpan(text: _fmt(amount), style: Lx.display(context, size: 18)),
+          TextSpan(text: '  ${pay['currency'] ?? ''}', style: Lx.text(context, size: 11, color: Lx.muted)),
+        ])),
     ]),
   );
 }

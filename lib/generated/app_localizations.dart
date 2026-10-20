@@ -5267,8 +5267,74 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingNextStepsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Next steps'**
+  /// **'What happens next'**
   String get onboardingNextStepsTitle;
+
+  /// No description provided for @onboardingNotifyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll notify you — no need to keep the app open.'**
+  String get onboardingNotifyHint;
+
+  /// No description provided for @onboardingStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String onboardingStepOf(int current, int total);
+
+  /// No description provided for @onboardingAdditionalContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional contract'**
+  String get onboardingAdditionalContract;
+
+  /// No description provided for @onboardingDownloadPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Download PDF'**
+  String get onboardingDownloadPdf;
+
+  /// No description provided for @onboardingPreviewShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get onboardingPreviewShort;
+
+  /// No description provided for @onboardingDocUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get onboardingDocUploaded;
+
+  /// No description provided for @onboardingDocMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get onboardingDocMissing;
+
+  /// No description provided for @onboardingPaymentSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment sent'**
+  String get onboardingPaymentSent;
+
+  /// No description provided for @onboardingUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Under review'**
+  String get onboardingUnderReview;
+
+  /// No description provided for @onboardingClauseCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} clauses'**
+  String onboardingClauseCount(int count);
+
+  /// No description provided for @onboardingSigUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get onboardingSigUpload;
 
   /// No description provided for @onboarding_contactSupport.
   ///

@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:io' show Directory, File;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/app_log.dart';
 import 'package:provider/provider.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
@@ -13,17 +18,22 @@ import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/helpers/required_documents_dialog.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
-import '../../core/widgets/shad_logo.dart';
 import '../../data/client_repository.dart';
+import '../../data/file_repository.dart';
+import '../../data/signature_repository.dart';
 import '../../data/payment_repository.dart';
 import '../../data/system_settings_repository.dart';
 import '../../providers/client_provider.dart';
 import '../../providers/contract_provider.dart';
+import '../../providers/file_provider.dart';
+import '../../providers/signature_provider.dart';
+import '../../core/widgets/signature_pad_screen.dart' show renderSignaturePng;
 import '../../providers/payment_provider.dart';
 import '../../providers/system_settings_provider.dart';
 import '../contracts/contract_detail_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'client_onboarding_payment_sheet.dart';
+import 'onboarding_signature_pad.dart';
 import 'client_onboarding_stages.dart';
 import 'onboarding_toast_keys.dart';
 
@@ -65,6 +75,12 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   final List<VoidCallback> _reverbUnsubscribers = [];
   late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider(repository: ClientRepository(api: _api));
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider(api: _api);
+  late final FileProvider _fileProvider = FileProvider(repository: FileRepository(api: _api));
+  int? _uploadingDocId;
+  late final SignatureProvider _signatureProvider = SignatureProvider(repository: SignatureRepository(api: _api));
+  final SignatureDraft _sigDraft = SignatureDraft();
+  bool _savingSig = false;
+  bool _drawing = false;
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider(repository: PaymentRepository(api: _api));
   late final SystemSettingsProvider _systemSettingsProvider = widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
 
@@ -174,6 +190,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fcmSubscription?.cancel();
+    _sigDraft.dispose();
     for (final unsubscribe in _reverbUnsubscribers) {
       unsubscribe();
     }
@@ -298,15 +315,29 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     }
 
     final stage = _computeStage();
+    final l10n = AppLocalizations.of(context)!;
+    final labels = _stageLabels(l10n);
+    final v = _visualStage(stage);
+    final next = [for (var i = v + 1; i < labels.length; i++) MapEntry(i, labels[i])];
     return Scaffold(
+      backgroundColor: Lx.page,
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(stage),
             _buildOnboardingProgress(stage),
-            const SizedBox(height: 8),
-            Expanded(child: _buildStageScreen(stage)),
-            _buildSupportBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                key: const ValueKey('onboarding-body'),
+                physics: _drawing ? const NeverScrollableScrollPhysics() : null,
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _buildStageBody(stage),
+                  buildNextList(context: context, title: l10n.onboardingNextStepsTitle, steps: next),
+                ]),
+              ),
+            ),
+            _buildStickyBar(stage),
           ],
         ),
       ),
@@ -314,26 +345,46 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
   Widget _buildHeader(int stage) {
+    final l10n = AppLocalizations.of(context)!;
+    final company = (_client?['company_name'] ?? _client?['contact_person'] ?? '').toString();
+    Widget iconBtn(String icon, VoidCallback onTap, {String? tooltip, Key? key}) => SizedBox(
+          width: 38, height: 38,
+          child: IconButton(
+            key: key,
+            padding: EdgeInsets.zero,
+            icon: LxIcon(icon, size: 18, color: Lx.muted),
+            onPressed: onTap,
+            tooltip: tooltip,
+          ),
+        );
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: Row(
         children: [
-          const ShadLogo(size: 28, showText: false),
+          Container(
+            key: const ValueKey('onboarding-logo'),
+            width: 30, height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: const Color(0xFF161616), borderRadius: BorderRadius.circular(8), border: Border.all(color: Lx.line)),
+            child: const Text.rich(
+              TextSpan(children: [
+                TextSpan(text: 'd'),
+                TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
+              ]),
+              style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 19, height: 1, color: Lx.ink),
+            ),
+          ),
+          if (company.isNotEmpty)
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 10),
+                child: Text(company, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.faint)),
+              ),
+            ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 22),
-            onPressed: () => context.push('/notifications'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.language, size: 20),
-            onPressed: () => context.read<LocaleProvider>().toggle(),
-            tooltip: AppLocalizations.of(context)!.onboarding_changeLanguage,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, size: 22),
-            onPressed: _logout,
-            tooltip: AppLocalizations.of(context)!.onboarding_logout,
-          ),
+          iconBtn('bell', () => context.push('/notifications'), key: const ValueKey('onboarding-notifications')),
+          iconBtn('lang', () => context.read<LocaleProvider>().toggle(), tooltip: l10n.onboarding_changeLanguage),
+          iconBtn('out', _logout, tooltip: l10n.onboarding_logout),
         ],
       ),
     );
@@ -356,119 +407,206 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     final labels = _stageLabels(l10n);
     final v = _visualStage(stage);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LuxeStepperBars(total: 6, current: v + 1),
-          const SizedBox(height: 8),
-          Text(
-            '${v + 1} / 6 · ${labels[v]}',
-            key: const ValueKey('onboarding-stage-name'),
-            style: Lx.text(context, size: 12, color: Lx.ink2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(child: Text(labels[v], key: const ValueKey('onboarding-stage-name'), maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 11.5, weight: FontWeight.w500))),
+              Text(l10n.onboardingStepOf(v + 1, 6), key: const ValueKey('onboarding-step-of'), style: Lx.text(context, size: 11.5, color: Lx.muted)),
+            ],
           ),
+          const SizedBox(height: 8),
+          LuxeStepperBars(total: 6, current: v + 1),
         ],
       ),
     );
   }
 
-  /// Support is always one tap away, pinned under every stage.
-  Widget _buildSupportBar() {
+  /// Stage buttons + the always-there support link, pinned under the body.
+  Widget _buildStickyBar(int stage) {
+    final l10n = AppLocalizations.of(context)!;
+    final actions = _stageActions(stage);
     return Container(
+      key: const ValueKey('onboarding-sticky'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       decoration: const BoxDecoration(color: Lx.rail, border: Border(top: BorderSide(color: Lx.line))),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: SizedBox(
-        width: double.infinity,
-        child: TextButton.icon(
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final a in actions) ...[a, const SizedBox(height: 8)],
+        InkWell(
           key: const ValueKey('onboarding-support'),
-          onPressed: _contactSupport,
-          icon: const Icon(Icons.headset_mic, size: 18),
-          label: Text(AppLocalizations.of(context)!.onboarding_contactSupport),
-          style: TextButton.styleFrom(foregroundColor: Lx.ink2, minimumSize: const Size.fromHeight(44)),
+          onTap: _contactSupport,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const LxIcon('chat', size: 15, color: Lx.ink2),
+              const SizedBox(width: 8),
+              Text(l10n.onboarding_contactSupport, style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+            ]),
+          ),
         ),
-      ),
+      ]),
     );
   }
 
-  List<String> _nextAfter(int stage) {
-    final labels = _stageLabels(AppLocalizations.of(context)!);
-    final v = _visualStage(stage);
-    return labels.sublist((v + 1).clamp(0, labels.length));
-  }
-
-  Widget _buildStageScreen(int stage) {
+  List<Widget> _stageActions(int stage) {
     switch (stage) {
-      case 0:
-        return buildSignatureStage(
-          context: context,
-          client: _client,
-          onSign: () async {
-            await context.push('/signature');
-            _loadClientData();
-          },
-        );
-      case 1:
-        return buildWaitingStage(
-          context: context,
-          icon: Icons.downloading,
-          iconColor: ShadColors.sent,
-          title: AppLocalizations.of(context)!.onboarding_waitingContract,
-          subtitle: AppLocalizations.of(context)!.onboarding_waitingContractSendMsg,
-          nextSteps: _nextAfter(stage),
-          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
-        );
       case 2:
-        return buildContractReviewStage(
+        return buildContractReviewActions(
           context: context,
           workspace: _workspace,
-          onPreviewContract: _showContractModal,
           onRespond: _respondToContract,
         );
-      case 3:
-        return buildWaitingStage(
-          context: context,
-          icon: Icons.verified,
-          iconColor: ShadColors.companyApproved,
-          title: AppLocalizations.of(context)!.onboarding_waitingCompanyApproval,
-          subtitle: AppLocalizations.of(context)!.onboarding_waitingCompanyReviewMsg,
-          nextSteps: _nextAfter(stage),
-          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
-        );
       case 4:
-        return buildPaymentStage(
+        return buildPaymentActions(
           context: context,
           workspace: _workspace,
           client: _client,
           taxSettings: _taxSettings,
           onSendPayment: _showPaymentBottomSheet,
         );
+      case 1:
+      case 3:
       case 5:
-        return buildWaitingStage(
-          context: context,
-          icon: Icons.hourglass_top,
-          iconColor: ShadColors.warning,
-          title: AppLocalizations.of(context)!.onboarding_reviewingPayment,
-          subtitle: AppLocalizations.of(context)!.onboarding_waitingActivation,
-          nextSteps: _nextAfter(stage),
-          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
-        );
       case 6:
-        return buildWaitingStage(
+        return const [];
+      default:
+        return buildSignatureActions(context: context, draft: _sigDraft, saving: _savingSig, onSave: _saveSignature);
+    }
+  }
+
+  Future<void> _openFile(String url) async {
+    final l10n = AppLocalizations.of(context)!;
+    final uri = Uri.tryParse(_api.resolveFileUrl(url));
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.invalidFileUrl)));
+      return;
+    }
+    var failed = false;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      failed = true;
+    }
+    if (failed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
+    }
+  }
+
+  /// Same upload the contract sheet does, straight from the stage: the picked
+  /// file goes against the contract and the required-document definition.
+  Future<void> _uploadRequiredDoc(int contractId, int docId) async {
+    final wsId = _workspace?['id'] as int?;
+    if (wsId == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      withData: kIsWeb,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final pf = result.files.single;
+    setState(() => _uploadingDocId = docId);
+    String? message;
+    try {
+      final fields = <String, dynamic>{'contract_id': contractId, 'contract_required_document_id': docId};
+      if (kIsWeb) {
+        await _fileProvider.uploadFile(wsId, fields, bytes: pf.bytes, filename: pf.name);
+      } else {
+        await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
+      }
+      message = l10n.documentUploaded;
+      await _loadClientData();
+    } catch (e) {
+      message = l10n.documentUploadFailed(e.toString());
+    }
+    if (!mounted) return;
+    setState(() => _uploadingDocId = null);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _pickSignatureImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result == null || result.files.single.path == null) return;
+    _sigDraft.pick(result.files.single.path!, result.files.single.name);
+  }
+
+  /// Saves whatever the box holds: the drawing (as a cropped transparent PNG),
+  /// the typed name, or the picked image — the same three calls the signature
+  /// page makes. On success the client reloads and moves to the next stage.
+  Future<void> _saveSignature() async {
+    final cid = _api.userId;
+    if (cid == null || !_sigDraft.canSave) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _savingSig = true);
+    String message;
+    var ok = false;
+    try {
+      switch (_sigDraft.mode) {
+        case SignatureMode.draw:
+          final bytes = await renderSignaturePng(_sigDraft.allStrokes);
+          if (bytes == null) return;
+          final file = File('${Directory.systemTemp.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
+          await file.writeAsBytes(bytes);
+          await _signatureProvider.uploadImage(cid, file);
+        case SignatureMode.type:
+          await _signatureProvider.saveText(cid, _sigDraft.text.text.trim());
+        case SignatureMode.upload:
+          await _signatureProvider.uploadImage(cid, File(_sigDraft.pickedPath!));
+      }
+      message = l10n.signature_saved;
+      ok = true;
+    } catch (e, s) {
+      AppLog.error('client_onboarding._saveSignature', e, s);
+      message = l10n.signature_saveFailed;
+    } finally {
+      if (mounted) setState(() => _savingSig = false);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (ok) {
+      _sigDraft.clear();
+      await _loadClientData();
+    }
+  }
+
+  Widget _buildStageBody(int stage) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (stage) {
+      case 1:
+        return buildWaitingStage(context: context, title: l10n.onboarding_waitingContract, subtitle: l10n.onboarding_waitingContractSendMsg);
+      case 2:
+        return buildContractReviewStage(
           context: context,
-          icon: Icons.edit_note,
-          iconColor: ShadColors.warning,
-          title: AppLocalizations.of(context)!.onboardingWaitingEditContract,
-          subtitle: AppLocalizations.of(context)!.onboardingWaitingEditContractMsg,
-          nextSteps: _nextAfter(stage),
-          nextStepsTitle: AppLocalizations.of(context)!.onboardingNextStepsTitle,
+          workspace: _workspace,
+          onPreviewContract: _showContractModal,
+          uploadingDocId: _uploadingDocId,
+          onUploadDocument: _uploadRequiredDoc,
+          onOpenFile: _openFile,
         );
+      case 3:
+        return buildWaitingStage(context: context, title: l10n.onboarding_waitingCompanyApproval, subtitle: l10n.onboarding_waitingCompanyReviewMsg);
+      case 4:
+        return buildPaymentStage(context: context, workspace: _workspace, client: _client, taxSettings: _taxSettings);
+      case 5:
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          buildWaitingStage(context: context, title: l10n.onboarding_reviewingPayment, subtitle: l10n.onboarding_waitingActivation, boxed: false),
+          const SizedBox(height: 16),
+          buildSentPaymentCard(context: context, workspace: _workspace),
+        ]);
+      case 6:
+        return buildWaitingStage(context: context, title: l10n.onboardingWaitingEditContract, subtitle: l10n.onboardingWaitingEditContractMsg, boxed: false);
       default:
         return buildSignatureStage(
           context: context,
           client: _client,
-          onSign: () async {
-            await context.push('/signature');
-            _loadClientData();
+          draft: _sigDraft,
+          onPickImage: _pickSignatureImage,
+          onDrawingChanged: (v) {
+            if (_drawing != v) setState(() => _drawing = v);
           },
         );
     }

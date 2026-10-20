@@ -2665,7 +2665,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_signNow => 'Sign Now';
 
   @override
-  String get onboardingNextStepsTitle => 'Next steps';
+  String get onboardingNextStepsTitle => 'What happens next';
+
+  @override
+  String get onboardingNotifyHint =>
+      'We’ll notify you — no need to keep the app open.';
+
+  @override
+  String onboardingStepOf(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onboardingAdditionalContract => 'Additional contract';
+
+  @override
+  String get onboardingDownloadPdf => 'Download PDF';
+
+  @override
+  String get onboardingPreviewShort => 'Preview';
+
+  @override
+  String get onboardingDocUploaded => 'Uploaded';
+
+  @override
+  String get onboardingDocMissing => 'Missing';
+
+  @override
+  String get onboardingPaymentSent => 'Payment sent';
+
+  @override
+  String get onboardingUnderReview => 'Under review';
+
+  @override
+  String onboardingClauseCount(int count) {
+    return '$count clauses';
+  }
+
+  @override
+  String get onboardingSigUpload => 'Upload';
 
   @override
   String get onboarding_contactSupport => 'Contact Support';
