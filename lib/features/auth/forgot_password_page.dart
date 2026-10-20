@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/shad_logo.dart';
+import '../../core/luxe/tokens.dart';
 import '../../providers/auth_provider.dart';
 
 /// Request a password reset link.
@@ -120,25 +120,39 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ShadColors.goldBorder),
+                color: ShadColors.card.withAlpha(180),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: ShadColors.gold.withAlpha(40)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: ShadLogo(size: 56, showText: false)),
+                  Center(
+                    child: Container(
+                      key: const ValueKey('forgot-logo'),
+                      width: 56,
+                      height: 56,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF161616),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Lx.line),
+                      ),
+                      child: const Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: 'd'),
+                          TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
+                        ]),
+                        style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 36, height: 1, color: Lx.ink),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     l10n.forgotPasswordTitle,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'PlayfairDisplay',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: ShadColors.textPrimary,
-                    ),
+                    style: Lx.display(context, size: 22),
                   ),
                   const SizedBox(height: 20),
 
@@ -146,12 +160,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: ShadColors.successLight,
+                        color: Lx.ok.withAlpha(26),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: ShadColors.success.withAlpha(80)),
+                        border: Border.all(color: Lx.ok.withAlpha(90)),
                       ),
                       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Icon(Icons.mark_email_read_outlined, size: 18, color: ShadColors.success),
+                        const Icon(Icons.mark_email_read_outlined, size: 18, color: Lx.ok),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -183,11 +197,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: ShadColors.errorLight,
+                          color: ShadColors.crimson.withAlpha(30),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: ShadColors.error.withAlpha(80)),
+                          border: Border.all(color: ShadColors.crimson.withAlpha(50)),
                         ),
-                        child: Text(_error!, style: const TextStyle(color: ShadColors.error, fontSize: 12)),
+                        child: Text(_error!, key: const ValueKey('forgot-error'), style: Lx.text(context, size: 12, color: ShadColors.gold)),
                       ),
                     ],
 

@@ -8,6 +8,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
+import '../../core/luxe/tokens.dart';
 import '../../core/router.dart' show homeLocationForRole;
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -361,17 +362,30 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(14),
-                                        child: Image.asset(
-                                          'assets/images/logo.jpg',
-                                          width: 72, height: 72,
-                                          fit: BoxFit.contain,
+                                      // ── Luxe mark: "d." in a dark rounded square ──
+                                      Container(
+                                        key: const ValueKey('login-logo'),
+                                        width: 72, height: 72,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF161616),
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(color: Lx.line),
+                                        ),
+                                        child: Text.rich(
+                                          const TextSpan(children: [
+                                            TextSpan(text: 'd'),
+                                            TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
+                                          ]),
+                                          style: const TextStyle(
+                                            fontFamily: Lx.serif, fontStyle: FontStyle.italic,
+                                            fontSize: 46, height: 1, color: Lx.ink,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 12),
 
-                                      // ── SHAD: Mysterious Reveal + Glow ──
+                                      // ── Shad.: Mysterious Reveal + Glow ──
                                       AnimatedBuilder(
                                         animation: Listenable.merge([
                                           _shimmerController,
@@ -379,19 +393,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         ]),
                                         builder: (context, _) {
                                           if (_shimmerComplete) {
-                                            // After reveal: plain white + gold glow
+                                            // After reveal: white + crimson dot + soft gold glow
                                             final glow = _logoGlowAnim.value;
-                                            return Text('SHAD', style: TextStyle(
-                                              fontSize: 26, fontWeight: FontWeight.w700,
-                                              letterSpacing: 6, color: Colors.white,
-                                              fontFamily: 'PlayfairDisplay',
-                                              shadows: [
-                                                Shadow(
-                                                  color: ShadColors.gold.withAlpha((glow * 100).toInt()),
-                                                  blurRadius: lerpDouble(0, 8, glow)!,
-                                                ),
-                                              ],
-                                            ));
+                                            return Text.rich(
+                                              TextSpan(children: const [
+                                                TextSpan(text: 'Shad'),
+                                                TextSpan(text: '.', style: TextStyle(color: Lx.crimsonInk)),
+                                              ]),
+                                              key: const ValueKey('login-title'),
+                                              style: TextStyle(
+                                                fontSize: 34, fontWeight: FontWeight.w500,
+                                                letterSpacing: 1.4, color: Colors.white,
+                                                fontFamily: Lx.serif,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: ShadColors.gold.withAlpha((glow * 100).toInt()),
+                                                    blurRadius: lerpDouble(0, 8, glow)!,
+                                                  ),
+                                                ],
+                                              ),
+                                            );
                                           }
                                           // During reveal: gold sweep diagonal
                                           return ShaderMask(
@@ -410,15 +431,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                                 ),
                                               ).createShader(bounds);
                                             },
-                                            child: const Text('SHAD', style: TextStyle(
-                                              fontSize: 26, fontWeight: FontWeight.w700,
-                                              letterSpacing: 6, color: Colors.white,
-                                              fontFamily: 'PlayfairDisplay',
+                                            child: const Text('Shad.', style: TextStyle(
+                                              fontSize: 34, fontWeight: FontWeight.w500,
+                                              letterSpacing: 1.4, color: Colors.white,
+                                              fontFamily: Lx.serif,
                                             )),
                                           );
                                         },
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
 
                                       // ── "Shorter Road.": Letter-by-letter reveal ──
                                       _StaggeredText(
@@ -427,11 +448,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: ShadColors.gold.withAlpha(180),
-                                          fontFamily: 'PlayfairDisplay',
+                                          fontFamily: Lx.serif,
                                           fontStyle: FontStyle.italic,
                                         ),
                                       ),
-                                      const SizedBox(height: 28),
+                                      const SizedBox(height: 26),
 
                                       ValueListenableBuilder<String?>(
                                         valueListenable: _error,
@@ -446,10 +467,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                               borderRadius: BorderRadius.circular(10),
                                               border: Border.all(color: ShadColors.crimson.withAlpha(50)),
                                             ),
-                                            child: Text(error, style: TextStyle(
-                                              fontSize: 12, color: ShadColors.gold,
-                                              fontFamily: isAr ? 'NotoSansArabic' : 'Archivo',
-                                            )),
+                                            child: Text(error, key: const ValueKey('login-error'), style: Lx.text(context, size: 12, color: ShadColors.gold)),
                                           );
                                         },
                                       ),
@@ -493,8 +511,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         ),
                                         child: Text(
                                           l10n.forgotPassword,
-                                          style: TextStyle(fontSize: 11, color: Colors.white.withAlpha(160),
-                                            fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
+                                          style: Lx.text(context, size: 12, color: Colors.white.withAlpha(158)),
                                         ),
                                       ),
                                     ],
@@ -528,17 +545,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(
-          fontSize: 11, color: Colors.white.withAlpha(120),
-          fontFamily: Localizations.localeOf(context).languageCode == 'ar' ? 'NotoSansArabic' : 'Archivo',
-        )),
+        Text(label, style: Lx.text(context, size: 11, color: Lx.muted)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           focusNode: focusNode,
           keyboardType: keyboardType,
           obscureText: obscure && !_passwordVisible,
-          style: const TextStyle(fontSize: 13, color: Colors.white),
+          style: const TextStyle(fontSize: 14, color: Colors.white, fontFamily: Lx.sans),
           textDirection: TextDirection.ltr,
           onSubmitted: obscure ? (_) => _login() : null,
           decoration: InputDecoration(
@@ -546,18 +560,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             hintStyle: TextStyle(color: Colors.white.withAlpha(60)),
             filled: true,
             fillColor: Colors.white.withAlpha(8),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            constraints: const BoxConstraints(minHeight: 46),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withAlpha(20)),
+              borderSide: const BorderSide(color: Lx.line2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withAlpha(20)),
+              borderSide: const BorderSide(color: Lx.line2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: ShadColors.gold, width: 1.5),
+              borderSide: BorderSide(color: ShadColors.gold.withAlpha(128)),
             ),
             suffixIcon: obscure
                 ? IconButton(
@@ -598,23 +613,34 @@ class _LoginButtonState extends State<_LoginButton> {
         duration: const Duration(milliseconds: 100),
         child: SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: widget.loading ? null : widget.onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShadColors.crimson,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: ShadColors.crimson.withAlpha(120),
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 4,
-              shadowColor: ShadColors.crimson.withAlpha(80),
+          child: Opacity(
+            opacity: widget.loading ? 0.6 : 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Color(0xFFA51A1A), Color(0xFF941414)],
+                ),
+              ),
+              child: ElevatedButton(
+                key: const ValueKey('login-submit'),
+                onPressed: widget.loading ? null : widget.onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: widget.loading
+                    ? const SizedBox(width: 22, height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                    : Text(widget.label, style: Lx.text(context, size: 14, weight: FontWeight.w500, color: Colors.white)),
+              ),
             ),
-            child: widget.loading
-                ? const SizedBox(width: 22, height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                : Text(widget.label, style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700,
-                    fontFamily: Localizations.localeOf(context).languageCode == 'ar' ? 'NotoSansArabic' : 'Archivo')),
           ),
         ),
       ),
