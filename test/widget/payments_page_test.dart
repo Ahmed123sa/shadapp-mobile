@@ -135,6 +135,9 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '250');
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
 
@@ -159,6 +162,9 @@ void main() {
 
     await pumpPage(tester, api);
     await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
@@ -193,6 +199,9 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '250');
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
 
@@ -220,6 +229,9 @@ void main() {
     await tester.tap(find.text('Installment 2').first);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Pay Now'));
+    await tester.pumpAndSettle();
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Proof'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Proof'));
     await tester.pumpAndSettle();
@@ -259,6 +271,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('MSA (5000 SAR)').last);
     await tester.pumpAndSettle();
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
 
@@ -293,6 +308,9 @@ void main() {
     expect(find.text('Select the contract you\'re paying for'), findsNothing);
 
     await tester.enterText(find.byType(TextField).first, '250');
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
 
@@ -345,6 +363,9 @@ void main() {
     expect(find.text('EGP'), findsWidgets);
     expect(find.text('SAR'), findsNothing);
 
+    // The sheet scrolls; on the 600px test screen the button can sit below the fold.
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
     await tester.pumpAndSettle();
 

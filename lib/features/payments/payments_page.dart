@@ -5,7 +5,6 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
@@ -454,9 +453,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: ShadColors.crimson.withAlpha(30),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: ShadColors.crimson.withAlpha(50)),
+              color: const Color(0x1F941414),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x33941414)),
             ),
             child: Text('${l10n.paymentsRejectionReason}: ${p['rejection_reason']}', style: Lx.text(context, size: 11.5, color: Lx.danger)),
           ),

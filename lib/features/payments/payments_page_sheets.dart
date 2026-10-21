@@ -25,8 +25,153 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/helpers/proof_image_picker.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/payment_provider.dart';
+
+// ── Luxe sheet pieces (mockup `paySheet`), shared by both sheets ──
+
+Widget _label(BuildContext ctx, String t) => Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(t, style: Lx.text(ctx, size: 11, color: Lx.muted)),
+    );
+
+/// Mockup `.chips2`: one pill per method, the picked one crimson-tinted.
+Widget _methodChips(BuildContext ctx, Map<String, String> labels, ValueNotifier<String> selected) =>
+    ValueListenableBuilder<String>(
+      valueListenable: selected,
+      builder: (_, val, __) => Wrap(spacing: 8, runSpacing: 8, children: [
+        for (final e in labels.entries)
+          GestureDetector(
+            key: ValueKey('pay-method-${e.key}'),
+            onTap: () => selected.value = e.key,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+              decoration: BoxDecoration(
+                color: val == e.key ? const Color(0x33941414) : null,
+                borderRadius: BorderRadius.circular(Lx.rPill),
+                border: Border.all(color: val == e.key ? const Color(0x80941414) : Lx.line2),
+              ),
+              child: Text(e.value, style: Lx.text(ctx, size: 12, color: val == e.key ? Lx.ink : Lx.ink2)),
+            ),
+          ),
+      ]),
+    );
+
+/// Receipt picker: dashed "add files" box + camera, then one `.thumb` pill
+/// per picked file with a × to drop it.
+List<Widget> _proofPicker(
+  BuildContext ctx,
+  String addLabel,
+  List<Map<String, dynamic>> proofFiles,
+  void Function(void Function()) setSheetState,
+) =>
+    [
+      Row(children: [
+        Expanded(
+          child: GestureDetector(
+            key: const ValueKey('payment-attach'),
+            onTap: () async {
+              final picked = await pickProofFromGallery();
+              if (picked.isNotEmpty) setSheetState(() => proofFiles.addAll(picked));
+            },
+            child: LuxeDashedBox(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const LxIcon('up', size: 16, color: Lx.muted),
+                const SizedBox(width: 8),
+                Flexible(child: Text(addLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(ctx, size: 12.5, color: Lx.ink2))),
+              ]),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        InkResponse(
+          key: const ValueKey('payment-camera'),
+          onTap: () async {
+            final picked = await pickProofFromCamera();
+            if (picked != null) setSheetState(() => proofFiles.add(picked));
+          },
+          radius: 24,
+          child: Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+            child: const Icon(Icons.photo_camera_outlined, size: 18, color: Lx.ink2),
+          ),
+        ),
+      ]),
+      if (proofFiles.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Wrap(spacing: 8, runSpacing: 8, children: [
+            for (var i = 0; i < proofFiles.length; i++)
+              Container(
+                key: ValueKey('payment-proof-$i'),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: Lx.line2)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const LxIcon('doc', size: 14, color: Lx.ink2),
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 170),
+                    child: Text('${proofFiles[i]['name'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(ctx, size: 12)),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    key: ValueKey('payment-proof-remove-$i'),
+                    onTap: () => setSheetState(() => proofFiles.removeAt(i)),
+                    child: Text('×', style: Lx.text(ctx, size: 14, color: Lx.muted)),
+                  ),
+                ]),
+              ),
+          ]),
+        ),
+    ];
+
+/// Red line inside the sheet (a SnackBar would hide behind it).
+Widget _errorBox(BuildContext ctx, ValueNotifier<String?> errorNotifier) => ValueListenableBuilder<String?>(
+      valueListenable: errorNotifier,
+      builder: (_, err, __) => err == null
+          ? const SizedBox.shrink()
+          : Container(
+              key: const ValueKey('payment-sheet-error'),
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0x1F941414),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x33941414)),
+              ),
+              child: Text(err, style: Lx.text(ctx, size: 12.5, color: Lx.danger)),
+            ),
+    );
+
+Widget _sendButton(String label, ValueNotifier<bool> uploadingNotifier, VoidCallback onSend) => ValueListenableBuilder<bool>(
+      valueListenable: uploadingNotifier,
+      builder: (_, uploading, __) => SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: uploading ? null : onSend,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Lx.crimson,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: const Color(0xFF2A2827),
+            minimumSize: const Size.fromHeight(48),
+            shape: const StadiumBorder(),
+            elevation: 0,
+          ),
+          child: uploading
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Text(label),
+        ),
+      ),
+    );
+
+const _underline = UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2));
 
 void showRequestPaymentSheet({
   required BuildContext pageContext,
@@ -91,43 +236,75 @@ void showRequestPaymentSheet({
     }
   });
 
-  showModalBottomSheet(
-    context: pageContext,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+  // Mockup `paySheet`: serif title, amount + read-only currency (.f2), the
+  // contract picker only when more than one contract can be paid, method
+  // chips, receipt picker, full-width primary button.
+  showLuxeSheet<void>(
+    pageContext,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSheetState) => Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text(AppLocalizations.of(pageContext)!.payments_requestPayment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-          ]),
+      builder: (ctx, setSheetState) {
+        final pl10n = AppLocalizations.of(pageContext)!;
+        return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(pl10n.payments_requestPayment, style: Lx.display(ctx, size: 22)),
           const SizedBox(height: 16),
-          ValueListenableBuilder<int?>(
-            valueListenable: selectedContract,
-            builder: (_, contractId, __) => TextField(
-              controller: amountCtrl,
-              decoration: InputDecoration(labelText: '${AppLocalizations.of(pageContext)!.payments_amount} *', hintText: '0.00', prefixText: '${currencyFor(contractId)} '),
-              keyboardType: TextInputType.number,
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label(ctx, '${pl10n.payments_amount} *'),
+                TextField(
+                  key: const ValueKey('payment-amount'),
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: Lx.display(ctx, size: 18),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    filled: false,
+                    hintText: '0',
+                    hintStyle: Lx.display(ctx, size: 18, color: Lx.faint),
+                    contentPadding: const EdgeInsets.only(bottom: 8),
+                    border: _underline,
+                    enabledBorder: _underline,
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.muted)),
+                  ),
+                ),
+              ]),
             ),
-          ),
-          const SizedBox(height: 12),
-          ValueListenableBuilder<int?>(
-            valueListenable: selectedContract,
-            builder: (_, contractId, __) => InputDecorator(
-              decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_currency),
-              child: Text(currencyFor(contractId), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.gold)),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 90,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label(ctx, pl10n.payments_currency),
+                ValueListenableBuilder<int?>(
+                  valueListenable: selectedContract,
+                  builder: (_, contractId, __) => Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                    child: Text(currencyFor(contractId), key: const ValueKey('payment-currency'), style: Lx.text(ctx, size: 15, color: Lx.ink2)),
+                  ),
+                ),
+              ]),
             ),
-          ),
-          const SizedBox(height: 12),
+          ]),
           if (payableContracts.length > 1) ...[
+            const SizedBox(height: 16),
+            _label(ctx, pl10n.payments_selectContract),
             ValueListenableBuilder<int?>(
               valueListenable: selectedContract,
               builder: (_, val, __) => DropdownButtonFormField<int>(
                 initialValue: val,
-                decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_selectContract),
+                isExpanded: true,
+                dropdownColor: Lx.sheet,
+                style: Lx.text(ctx, size: 13.5),
+                icon: const LxIcon('down', size: 14, color: Lx.muted),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  filled: false,
+                  contentPadding: EdgeInsets.only(bottom: 8),
+                  border: _underline,
+                  enabledBorder: _underline,
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Lx.muted)),
+                ),
                 items: payableContracts.map((c) => DropdownMenuItem(
                   value: c['id'] as int?,
                   child: Text('${c['title']} (${c['value']} ${c['currency']})', overflow: TextOverflow.ellipsis),
@@ -144,123 +321,22 @@ void showRequestPaymentSheet({
                 },
               ),
             ),
-            const SizedBox(height: 12),
           ],
-          ValueListenableBuilder<String>(
-            valueListenable: selectedMethod,
-            builder: (_, val, __) => DropdownButtonFormField<String>(
-              initialValue: val,
-              decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_paymentMethod),
-              items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
-              onChanged: (v) { if (v != null) selectedMethod.value = v; },
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (proofFiles.isNotEmpty) ...[
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: proofFiles.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final pf = proofFiles[i];
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 80, height: 80,
-                        decoration: BoxDecoration(
-                          color: ShadColors.card,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: ShadColors.cardBorder),
-                        ),
-                        child: pf['bytes'] != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(pf['bytes'] as Uint8List, fit: BoxFit.cover, width: 80, height: 80),
-                              )
-                            : Center(
-                                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                  const Icon(Icons.insert_drive_file, size: 24, color: ShadColors.textSecondary),
-                                  const SizedBox(height: 4),
-                                  Text(pf['name'] ?? '', style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled), overflow: TextOverflow.ellipsis, maxLines: 2, textAlign: TextAlign.center),
-                                ]),
-                              ),
-                      ),
-                      Positioned(
-                        right: -6, top: -6,
-                        child: GestureDetector(
-                          onTap: () {
-                            setSheetState(() { proofFiles.removeAt(i); });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: ShadColors.error, shape: BoxShape.circle),
-                            child: const Icon(Icons.close, size: 12, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final picked = await pickProofFromGallery();
-                  if (picked.isNotEmpty) {
-                    setSheetState(() { proofFiles.addAll(picked); });
-                  }
-                },
-                icon: const Icon(Icons.upload_file, size: 18),
-                label: Text(AppLocalizations.of(pageContext)!.payments_attachProof),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () async {
-                final picked = await pickProofFromCamera();
-                if (picked != null) {
-                  setSheetState(() { proofFiles.add(picked); });
-                }
-              },
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
-              child: const Icon(Icons.camera_alt, size: 18),
-            ),
-          ]),
-          ValueListenableBuilder<String?>(
-            valueListenable: errorNotifier,
-            builder: (_, err, __) => err == null
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
-                  ),
-          ),
-          const SizedBox(height: 20),
-          ValueListenableBuilder<bool>(
-            valueListenable: uploadingNotifier,
-            builder: (_, uploading, __) => SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: uploading ? null : () => _submitPaymentDashboard(
-                  ctx, setSheetState, uploadingNotifier, errorNotifier,
-                  amountCtrl, currencyFor(selectedContract.value), selectedMethod.value, selectedContract.value, proofFiles,
-                  paymentProvider, api, load,
-                ),
-                child: uploading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(AppLocalizations.of(pageContext)!.payments_sendPayment),
-              ),
-            ),
-          ),
-        ]),
-      ),
+          const SizedBox(height: 16),
+          _label(ctx, pl10n.payments_paymentMethod),
+          _methodChips(ctx, methodLabels, selectedMethod),
+          const SizedBox(height: 16),
+          _label(ctx, pl10n.payments_attachProof),
+          ..._proofPicker(ctx, pl10n.onboardingDropTitle, proofFiles, setSheetState),
+          _errorBox(ctx, errorNotifier),
+          const SizedBox(height: 18),
+          _sendButton(pl10n.payments_sendPayment, uploadingNotifier, () => _submitPaymentDashboard(
+            ctx, setSheetState, uploadingNotifier, errorNotifier,
+            amountCtrl, currencyFor(selectedContract.value), selectedMethod.value, selectedContract.value, proofFiles,
+            paymentProvider, api, load,
+          )),
+        ]);
+      },
     ),
   );
 }
@@ -320,7 +396,7 @@ Future<void> _submitPaymentDashboard(
     );
 
     if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_requestSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(l10n.payments_requestSent))])));
       Navigator.pop(ctx);
     }
     await load();
@@ -371,125 +447,41 @@ void showScheduledPaymentSheet({
   final currency = p['currency']?.toString() ?? 'SAR';
   final label = p['installment_label']?.toString() ?? l10n.payments_scheduledPayment;
 
-  showModalBottomSheet(
-    context: pageContext,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+  final amt = num.tryParse(amount);
+  // Same Luxe sheet: what you are paying (label + amount), then method,
+  // receipt and the send button.
+  showLuxeSheet<void>(
+    pageContext,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setSheetState) => Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 16),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.payment, size: 20, color: ShadColors.gold),
-            const SizedBox(width: 8),
-            Text(l10n.payments_payScheduled(label), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: ShadColors.textPrimary, fontFamily: 'NotoSansArabic')),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-          ]),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: ShadColors.gold.withAlpha(15), borderRadius: BorderRadius.circular(10), border: Border.all(color: ShadColors.gold.withAlpha(40))),
-            child: Row(children: [
-              const Icon(Icons.attach_money, size: 16, color: ShadColors.gold),
-              const SizedBox(width: 8),
-              Text('$amount $currency', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          ValueListenableBuilder<String>(
-            valueListenable: selectedMethod,
-            builder: (_, val, __) => DropdownButtonFormField<String>(
-              initialValue: val,
-              decoration: InputDecoration(labelText: AppLocalizations.of(pageContext)!.payments_paymentMethodLabel),
-              items: methodLabels.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
-              onChanged: (v) { if (v != null) selectedMethod.value = v; },
+      builder: (ctx, setSheetState) {
+        final cl10n = AppLocalizations.of(ctx)!;
+        return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.payments_payScheduled(label), style: Lx.display(ctx, size: 22)),
+          const SizedBox(height: 8),
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(text: amt != null ? lxFormatMoney(amt) : amount, style: Lx.display(ctx, size: 26)),
+                TextSpan(text: ' $currency', style: Lx.text(ctx, size: 11, color: Lx.muted)),
+              ]),
+              key: const ValueKey('scheduled-amount'),
             ),
           ),
-          const SizedBox(height: 12),
-          if (proofFiles.isNotEmpty) ...[
-            SizedBox(
-              height: 80,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: proofFiles.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final pf = proofFiles[i];
-                  return Stack(clipBehavior: Clip.none, children: [
-                    Container(
-                      width: 70, height: 70,
-                      decoration: BoxDecoration(color: ShadColors.card, borderRadius: BorderRadius.circular(8), border: Border.all(color: ShadColors.cardBorder)),
-                      child: pf['bytes'] != null
-                          ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.memory(pf['bytes'] as Uint8List, fit: BoxFit.cover, width: 70, height: 70))
-                          : Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                              const Icon(Icons.insert_drive_file, size: 20, color: ShadColors.textSecondary),
-                              const SizedBox(height: 2),
-                              Text(pf['name'] ?? '', style: const TextStyle(fontSize: 8, color: ShadColors.textDisabled), overflow: TextOverflow.ellipsis, maxLines: 2, textAlign: TextAlign.center),
-                            ])),
-                    ),
-                    Positioned(right: -4, top: -4, child: GestureDetector(
-                      onTap: () => setSheetState(() => proofFiles.removeAt(i)),
-                      child: Container(padding: const EdgeInsets.all(2), decoration: const BoxDecoration(color: ShadColors.error, shape: BoxShape.circle), child: const Icon(Icons.close, size: 10, color: Colors.white)),
-                    )),
-                  ]);
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final picked = await pickProofFromGallery();
-                  if (picked.isNotEmpty) {
-                    setSheetState(() { proofFiles.addAll(picked); });
-                  }
-                },
-                icon: const Icon(Icons.upload_file, size: 18),
-                label: Text(AppLocalizations.of(ctx)!.payments_attachProofLabel),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () async {
-                final picked = await pickProofFromCamera();
-                if (picked != null) {
-                  setSheetState(() { proofFiles.add(picked); });
-                }
-              },
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
-              child: const Icon(Icons.camera_alt, size: 18),
-            ),
-          ]),
-          ValueListenableBuilder<String?>(
-            valueListenable: errorNotifier,
-            builder: (_, err, __) => err == null
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(err, style: const TextStyle(color: ShadColors.error, fontSize: 13)),
-                  ),
-          ),
+          const SizedBox(height: 18),
+          _label(ctx, l10n.payments_paymentMethodLabel),
+          _methodChips(ctx, methodLabels, selectedMethod),
           const SizedBox(height: 16),
-          ValueListenableBuilder<bool>(
-            valueListenable: uploadingNotifier,
-            builder: (_, uploading, __) => SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: uploading ? null : () => _submitScheduledPaymentProof(
-                  ctx, setSheetState, uploadingNotifier, errorNotifier, paymentId, selectedMethod.value, proofFiles,
-                  paymentProvider, api, load,
-                ),
-                child: uploading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(AppLocalizations.of(ctx)!.payments_sendProof),
-              ),
-            ),
-          ),
-        ]),
-      ),
+          _label(ctx, cl10n.payments_attachProofLabel),
+          ..._proofPicker(ctx, cl10n.onboardingDropTitle, proofFiles, setSheetState),
+          _errorBox(ctx, errorNotifier),
+          const SizedBox(height: 18),
+          _sendButton(cl10n.payments_sendProof, uploadingNotifier, () => _submitScheduledPaymentProof(
+            ctx, setSheetState, uploadingNotifier, errorNotifier, paymentId, selectedMethod.value, proofFiles,
+            paymentProvider, api, load,
+          )),
+        ]);
+      },
     ),
   );
 }
@@ -536,7 +528,7 @@ Future<void> _submitScheduledPaymentProof(
     );
 
     if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(l10n.payments_proofSent)])));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(l10n.payments_proofSent))])));
       Navigator.pop(ctx);
     }
     await load();
