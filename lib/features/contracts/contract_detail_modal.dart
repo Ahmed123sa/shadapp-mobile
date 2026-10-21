@@ -6,7 +6,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
-import '../../core/theme.dart';
+import 'package:intl/intl.dart' show DateFormat;
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/theme.dart' show statusLabels;
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../data/file_repository.dart';
 import '../../providers/contract_provider.dart';
 import '../../providers/file_provider.dart';
@@ -16,7 +20,6 @@ class ContractDetailModal extends StatefulWidget {
   final Future<void> Function(int, String) onAction;
   final VoidCallback onRefresh;
   final VoidCallback? onGoToPayments;
-  final String backLabel;
   final int? workspaceId;
   // Optional so this screen can be pumped in a widget test with a mocked
   // ApiClient instead of hitting the network. Defaults to the real
@@ -32,7 +35,6 @@ class ContractDetailModal extends StatefulWidget {
     required this.onAction,
     required this.onRefresh,
     this.onGoToPayments,
-    this.backLabel = '',
     this.workspaceId,
     this.api,
     this.contractProvider,
@@ -116,7 +118,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       } else {
         await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.documentUploaded)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(AppLocalizations.of(context)!.documentUploaded))])));
       widget.onRefresh();
       await Future.wait([
         _loadUploadedFiles(),
@@ -137,9 +139,8 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
     final requiredDocs = c['required_documents'] as List<dynamic>? ?? [];
     final needsAction = status == 'sent';
     final isCompanyApproved = status == 'company_approved';
-
-    final progress = double.tryParse((c['progress'] ?? '').toString()) ?? 0.0;
-    final stageIndex = _computeStageIndex(c);
+    final currency = c['currency'] as String? ?? 'SAR';
+    final amt = num.tryParse('${c['value'] ?? ''}');
 
     final hasMissingDocs = requiredDocs.isNotEmpty && requiredDocs.any((d) {
       if (d is! Map) return false;
@@ -154,413 +155,298 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       return d['status'] != 'approved' && d['status'] != 'pending';
     });
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (_, scrollController) => Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 16),
-        child: ListView(
-          controller: scrollController,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
+    final steps = [l10n.contractStepSent, l10n.contractStepClientApproved, l10n.contractStepCompanyApproved, l10n.contractStepActive];
+    final statusMsg = switch (status) {
+      'client_approved' => l10n.clientApprovedStatus,
+      'edit_requested' => l10n.editRequestedStatus,
+      'rejected' => l10n.rejectedStatus,
+      'completed' => l10n.completedStatus,
+      _ => '',
+    };
+
+    // Same layout as the staff contract sheet (contracts_tab
+    // _showContractDetail): kind, serif title, amount, dates, labelled
+    // steps, numbered clauses, then the client's own parts (documents to
+    // upload, uploaded files, approve / edit), PDF last. Shown inside
+    // showLuxeSheet, which draws the grab handle and scrolls.
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      LuxeKind(c['contract_type'] == 'additional' ? l10n.contractKindAdditional : l10n.contractKindMain),
+      const SizedBox(height: 4),
+      Text('${c['title'] ?? ''}', key: const ValueKey('contract-modal-title'), style: Lx.display(context, size: 22)),
+      if (c['value'] != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text.rich(TextSpan(children: [
+              TextSpan(text: amt != null ? lxFormatMoney(amt) : '${c['value']}', style: Lx.display(context, size: 20)),
+              TextSpan(text: ' $currency', style: Lx.text(context, size: 11, color: Lx.muted)),
+            ])),
+          ),
+        ),
+      if (c['start_date'] != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            c['end_date'] != null
+                ? l10n.contractDateRange(_day(c['start_date']), _day(c['end_date']))
+                : l10n.contractDateFrom(_day(c['start_date'])),
+            style: Lx.text(context, size: 12.5, color: Lx.muted),
+          ),
+        ),
+      if (c['paid'] != null || c['remaining'] != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            [
+              if (c['paid'] != null) '${l10n.paid}: ${c['paid']} $currency',
+              if (c['remaining'] != null) '${l10n.remaining}: ${c['remaining']} $currency',
+            ].join(' · '),
+            style: Lx.text(context, size: 12.5, color: Lx.muted),
+          ),
+        ),
+      LuxeLabeledSteps(labels: steps, current: _stepFor(status)),
+
+      if (clauses.isNotEmpty) ...[
+        const SizedBox(height: 22),
+        LuxeKind(l10n.contractClausesLabel),
+        const SizedBox(height: 4),
+        for (var i = 0; i < clauses.length; i++)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(border: i == clauses.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SizedBox(width: 20, child: Text('${i + 1}', style: Lx.text(context, size: 11, color: Lx.faint, height: 1.8))),
+              const SizedBox(width: 10),
+              Expanded(child: Text('${clauses[i]['content'] ?? ''}', style: Lx.text(context, size: 13, height: 1.6))),
+            ]),
+          ),
+      ],
+
+      // Required documents (only while the contract waits on the client)
+      if (requiredDocs.isNotEmpty && needsAction) ...[
+        const SizedBox(height: 18),
+        LuxeKind(l10n.contractRequiredDocsLabel),
+        const SizedBox(height: 4),
+        for (var i = 0; i < requiredDocs.length; i++)
+          Builder(builder: (context) {
+            final doc = requiredDocs[i];
+            final docStatus = doc['status'] as String? ?? 'pending';
+            final dot = docStatus == 'approved' ? LxStatus.ok : docStatus == 'rejected' ? LxStatus.bad : LxStatus.wait;
+            return Container(
+              key: ValueKey('contract-modal-doc-$i'),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(border: i == requiredDocs.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
               child: Row(children: [
-                const Icon(Icons.arrow_forward_ios, size: 12, color: ShadColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(widget.backLabel, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-              ]),
-            ),
-            const SizedBox(height: 14),
-
-            // detail-card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: ShadColors.surfaceDarker,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: ShadColors.cardBorder),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(c['title'] ?? '', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ShadColors.gold, fontFamily: 'PlayfairDisplay')),
-                if (c['contract_type'] == 'additional')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [ShadColors.gold.withAlpha(50), ShadColors.gold.withAlpha(25)]),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: ShadColors.gold.withAlpha(80)),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.add_circle_outline, size: 12, color: ShadColors.gold),
-                        const SizedBox(width: 4),
-                        Text(l10n.additionalServiceContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold)),
-                      ]),
-                    ),
-                  ),
-                if (c['contract_type'] != 'additional')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: ShadColors.infoBg.withAlpha(60),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: ShadColors.infoAccent.withAlpha(80)),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.description_outlined, size: 12, color: ShadColors.infoAccent),
-                        const SizedBox(width: 4),
-                        Text(l10n.mainContract, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.infoAccent)),
-                      ]),
-                    ),
-                  ),
-                const SizedBox(height: 4),
-                Text('#${c['id'] ?? ''}', style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary)),
-                const SizedBox(height: 12),
-                Text('${c['value'] ?? 0} ${c['currency'] as String? ?? 'SAR'}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'PlayfairDisplay')),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: ShadColors.cardBorder,
-                    valueColor: const AlwaysStoppedAnimation(ShadColors.gold),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(children: List.generate(4, (i) {
-                  final done = i < stageIndex;
-                  final current = i == stageIndex;
-                  return Expanded(
-                    child: Container(
-                      height: 5, margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: done ? ShadColors.crimson : current ? ShadColors.gold : ShadColors.cardBorder,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  );
-                })),
-              ]),
-            ),
-            const SizedBox(height: 16),
-
-            // Info rows
-            Text(l10n.contractInfo, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-            const SizedBox(height: 8),
-            if (c['start_date'] != null)
-              _infoRow(l10n.startDate, (c['start_date'] as String).split('T')[0]),
-            if (c['end_date'] != null)
-              _infoRow(l10n.endDate, (c['end_date'] as String).split('T')[0]),
-            if (c['value'] != null)
-              _infoRow(l10n.contractValue, '${c['value']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
-            if (c['paid'] != null)
-              _infoRow(l10n.paid, '${c['paid']} ${c['currency'] as String? ?? 'SAR'}', gold: true),
-            if (c['remaining'] != null)
-              _infoRow(l10n.remaining, '${c['remaining']} ${c['currency'] as String? ?? 'SAR'}'),
-            const SizedBox(height: 16),
-
-            // Clauses (only in modal)
-            if (clauses.isNotEmpty) ...[
-              Text(l10n.contractClauses, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-              const SizedBox(height: 8),
-              ...clauses.map((cl) => Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: ShadColors.card,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Icons.circle, size: 6, color: ShadColors.textDisabled),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(cl['content'] ?? '', style: const TextStyle(fontSize: 13, color: ShadColors.textPrimary))),
-                ]),
-              )),
-              const SizedBox(height: 16),
-            ],
-
-            // Required documents (only show when action is needed)
-            if (requiredDocs.isNotEmpty && needsAction) ...[
-              Text(l10n.requiredDocuments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-              const SizedBox(height: 8),
-              ...requiredDocs.map((doc) {
-                final docStatus = doc['status'] as String? ?? 'pending';
-                final docStatusColor = docStatus == 'approved'
-                    ? ShadColors.success
-                    : docStatus == 'rejected'
-                        ? ShadColors.error
-                        : ShadColors.warning;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: ShadColors.card,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: ShadColors.cardBorder),
-                  ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Expanded(child: Text(doc['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: ShadColors.textPrimary))),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: docStatusColor.withAlpha(25),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          statusLabels(AppLocalizations.of(context)!)[docStatus] ?? docStatus,
-                          style: TextStyle(fontSize: 10, color: docStatusColor, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ]),
-                    if (doc['rejection_reason'] != null) ...[
-                      const SizedBox(height: 4),
-                      Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: const TextStyle(fontSize: 11, color: ShadColors.error)),
-                    ],
-                    // subuser-review-plan.md م٦ — required-document uploads
-                    // map to can_upload_files, per the plan's action table.
-                    if (docStatus != 'approved' && _api.canDo('can_upload_files')) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _uploading ? null : () => _uploadDocument(c['id'], doc['id']),
-                          icon: _uploading
-                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.upload_file, size: 16),
-                          label: Text(_uploading ? l10n.uploading : l10n.uploadDocument),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ShadColors.primary,
-                            side: const BorderSide(color: ShadColors.primary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ]),
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
-
-            // Uploaded files
-            if (_loadingFiles) ...[
-              const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
-            ] else if (_uploadedFiles.isNotEmpty) ...[
-              Text(l10n.uploadedFiles, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-              const SizedBox(height: 8),
-              ..._uploadedFiles.map((f) {
-                final fStatus = f['status'] as String? ?? '';
-                final canDelete = fStatus != 'approved';
-                return Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: ShadColors.card,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
-                ),
-                child: Row(children: [
-                  const Icon(Icons.attach_file, size: 16, color: ShadColors.gold),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _downloadFile(f['file_url'] as String? ?? ''),
-                      child: Text(f['name'] ?? '', style: const TextStyle(fontSize: 12, color: ShadColors.primary, decoration: TextDecoration.underline))),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: fStatus == 'approved'
-                          ? ShadColors.success.withAlpha(25)
-                          : ShadColors.warning.withAlpha(25),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      statusLabels(AppLocalizations.of(context)!)[fStatus] ?? fStatus,
-                      style: TextStyle(fontSize: 9, color: fStatus == 'approved' ? ShadColors.success : ShadColors.warning),
-                    ),
-                  ),
-                  if (canDelete) ...[
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => _deleteFile(f),
-                      child: const Icon(Icons.close, size: 16, color: ShadColors.error),
-                    ),
-                  ],
-                ]),
-              );
-              }),
-              const SizedBox(height: 16),
-            ],
-
-            // Action buttons
-            // subuser-review-plan.md م٦ — a sub-user without
-            // can_approve_contracts must not see the approve/edit-request
-            // buttons at all, only find out about them via a 403.
-            if (needsAction && _api.canDo('can_approve_contracts')) ...[
-              Text(l10n.actions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-              if (hasMissingDocs) ...[
-                const SizedBox(height: 6),
-                Text(
-                  l10n.contractUploadRequiredFirst,
-                  style: const TextStyle(fontSize: 11, color: ShadColors.warning, fontWeight: FontWeight.w500),
-                ),
-              ],
-              const SizedBox(height: 8),
-              Row(children: [
+                const LxIcon('doc', size: 18, color: Lx.muted),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: hasMissingDocs ? null : () async {
-                      await widget.onAction(c['id'], 'approved');
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.check, size: 18),
-                    label: Text(l10n.approve),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.success,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      disabledBackgroundColor: ShadColors.cardBorder,
-                      disabledForegroundColor: ShadColors.textDisabled,
-                    ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${doc['name'] ?? ''}', style: Lx.text(context, size: 13.5)),
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      LuxeStatusDot(status: dot),
+                      const SizedBox(width: 7),
+                      Text(statusLabels(l10n)[docStatus] ?? docStatus, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                    ]),
+                    if (doc['rejection_reason'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(l10n.rejectionReason(doc['rejection_reason'] as String), style: Lx.text(context, size: 11, color: Lx.danger)),
+                      ),
+                  ]),
+                ),
+                // subuser-review-plan.md م٦ — required-document uploads
+                // map to can_upload_files, per the plan's action table.
+                if (docStatus != 'approved' && _api.canDo('can_upload_files'))
+                  LuxeButton(
+                    key: ValueKey('contract-modal-upload-$i'),
+                    label: _uploading ? l10n.uploading : l10n.uploadDocument,
+                    lxIcon: 'up',
+                    size: LuxeButtonSize.sm,
+                    onPressed: _uploading ? null : () => _uploadDocument(c['id'], doc['id']),
+                  ),
+              ]),
+            );
+          }),
+      ],
+
+      // Files the client already uploaded against this contract
+      if (_loadingFiles)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 14),
+          child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Lx.crimsonInk))),
+        )
+      else if (_uploadedFiles.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        LuxeKind(l10n.uploadedFiles),
+        const SizedBox(height: 4),
+        for (final f in _uploadedFiles)
+          Builder(builder: (context) {
+            final fStatus = f['status'] as String? ?? '';
+            return Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.line2)),
+              child: Row(children: [
+                const LxIcon('clip', size: 16, color: Lx.muted),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _downloadFile(f['file_url'] as String? ?? ''),
+                    child: Text('${f['name'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5)),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await widget.onAction(c['id'], 'edit_requested');
+                LuxeStatusDot(status: fStatus == 'approved' ? LxStatus.ok : fStatus == 'rejected' ? LxStatus.bad : LxStatus.wait),
+                const SizedBox(width: 6),
+                Text(statusLabels(l10n)[fStatus] ?? fStatus, style: Lx.text(context, size: 11, color: Lx.muted)),
+                if (fStatus != 'approved') ...[
+                  const SizedBox(width: 6),
+                  InkResponse(
+                    key: ValueKey('contract-modal-file-delete-${f['id']}'),
+                    onTap: () => _deleteFile(f),
+                    radius: 16,
+                    child: const Padding(padding: EdgeInsets.all(4), child: LxIcon('trash', size: 15, color: Lx.danger)),
+                  ),
+                ],
+              ]),
+            );
+          }),
+      ],
+
+      // Approve / request edit
+      // subuser-review-plan.md م٦ — a sub-user without
+      // can_approve_contracts must not see the approve/edit-request
+      // buttons at all, only find out about them via a 403.
+      if (needsAction && _api.canDo('can_approve_contracts')) ...[
+        const SizedBox(height: 22),
+        if (hasMissingDocs)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const LxIcon('lock', size: 14, color: Lx.faint),
+              const SizedBox(width: 8),
+              Flexible(child: Text(l10n.contractUploadRequiredFirst, textAlign: TextAlign.center, style: Lx.text(context, size: 11.5, color: Lx.faint))),
+            ]),
+          ),
+        Row(children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: hasMissingDocs
+                  ? null
+                  : () async {
+                      await widget.onAction(c['id'], 'approved');
                       if (context.mounted) Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: Text(l10n.edit),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ShadColors.warning,
-                      side: const BorderSide(color: ShadColors.warning),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-              ]),
-            ] else if (needsAction) ...[
-              Text(l10n.subuserActionNeedsOwner, style: const TextStyle(fontSize: 12, color: ShadColors.textDisabled)),
-            ],
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Lx.crimson,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFF2A2827),
+                disabledForegroundColor: Lx.faint,
+                minimumSize: const Size.fromHeight(48),
+                shape: const StadiumBorder(),
+                elevation: 0,
+              ),
+              child: Text(l10n.approve),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () async {
+                await widget.onAction(c['id'], 'edit_requested');
+                if (context.mounted) Navigator.pop(context);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Lx.ink2,
+                side: const BorderSide(color: Lx.line2),
+                minimumSize: const Size.fromHeight(48),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(l10n.edit),
+            ),
+          ),
+        ]),
+      ] else if (needsAction) ...[
+        const SizedBox(height: 18),
+        Row(children: [
+          const LxIcon('lock', size: 14, color: Lx.faint),
+          const SizedBox(width: 8),
+          Expanded(child: Text(l10n.subuserActionNeedsOwner, style: Lx.text(context, size: 12, color: Lx.faint))),
+        ]),
+      ],
 
-            // Download PDF (shown whenever available)
-            if (c['pdf_url'] != null) ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _downloadPdf(c['pdf_url'] as String),
-                  icon: const Icon(Icons.picture_as_pdf, size: 18),
-                  label: Text(l10n.downloadContractPdf),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ShadColors.gold,
-                    side: const BorderSide(color: ShadColors.gold),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
+      if (isCompanyApproved) ...[
+        const SizedBox(height: 18),
+        LuxeCard(
+          key: const ValueKey('contract-modal-company-approved'),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const LuxeStatusDot(status: LxStatus.ok),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.contractApprovedByCompany, style: Lx.text(context, size: 14, weight: FontWeight.w500))),
+            ]),
+            const SizedBox(height: 6),
+            Text(l10n.goToPaymentHint, style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.5)),
+            if (widget.onGoToPayments != null) ...[
+              const SizedBox(height: 12),
+              LuxeButton(
+                label: l10n.goToPayment,
+                lxIcon: 'wallet',
+                kind: LuxeButtonKind.primary,
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onGoToPayments?.call();
+                },
               ),
             ],
-
-            if (isCompanyApproved) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ShadColors.success.withAlpha(15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.success.withAlpha(40)),
-                ),
-                child: Column(children: [
-                  const Icon(Icons.check_circle, size: 40, color: ShadColors.success),
-                  const SizedBox(height: 8),
-                  Text(l10n.contractApprovedByCompany, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.success)),
-                  const SizedBox(height: 4),
-                  Text(l10n.goToPaymentHint, style: const TextStyle(fontSize: 12, color: ShadColors.success)),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      widget.onGoToPayments?.call();
-                    },
-                    icon: const Icon(Icons.payment, size: 18),
-                    label: Text(l10n.goToPayment),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ShadColors.success,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ]),
-              ),
-            ],
-
-            // Status messages
-            if (!needsAction && !isCompanyApproved && status != 'draft') ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ShadColors.card,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ShadColors.cardBorder),
-                ),
-                child: Center(
-                  child: Text(
-                    status == 'client_approved' ? l10n.clientApprovedStatus :
-                    status == 'edit_requested' ? l10n.editRequestedStatus :
-                    status == 'rejected' ? l10n.rejectedStatus :
-                    status == 'completed' ? l10n.completedStatus : '',
-                    style: const TextStyle(fontSize: 13, color: ShadColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            const SizedBox(height: 24),
-          ],
+          ]),
         ),
-      ),
-    );
+      ],
+
+      if (statusMsg.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        Center(child: Text(statusMsg, textAlign: TextAlign.center, style: Lx.text(context, size: 13, color: Lx.muted))),
+      ],
+
+      if (c['pdf_url'] != null) ...[
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: LuxeButton(
+            key: const ValueKey('contract-modal-pdf'),
+            label: l10n.downloadContractPdf,
+            lxIcon: 'down',
+            size: LuxeButtonSize.lg,
+            onPressed: () => _downloadPdf(c['pdf_url'] as String),
+          ),
+        ),
+      ],
+    ]);
   }
 
-  static int _computeStageIndex(dynamic c) {
-    final stageMap = <String, int>{
-      'onboarding': 0, 'draft': 0, 'sent': 0,
-      'client_approved': 1, 'edit_requested': 1,
-      'company_approved': 2,
-      'completed': 3,
-      'archived': 3,
-    };
-    return stageMap[c['status'] as String? ?? ''] ?? 0;
+  static int _stepFor(String status) {
+    switch (status) {
+      case 'sent':
+        return 1;
+      case 'client_approved':
+      case 'edit_requested':
+        return 2;
+      case 'company_approved':
+        return 3;
+      case 'completed':
+      case 'archived':
+        return 4;
+      default:
+        return 0;
+    }
   }
 
-  Widget _infoRow(String label, String value, {bool gold = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ShadColors.cardBorder, width: 0.5)),
-      ),
-      child: Row(children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
-        const Spacer(),
-        Text(value, style: TextStyle(fontSize: 12, color: gold ? ShadColors.gold : ShadColors.textPrimary, fontWeight: gold ? FontWeight.w600 : FontWeight.w400)),
-      ]),
-    );
+  String _day(dynamic date) {
+    final t = DateTime.tryParse(date?.toString() ?? '')?.toLocal();
+    if (t == null) return '${date ?? ''}'.split('T').first;
+    return DateFormat('d MMM y', Localizations.localeOf(context).toString()).format(t);
   }
 
   // Both methods below deliberately keep the try/catch free of any
@@ -624,7 +510,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: Lx.crimson, foregroundColor: Colors.white),
             child: Text(l10n.delete),
           ),
         ],

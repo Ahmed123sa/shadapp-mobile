@@ -42,13 +42,16 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      // The modal is a plain column now; showLuxeSheet supplies the scroll.
       home: Scaffold(
-        body: ContractDetailModal(
-          contract: contract ?? {'id': 1, 'title': 'Villa Deal', 'status': 'sent'},
-          onAction: (_, __) async {},
-          onRefresh: () {},
-          workspaceId: 5,
-          api: api,
+        body: SingleChildScrollView(
+          child: ContractDetailModal(
+            contract: contract ?? {'id': 1, 'title': 'Villa Deal', 'status': 'sent'},
+            onAction: (_, __) async {},
+            onRefresh: () {},
+            workspaceId: 5,
+            api: api,
+          ),
         ),
       ),
     ));
@@ -84,7 +87,7 @@ void main() {
 
     await pumpModal(tester, api);
 
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.byKey(const ValueKey('contract-modal-file-delete-9')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
     await tester.pumpAndSettle();

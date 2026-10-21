@@ -717,14 +717,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   }
 
   void _showContractModal(Map c) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-        builder: (_) => ContractDetailModal(
-          contract: c,
-          workspaceId: _workspace?['id'] as int?,
-          backLabel: AppLocalizations.of(context)!.onboarding_back,
+    showLuxeSheet<void>(
+      context,
+      builder: (_) => ContractDetailModal(
+        contract: c,
+        workspaceId: _workspace?['id'] as int?,
         onAction: (id, action) async {
           Navigator.pop(context);
           // "Request edit" from the sheet opens the same inline card.
