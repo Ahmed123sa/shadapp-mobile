@@ -61,6 +61,9 @@ void main() {
     await tester.tap(find.text('Type'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Sara Ahmed');
+    // The Save button sits under the type box, below the 600px test screen.
+    await tester.ensureVisible(find.byKey(const ValueKey('signature-save-text')));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Signature'));
     await tester.pumpAndSettle();
 
@@ -85,7 +88,7 @@ void main() {
     await pumpPage(tester, clientProvider, signatureProvider, api);
     expect(find.text('Ahmed Ali'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete Signature'));
+    await tester.tap(find.byKey(const ValueKey('signature-delete')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/sign'))),

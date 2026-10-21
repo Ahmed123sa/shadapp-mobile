@@ -1960,5 +1960,7 @@
   "onboardingYourRequest": "طلبك",
   "onboardingSendPaymentTitle": "إرسال دفعة",
   "onboardingDropTitle": "اضغط عشان تضيف ملفات",
-  "onboardingDropHint": "صور من المعرض"
+  "onboardingDropHint": "صور من المعرض",
+  "signatureLead": "توقيعك الإلكتروني، بيُستخدم لما توافق على العقود والطلبات.",
+  "signatureNone": "مفيش توقيع محفوظ لسه"
 }

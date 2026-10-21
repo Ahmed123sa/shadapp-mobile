@@ -6041,4 +6041,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboardingDropHint => 'صور من المعرض';
+
+  @override
+  String get signatureLead =>
+      'توقيعك الإلكتروني، بيُستخدم لما توافق على العقود والطلبات.';
+
+  @override
+  String get signatureNone => 'مفيش توقيع محفوظ لسه';
 }

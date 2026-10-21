@@ -6065,4 +6065,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingDropHint => 'Images from your gallery';
+
+  @override
+  String get signatureLead =>
+      'Your e-signature, used when you approve contracts and requests.';
+
+  @override
+  String get signatureNone => 'No signature saved yet';
 }

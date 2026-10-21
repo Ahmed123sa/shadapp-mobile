@@ -1,15 +1,17 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
-import '../../core/app_log.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/client_provider.dart';
 import '../../providers/signature_provider.dart';
-import '../../core/theme.dart';
-import '../../core/widgets/signature_pad_screen.dart';
-import '../../core/widgets/luxe/luxe_widgets.dart' show LuxeSignatureInk;
+import 'signature_editor.dart';
 
+/// Standalone `/signature` route, opened from the "signature required"
+/// dialog. Same page as the dashboard's signature tab ([SignatureEditor]),
+/// plus a back row; after a successful save it confirms and returns
+/// `true` to whoever pushed it, so they can retry the approval.
 class SignaturePage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with mocked
   // providers instead of hitting the network.
@@ -26,513 +28,56 @@ class _SignaturePageState extends State<SignaturePage> {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ClientProvider _clientProvider = widget.clientProvider ?? ClientProvider();
   late final SignatureProvider _signatureProvider = widget.signatureProvider ?? SignatureProvider();
-  final _textController = TextEditingController();
-  bool _saving = false;
   bool _signed = false;
-  String _mode = 'draw';
 
-  String? _existingSigUrl;
-  String? _existingSigText;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadExisting();
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadExisting() async {
-    try {
-      final cid = _api.userId;
-      if (cid == null) return;
-      final data = await _clientProvider.fetchClientRaw(cid);
-      final client = data['client'] as Map<String, dynamic>?;
-      final sigData = client?['signature_data'] as String?;
-      setState(() {
-        _existingSigUrl = null;
-        _existingSigText = null;
-      });
-      if (sigData != null && sigData.isNotEmpty) {
-        if (sigData.startsWith('http') || sigData.startsWith('/')) {
-          // signature_url: the backend's signed link - /storage/... doesn't
-          // exist in production (23 Sept 2026).
-          final signedUrl = client?['signature_url'] as String?;
-          setState(() => _existingSigUrl = signedUrl ?? _api.resolveFileUrl(sigData));
-        } else {
-          setState(() => _existingSigText = sigData);
-        }
-      }
-    } catch (e, s) {
-      AppLog.error('signature_page._loadExisting', e, s);
-    }
-  }
-
-  void _clear() => setState(() {
-        _textController.clear();
-      });
-
-  Future<void> _deleteSignature() async {
-    try {
-      final cid = _api.userId;
-      if (cid == null) return;
-      await _signatureProvider.deleteSignature(cid);
-      setState(() {
-        _existingSigUrl = null;
-        _existingSigText = null;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_deleted)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_deleteFailed)),
-        );
-      }
-    }
-  }
-
-  Future<void> _openFullscreenSignature() async {
-    final bytes = await SignaturePadScreen.show(context);
-    if (bytes == null) return;
-    setState(() => _saving = true);
-    try {
-      final cid = _api.userId;
-      if (cid == null) throw Exception('User ID not found');
-      final dir = Directory.systemTemp;
-      final file = File('${dir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(bytes);
-      await _signatureProvider.uploadImage(cid, file);
-      if (mounted) {
-        setState(() => _signed = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
-        );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.pop(context, true);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context)!.signature_saveFailed}: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
-      try {
-        final file = File(result.files.single.path!);
-        final cid = _api.userId;
-        if (cid == null) return;
-        await _signatureProvider.uploadImage(cid, file);
-        if (mounted) {
-          setState(() => _signed = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
-          );
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) Navigator.pop(context, true);
-          });
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _saveText() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _saving = true);
-    try {
-      final cid = _api.userId;
-      if (cid == null) throw Exception('User ID not found');
-      await _signatureProvider.saveText(cid, text);
-      if (mounted) {
-        _textController.clear();
-        setState(() => _signed = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saved)),
-        );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.pop(context, true);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.signature_saveFailed)),
-        );
-      }
-    }
-    if (mounted) setState(() => _saving = false);
+  void _onSaved() {
+    setState(() => _signed = true);
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) Navigator.pop(context, true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: ShadColors.black,
-      appBar: AppBar(
-        backgroundColor: ShadColors.black,
-        foregroundColor: ShadColors.textPrimary,
-        elevation: 0,
-        title: Text(l10n.signature_title,
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal')),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: ShadColors.cardBorder),
-        ),
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            // The drawing area's GestureDetector (onPan*) and this
-            // ScrollView's own vertical drag recognizer used to compete in
-            // the same gesture arena for every touch on the canvas, so the
-            // page would scroll instead of (or while) the user drew. While
-            // in draw mode there's nothing on this screen that needs
-            // scrolling to reach, so scrolling is disabled outright and the
-            // pan gesture is the sole claimant.
-            physics: _mode == 'draw' ? const NeverScrollableScrollPhysics() : null,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_existingSigUrl != null || _existingSigText != null) ...[
-                  _buildExistingSignature(),
-                  const SizedBox(height: 20),
-                ],
-                _buildModeSelector(),
-                const SizedBox(height: 20),
-                if (_mode == 'draw')
-                  _buildDrawArea()
-                else
-                  _buildTextArea(),
-                const SizedBox(height: 20),
-                _buildActionButtons(),
-                const SizedBox(height: 12),
-                _buildUploadButton(),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-          if (_signed) _buildSuccessOverlay(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExistingSignature() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: ShadColors.gold.withAlpha(25),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.check,
-                    size: 16, color: ShadColors.gold),
-              ),
-              const SizedBox(width: 10),
-              Text(l10n.signature_currentSignature,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: ShadColors.textPrimary,
-                      fontFamily: 'Tajawal')),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_existingSigUrl != null)
-            Center(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ShadColors.black,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LuxeSignatureInk(
-                    child: Image.network(_existingSigUrl!,
-                        height: 60,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.error, size: 30, color: ShadColors.error)),
-                  ),
+      backgroundColor: Lx.page,
+      body: SafeArea(
+        child: Stack(children: [
+          Column(children: [
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: InkWell(
+                key: const ValueKey('signature-back'),
+                onTap: () => Navigator.maybePop(context),
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const LxIcon('back', size: 16, color: Lx.muted),
+                    const SizedBox(width: 6),
+                    Text(l10n.onboarding_back, style: Lx.text(context, size: 13, color: Lx.muted)),
+                  ]),
                 ),
               ),
             ),
-          if (_existingSigText != null)
-            Center(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ShadColors.black,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ShadColors.cardBorder),
-                ),
-                child: Text(_existingSigText!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w400,
-                        color: ShadColors.gold,
-                        fontFamily: 'Tajawal')),
+            Expanded(
+              child: SignatureEditor(
+                clientProvider: _clientProvider,
+                signatureProvider: _signatureProvider,
+                api: _api,
+                onSaved: _onSaved,
               ),
             ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _deleteSignature,
-              icon: const Icon(Icons.delete_outline, size: 16),
-              label: Text(l10n.signature_deleteSignature,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ShadColors.error,
-                side: const BorderSide(color: ShadColors.error),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.all(12),
-              ),
-            ),
-          ),
-        ],
+          ]),
+          if (_signed) _buildSuccessOverlay(l10n),
+        ]),
       ),
     );
   }
 
-  Widget _buildModeSelector() {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildSuccessOverlay(AppLocalizations l10n) {
     return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildModeTab('draw', l10n.signature_drawMode, Icons.brush_outlined),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _buildModeTab('text', l10n.signature_textMode, Icons.text_fields_outlined),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModeTab(String value, String label, IconData icon) {
-    final selected = _mode == value;
-    return GestureDetector(
-      onTap: () => setState(() => _mode = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected ? ShadColors.crimson : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                size: 18,
-                color: selected
-                    ? ShadColors.textOnCrimson
-                    : ShadColors.textSecondary),
-            const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: selected
-                        ? ShadColors.textOnCrimson
-                        : ShadColors.textSecondary,
-                    fontFamily: 'Tajawal')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawArea() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.draw_outlined, size: 40, color: ShadColors.gold.withValues(alpha: 0.8)),
-          const SizedBox(height: 10),
-          Text(
-            l10n.signatureDrawSignature,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary, fontFamily: 'Tajawal'),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _saving ? null : _openFullscreenSignature,
-              icon: const Icon(Icons.fullscreen, size: 20),
-              label: Text(l10n.signatureOpenFullscreen, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Tajawal')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ShadColors.gold,
-                foregroundColor: ShadColors.background,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextArea() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(
-        color: ShadColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ShadColors.cardBorder),
-      ),
-      child: TextField(
-        controller: _textController,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w400,
-            color: ShadColors.gold,
-            fontFamily: 'Tajawal'),
-        decoration: InputDecoration(
-          hintText: l10n.signature_typeYourName,
-          hintStyle: TextStyle(
-              color: ShadColors.textDisabled.withValues(alpha: 0.5),
-              fontSize: 20,
-              fontFamily: 'Tajawal'),
-          border: InputBorder.none,
-        ),
-        maxLines: 1,
-      ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    final l10n = AppLocalizations.of(context)!;
-    if (_mode == 'draw') return const SizedBox.shrink();
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: _clear,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ShadColors.textSecondary,
-              side: const BorderSide(color: ShadColors.cardBorder),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.all(12),
-            ),
-            child: Text(l10n.signature_clear,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: ElevatedButton.icon(
-            onPressed: _saving ? null : _saveText,
-            icon: _saving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.check, size: 18),
-            label: Text(_saving ? l10n.signature_saving : l10n.signature_saveSignature,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Tajawal')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShadColors.crimson,
-              foregroundColor: ShadColors.textOnCrimson,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.all(12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUploadButton() {
-    final l10n = AppLocalizations.of(context)!;
-    return OutlinedButton.icon(
-      onPressed: _pickImage,
-      icon: const Icon(Icons.attach_file, size: 18),
-      label: Text(l10n.signature_orUploadImage,
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Tajawal')),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: ShadColors.gold,
-        side: const BorderSide(color: ShadColors.gold),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.all(12),
-      ),
-    );
-  }
-
-  Widget _buildSuccessOverlay() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      color: Colors.black54,
+      color: const Color(0x8C000000),
       child: Center(
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
@@ -540,39 +85,23 @@ class _SignaturePageState extends State<SignaturePage> {
           curve: Curves.easeOutBack,
           builder: (_, v, __) => Transform.scale(
             scale: v,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 48),
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ShadColors.gold),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: ShadColors.success.withAlpha(25),
-                    shape: BoxShape.circle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: LuxeCard(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Lx.ok)),
+                    child: const LxIcon('check', size: 26, color: Lx.ok),
                   ),
-                  child: const Icon(Icons.check_circle,
-                      size: 40, color: ShadColors.success),
-                ),
-                const SizedBox(height: 16),
-                Text(l10n.signature_saved,
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: ShadColors.textPrimary,
-                        fontFamily: 'Tajawal')),
-                const SizedBox(height: 4),
-                Text(l10n.signature_saved_willReturn,
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: ShadColors.textSecondary,
-                        fontFamily: 'Tajawal')),
-              ]),
+                  const SizedBox(height: 14),
+                  Text(l10n.signature_saved, style: Lx.display(context, size: 20)),
+                  const SizedBox(height: 4),
+                  Text(l10n.signature_saved_willReturn, textAlign: TextAlign.center, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                ]),
+              ),
             ),
           ),
         ),

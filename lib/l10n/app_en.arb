@@ -2081,5 +2081,7 @@
   "onboardingYourRequest": "Your request",
   "onboardingSendPaymentTitle": "Send a payment",
   "onboardingDropTitle": "Tap to add files",
-  "onboardingDropHint": "Images from your gallery"
+  "onboardingDropHint": "Images from your gallery",
+  "signatureLead": "Your e-signature, used when you approve contracts and requests.",
+  "signatureNone": "No signature saved yet"
 }

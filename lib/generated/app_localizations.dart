@@ -11603,6 +11603,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Images from your gallery'**
   String get onboardingDropHint;
+
+  /// No description provided for @signatureLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Your e-signature, used when you approve contracts and requests.'**
+  String get signatureLead;
+
+  /// No description provided for @signatureNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No signature saved yet'**
+  String get signatureNone;
 }
 
 class _AppLocalizationsDelegate

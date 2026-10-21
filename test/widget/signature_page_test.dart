@@ -37,7 +37,7 @@ void main() {
     await pumpPage(tester, clientProvider, signatureProvider, api);
 
     expect(find.text('Ahmed Ali'), findsOneWidget);
-    expect(find.text('Current Signature'), findsOneWidget);
+    expect(find.text('CURRENT SIGNATURE'), findsOneWidget);
   });
 
   testWidgets('switching to text mode and saving posts the signature text', (tester) async {
@@ -59,6 +59,9 @@ void main() {
     await tester.tap(find.text('Type'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Sara Ahmed');
+    // The Save button sits under the type box, below the 600px test screen.
+    await tester.ensureVisible(find.byKey(const ValueKey('signature-save-text')));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Signature'));
     // Not pumpAndSettle: a successful save schedules Navigator.pop(context,
     // true) a full second later via Future.delayed, which the test's virtual
@@ -94,13 +97,14 @@ void main() {
     final signatureProvider = SignatureProvider(repository: SignatureRepository(api: api));
 
     await pumpPage(tester, clientProvider, signatureProvider, api);
-    expect(find.text('Current Signature'), findsOneWidget);
+    expect(find.text('CURRENT SIGNATURE'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete Signature'));
+    await tester.tap(find.byKey(const ValueKey('signature-delete')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/sign'))),
         headers: any(named: 'headers'))).called(1);
-    expect(find.text('Current Signature'), findsNothing);
+    expect(find.text('Ahmed Ali'), findsNothing);
+    expect(find.text('No signature saved yet'), findsOneWidget);
   });
 }
