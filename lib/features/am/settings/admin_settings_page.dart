@@ -2,9 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/locale_provider.dart';
+import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../data/signature_repository.dart';
@@ -350,33 +353,115 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
     }
   }
 
-  Widget _modeChip(String value, String label, IconData icon) {
-    final selected = _sigMode == value;
-    return GestureDetector(
-      onTap: () => setState(() => _sigMode = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? Lx.crimson : Lx.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? Lx.crimson : Lx.line2),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 18, color: selected ? Lx.ink : Lx.muted),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? Lx.ink : Lx.muted)),
-        ]),
-      ),
+  /// Mockup `.segm`: pill group, the selected one lightly filled.
+  Widget _segm(List<(String, String)> items, String selected, ValueChanged<String> onTap) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line2)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        for (final (value, label) in items)
+          GestureDetector(
+            onTap: () => onTap(value),
+            child: Container(
+              height: 30,
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected == value ? const Color(0x14FFFFFF) : Colors.transparent,
+                borderRadius: BorderRadius.circular(Lx.rPill),
+              ),
+              child: Text(label, style: Lx.text(context, size: 12, color: selected == value ? Lx.ink : Lx.muted)),
+            ),
+          ),
+      ]),
     );
   }
+
+  /// Mockup `.sec`: margin 22 0 10, 16px muted icon, serif 18.
+  Widget _sec(String icon, String title, {String? count}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 10),
+      child: Row(children: [
+        LxIcon(icon, size: 16, color: Lx.muted),
+        const SizedBox(width: 8),
+        Text(title, style: Lx.display(context, size: 18)),
+        if (count != null) ...[
+          const SizedBox(width: 8),
+          Text(count, style: Lx.text(context, size: 12, color: Lx.muted)),
+        ],
+      ]),
+    );
+  }
+
+  /// Mockup `.f2`: 12px muted label, then the underlined input (15px).
+  Widget _f2(String label, Widget input) => Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Lx.text(context, size: 12, color: Lx.muted)),
+          const SizedBox(height: 6),
+          input,
+        ]),
+      );
+
+  Widget _input(TextEditingController c, {TextInputType? keyboardType, Key? key, String? suffix}) => TextField(
+        key: key,
+        controller: c,
+        keyboardType: keyboardType,
+        style: Lx.text(context, size: 15),
+        cursorColor: Lx.crimsonInk,
+        decoration: InputDecoration(
+          isDense: true,
+          filled: false,
+          suffixText: suffix,
+          suffixStyle: Lx.text(context, size: 15, color: Lx.muted),
+          contentPadding: const EdgeInsets.only(top: 6, bottom: 9),
+          border: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+          enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
+          focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.crimsonInk)),
+        ),
+      );
+
+  /// Mockup `.sigprev`: 84px box, r12, line-2 border, centred script.
+  Widget _sigprev(Widget child, {VoidCallback? onTap}) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 84,
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.line2)),
+          child: child,
+        ),
+      );
+
+  /// Mockup settings switch row (`.opt`, align top): label (500) + sub, `.sw2`.
+  Widget _swRow(String title, String desc, bool value, ValueChanged<bool>? onChanged, {Key? key, bool last = false}) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: Lx.text(context, size: 13.5, weight: FontWeight.w500)),
+              Text(desc, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          LuxeToggle(key: key, value: value, onChanged: onChanged),
+        ]),
+      );
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(backgroundColor: Lx.page, body: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
     final isAM = _api.role == 'account_manager' || _api.role == 'manager_assistant';
     final l10n = AppLocalizations.of(context)!;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final h1 = Lx.display(context, size: 28).copyWith(height: 1.2);
+    final name = _nameController.text.trim();
+    final hasSig = _existingSigUrl != null || _existingSigText != null;
+    const script = TextStyle(fontFamily: 'DancingScript', fontSize: 30, color: Lx.ink);
 
-    return LuxeFormTheme(child: Scaffold(
+    return Scaffold(
       backgroundColor: Lx.page,
       appBar: AppBar(
         backgroundColor: Lx.page,
@@ -386,359 +471,221 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         title: const SizedBox.shrink(),
       ),
       body: ListView(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 28),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 28),
         children: [
-          LuxePageTitle(l10n.settingsTitle),
-          // The account manager's own team of company staff (PLAN_2 ف٦).
-          if (_api.role == 'account_manager') ...[
-            Card(
-              child: ListTile(
-                key: const ValueKey('am-my-team-entry'),
-                leading: const Icon(Icons.groups_outlined, color: Lx.wait),
-                title: Text(l10n.mtTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(l10n.mtSubtitle, style: const TextStyle(fontSize: 11, color: Lx.muted)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/am/my-team'),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          // ═══════════════════════════════════════
-          // Section 1: Profile
-          // ═══════════════════════════════════════
-          _sectionHeader(Icons.person_outline, l10n.settingsProfile),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Lx.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Lx.line2),
-            ),
-            child: Column(children: [
-              // Avatar
-              GestureDetector(
-                onTap: _pickAvatar,
-                child: Stack(children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Lx.crimson,
-                    backgroundImage: _avatarUrl != null ? NetworkImage(_api.resolveFileUrl(_avatarUrl!)) : null,
-                    child: _avatarUrl == null
-                        ? const Icon(Icons.person, size: 40, color: Lx.wait)
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0, right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Lx.wait, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, size: 14, color: Lx.page),
-                    ),
-                  ),
+          // Mockup pSettings: head('Account', 'Settings', 'Your profile and language.').
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l10n.settingsEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+              const SizedBox(height: 6),
+              Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: l10n.settingsTitle),
+                  TextSpan(text: '.', style: h1.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
                 ]),
+                key: const ValueKey('lx-page-title'),
+                style: h1,
               ),
-              const SizedBox(height: 4),
-              TextButton(
-                onPressed: _pickAvatar,
-                child: Text(l10n.profileChangePicture, style: const TextStyle(fontSize: 11, color: Lx.wait, fontFamily: Lx.sans)),
-              ),
-              const SizedBox(height: 12),
-              // Name field
-              _settingsField(
-                controller: _nameController,
-                label: l10n.settingsName,
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 12),
-              // Email field (SA only)
-              if (!isAM)
-                _settingsField(
-                  controller: _emailController,
-                  label: l10n.settingsOfficialEmail,
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-              if (!isAM) const SizedBox(height: 16),
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Lx.crimson,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: _saving
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : Text(l10n.settingsSaveChanges, style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: Lx.sans)),
-                ),
-              ),
+              const SizedBox(height: 8),
+              Text(l10n.settingsLead, style: Lx.text(context, size: 13, color: Lx.muted)),
             ]),
           ),
+          // The account manager's own team of company staff (PLAN_2 ف٦).
+          if (_api.role == 'account_manager')
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: LuxeCard(
+                key: const ValueKey('am-my-team-entry'),
+                onTap: () => context.push('/am/my-team'),
+                child: Row(children: [
+                  const LxIcon('users', size: 18, color: Lx.muted),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(l10n.mtTitle, style: Lx.text(context, size: 14.5)),
+                      Text(l10n.mtSubtitle, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                    ]),
+                  ),
+                  const Icon(Icons.chevron_right, size: 18, color: Lx.faint),
+                ]),
+              ),
+            ),
 
-          // ═══════════════════════════════════════
-          // Section 2: Signature (SA only)
-          // ═══════════════════════════════════════
+          // ── Profile ──
+          _sec('users', l10n.settingsProfile),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: Row(children: [
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: _avatarUrl != null
+                    ? CircleAvatar(radius: 32, backgroundImage: NetworkImage(_api.resolveFileUrl(_avatarUrl!)))
+                    : Container(
+                        width: 64,
+                        height: 64,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: const Color(0xFF262626), shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+                        child: Text(name.isEmpty ? '·' : name[0].toUpperCase(), style: const TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 26, color: Lx.ink)),
+                      ),
+              ),
+              const SizedBox(width: 16),
+              LuxeButton(key: const ValueKey('settings-change-picture'), label: l10n.profileChangePicture, size: LuxeButtonSize.sm, onPressed: _pickAvatar),
+            ]),
+          ),
+          _f2(l10n.settingsDisplayName, _input(_nameController, key: const ValueKey('settings-name'))),
+          if (!isAM) _f2(l10n.settingsOfficialEmail, _input(_emailController, keyboardType: TextInputType.emailAddress, key: const ValueKey('settings-email'))),
+          _f2(
+            l10n.settingsLanguage,
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: _segm([('en', 'English'), ('ar', 'العربية')], isAr ? 'ar' : 'en', (v) {
+                if ((v == 'ar') != isAr) context.read<LocaleProvider>().toggle();
+              }),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: LuxeButton(
+              key: const ValueKey('settings-save-profile'),
+              label: l10n.settingsSaveChanges,
+              kind: LuxeButtonKind.primary,
+              size: LuxeButtonSize.lg,
+              onPressed: _saving ? null : _saveProfile,
+            ),
+          ),
+
+          // ── Signature (super admin) ──
           if (!isAM) ...[
-            const SizedBox(height: 20),
-            _sectionHeader(Icons.draw_outlined, l10n.signatureTitle),
-            const SizedBox(height: 8),
-
-            // Card 1: Current signature
-            if (_existingSigUrl != null || _existingSigText != null) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Lx.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Lx.line2),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _sec('sign', l10n.signatureTitle),
+            LuxeCard(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (hasSig) ...[
                   Row(children: [
-                    Icon(Icons.verified, size: 14, color: Lx.ok),
-                    const SizedBox(width: 6),
-                    Text(l10n.signatureCurrentSignature, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait, fontFamily: Lx.sans)),
-                    const Spacer(),
-                    GestureDetector(
+                    Expanded(child: LuxeKind(l10n.signatureCurrentSignature)),
+                    InkResponse(
+                      key: const ValueKey('signature-delete'),
                       onTap: _deleteSignature,
-                      child: const Icon(Icons.delete_outline, size: 16, color: Lx.danger),
+                      radius: 18,
+                      child: const Padding(padding: EdgeInsets.all(4), child: LxIcon('trash', size: 16, color: Lx.danger)),
                     ),
                   ]),
-                  const SizedBox(height: 10),
-                  if (_existingSigUrl != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Lx.page,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Lx.line2),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.network(_existingSigUrl!, height: 50, fit: BoxFit.contain),
-                      ),
-                    ),
-                  if (_existingSigText != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Lx.page,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Lx.line2),
-                      ),
-                      child: Center(
-                        child: Text(_existingSigText!, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: Lx.wait)),
-                      ),
-                    ),
-                ]),
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            // Card 2: New signature
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Lx.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Lx.line2),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(Icons.add_circle_outline, size: 14, color: Lx.wait),
-                  const SizedBox(width: 6),
-                  Text(
-                    (_existingSigUrl != null || _existingSigText != null) ? l10n.settingsNewSignature : l10n.settingsAddYourSignature,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Lx.wait, fontFamily: Lx.sans),
+                  _sigprev(
+                    _existingSigUrl != null
+                        ? Padding(padding: const EdgeInsets.all(10), child: Image.network(_existingSigUrl!, fit: BoxFit.contain))
+                        : Text(_existingSigText!, style: script),
                   ),
-                ]),
-                const SizedBox(height: 12),
-
-                // Mode chips
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  _modeChip('draw', l10n.signatureDrawMode, Icons.brush),
-                  const SizedBox(width: 8),
-                  _modeChip('text', l10n.signatureTextMode, Icons.text_fields),
-                ]),
-                const SizedBox(height: 14),
-
-                // Draw mode
+                  Text(l10n.settingsSigUsedFor, style: Lx.text(context, size: 11, color: Lx.faint)),
+                  const SizedBox(height: 14),
+                ],
+                Text((hasSig ? l10n.settingsNewSignature : l10n.settingsAddYourSignature).toUpperCase(),
+                    style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+                const SizedBox(height: 8),
+                _segm([('draw', l10n.signatureDrawMode), ('text', l10n.signatureTextMode), ('upload', l10n.upload)], _sigMode, (v) => setState(() => _sigMode = v)),
                 if (_sigMode == 'draw') ...[
+                  _sigprev(Text(l10n.settingsSignHere, style: Lx.text(context, size: 14, color: Lx.faint)), onTap: _saving ? null : _openFullscreenSignature),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
+                    child: LuxeButton(
+                      key: const ValueKey('settings-sign-fullscreen'),
+                      label: l10n.signatureOpenFullscreen,
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.primary,
                       onPressed: _saving ? null : _openFullscreenSignature,
-                      icon: const Icon(Icons.fullscreen, size: 20),
-                      label: Text(l10n.signatureOpenFullscreen, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Lx.crimson,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _pickImage,
-                      icon: const Icon(Icons.image, size: 16, color: Lx.wait),
-                      label: Text(l10n.settingsUploadSignatureImage, style: const TextStyle(color: Lx.wait, fontSize: 12, fontFamily: Lx.sans)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Lx.wait),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
                     ),
                   ),
                 ],
-
-                // Text mode
                 if (_sigMode == 'text') ...[
-                  _subLabel(l10n.signatureTypeYourName),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Lx.page,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Lx.line2),
-                    ),
-                    child: TextField(
-                      controller: _sigTextController,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w400, fontFamily: 'DancingScript', color: Lx.wait),
-                      decoration: InputDecoration(
-                        hintText: l10n.settingsSignatureHint,
-                        hintStyle: const TextStyle(color: Lx.faint, fontSize: 18),
-                        border: InputBorder.none,
+                  _sigprev(
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextField(
+                        controller: _sigTextController,
+                        textAlign: TextAlign.center,
+                        style: script,
+                        cursorColor: Lx.crimsonInk,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: false,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          hintText: l10n.settingsSignatureHint,
+                          hintStyle: Lx.text(context, size: 14, color: Lx.faint),
+                        ),
+                        maxLines: 1,
                       ),
-                      maxLines: 1,
                     ),
                   ),
-                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
+                    child: LuxeButton(
+                      key: const ValueKey('settings-save-signature'),
+                      label: l10n.signatureSaveSignature,
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.primary,
                       onPressed: _saving ? null : _saveSignature,
-                      icon: _saving
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.check_circle, size: 18),
-                      label: Text(l10n.signatureSaveSignature, style: const TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Lx.crimson,
-                        foregroundColor: Lx.ink,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+                    ),
+                  ),
+                ],
+                if (_sigMode == 'upload') ...[
+                  _sigprev(Row(mainAxisSize: MainAxisSize.min, children: [
+                    const LxIcon('up', size: 18, color: Lx.faint),
+                    const SizedBox(width: 8),
+                    Text(l10n.settingsUploadSignatureImage, style: Lx.text(context, size: 13, color: Lx.faint)),
+                  ]), onTap: _saving ? null : _pickImage),
+                  SizedBox(
+                    width: double.infinity,
+                    child: LuxeButton(
+                      label: l10n.settingsUploadSignatureImage,
+                      lxIcon: 'up',
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.primary,
+                      onPressed: _saving ? null : _pickImage,
                     ),
                   ),
                 ],
               ]),
             ),
-          ],
-          const SizedBox(height: 32),
 
-          // ═══════════════════════════════════════
-          // Section 3: System settings (SA only)
-          // ═══════════════════════════════════════
-          if (!isAM) ...[
-            _sectionHeader(Icons.settings_suggest_outlined, l10n.settingsSystemSettings),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Lx.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Lx.line2),
-              ),
+            // ── System settings ──
+            _sec('gear', l10n.settingsSystemSettings),
+            LuxeCard(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(l10n.settingsCorporateTax, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
-                const SizedBox(height: 4),
-                Text(l10n.settingsCorporateTaxDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: _settingsField(
-                      controller: _taxController,
-                      label: l10n.settingsTaxRate,
-                      icon: Icons.percent,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('%', style: TextStyle(fontSize: 14, color: Lx.muted)),
-                ]),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _taxSaving ? null : _saveTax,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Lx.crimson,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: _taxSaving
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(l10n.settingsSaveTax, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: Lx.sans)),
-                  ),
+                Text(l10n.settingsCorporateTax, style: Lx.text(context, size: 13.5, weight: FontWeight.w500)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: Text(l10n.settingsCorporateTaxDesc, style: Lx.text(context, size: 11, color: Lx.faint)),
                 ),
-                const SizedBox(height: 16),
-                const Divider(color: Lx.line2),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.settingManagersCanReviewFiles, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
-                      const SizedBox(height: 4),
-                      Text(l10n.settingManagersCanReviewFilesDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
-                    ]),
-                  ),
-                  Switch(
-                    value: _managersCanReviewFiles,
-                    onChanged: _savingManagersCanReviewFiles ? null : _toggleManagersCanReviewFiles,
-                    activeThumbColor: Lx.wait,
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                const Divider(color: Lx.line2),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.settingShowContractDates, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif)),
-                      const SizedBox(height: 4),
-                      Text(l10n.settingShowContractDatesDesc, style: TextStyle(fontSize: 11, color: Lx.muted)),
-                    ]),
-                  ),
-                  Switch(
-                    value: _showContractDates,
-                    onChanged: _savingShowContractDates ? null : _toggleShowContractDates,
-                    activeThumbColor: Lx.wait,
+                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Expanded(child: _input(_taxController, keyboardType: const TextInputType.numberWithOptions(decimal: true), key: const ValueKey('settings-tax'), suffix: '%')),
+                  const SizedBox(width: 12),
+                  LuxeButton(
+                    key: const ValueKey('settings-save-tax'),
+                    label: l10n.settingsSaveTax,
+                    size: LuxeButtonSize.sm,
+                    onPressed: _taxSaving ? null : _saveTax,
                   ),
                 ]),
               ]),
             ),
-          ],
+            LuxeCard(
+              child: Column(children: [
+                _swRow(l10n.settingManagersCanReviewFiles, l10n.settingManagersCanReviewFilesDesc, _managersCanReviewFiles,
+                    _savingManagersCanReviewFiles ? null : _toggleManagersCanReviewFiles,
+                    key: const ValueKey('settings-managers-review')),
+                _swRow(l10n.settingShowContractDates, l10n.settingShowContractDatesDesc, _showContractDates,
+                    _savingShowContractDates ? null : _toggleShowContractDates,
+                    key: const ValueKey('settings-show-dates'), last: true),
+              ]),
+            ),
 
-          // ═══════════════════════════════════════
-          // Section 4: Contract clauses (SA only)
-          // ═══════════════════════════════════════
-          if (!isAM) ...[
-            const SizedBox(height: 20),
-            _sectionHeader(Icons.description_outlined, l10n.adminSettings_clauses),
-            const SizedBox(height: 4),
-            Text(l10n.adminSettings_clausesDescription, style: TextStyle(fontSize: 11, color: Lx.muted)),
-            const SizedBox(height: 8),
+            // ── Contract clauses ──
+            _sec('list', l10n.adminSettings_clauses, count: _clausesLoading ? null : '${_clauses.length}'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(l10n.clausesLead, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+            ),
             buildClauseTemplatesSection(
               context: context,
               clausesLoading: _clausesLoading,
@@ -752,51 +699,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               onDelete: _deleteClause,
             ),
           ],
-          const SizedBox(height: 32),
         ],
-      ),
-    ));
-  }
-
-  Widget _sectionHeader(IconData icon, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Row(children: [
-        Icon(icon, size: 16, color: Lx.muted),
-        const SizedBox(width: 8),
-        Text(title, style: Lx.display(context, size: 18)),
-      ]),
-    );
-  }
-
-  Widget _subLabel(String text) {
-    return Text(text, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans));
-  }
-
-  Widget _settingsField({required TextEditingController controller, required String label, required IconData icon, TextInputType? keyboardType}) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans),
-        prefixIcon: Icon(icon, size: 18, color: Lx.muted),
-        filled: true,
-        fillColor: Lx.page,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Lx.line2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Lx.line2),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Lx.wait),
-        ),
       ),
     );
   }

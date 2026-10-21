@@ -93,7 +93,7 @@ void main() {
 
     await pumpPage(tester, api);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
+    await tester.tap(find.byKey(const ValueKey('settings-save-profile')));
     await tester.pumpAndSettle();
 
     final captured = verify(() => httpClient.put(
@@ -112,8 +112,8 @@ void main() {
 
     await pumpPage(tester, api);
 
-    await scrollTo(tester, find.widgetWithText(ElevatedButton, 'Save Tax Rate'));
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Tax Rate'));
+    await scrollTo(tester, find.byKey(const ValueKey('settings-save-tax')));
+    await tester.tap(find.byKey(const ValueKey('settings-save-tax')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.put(
@@ -131,8 +131,8 @@ void main() {
 
     await pumpPage(tester, api);
 
-    await scrollTo(tester, find.widgetWithText(ElevatedButton, 'Add Clause'));
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Clause'));
+    await scrollTo(tester, find.byKey(const ValueKey('clause-add')));
+    await tester.tap(find.byKey(const ValueKey('clause-add')));
     await tester.pumpAndSettle();
     // Scoped to the dialog itself (title/category/content, in that order) —
     // safer than a raw byType(TextField) index, since which of the screen's
@@ -159,8 +159,12 @@ void main() {
 
     await pumpPage(tester, api);
 
-    await scrollTo(tester, find.byIcon(Icons.delete_outline));
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    // Mockup clause rows open on tap to show Activate / Edit / Delete.
+    await scrollTo(tester, find.byKey(const ValueKey('clause-row-5')));
+    await tester.tap(find.byKey(const ValueKey('clause-row-5')));
+    await tester.pumpAndSettle();
+    await scrollTo(tester, find.byKey(const ValueKey('clause-delete-5')));
+    await tester.tap(find.byKey(const ValueKey('clause-delete-5')));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
     await tester.pumpAndSettle();
@@ -176,8 +180,11 @@ void main() {
 
     await pumpPage(tester, api);
 
-    await scrollTo(tester, find.byIcon(Icons.visibility_outlined));
-    await tester.tap(find.byIcon(Icons.visibility_outlined));
+    await scrollTo(tester, find.byKey(const ValueKey('clause-row-5')));
+    await tester.tap(find.byKey(const ValueKey('clause-row-5')));
+    await tester.pumpAndSettle();
+    await scrollTo(tester, find.byKey(const ValueKey('clause-toggle-5')));
+    await tester.tap(find.byKey(const ValueKey('clause-toggle-5')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.put(
@@ -204,8 +211,8 @@ void main() {
     final sigField = find.byWidgetPredicate((w) => w is TextField && w.decoration?.hintText == 'Type your signature');
     await scrollTo(tester, sigField);
     await tester.enterText(sigField, 'Sara A.');
-    await scrollTo(tester, find.widgetWithText(ElevatedButton, 'Save Signature'));
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Signature'));
+    await scrollTo(tester, find.byKey(const ValueKey('settings-save-signature')));
+    await tester.tap(find.byKey(const ValueKey('settings-save-signature')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.post(
@@ -237,10 +244,13 @@ void main() {
         .thenAnswer((_) async => jsonResponse('{}'));
 
     await pumpPage(tester, api);
+    // The profile section (avatar, name, email, language) now fills the first
+    // screen, so the signature is below the fold of the lazy ListView.
+    await scrollTo(tester, find.text('Sara A.'));
     expect(find.text('Sara A.'), findsOneWidget);
 
-    await scrollTo(tester, find.byIcon(Icons.delete_outline));
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await scrollTo(tester, find.byKey(const ValueKey('signature-delete')));
+    await tester.tap(find.byKey(const ValueKey('signature-delete')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path == '/auth/sign')), headers: any(named: 'headers'))).called(1);
@@ -256,7 +266,7 @@ void main() {
     await pumpPage(tester, api);
 
     await scrollTo(tester, find.text('Contract Start and End Dates'));
-    await tester.tap(find.byType(Switch).last);
+    await tester.tap(find.byKey(const ValueKey('settings-show-dates')));
     await tester.pumpAndSettle();
 
     verify(() => httpClient.put(

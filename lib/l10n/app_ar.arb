@@ -1942,5 +1942,13 @@
   "amAssignedClients": "{count, plural, =1{عميل واحد} =2{عميلين} few{{count} عملاء} other{{count} عميل}}",
   "staffNewMember": "عضو فريق جديد",
   "staffPasswordShort": "كلمة السر",
-  "financeEyebrow": "الفلوس"
+  "financeEyebrow": "الفلوس",
+  "auditEyebrow": "السجل",
+  "settingsEyebrow": "الحساب",
+  "settingsLead": "ملفك الشخصي واللغة.",
+  "settingsLanguage": "اللغة",
+  "settingsSigUsedFor": "بيُستخدم لما توافق على العقود كشركة.",
+  "clausesShowFewer": "عرض أقل",
+  "clausesLead": "الثابتة بتدخل كل عقد، والاختيارية بيختارها المدير لكل عقد.",
+  "settingsDisplayName": "الاسم الظاهر"
 }

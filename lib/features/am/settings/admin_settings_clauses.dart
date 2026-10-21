@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../providers/contract_provider.dart';
 
 Future<void> showSaveClauseDialog({
@@ -223,143 +224,199 @@ Widget buildClauseTemplatesSection({
   required void Function(Map<String, dynamic>) onToggle,
   required void Function(Map<String, dynamic>) onEdit,
   required void Function(Map<String, dynamic>) onDelete,
-}) {
-  final l10n = AppLocalizations.of(context)!;
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Lx.surface,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Lx.line2),
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        const Spacer(),
-        ElevatedButton.icon(
-          onPressed: clauseSaving ? null : onAdd,
-          icon: const Icon(Icons.add, size: 16),
-          label: Text(l10n.adminSettings_addClause, style: const TextStyle(fontSize: 12, fontFamily: Lx.sans)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Lx.crimson,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          ),
-        ),
-      ]),
-      const SizedBox(height: 12),
-      if (clausesLoading)
-        const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2.5)))
-      else if (clauses.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(child: Text(l10n.adminSettings_clausesEmpty, style: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans))),
-        )
-      else
-        Column(children: [
-          for (var i = 0; i < clauses.length; i++) _clauseTile(context, clauses[i], i, onMove, onToggle, onEdit, onDelete),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton.icon(
-              onPressed: onSaveOrder,
-              icon: const Icon(Icons.save_outlined, size: 16),
-              label: Text(l10n.adminSettings_clauseSaveOrder, style: const TextStyle(fontSize: 12, fontFamily: Lx.sans)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Lx.crimson,
-                foregroundColor: Lx.ink,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              ),
-            ),
-          ),
-        ]),
-    ]),
-  );
+}) =>
+    _ClauseList(
+      clausesLoading: clausesLoading,
+      clauseSaving: clauseSaving,
+      clauses: clauses,
+      onAdd: onAdd,
+      onMove: onMove,
+      onSaveOrder: onSaveOrder,
+      onToggle: onToggle,
+      onEdit: onEdit,
+      onDelete: onDelete,
+    );
+
+/// Mockup clause list: a `.card` (padding 4 12) of `.clr2` rows — move
+/// arrows, number, text (2 lines), Fixed/Optional `.tagr`, active dot. A tap
+/// opens the row (`.dt`) with Activate/Edit/Delete; "Show all" after 6;
+/// then Add clause / Save order.
+class _ClauseList extends StatefulWidget {
+  final bool clausesLoading;
+  final bool clauseSaving;
+  final List<Map<String, dynamic>> clauses;
+  final VoidCallback onAdd;
+  final void Function(int index, int delta) onMove;
+  final VoidCallback onSaveOrder;
+  final void Function(Map<String, dynamic>) onToggle;
+  final void Function(Map<String, dynamic>) onEdit;
+  final void Function(Map<String, dynamic>) onDelete;
+  const _ClauseList({
+    required this.clausesLoading,
+    required this.clauseSaving,
+    required this.clauses,
+    required this.onAdd,
+    required this.onMove,
+    required this.onSaveOrder,
+    required this.onToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_ClauseList> createState() => _ClauseListState();
 }
 
-Widget _clauseTile(
-  BuildContext context,
-  Map<String, dynamic> clause,
-  int index,
-  void Function(int index, int delta) onMove,
-  void Function(Map<String, dynamic>) onToggle,
-  void Function(Map<String, dynamic>) onEdit,
-  void Function(Map<String, dynamic>) onDelete,
-) {
-  final l10n = AppLocalizations.of(context)!;
-  final isFixed = (clause['type'] as String? ?? 'fixed') == 'fixed';
-  final isActive = (clause['is_active'] as bool?) ?? true;
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Lx.page,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: Lx.line2),
-    ),
-    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Column(children: [
-        GestureDetector(
-          onTap: () => onMove(index, -1),
-          child: const Icon(Icons.keyboard_arrow_up, size: 18, color: Lx.muted),
+class _ClauseListState extends State<_ClauseList> {
+  int? _open;
+  bool _all = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final clauses = widget.clauses;
+    final shown = _all ? clauses.length : (clauses.length < 6 ? clauses.length : 6);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      LuxeCard(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: widget.clausesLoading
+            ? const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator(strokeWidth: 2.5, color: Lx.crimsonInk)))
+            : clauses.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text(l10n.adminSettings_clausesEmpty, style: Lx.text(context, size: 12.5, color: Lx.faint))),
+                  )
+                : Column(children: [
+                    for (var i = 0; i < shown; i++) _row(context, clauses[i], i, last: i == shown - 1 && clauses.length <= 6),
+                    if (clauses.length > 6)
+                      GestureDetector(
+                        key: const ValueKey('clauses-show-all'),
+                        onTap: () => setState(() => _all = !_all),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Center(
+                            child: Text(_all ? l10n.clausesShowFewer : '${l10n.amViewAll} (${clauses.length})', style: Lx.text(context, size: 12.5, color: Lx.ink2)),
+                          ),
+                        ),
+                      ),
+                  ]),
+      ),
+      Row(children: [
+        Expanded(
+          child: LuxeButton(
+            key: const ValueKey('clause-add'),
+            label: l10n.adminSettings_addClause,
+            lxIcon: 'plus',
+            onPressed: widget.clauseSaving ? null : widget.onAdd,
+          ),
         ),
-        GestureDetector(
-          onTap: () => onMove(index, 1),
-          child: const Icon(Icons.keyboard_arrow_down, size: 18, color: Lx.muted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: LuxeButton(
+            key: const ValueKey('clause-save-order'),
+            label: l10n.adminSettings_clauseSaveOrder,
+            lxIcon: 'down',
+            kind: LuxeButtonKind.primary,
+            onPressed: clauses.isEmpty ? null : widget.onSaveOrder,
+          ),
         ),
       ]),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-              child: Text(clause['title'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: Lx.serif, color: Lx.ink)),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: isFixed ? Lx.wait.withValues(alpha: 0.15) : Lx.muted.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+    ]);
+  }
+
+  Widget _row(BuildContext context, Map<String, dynamic> clause, int index, {bool last = false}) {
+    final l10n = AppLocalizations.of(context)!;
+    final id = clause['id'];
+    final isFixed = (clause['type'] as String? ?? 'fixed') == 'fixed';
+    final isActive = (clause['is_active'] as bool?) ?? true;
+    final open = _open == index;
+    final title = clause['title'] as String? ?? '';
+    final content = clause['content'] as String? ?? '';
+    Widget arrow(String d, int delta) => GestureDetector(
+          onTap: () => widget.onMove(index, delta),
+          child: SizedBox(width: 18, height: 14, child: Center(child: SvgArrow(d: d))),
+        );
+    return Container(
+      decoration: BoxDecoration(border: last && !open ? null : const Border(bottom: BorderSide(color: Lx.line))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        GestureDetector(
+          key: ValueKey('clause-row-$id'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _open = open ? null : index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Column(children: [arrow('up', -1), arrow('down', 1)]),
+              const SizedBox(width: 6),
+              SizedBox(width: 18, child: Text('${index + 1}', style: Lx.text(context, size: 11, color: Lx.faint, height: 1.8))),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(title.isNotEmpty ? title : content,
+                    maxLines: open ? null : 2,
+                    overflow: open ? null : TextOverflow.ellipsis,
+                    style: Lx.text(context, size: 13, color: isActive ? Lx.ink : Lx.faint, height: 1.6)),
               ),
-              child: Text(
-                isFixed ? l10n.adminSettings_clauseFixed : l10n.adminSettings_clauseOptional,
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isFixed ? Lx.wait : Lx.muted, fontFamily: Lx.sans),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Lx.rPill),
+                  border: Border.all(color: isFixed ? const Color(0x73C9B27A) : Lx.line2),
+                ),
+                child: Text(isFixed ? l10n.adminSettings_clauseFixed : l10n.adminSettings_clauseOptional,
+                    style: Lx.text(context, size: 9.5, color: isFixed ? Lx.wait : Lx.muted)),
               ),
-            ),
-          ]),
-          if ((clause['category'] as String? ?? '').isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(clause['category'] as String, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans)),
-          ],
-          const SizedBox(height: 4),
-          Text(clause['content'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Lx.muted, fontFamily: Lx.sans, height: 1.4)),
-          const SizedBox(height: 6),
-          Row(children: [
-            Icon(Icons.circle, size: 8, color: isActive ? Lx.ok : Lx.faint),
-            const SizedBox(width: 4),
-            Text(
-              isActive ? l10n.adminSettings_clauseActive : l10n.adminSettings_clauseInactive,
-              style: TextStyle(fontSize: 10, color: isActive ? Lx.ok : Lx.faint, fontFamily: Lx.sans),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => onToggle(clause),
-              child: Icon(Icons.visibility_outlined, size: 16, color: isActive ? Lx.wait : Lx.faint),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: () => onEdit(clause),
-              child: const Icon(Icons.edit_outlined, size: 16, color: Lx.muted),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: () => onDelete(clause),
-              child: const Icon(Icons.delete_outline, size: 16, color: Lx.danger),
-            ),
-          ]),
-        ]),
-      ),
-    ]),
-  );
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Container(width: 7, height: 7, decoration: BoxDecoration(color: isActive ? Lx.ok : Lx.faint, shape: BoxShape.circle)),
+              ),
+            ]),
+          ),
+        ),
+        if (open)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 28, bottom: 14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (title.isNotEmpty && content.isNotEmpty)
+                Text(content, style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.6)),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(children: [
+                  Expanded(
+                    child: LuxeButton(
+                      key: ValueKey('clause-toggle-$id'),
+                      label: isActive ? l10n.amDeactivate : l10n.adminSettings_clauseActive,
+                      lxIcon: 'eye',
+                      size: LuxeButtonSize.sm,
+                      onPressed: () => widget.onToggle(clause),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: LuxeButton(key: ValueKey('clause-edit-$id'), label: l10n.edit, size: LuxeButtonSize.sm, onPressed: () => widget.onEdit(clause))),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: LuxeButton(
+                      key: ValueKey('clause-delete-$id'),
+                      label: l10n.delete,
+                      size: LuxeButtonSize.sm,
+                      kind: LuxeButtonKind.danger,
+                      onPressed: () => widget.onDelete(clause),
+                    ),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+      ]),
+    );
+  }
+}
+
+/// The mockup's tiny up/down move arrows (`.mv`), 14px muted strokes.
+class SvgArrow extends StatelessWidget {
+  final String d;
+  const SvgArrow({super.key, required this.d});
+  @override
+  Widget build(BuildContext context) => Icon(d == 'up' ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 14, color: Lx.muted);
 }

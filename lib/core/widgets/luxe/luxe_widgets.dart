@@ -597,14 +597,15 @@ class LuxeTopBar extends StatelessWidget {
           key: ValueKey('lx-brand'),
           style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 30, height: 1, color: Lx.ink),
         ),
+        // Mockup `.co`: max-width 130, no flex — it used to be Flexible and
+        // split the free space with the Spacer below, which parked the bell
+        // and avatar mid-way instead of at the edge.
         if (company.isNotEmpty)
-          Flexible(
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(start: 6),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 130),
-                child: Text(company, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.faint)),
-              ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 6),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 130),
+              child: Text(company, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.faint)),
             ),
           ),
         const Spacer(),

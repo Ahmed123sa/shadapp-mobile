@@ -6007,4 +6007,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeEyebrow => 'Money';
+
+  @override
+  String get auditEyebrow => 'Record';
+
+  @override
+  String get settingsEyebrow => 'Account';
+
+  @override
+  String get settingsLead => 'Your profile and language.';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsSigUsedFor => 'Used when you company-approve contracts.';
+
+  @override
+  String get clausesShowFewer => 'Show fewer';
+
+  @override
+  String get clausesLead =>
+      'Fixed clauses go into every contract; optional ones are picked per contract.';
+
+  @override
+  String get settingsDisplayName => 'Display name';
 }

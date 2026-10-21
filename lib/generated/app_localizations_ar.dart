@@ -5984,4 +5984,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get financeEyebrow => 'الفلوس';
+
+  @override
+  String get auditEyebrow => 'السجل';
+
+  @override
+  String get settingsEyebrow => 'الحساب';
+
+  @override
+  String get settingsLead => 'ملفك الشخصي واللغة.';
+
+  @override
+  String get settingsLanguage => 'اللغة';
+
+  @override
+  String get settingsSigUsedFor => 'بيُستخدم لما توافق على العقود كشركة.';
+
+  @override
+  String get clausesShowFewer => 'عرض أقل';
+
+  @override
+  String get clausesLead =>
+      'الثابتة بتدخل كل عقد، والاختيارية بيختارها المدير لكل عقد.';
+
+  @override
+  String get settingsDisplayName => 'الاسم الظاهر';
 }

@@ -11495,6 +11495,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Money'**
   String get financeEyebrow;
+
+  /// No description provided for @auditEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get auditEyebrow;
+
+  /// No description provided for @settingsEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsEyebrow;
+
+  /// No description provided for @settingsLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile and language.'**
+  String get settingsLead;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsSigUsedFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Used when you company-approve contracts.'**
+  String get settingsSigUsedFor;
+
+  /// No description provided for @clausesShowFewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer'**
+  String get clausesShowFewer;
+
+  /// No description provided for @clausesLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed clauses go into every contract; optional ones are picked per contract.'**
+  String get clausesLead;
+
+  /// No description provided for @settingsDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get settingsDisplayName;
 }
 
 class _AppLocalizationsDelegate

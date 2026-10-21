@@ -2,10 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import '../../../core/luxe/tokens.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../../core/widgets/loading_state.dart';
-import '../../../core/widgets/empty_state.dart';
 import '../../../providers/audit_log_provider.dart';
 
 class AuditLogPage extends StatefulWidget {
@@ -79,37 +78,63 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    Widget content;
+    if (_loading) {
+      content = const Padding(padding: EdgeInsets.only(top: 40), child: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
+    } else if (_error != null) {
+      content = _buildError();
+    } else if (_logs.isEmpty) {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(children: [
+          Text(l10n.auditLogNoEvents, style: Lx.display(context, size: 20)),
+          const SizedBox(height: 8),
+          Text(l10n.auditLogNoActivities, textAlign: TextAlign.center, style: Lx.text(context, size: 13.5, color: Lx.muted)),
+        ]),
+      );
+    } else {
+      content = Column(children: [..._buildGroupedLogs(), _buildPagination()]);
+    }
+    final h1 = Lx.display(context, size: 28).copyWith(height: 1.2);
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      backgroundColor: Lx.page,
+      appBar: AppBar(
+        backgroundColor: Lx.page,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Lx.muted),
+        title: const SizedBox.shrink(),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async { _page = 1; await _load(); },
+        color: Lx.crimsonInk,
+        child: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 18),
           children: [
-            _buildAppBar(),
+            // Mockup pAudit: head('Record', 'Audit log') — the event count is
+            // the lead line.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 6, 0, 14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l10n.auditEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+                const SizedBox(height: 6),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: l10n.auditLogTitle),
+                    TextSpan(text: '.', style: h1.copyWith(color: Lx.crimsonInk, fontStyle: FontStyle.normal)),
+                  ]),
+                  key: const ValueKey('lx-page-title'),
+                  style: h1,
+                ),
+                const SizedBox(height: 8),
+                Text(l10n.auditLogEventCount(_total), style: Lx.text(context, size: 13, color: Lx.muted)),
+              ]),
+            ),
             _buildSearchBar(),
             _buildFilterChips(),
             _buildDateFilter(),
-            Expanded(
-              child: _loading
-                  ? const LoadingState()
-                  : _error != null
-                      ? _buildError()
-                      : RefreshIndicator(
-                          onRefresh: () async { _page = 1; await _load(); },
-                          child: _logs.isEmpty
-                              ? ListView(children: [
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.3,
-                                    child: EmptyState(icon: Icons.history, title: AppLocalizations.of(context)!.auditLogNoEvents, subtitle: AppLocalizations.of(context)!.auditLogNoActivities),
-                                  ),
-                                ])
-                              : ListView(
-                                  padding: EdgeInsets.zero,
-                                  children: [
-                                    ..._buildGroupedLogs(),
-                                    _buildPagination(),
-                                  ],
-                                ),
-                        ),
-            ),
+            content,
           ],
         ),
       ),
@@ -117,17 +142,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.error_outline, color: Lx.danger, size: 48),
-          const SizedBox(height: 12),
-          Text(_error!, style: ShadTypography.cardBody.copyWith(color: Lx.danger)),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: _load, child: Text(AppLocalizations.of(context)!.auditLogRetry)),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(children: [
+        Text(_error!, textAlign: TextAlign.center, style: Lx.text(context, size: 14, color: Lx.danger)),
+        const SizedBox(height: 16),
+        LuxeButton(label: AppLocalizations.of(context)!.auditLogRetry, onPressed: _load),
+      ]),
     );
   }
 
@@ -177,96 +198,56 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
+  /// Mockup `.day`: 10px (.24em) uppercase faint label between hairlines.
   Widget _buildDateDivider(String label) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 4),
-      child: Row(
-        children: [
-          Expanded(child: Container(height: 0.5, color: Lx.line2)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(label, style: const TextStyle(fontSize: 9.5, color: Lx.faint)),
-          ),
-          Expanded(child: Container(height: 0.5, color: Lx.line2)),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+      child: Row(children: [
+        const Expanded(child: Divider(height: 1, thickness: 1, color: Lx.line)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(label.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.4)),
+        ),
+        const Expanded(child: Divider(height: 1, thickness: 1, color: Lx.line)),
+      ]),
     );
   }
 
-  Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsetsDirectional.only(start: 6, end: 14, top: 10, bottom: 10),
-      decoration: const BoxDecoration(
-        color: Lx.page,
-        border: Border(bottom: BorderSide(color: Lx.line2)),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back_ios, size: 16, color: Lx.muted),
-          ),
-          const SizedBox(width: 4),
-          const Text('d', style: TextStyle(
-            fontFamily: Lx.serif, fontSize: 15, fontStyle: FontStyle.italic, color: Lx.ink,
-          )),
-          Container(
-            width: 4, height: 4,
-            margin: const EdgeInsetsDirectional.only(bottom: 1, start: 4),
-            decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(AppLocalizations.of(context)!.auditLogTitle, style: Lx.display(context, size: 20)),
-                Text(AppLocalizations.of(context)!.auditLogEventCount(_total), style: const TextStyle(fontSize: 9, color: Lx.muted)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /// Mockup `.srch`.
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Lx.line2)),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-        decoration: BoxDecoration(
-          color: Lx.page,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Lx.line2),
-        ),
-        child: Row(
-          children: [
-            const Text('🔍', style: TextStyle(fontSize: 12)),
-            const SizedBox(width: 7),
-            Expanded(
-              child: TextField(
-                style: const TextStyle(fontSize: 12, color: Lx.ink),
-                decoration: InputDecoration.collapsed(
-                  hintText: AppLocalizations.of(context)!.auditLogSearch,
-                  hintStyle: const TextStyle(color: Lx.faint, fontSize: 12),
-                ),
-                onChanged: (v) {
-                  _searchQuery = v;
-                  _page = 1;
-                  _debouncedLoad();
-                },
-              ),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line)),
+      child: Row(children: [
+        const LxIcon('search', size: 18, color: Lx.faint),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextField(
+            style: Lx.text(context, size: 12.5),
+            cursorColor: Lx.crimsonInk,
+            decoration: InputDecoration(
+              isDense: true,
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              hintText: AppLocalizations.of(context)!.auditLogSearch,
+              hintStyle: Lx.text(context, size: 12.5, color: Lx.faint),
             ),
-          ],
+            onChanged: (v) {
+              _searchQuery = v;
+              _page = 1;
+              _debouncedLoad();
+            },
+          ),
         ),
-      ),
+      ]),
     );
   }
 
+  /// Mockup `.chips` / `.chip` (all the real filters are kept).
   Widget _buildFilterChips() {
     final l10n = AppLocalizations.of(context)!;
     final chips = [
@@ -278,11 +259,8 @@ class _AuditLogPageState extends State<AuditLogPage> {
       ('login', l10n.auditLogFilterLogins),
       ('client', l10n.auditLogFilterClients),
     ];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Lx.line2)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -297,12 +275,12 @@ class _AuditLogPageState extends State<AuditLogPage> {
                 _load();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                margin: const EdgeInsetsDirectional.only(end: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                margin: const EdgeInsetsDirectional.only(end: 8),
                 decoration: BoxDecoration(
-                  color: active ? Lx.ink : Colors.transparent,
+                  color: active ? const Color(0xFFF0F0F0) : Colors.transparent,
                   borderRadius: BorderRadius.circular(Lx.rPill),
-                  border: Border.all(color: active ? Lx.ink : Lx.line2),
+                  border: Border.all(color: active ? const Color(0xFFF0F0F0) : Lx.line2),
                 ),
                 child: Text(c.$2, style: Lx.text(context, size: 12, color: active ? const Color(0xFF111111) : Lx.muted)),
               ),
@@ -314,21 +292,18 @@ class _AuditLogPageState extends State<AuditLogPage> {
   }
 
   Widget _buildDateFilter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Lx.line2)),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _dateField(AppLocalizations.of(context)!.auditLogFrom, _dateFrom, (d) { setState(() => _dateFrom = d); _page = 1; _load(); })),
-          const SizedBox(width: 6),
-          Expanded(child: _dateField(AppLocalizations.of(context)!.auditLogTo, _dateTo, (d) { setState(() => _dateTo = d); _page = 1; _load(); })),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(children: [
+        Expanded(child: _dateField(l10n.auditLogFrom, _dateFrom, (d) { setState(() => _dateFrom = d); _page = 1; _load(); })),
+        const SizedBox(width: 8),
+        Expanded(child: _dateField(l10n.auditLogTo, _dateTo, (d) { setState(() => _dateTo = d); _page = 1; _load(); })),
+      ]),
     );
   }
 
+  /// Date pill in the `.chip` outline with the mockup's calendar icon.
   Widget _dateField(String label, DateTime? value, Function(DateTime) onSelect) {
     return GestureDetector(
       onTap: () async {
@@ -337,24 +312,22 @@ class _AuditLogPageState extends State<AuditLogPage> {
           initialDate: value ?? DateTime.now(),
           firstDate: DateTime(2020),
           lastDate: DateTime.now(),
-          builder: (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.dark(primary: Lx.wait)),
-            child: child!,
-          ),
         );
         if (picked != null) onSelect(picked);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Lx.page,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Lx.line2),
-        ),
-        child: Text(
-          value != null ? '${value.day}/${value.month}/${value.year}' : label,
-          style: const TextStyle(fontSize: 11, color: Lx.faint),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: value != null ? Lx.ink2 : Lx.line2)),
+        child: Row(children: [
+          const LxIcon('cal', size: 15, color: Lx.faint),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value != null ? '${value.day}/${value.month}/${value.year}' : label,
+              style: Lx.text(context, size: 12, color: value != null ? Lx.ink : Lx.muted),
+            ),
+          ),
+        ]),
       ),
     );
   }
@@ -390,99 +363,34 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return '';
   }
 
+  /// Mockup pAudit card: `.st2` (crimson dot + action), then "who · what"
+  /// (12.5 muted, margin-top 6), then the time.
   Widget _auditLogTile(Map<String, dynamic> log) {
     final action = log['action'] as String? ?? '';
     final createdAt = log['created_at'] as String? ?? '';
     final userName = _actorName(log);
-    final initials = userName.length >= 2 ? userName.substring(0, 2) : (userName.isNotEmpty ? userName[0] : '?');
-    final time = createdAt.length >= 16 ? createdAt.substring(11, 16) : createdAt;
-    final (dotColor, badgeColor, badgeText) = _actionStyle(action);
-    final avatarColors = _userAvatarColors(userName);
-
-    return Container(
-      margin: const EdgeInsetsDirectional.fromSTEB(14, 0, 14, 10),
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: Lx.surface,
-        borderRadius: BorderRadius.circular(Lx.rCard),
-        border: Border.all(color: Lx.line),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 9, height: 9,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-              ),
-            ],
+    final dt = DateTime.tryParse(createdAt)?.toLocal();
+    final time = dt == null ? createdAt : '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final what = _entityText(action);
+    final sub = [userName, if (what != action) what].where((e) => e.isNotEmpty).join(' · ');
+    return LuxeCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const LuxeStatusDot(status: LxStatus.bad),
+          const SizedBox(width: 7),
+          Expanded(child: Text(_auditLabel(action), style: Lx.text(context, size: 12, color: Lx.ink2))),
+        ]),
+        if (sub.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_auditLabel(action), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink)),
-                const SizedBox(height: 3),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(badgeText, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Lx.ink)),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      width: 16, height: 16,
-                      decoration: BoxDecoration(
-                        color: avatarColors.$1,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: avatarColors.$2),
-                      ),
-                      child: Center(child: Text(initials, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w700, color: avatarColors.$3))),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      userName.isNotEmpty ? '$userName • $time' : time,
-                      style: const TextStyle(fontSize: 10, color: Lx.faint),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(time, textDirection: TextDirection.ltr, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        ),
+      ]),
     );
-  }
-
-  (Color, Color, String) _actionStyle(String action) {
-    final prefix = action.split('.').firstOrNull ?? action;
-    switch (prefix) {
-      case 'contract':
-        return (ShadColors.blue, ShadColors.blue.withAlpha(30), _entityText(action));
-      case 'payment':
-        return (Lx.wait, Lx.wait.withAlpha(35), _entityText(action));
-      case 'client':
-        return (Lx.ok, Lx.ok.withAlpha(25), _entityText(action));
-      case 'approval':
-        return (ShadColors.purple, ShadColors.purple.withAlpha(30), _entityText(action));
-      case 'login':
-        return (ShadColors.orange, ShadColors.orange.withAlpha(25), _entityText(action));
-      case 'meeting':
-        return (Lx.crimson, Lx.crimson.withAlpha(46), _entityText(action));
-      case 'file':
-        return (ShadColors.blue, ShadColors.blue.withAlpha(25), _entityText(action));
-      case 'workspace':
-        return (ShadColors.purple, ShadColors.purple.withAlpha(25), _entityText(action));
-      default:
-        return (Lx.muted, Lx.line2, action);
-    }
   }
 
   String _entityText(String action) {
@@ -498,26 +406,10 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return action;
   }
 
-  (Color, Color, Color) _userAvatarColors(String name) {
-    final hash = name.codeUnits.fold<int>(0, (a, b) => a + b);
-    final palettes = [
-      (Lx.crimson.withAlpha(46), Lx.crimson.withAlpha(82), Lx.wait),
-      (ShadColors.purple.withAlpha(30), ShadColors.purple.withAlpha(80), ShadColors.purple),
-      (ShadColors.blue.withAlpha(30), ShadColors.blue.withAlpha(80), ShadColors.blue),
-      (Lx.ok.withAlpha(25), Lx.ok.withAlpha(60), Lx.ok),
-      (ShadColors.orange.withAlpha(25), ShadColors.orange.withAlpha(60), ShadColors.orange),
-      (Lx.wait.withAlpha(35), Lx.wait.withAlpha(90), Lx.wait),
-    ];
-    return palettes[hash % palettes.length];
-  }
-
   Widget _buildPagination() {
     if (_totalPages <= 1) return const SizedBox.shrink();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Lx.line2)),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -548,7 +440,7 @@ class _AuditLogPageState extends State<AuditLogPage> {
     if (end < _totalPages) {
       widgets.add(Padding(
         padding: const EdgeInsetsDirectional.only(end: 4),
-        child: Text('…$_totalPages', style: const TextStyle(fontSize: 10, color: Lx.faint)),
+        child: Text('…$_totalPages', style: Lx.text(context, size: 12, color: Lx.faint)),
       ));
     }
     return widgets;
@@ -558,15 +450,13 @@ class _AuditLogPageState extends State<AuditLogPage> {
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? Lx.crimson.withAlpha(46) : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: active ? Lx.crimson.withAlpha(82) : Lx.line2),
+          color: active ? const Color(0xFFF0F0F0) : Colors.transparent,
+          borderRadius: BorderRadius.circular(Lx.rPill),
+          border: Border.all(color: active ? const Color(0xFFF0F0F0) : Lx.line2),
         ),
-        child: Text(label, style: TextStyle(
-          fontSize: 11, color: enabled ? (active ? Lx.ink : Lx.muted) : Lx.faint,
-        )),
+        child: Text(label, style: Lx.text(context, size: 12, color: active ? const Color(0xFF111111) : enabled ? Lx.muted : Lx.faint)),
       ),
     );
   }
