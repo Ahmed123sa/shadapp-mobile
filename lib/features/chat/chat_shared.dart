@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/meeting_chip.dart';
 import '../../providers/chat_provider.dart';
 
@@ -59,26 +61,6 @@ String? chatDateKey(String? iso) {
   }
 }
 
-Widget chatSenderAvatar(ApiClient api, Map<String, dynamic> m) {
-  final sender = m['sender'] as Map<String, dynamic>?;
-  final name = sender?['name'] as String? ?? '?';
-  final avatarUrl = sender?['avatar_url'] as String?;
-  final senderType = m['sender_type'] as String?;
-  final isSubUser = senderType == 'App\\Models\\SubUser';
-  final isClient = senderType == 'App\\Models\\Client';
-  final bgColor = isSubUser ? ShadColors.subUserBubble : isClient ? ShadColors.primary : ShadColors.managerBubble;
-  final textColor = isSubUser ? ShadColors.subUserNameColor : isClient ? ShadColors.gold : ShadColors.managerNameColor;
-
-  return CircleAvatar(
-    radius: 14,
-    backgroundColor: bgColor,
-    backgroundImage: avatarUrl != null ? NetworkImage(api.resolveFileUrl(avatarUrl)) : null,
-    child: avatarUrl == null
-        ? Text(chatInitials(name), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: textColor))
-        : null,
-  );
-}
-
 Widget chatMeetingBubble(
   Map<String, dynamic> metadata,
   Map<String, dynamic> m, {
@@ -92,25 +74,11 @@ Widget chatMeetingBubble(
       if (m['created_at'] != null)
         Padding(
           padding: const EdgeInsetsDirectional.only(top: 3, start: 2),
-          child: Text(chatFormatTime(m['created_at'] as String?),
-            style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
+          child: Builder(
+            builder: (context) => Text(chatFormatTime(m['created_at'] as String?), style: Lx.text(context, size: 11, color: Lx.faint)),
+          ),
         ),
     ],
-  );
-}
-
-Widget chatHeaderIconBtn(IconData icon, VoidCallback onTap) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(
-        color: ShadColors.overlayFaint,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ShadColors.cardBorder, width: 0.5),
-      ),
-      child: Icon(icon, size: 14, color: ShadColors.textSecondary),
-    ),
   );
 }
 
@@ -253,9 +221,14 @@ Widget chatCertificateDownloadButton({
   required String label,
   required String fileOpenFailedMessage,
 }) {
+  // Mockup `.btn.sm` with the download icon.
   return Padding(
-    padding: const EdgeInsets.only(top: 6),
-    child: ElevatedButton.icon(
+    padding: const EdgeInsets.only(top: 8),
+    child: LuxeButton(
+      key: const ValueKey('chat-certificate'),
+      label: label,
+      lxIcon: 'down',
+      size: LuxeButtonSize.sm,
       onPressed: () async {
         final url = api.resolveFileUrl(m['approval']['certificate']['pdf_url'] as String);
         final uri = Uri.tryParse(url);
@@ -267,33 +240,16 @@ Widget chatCertificateDownloadButton({
           ScaffoldMessenger.of(state.context).showSnackBar(SnackBar(content: Text(fileOpenFailedMessage)));
         }
       },
-      icon: const Icon(Icons.picture_as_pdf, size: 14),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: ShadColors.crimson,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 0,
-      ),
     ),
   );
 }
 
-// Identical in both screens except for the container's background/border
-// colors (chat_page used ShadColors.chatBg/chatBorder, chat_tab used
-// ShadColors.card/cardBorder — both pre-existing valid tokens, just a
-// different choice) and chat_page.dart carried an unused `isClient`
-// parameter that never affected the body. Callers pass their own colors
-// and the fallback file name string (both screens used the same l10n key
-// here, so no .arb changes were needed).
+// Mockup `.fcard`: 34×42 file box with the extension, name, size, download
+// icon. Shared by chat_page and chat_tab; tap opens the file.
 Widget chatFileAttachment({
   required ApiClient api,
   required Map<String, dynamic> m,
   required String fallbackFileName,
-  required Color backgroundColor,
-  required Color borderColor,
 }) {
   final fileName = m['file_name'] as String? ?? fallbackFileName;
   final fileSize = m['file_size'] as int?;
@@ -305,102 +261,46 @@ Widget chatFileAttachment({
       sizeText = '${(fileSize / 1024).toStringAsFixed(0)} KB';
     }
   }
-  return Container(
-    margin: const EdgeInsets.only(bottom: 4),
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: borderColor, width: 0.5),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.insert_drive_file, size: 20, color: ShadColors.gold),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(fileName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.textPrimary), overflow: TextOverflow.ellipsis, maxLines: 1),
-              if (sizeText.isNotEmpty)
-                Text(sizeText, style: const TextStyle(fontSize: 9, color: ShadColors.textSecondary)),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () async {
-            final url = api.resolveFileUrl(m['file_url'] as String);
-            final uri = Uri.tryParse(url);
-            if (uri != null && await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            }
-          },
-          child: const Icon(Icons.download, size: 16, color: ShadColors.gold),
-        ),
-      ],
-    ),
-  );
-}
-
-// chat_page.dart and chat_tab.dart both build this banner identically —
-// the only difference was which l10n keys they read (two separate but
-// textually-equivalent key sets). Rather than touching the .arb files to
-// unify the keys (a bigger, separate risk), each screen resolves its own
-// localized strings and passes them in here, so the displayed text is
-// byte-for-byte unchanged from before this extraction.
-Widget chatUpcomingMeetingBanner({
-  required Map<String, dynamic> meeting,
-  required String fallbackTitle,
-  required String Function(int) inMinutesLabel,
-  required String Function(int) inHoursLabel,
-  required String Function(int) inDaysLabel,
-  required String joinLabel,
-  VoidCallback? onTap,
-}) {
-  final title = meeting['title'] as String? ?? fallbackTitle;
-  final link = meeting['link'] as String?;
-  String timeLabel = '';
-  try {
-    final scheduledAt = DateTime.parse(meeting['scheduled_at']).toLocal();
-    final diff = scheduledAt.difference(DateTime.now());
-    if (diff.inMinutes < 60) {
-      timeLabel = inMinutesLabel(diff.inMinutes);
-    } else if (diff.inHours < 24) {
-      timeLabel = inHoursLabel(diff.inHours);
-    } else {
-      timeLabel = inDaysLabel(diff.inDays);
+  final dot = fileName.lastIndexOf('.');
+  final ext = dot > 0 && dot < fileName.length - 1 ? fileName.substring(dot + 1).toUpperCase() : 'FILE';
+  Future<void> open() async {
+    final url = api.resolveFileUrl(m['file_url'] as String);
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
-  } catch (_) {
-    // An unparseable/missing date just leaves the relative label off.
-    // Runs inside build(), so reporting it would fire on every frame.
   }
-  return GestureDetector(
-    onTap: onTap ?? (link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null),
-    child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: ShadColors.meetingBlueSoft,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ShadColors.meetingBlueBorder, width: 0.5),
-      ),
-      child: Row(children: [
-        const Icon(Icons.videocam, size: 18, color: ShadColors.meetingBlue),
-        const SizedBox(width: 8),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.meetingBlue)),
-          if (timeLabel.isNotEmpty) Text(timeLabel, style: TextStyle(fontSize: 10, color: ShadColors.meetingBlue.withAlpha(180))),
-        ])),
-        if (link != null)
+
+  // Mockup `.fcard`: line-2 border r12, padding 10 12, gap 12 — `.fic`
+  // (34×42, r6, extension at the bottom, 8.5px .1em muted), `.fn` 12.5 /
+  // `.fs` 11 faint, then the download link.
+  return Builder(
+    builder: (context) => GestureDetector(
+      onTap: open,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.line2)),
+        child: Row(children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: ShadColors.meetingBlue,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(joinLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
+            width: 34,
+            height: 42,
+            alignment: Alignment.bottomCenter,
+            padding: const EdgeInsets.only(bottom: 5),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Lx.line2)),
+            child: Text(ext.length > 4 ? ext.substring(0, 4) : ext, style: Lx.text(context, size: 8.5, color: Lx.muted).copyWith(letterSpacing: 0.85)),
           ),
-      ]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(fileName, style: Lx.text(context, size: 12.5), overflow: TextOverflow.ellipsis, maxLines: 1),
+              if (sizeText.isNotEmpty) Text(sizeText, style: Lx.text(context, size: 11, color: Lx.faint)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          const LxIcon('down', size: 16, color: Lx.ink2),
+        ]),
+      ),
     ),
   );
 }

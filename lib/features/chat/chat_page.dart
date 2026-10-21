@@ -9,7 +9,6 @@ import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/reverb_service.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -325,7 +324,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         return AlertDialog(
         title: Text(l10n.editRequestTitle),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(l10n.editRequestPrompt, style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary)),
+          Text(l10n.editRequestPrompt, style: Lx.text(ctx, size: 12.5, color: Lx.muted, height: 1.5)),
           const SizedBox(height: 10),
           TextField(
             controller: controller,
@@ -337,7 +336,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            style: ElevatedButton.styleFrom(backgroundColor: ShadColors.gold),
             child: Text(l10n.send),
           ),
         ],
@@ -352,10 +350,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     try {
       final contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
       if (!mounted) return;
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      showLuxeSheet(
+        context,
         builder: (_) => ContractsSheet(contracts: contracts),
       );
     } catch (e, s) {
@@ -608,16 +604,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final isMine = (msg['sender_type'] == 'App\\Models\\Client' && msg['sender_id'] == _api.userId) ||
                    (msg['sender_type'] == 'App\\Models\\SubUser' && msg['sender_id'] == _api.subUserId);
     final canEdit = isMine && msg['type'] == 'text' && msg['approval_id'] == null;
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => SafeArea(
+    showLuxeSheet(
+      context,
+      builder: (_) => Material(
+        type: MaterialType.transparency,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.zero,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             if (canEdit)
               ListTile(
-                leading: const Icon(Icons.edit, color: ShadColors.textPrimary),
-                title: Text(AppLocalizations.of(context)!.edit, style: const TextStyle(fontSize: 14)),
+                leading: const Icon(Icons.edit_outlined, size: 18, color: Lx.muted),
+                title: Text(AppLocalizations.of(context)!.edit, style: Lx.text(context, size: 14, color: Lx.ink)),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {
@@ -627,8 +624,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.reply, color: ShadColors.textPrimary),
-              title: Text(AppLocalizations.of(context)!.reply, style: const TextStyle(fontSize: 14)),
+              leading: const LxIcon('reply', size: 18, color: Lx.muted),
+              title: Text(AppLocalizations.of(context)!.reply, style: Lx.text(context, size: 14, color: Lx.ink)),
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _replyTo = msg);

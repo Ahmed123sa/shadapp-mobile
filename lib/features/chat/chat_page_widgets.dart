@@ -18,7 +18,7 @@ import '../../core/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart';
+import '../../core/theme.dart' show statusLabels;
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/chat_contract_card.dart';
 import 'chat_shared.dart';
@@ -214,20 +214,20 @@ Widget _buildContractBubble(
       if (m['message'] != null && m['message'].toString().isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
-          child: Text(m['message'], style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary)),
+          child: Text(m['message'], style: Lx.text(context, size: 13, color: Lx.muted, height: 1.5)),
         ),
       if (m['created_at'] != null && (m['message'] != null && m['message'].toString().isNotEmpty))
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(chatFormatTime(m['created_at'] as String?),
-            style: const TextStyle(fontSize: 9, color: ShadColors.textDisabled)),
+            style: Lx.text(context, size: 11, color: Lx.faint)),
         ),
       ChatContractCard(
         contract: contract,
         isClient: isClient,
         onViewClauses: () {
-          showModalBottomSheet(
-            context: context,
+          showLuxeSheet(
+            context,
             builder: (_) => ClausesSheet(clauses: contract['clauses'] as List<dynamic>? ?? []),
           );
         },
@@ -275,8 +275,6 @@ Widget _buildTextBubble(
         api: api,
         m: m,
         fallbackFileName: l10n.attachment,
-        backgroundColor: Lx.surface,
-        borderColor: Lx.line2,
       ),
   ];
 
@@ -520,87 +518,90 @@ class LxPaymentBanner extends StatelessWidget {
   }
 }
 
+/// Mockup sheet: serif 22 title, then `.doc` rows (doc icon, title, status
+/// dot + label). Shown inside [showLuxeSheet], which draws the grab handle.
 class ContractsSheet extends StatelessWidget {
   final List<dynamic> contracts;
   const ContractsSheet({super.key, required this.contracts});
 
+  static LxStatus _dot(String status) => switch (status) {
+        'active' || 'completed' || 'client_approved' => LxStatus.ok,
+        'rejected' || 'cancelled' => LxStatus.bad,
+        'draft' => LxStatus.off,
+        _ => LxStatus.wait,
+      };
+
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      maxChildSize: 0.8,
-      minChildSize: 0.3,
-      expand: false,
-      builder: (_, scrollController) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text(AppLocalizations.of(context)!.contracts, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-          ]),
-          const Divider(),
-          Expanded(
-            child: contracts.isEmpty
-                ? Center(child: Text(AppLocalizations.of(context)!.noContracts, style: TextStyle(color: ShadColors.textSecondary)))
-                : ListView.separated(
-                    controller: scrollController,
-                    itemCount: contracts.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final c = contracts[i];
-                      final status = c['status'] as String? ?? '';
-                      final statusColor = statusColors[status] ?? ShadColors.textDisabled;
-                      final statusLabel = statusLabels(AppLocalizations.of(context)!)[status] ?? status;
-                      return ListTile(
-                        leading: const Icon(Icons.description, size: 24, color: ShadColors.gold),
-                        title: Text(c['title'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: statusColor.withAlpha(25), borderRadius: BorderRadius.circular(8)),
-                          child: Text(statusLabel, style: TextStyle(fontSize: 10, color: statusColor)),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ]),
-      ),
-    );
+    final l10n = AppLocalizations.of(context)!;
+    final labels = statusLabels(l10n);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(l10n.contracts, style: Lx.display(context, size: 22)),
+      const SizedBox(height: 14),
+      if (contracts.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: Text(l10n.noContracts, style: Lx.text(context, size: 13, color: Lx.muted))),
+        )
+      else
+        for (final c in contracts)
+          Builder(builder: (context) {
+            final status = c['status'] as String? ?? '';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Lx.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Lx.line),
+              ),
+              child: Row(children: [
+                const LxIcon('doc', size: 18, color: Lx.muted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(c['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: Lx.text(context, size: 13.5, color: Lx.ink, weight: FontWeight.w500)),
+                ),
+                const SizedBox(width: 10),
+                LuxeStatusDot(status: _dot(status)),
+                const SizedBox(width: 6),
+                Text(labels[status] ?? status, style: Lx.text(context, size: 11.5, color: Lx.muted)),
+              ]),
+            );
+          }),
+    ]);
   }
 }
 
+/// Mockup clauses sheet: serif 22 title, numbered clauses (crimson-ink
+/// number, 13/1.6 body), hairline between them.
 class ClausesSheet extends StatelessWidget {
   final List<dynamic> clauses;
   const ClausesSheet({super.key, required this.clauses});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Text(AppLocalizations.of(context)!.contractClauses, style: ShadTypography.cardTitle),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-          ]),
-          const SizedBox(height: 12),
-          if (clauses.isEmpty)
-            Text(AppLocalizations.of(context)!.noClauses, style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary))
-          else
-            ...clauses.map((cl) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.circle, size: 6, color: ShadColors.textDisabled),
-                const SizedBox(width: 8),
-                Expanded(child: Text(cl['content'] ?? '', style: ShadTypography.cardBody)),
-              ]),
-            )),
-        ],
-      ),
-    );
+    final l10n = AppLocalizations.of(context)!;
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(l10n.contractClauses, style: Lx.display(context, size: 22)),
+      const SizedBox(height: 14),
+      if (clauses.isEmpty)
+        Text(l10n.noClauses, style: Lx.text(context, size: 13, color: Lx.muted))
+      else
+        for (var i = 0; i < clauses.length; i++)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              border: i == clauses.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line)),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SizedBox(
+                width: 22,
+                child: Text('${i + 1}.', style: Lx.text(context, size: 13, color: Lx.crimsonInk, weight: FontWeight.w500)),
+              ),
+              Expanded(child: Text(clauses[i]['content'] ?? '', style: Lx.text(context, size: 13, color: Lx.ink2, height: 1.6))),
+            ]),
+          ),
+    ]);
   }
 }
