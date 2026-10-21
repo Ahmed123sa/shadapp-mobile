@@ -6022,24 +6022,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get onboardingOwnerSignTitle => 'مستنيين صاحب الحساب';
-
-  @override
-  String onboardingOwnerSignMsg(String name) {
-    return '$name محتاج يضيف توقيع الشركة الأول. هيوصلك إشعار لما يخلص.';
-  }
-
-  @override
-  String get onboardingApproveOwnerOnly => 'الموافقة على العقد لصاحب الحساب.';
-
-  @override
-  String get onboardingPayAllowed =>
-      'تقدر ترسل دفعة لأن معاك صلاحية \"رفع إيصال الدفع\".';
-
-  @override
-  String get onboardingPayOwnerOnly => 'إرسال الدفعة لصاحب الحساب.';
-
-  @override
   String get onboardingEditLabel => 'عايز تغيّر إيه؟';
 
   @override

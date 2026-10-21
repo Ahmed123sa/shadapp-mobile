@@ -11562,36 +11562,6 @@ abstract class AppLocalizations {
   /// **'Sent {date}'**
   String onboardingSentOn(String date);
 
-  /// No description provided for @onboardingOwnerSignTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for the account owner'**
-  String get onboardingOwnerSignTitle;
-
-  /// No description provided for @onboardingOwnerSignMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} needs to add the company\'s e-signature first. You\'ll be notified when it\'s done.'**
-  String onboardingOwnerSignMsg(String name);
-
-  /// No description provided for @onboardingApproveOwnerOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Approving the contract is done by the account owner.'**
-  String get onboardingApproveOwnerOnly;
-
-  /// No description provided for @onboardingPayAllowed.
-  ///
-  /// In en, this message translates to:
-  /// **'You can send a payment: you have the “upload payment proof” permission.'**
-  String get onboardingPayAllowed;
-
-  /// No description provided for @onboardingPayOwnerOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Sending the payment is done by the account owner.'**
-  String get onboardingPayOwnerOnly;
-
   /// No description provided for @onboardingEditLabel.
   ///
   /// In en, this message translates to:

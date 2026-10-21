@@ -312,11 +312,11 @@ Widget buildContractReviewStage({
   ]);
 }
 
-Widget _lockLine(BuildContext context, String text, {Key? key, String icon = 'lock'}) => Row(
+Widget _lockLine(BuildContext context, String text, {Key? key}) => Row(
       key: key,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        LxIcon(icon, size: 14, color: Lx.faint),
+        const LxIcon('lock', size: 14, color: Lx.faint),
         const SizedBox(width: 8),
         Flexible(child: Text(text, textAlign: TextAlign.center, style: Lx.text(context, size: 12, color: Lx.faint))),
       ],
@@ -326,13 +326,9 @@ List<Widget> buildContractReviewActions({
   required BuildContext context,
   required Map<String, dynamic>? workspace,
   required void Function(String) onRespond,
-  bool canApprove = true,
   VoidCallback? onRequestEdit,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  if (!canApprove) {
-    return [_lockLine(context, l10n.onboardingApproveOwnerOnly, key: const ValueKey('onboarding-approve-locked'))];
-  }
   final missing = _hasMissingDocs(_sentContract(workspace));
   return [
     ElevatedButton(
@@ -482,7 +478,6 @@ Widget buildPaymentStage({
   required Map<String, dynamic>? workspace,
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
-  bool assistantCanPay = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
   final f = _PaymentFigures(workspace, client, taxSettings);
@@ -544,15 +539,6 @@ Widget buildPaymentStage({
             ]),
         ]),
       ),
-    if (assistantCanPay)
-      Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(key: const ValueKey('onboarding-pay-allowed'), crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const LxIcon('check', size: 14, color: Lx.faint),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.onboardingPayAllowed, style: Lx.text(context, size: 12, color: Lx.faint))),
-        ]),
-      ),
   ]);
 }
 
@@ -562,12 +548,8 @@ List<Widget> buildPaymentActions({
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
   required void Function(double suggestedAmount, int? workspaceId, String currency) onSendPayment,
-  bool canPay = true,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  if (!canPay) {
-    return [_lockLine(context, l10n.onboardingPayOwnerOnly, key: const ValueKey('onboarding-pay-locked'))];
-  }
   final f = _PaymentFigures(workspace, client, taxSettings);
   return [
     ElevatedButton(

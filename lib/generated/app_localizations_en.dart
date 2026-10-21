@@ -6045,26 +6045,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get onboardingOwnerSignTitle => 'Waiting for the account owner';
-
-  @override
-  String onboardingOwnerSignMsg(String name) {
-    return '$name needs to add the company\'s e-signature first. You\'ll be notified when it\'s done.';
-  }
-
-  @override
-  String get onboardingApproveOwnerOnly =>
-      'Approving the contract is done by the account owner.';
-
-  @override
-  String get onboardingPayAllowed =>
-      'You can send a payment: you have the “upload payment proof” permission.';
-
-  @override
-  String get onboardingPayOwnerOnly =>
-      'Sending the payment is done by the account owner.';
-
-  @override
   String get onboardingEditLabel => 'What would you like changed?';
 
   @override

@@ -477,8 +477,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     );
   }
 
-  bool get _isSubUser => _api.role == 'sub_user';
-
   List<Widget> _stageActions(int stage) {
     switch (stage) {
       case 2:
@@ -487,7 +485,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           context: context,
           workspace: _workspace,
           onRespond: _respondToContract,
-          canApprove: _api.canDo('can_approve_contracts'),
           onRequestEdit: () => setState(() => _editing = true),
         );
       case 4:
@@ -497,7 +494,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           client: _client,
           taxSettings: _taxSettings,
           onSendPayment: _showPaymentBottomSheet,
-          canPay: _api.canDo('can_upload_payment_proof'),
         );
       case 1:
       case 3:
@@ -505,8 +501,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       case 6:
         return const [];
       default:
-        // Only the account owner signs; an assistant just waits.
-        if (_isSubUser) return const [];
         return buildSignatureActions(context: context, draft: _sigDraft, saving: _savingSig, onSave: _saveSignature);
     }
   }
@@ -636,13 +630,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       case 3:
         return buildWaitingStage(context: context, title: l10n.onboarding_waitingCompanyApproval, subtitle: l10n.onboarding_waitingCompanyReviewMsg);
       case 4:
-        return buildPaymentStage(
-          context: context,
-          workspace: _workspace,
-          client: _client,
-          taxSettings: _taxSettings,
-          assistantCanPay: _isSubUser && _api.canDo('can_upload_payment_proof'),
-        );
+        return buildPaymentStage(context: context, workspace: _workspace, client: _client, taxSettings: _taxSettings);
       case 5:
         // Mockup: the sent payment sits inside the waiting column.
         return buildWaitingStage(
@@ -662,10 +650,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           extra: reason == null ? null : buildEditReasonQuote(context, reason),
         );
       default:
-        if (_isSubUser) {
-          final owner = (_client?['contact_person'] ?? _client?['company_name'] ?? '').toString();
-          return buildWaitingStage(context: context, title: l10n.onboardingOwnerSignTitle, subtitle: l10n.onboardingOwnerSignMsg(owner), boxed: false);
-        }
         return buildSignatureStage(
           context: context,
           client: _client,

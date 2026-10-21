@@ -2075,18 +2075,6 @@
       }
     }
   },
-  "onboardingOwnerSignTitle": "Waiting for the account owner",
-  "onboardingOwnerSignMsg": "{name} needs to add the company's e-signature first. You'll be notified when it's done.",
-  "@onboardingOwnerSignMsg": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "onboardingApproveOwnerOnly": "Approving the contract is done by the account owner.",
-  "onboardingPayAllowed": "You can send a payment: you have the “upload payment proof” permission.",
-  "onboardingPayOwnerOnly": "Sending the payment is done by the account owner.",
   "onboardingEditLabel": "What would you like changed?",
   "onboardingEditHint": "e.g. Please split the payment into two instalments",
   "onboardingSendRequest": "Send request",
