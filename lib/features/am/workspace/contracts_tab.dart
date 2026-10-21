@@ -94,7 +94,7 @@ class _ContractsTabState extends State<ContractsTab> {
   }
 
   Future<void> _editContract(Map<String, dynamic> c) async {
-            await ContractBuilder.show(context, contractId: c['id'], contractData: c, isAdditional: c['contract_type'] == 'additional', onCreated: _load, api: _api, contractProvider: _contractProvider);
+            await ContractBuilder.show(context, contractId: c['id'], contractData: c, isAdditional: c['contract_type'] == 'additional', onCreated: _load, api: _api, contractProvider: _contractProvider, workspaceId: widget.workspaceId ?? _api.workspaceId);
   }
 
   /// Mockup step index for a status: steps before it are done, it is "now".
@@ -405,7 +405,7 @@ class _ContractsTabState extends State<ContractsTab> {
                 size: LuxeButtonSize.lg,
                 onPressed: () {
                   final isActive = _wsStatus == 'active';
-                  ContractBuilder.show(context, isAdditional: isActive, onCreated: _load, api: _api, contractProvider: _contractProvider);
+                  ContractBuilder.show(context, isAdditional: isActive, onCreated: _load, api: _api, contractProvider: _contractProvider, workspaceId: widget.workspaceId ?? _api.workspaceId);
                 },
               ),
             ),

@@ -33,13 +33,16 @@ class ContractBuilder extends StatefulWidget {
   final ApiClient? api;
   final ContractProvider? contractProvider;
   final SystemSettingsProvider? systemSettingsProvider;
+  /// The workspace the contract belongs to, passed by the workspace page.
+  /// Falls back to the app-wide last-opened workspace only when missing.
+  final int? workspaceId;
 
-  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData, this.api, this.contractProvider, this.systemSettingsProvider});
+  const ContractBuilder({super.key, this.onCreated, this.isAdditional = false, this.contractId, this.contractData, this.api, this.contractProvider, this.systemSettingsProvider, this.workspaceId});
 
   @override
   State<ContractBuilder> createState() => _ContractBuilderState();
 
-  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData, ApiClient? api, ContractProvider? contractProvider, SystemSettingsProvider? systemSettingsProvider}) {
+  static Future<void> show(BuildContext context, {VoidCallback? onCreated, bool isAdditional = false, int? contractId, Map<String, dynamic>? contractData, ApiClient? api, ContractProvider? contractProvider, SystemSettingsProvider? systemSettingsProvider, int? workspaceId}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -54,7 +57,7 @@ class ContractBuilder extends StatefulWidget {
         maxChildSize: 0.9,
         minChildSize: 0.4,
         expand: false,
-        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData, api: api, contractProvider: contractProvider, systemSettingsProvider: systemSettingsProvider),
+        builder: (_, scrollController) => ContractBuilder(onCreated: onCreated, isAdditional: isAdditional, contractId: contractId, contractData: contractData, api: api, contractProvider: contractProvider, systemSettingsProvider: systemSettingsProvider, workspaceId: workspaceId),
       ),
     );
   }
@@ -194,15 +197,25 @@ class _ContractBuilderState extends State<ContractBuilder> {
     if (mounted) setState(() => _templatesLoading = false);
   }
 
+  /// Shown above the save button. A SnackBar would sit under this sheet
+  /// (it covers most of the screen), so it looked like nothing happened.
+  String? _error;
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_titleController.text.trim().isEmpty || _api.workspaceId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderTitleRequired)));
+    final wsId = widget.workspaceId ?? _api.workspaceId;
+    setState(() => _error = null);
+    if (_titleController.text.trim().isEmpty) {
+      setState(() => _error = l10n.contractBuilderTitleRequired);
       return;
     }
-    final value = double.tryParse(_valueController.text);
+    final value = double.tryParse(_valueController.text.trim());
     if (value == null || value <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contractBuilderValueRequired)));
+      setState(() => _error = l10n.contractBuilderValueRequired);
+      return;
+    }
+    if (wsId == null && !_isEditing) {
+      setState(() => _error = l10n.contractBuilderCreateFailed);
       return;
     }
 
@@ -243,7 +256,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
         Navigator.pop(context);
         widget.onCreated?.call();
       } else {
-        final data = await _contractProvider.create(_api.workspaceId!, payload);
+        final data = await _contractProvider.create(wsId!, payload);
         if (!mounted) return;
         final contractId = data['contract']['id'] as int;
         try {
@@ -256,8 +269,18 @@ class _ContractBuilderState extends State<ContractBuilder> {
         Navigator.pop(context);
         widget.onCreated?.call();
       }
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isEditing ? l10n.contractBuilderUpdateFailed : l10n.contractBuilderCreateFailed)));
+    } catch (e, s) {
+      AppLog.error('contract_builder._save', e, s);
+      // Add the server's own reason when it gives one (e.g. archived client).
+      final reason = e is ValidationException
+          ? e.message
+          : e is ServerException
+              ? e.message
+              : e is ConnectionException
+                  ? l10n.connectionFailedMessage
+                  : '';
+      final base = _isEditing ? l10n.contractBuilderUpdateFailed : l10n.contractBuilderCreateFailed;
+      if (mounted) setState(() => _error = reason.isEmpty ? base : '$base\n$reason');
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -456,6 +479,19 @@ class _ContractBuilderState extends State<ContractBuilder> {
                     ],
                   ),
           ),
+          if (_error != null)
+            Container(
+              key: const ValueKey('cb-error'),
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0x1F941414),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x33941414)),
+              ),
+              child: Text(_error!, style: Lx.text(context, size: 12.5, color: Lx.danger)),
+            ),
           SizedBox(
             width: double.infinity,
             height: 48,
