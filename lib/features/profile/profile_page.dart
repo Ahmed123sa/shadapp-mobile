@@ -4,7 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
-import '../../core/theme.dart';
+import '../../core/luxe/lx_icons.dart';
+import '../../core/luxe/tokens.dart';
+import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/auth_provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -63,7 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _authProvider.uploadAvatar(file);
       _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_imageChanged)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(AppLocalizations.of(context)!.profile_imageChanged))])));
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profile_imageChangeFailed)));
     }
@@ -92,7 +95,7 @@ class _ProfilePageState extends State<ProfilePage> {
         await _authProvider.updateProfile(name: _nameController.text.trim());
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.profile_saved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(AppLocalizations.of(context)!.profile_saved))])));
         Navigator.pop(context, true);
       }
     } catch (_) {
@@ -101,69 +104,113 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) setState(() => _saving = false);
   }
 
+  /// Mockup `.f2`: small muted label over an underline input.
+  Widget _f2(String label, Widget input) => Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Lx.text(context, size: 11, color: Lx.muted)),
+          input,
+        ]),
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return const Scaffold(backgroundColor: Lx.page, body: SafeArea(child: LoadingState(style: LoadingStyle.spinner)));
+    }
+    final name = _nameController.text.trim();
 
+    // Same look as the staff Settings page (mockup pSettings): back row,
+    // "Account" eyebrow + serif title, 64px avatar with a small "Change
+    // picture" button, underline fields, full-width crimson Save.
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profile_title),),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          GestureDetector(
-            onTap: _pickAvatar,
-            child: Center(
-              child: CircleAvatar(
-                radius: 52,
-                backgroundColor: ShadColors.cardBorder,
-                backgroundImage: _avatarUrl != null
-                    ? NetworkImage(_api.resolveFileUrl(_avatarUrl!))
-                    : null,
-                child: _avatarUrl == null
-                    ? const Icon(Icons.person, size: 52, color: ShadColors.textDisabled)
-                    : null,
+      backgroundColor: Lx.page,
+      body: SafeArea(
+        child: LuxeFormTheme(
+          child: ListView(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 32),
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: InkWell(
+                  key: const ValueKey('profile-back'),
+                  onTap: () => Navigator.maybePop(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const LxIcon('back', size: 16, color: Lx.muted),
+                      const SizedBox(width: 6),
+                      Text(l10n.onboarding_back, style: Lx.text(context, size: 13, color: Lx.muted)),
+                    ]),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 6),
+              Text(l10n.settingsEyebrow.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.73)),
+              LuxePageTitle(l10n.profile_title),
+              Row(children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: const Color(0xFF262626),
+                  backgroundImage: _avatarUrl != null ? NetworkImage(_api.resolveFileUrl(_avatarUrl!)) : null,
+                  child: _avatarUrl == null
+                      ? Text(name.isEmpty ? '' : String.fromCharCode(name.runes.first), style: Lx.display(context, size: 26))
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                LuxeButton(
+                  key: const ValueKey('profile-change-picture'),
+                  label: l10n.profile_changePicture,
+                  size: LuxeButtonSize.sm,
+                  onPressed: _pickAvatar,
+                ),
+              ]),
+              const SizedBox(height: 24),
+              _f2(
+                l10n.profile_displayName,
+                TextField(
+                  controller: _nameController,
+                  style: Lx.text(context, size: 15),
+                  decoration: InputDecoration(hintText: l10n.profile_displayNameHint),
+                ),
+              ),
+              if (_isStaff)
+                _f2(
+                  l10n.staffFieldDob,
+                  InkWell(
+                    key: const ValueKey('profile-dob'),
+                    onTap: _pickDob,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                      child: Row(children: [
+                        Expanded(child: Text(_dob ?? '—', style: Lx.text(context, size: 15, color: _dob != null ? Lx.ink : Lx.faint))),
+                        const LxIcon('cal', size: 16, color: Lx.faint),
+                      ]),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Lx.crimson,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: const StadiumBorder(),
+                    elevation: 0,
+                  ),
+                  child: _saving
+                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                      : Text(l10n.profile_save),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton.icon(
-              onPressed: _pickAvatar,
-              icon: const Icon(Icons.camera_alt, size: 16),
-              label: Text(l10n.profile_changePicture),
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: l10n.profile_displayName,
-              hintText: l10n.profile_displayNameHint,
-            ),
-          ),
-          if (_isStaff) ...[
-            const SizedBox(height: 16),
-            ListTile(
-              key: const ValueKey('profile-dob'),
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.cake_outlined),
-              title: Text(l10n.staffFieldDob),
-              subtitle: Text(_dob ?? '—'),
-              onTap: _pickDob,
-            ),
-          ],
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text(l10n.profile_save),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
