@@ -5722,4 +5722,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatStaffReadOnly => 'You can read this chat but not write in it.';
+
+  @override
+  String get teamSendLogin => 'Email the login details';
 }

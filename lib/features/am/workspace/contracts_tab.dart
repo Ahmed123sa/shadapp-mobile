@@ -10,6 +10,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../providers/contract_provider.dart';
 import '../widgets/contract_builder.dart';
+import '../../../core/widgets/signature_ink.dart';
 
 class ContractsTab extends StatefulWidget {
   final int? workspaceId;
@@ -276,9 +277,11 @@ class _ContractsTabState extends State<ContractsTab> {
             if (sig.startsWith('http') || sig.startsWith('/storage'))
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  sigUrl ?? (sig.startsWith('http') ? sig : '${_api.baseUrl.replaceAll('/api', '')}$sig'),
-                  height: 50, fit: BoxFit.contain,
+                child: SignatureInk(
+                  child: Image.network(
+                    sigUrl ?? (sig.startsWith('http') ? sig : '${_api.baseUrl.replaceAll('/api', '')}$sig'),
+                    height: 50, fit: BoxFit.contain,
+                  ),
                 ),
               )
             else

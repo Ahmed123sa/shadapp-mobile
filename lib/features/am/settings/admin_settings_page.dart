@@ -14,6 +14,7 @@ import '../../../providers/signature_provider.dart';
 import '../../../providers/system_settings_provider.dart';
 import 'admin_settings_clauses.dart';
 import '../../../core/widgets/signature_pad_screen.dart';
+import '../../../core/widgets/signature_ink.dart';
 
 class AdminSettingsPage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test (e.g. embedded
@@ -512,7 +513,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(_existingSigUrl!, height: 50, fit: BoxFit.contain),
+                        child: SignatureInk(child: Image.network(_existingSigUrl!, height: 50, fit: BoxFit.contain)),
                       ),
                     ),
                   if (_existingSigText != null)

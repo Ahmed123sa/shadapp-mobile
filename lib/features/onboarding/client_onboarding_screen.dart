@@ -73,6 +73,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   String? _error;
   int _lastStage = 0;
   bool _autoAdvancing = false;
+  // "Request edit" opens an inline card in the page (instead of a dialog).
+  bool _editing = false;
+  bool _sendingEdit = false;
+  final TextEditingController _editCtrl = TextEditingController();
   String _prevWsStatus = '';
   StreamSubscription? _fcmSubscription;
   final ValueNotifier<int> _contractRefreshNotifier = ValueNotifier<int>(0);
@@ -178,6 +182,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     if (_joinedWsId != null) {
       _reverb.leaveWorkspace(_joinedWsId!);
     }
+    _editCtrl.dispose();
     super.dispose();
   }
 
@@ -418,12 +423,21 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           onContactSupport: _contactSupport,
         );
       case 2:
-        return buildContractReviewStage(
-          context: context,
-          workspace: _workspace,
-          onPreviewContract: _showContractModal,
-          onRespond: _respondToContract,
-        );
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          buildContractReviewStage(
+            context: context,
+            workspace: _workspace,
+            onPreviewContract: _showContractModal,
+            onRespond: (action) {
+              if (action == 'edit_requested') {
+                setState(() => _editing = true);
+              } else {
+                _respondToContract(action);
+              }
+            },
+          ),
+          if (_editing) _buildEditRequestCard(),
+        ]);
       case 3:
         return buildWaitingStage(
           context: context,
@@ -508,6 +522,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           backLabel: AppLocalizations.of(context)!.onboarding_back,
         onAction: (id, action) async {
           Navigator.pop(context);
+          // "Request edit" from the sheet opens the same inline card.
+          if (action == 'edit_requested') {
+            setState(() => _editing = true);
+            return;
+          }
           await _respondToContractById(id, action);
         },
         onRefresh: () {
@@ -530,22 +549,70 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     await _respondToContractById(c['id'] as int, action);
   }
 
-  Future<void> _respondToContractById(dynamic contractId, String action) async {
-    String? reason;
-    if (action == 'edit_requested') {
-      final controller = TextEditingController();
-      reason = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(ctx)!.requiredEdits),
-          content: TextField(controller: controller, maxLines: 3, decoration: InputDecoration(hintText: AppLocalizations.of(ctx)!.editRequestHint2)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(ctx)!.onboarding_cancel)),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(AppLocalizations.of(ctx)!.onboarding_confirmAction)),
-          ],
-        ),
-      );
-      if (reason == null) return;
+  /// Inline "request edit" card: what to change, Send / Cancel.
+  Widget _buildEditRequestCard() {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      key: const ValueKey('onboarding-edit-card'),
+      margin: const EdgeInsets.only(top: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(l10n.requiredEdits, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
+          const SizedBox(height: 10),
+          TextField(
+            key: const ValueKey('onboarding-edit-text'),
+            controller: _editCtrl,
+            minLines: 3,
+            maxLines: 6,
+            decoration: InputDecoration(hintText: l10n.editRequestHint2),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: ElevatedButton(
+                key: const ValueKey('onboarding-edit-send'),
+                onPressed: _sendingEdit ? null : _sendEditRequest,
+                child: _sendingEdit
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(l10n.onboarding_confirmAction),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                key: const ValueKey('onboarding-edit-cancel'),
+                onPressed: _sendingEdit ? null : () => setState(() { _editing = false; _editCtrl.clear(); }),
+                child: Text(l10n.onboarding_cancel),
+              ),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _sendEditRequest() async {
+    final contracts = safeList(_workspace?['contracts']).whereType<Map>().toList();
+    if (contracts.isEmpty) return;
+    final c = contracts.firstWhere((x) => x['status'] == 'sent', orElse: () => contracts.first);
+    setState(() => _sendingEdit = true);
+    final ok = await _respondToContractById(c['id'] as int, 'edit_requested', reason: _editCtrl.text.trim());
+    if (!mounted) return;
+    setState(() {
+      _sendingEdit = false;
+      if (ok) {
+        _editing = false;
+        _editCtrl.clear();
+      }
+    });
+  }
+
+  /// Returns true when the server accepted the action.
+  Future<bool> _respondToContractById(dynamic contractId, String action, {String? reason}) async {
+    if (action == 'edit_requested' && reason == null) {
+      setState(() => _editing = true);
+      return false;
     }
     try {
       await _contractProvider.clientAction(contractId as int, action, reason: (reason != null && reason.isNotEmpty) ? reason : null);
@@ -561,14 +628,16 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           duration: const Duration(seconds: 2),
         ));
       }
+      return true;
     } catch (e) {
-      if (!mounted) return;
-      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
-      if (!mounted) return;
-      if (await maybeShowRequiredDocumentsDialog(context, e)) return;
+      if (!mounted) return false;
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return false;
+      if (!mounted) return false;
+      if (await maybeShowRequiredDocumentsDialog(context, e)) return false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.onboarding_failedWithError(e.toString()))));
       }
+      return false;
     }
   }
 

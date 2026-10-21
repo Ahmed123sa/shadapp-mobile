@@ -25,6 +25,11 @@ class _SubUsersPageState extends State<SubUsersPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  // Chosen in the add form; a new sub-user starts with no permissions on the
+  // server, so these are sent right after creating it.
+  final Map<String, bool> _newPerms = {};
+  bool _newSendEmail = true;
   List<dynamic> _subUsers = [];
   // SUBUSER_PLAN.md §6.1 — fetched from the backend's single source
   // (SubUser::PERMISSION_KEYS via GET /sub-user-permissions) instead of a
@@ -96,15 +101,28 @@ class _SubUsersPageState extends State<SubUsersPage> {
     setState(() => _saving = true);
     try {
       final body = <String, dynamic>{
-        'name': name, 'email': email, 'password': password,
+        'name': name, 'email': email, 'password': password, 'send_email': _newSendEmail,
       };
+      final phone = _phoneController.text.trim();
+      if (phone.isNotEmpty) body['phone'] = phone;
       if (_newDob != null) body['date_of_birth'] = _newDob!.toIso8601String().substring(0, 10);
       final data = await _subUserProvider.create(cid, body);
-      _subUsers.add(data['sub_user']);
+      final created = Map<String, dynamic>.from(data['sub_user'] as Map);
+      final perms = {for (final k in _permissionKeys) k: _newPerms[k] == true};
+      if (perms.values.any((v) => v) && created['id'] is int) {
+        try {
+          final upd = await _subUserProvider.updatePermissions(created['id'] as int, perms);
+          created['permissions'] = upd['sub_user']?['permissions'] ?? perms;
+        } catch (_) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+        }
+      }
+      _subUsers.add(created);
       _nameController.clear();
       _emailController.clear();
       _passwordController.clear();
-      setState(() { _showForm = false; _newDob = null; });
+      _phoneController.clear();
+      setState(() { _showForm = false; _newDob = null; _newPerms.clear(); _newSendEmail = true; });
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_createFailed)));
     }
@@ -235,6 +253,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneController.dispose();
     _editNameController.dispose();
     _editEmailController.dispose();
     _editPhoneController.dispose();
@@ -276,6 +295,13 @@ class _SubUsersPageState extends State<SubUsersPage> {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
+                TextField(
+                  controller: _phoneController,
+                  decoration: InputDecoration(labelText: l10n.subusers_phone, hintText: '+20'),
+                  keyboardType: TextInputType.phone,
+                  textDirection: TextDirection.ltr,
+                ),
+                const SizedBox(height: 12),
                 PasswordField(controller: _passwordController, showRequirements: false),
                 const SizedBox(height: 12),
                 ListTile(
@@ -296,6 +322,25 @@ class _SubUsersPageState extends State<SubUsersPage> {
                     );
                     if (picked != null) setState(() => _newDob = picked);
                   },
+                ),
+                // Permissions to give from the start, and whether to email the
+                // login details (backend: send_email).
+                for (final key in _permissionKeys)
+                  SwitchListTile(
+                    key: ValueKey('subuser-new-perm-$key'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(_permissionLabel(key), style: const TextStyle(fontSize: 13)),
+                    value: _newPerms[key] == true,
+                    onChanged: (v) => setState(() => _newPerms[key] = v),
+                  ),
+                SwitchListTile(
+                  key: const ValueKey('subuser-send-email'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l10n.teamSendLogin, style: const TextStyle(fontSize: 13)),
+                  value: _newSendEmail,
+                  onChanged: (v) => setState(() => _newSendEmail = v),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(

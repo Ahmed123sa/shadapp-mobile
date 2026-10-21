@@ -5694,4 +5694,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatStaffReadOnly => 'يمكنك قراءة هذه المحادثة دون الكتابة فيها.';
+
+  @override
+  String get teamSendLogin => 'ابعت بيانات الدخول على الإيميل';
 }

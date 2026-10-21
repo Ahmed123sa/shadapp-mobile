@@ -58,7 +58,8 @@ class _MeetingsPageState extends State<MeetingsPage> {
   String _time(String? dt) {
     if (dt == null) return '';
     try {
-      final parsed = DateTime.parse(dt);
+      // The API sends UTC; show the phone's local time (Egypt).
+      final parsed = DateTime.parse(dt).toLocal();
       return '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
     } catch (_) { return dt; }
   }

@@ -1911,5 +1911,6 @@
   "mtNoOtherStaff": "There are no other company staff to add.",
   "teamTabHintManager": "Your team members. Assign or unassign here — permissions are set from the Team page.",
   "teamTabEmptyManager": "Nobody in your team yet. Add people from the Team page.",
-  "chatStaffReadOnly": "You can read this chat but not write in it."
+  "chatStaffReadOnly": "You can read this chat but not write in it.",
+  "teamSendLogin": "Email the login details"
 }

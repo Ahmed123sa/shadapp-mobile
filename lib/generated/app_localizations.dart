@@ -11009,6 +11009,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can read this chat but not write in it.'**
   String get chatStaffReadOnly;
+
+  /// No description provided for @teamSendLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Email the login details'**
+  String get teamSendLogin;
 }
 
 class _AppLocalizationsDelegate

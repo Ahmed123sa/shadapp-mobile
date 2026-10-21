@@ -107,11 +107,15 @@ void main() {
     // The password field is a PasswordField, which renders a TextFormField
     // internally rather than a plain TextField.
     await tester.enterText(find.byType(TextFormField), 'pw123456');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Sub-User'));
+    // The form now also has the phone, the permission switches and the
+    // login-email switch, so it is taller than the test screen: press the
+    // button directly.
+    tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Add Sub-User')).onPressed!();
     await tester.pumpAndSettle();
 
     expect(sentBody!['name'], 'New Sub');
     expect(sentBody!['email'], 'new@x.com');
+    expect(sentBody!['send_email'], true);
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/sub-users'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
     expect(find.text('New Sub'), findsOneWidget);
