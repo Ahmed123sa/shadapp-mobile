@@ -2064,5 +2064,7 @@
   "settingsSigUsedFor": "Used when you company-approve contracts.",
   "clausesShowFewer": "Show fewer",
   "clausesLead": "Fixed clauses go into every contract; optional ones are picked per contract.",
-  "settingsDisplayName": "Display name"
+  "settingsDisplayName": "Display name",
+  "clientsNewEyebrow": "Directory",
+  "credsTitle": "Client created"
 }

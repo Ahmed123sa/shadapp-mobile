@@ -6009,4 +6009,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsDisplayName => 'الاسم الظاهر';
+
+  @override
+  String get clientsNewEyebrow => 'الدليل';
+
+  @override
+  String get credsTitle => 'العميل اتعمل';
 }

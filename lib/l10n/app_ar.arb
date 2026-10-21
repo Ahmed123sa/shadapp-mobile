@@ -1950,5 +1950,7 @@
   "settingsSigUsedFor": "بيُستخدم لما توافق على العقود كشركة.",
   "clausesShowFewer": "عرض أقل",
   "clausesLead": "الثابتة بتدخل كل عقد، والاختيارية بيختارها المدير لكل عقد.",
-  "settingsDisplayName": "الاسم الظاهر"
+  "settingsDisplayName": "الاسم الظاهر",
+  "clientsNewEyebrow": "الدليل",
+  "credsTitle": "العميل اتعمل"
 }

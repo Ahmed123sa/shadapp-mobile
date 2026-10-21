@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../theme.dart';
+import '../luxe/tokens.dart';
 
 class PasswordField extends StatefulWidget {
   final TextEditingController controller;
@@ -69,9 +69,9 @@ class _PasswordFieldState extends State<PasswordField> {
   }
 
   Color _strengthColor() {
-    if (_strength <= 1) return ShadColors.error;
-    if (_strength == 2) return ShadColors.warning;
-    return ShadColors.success;
+    if (_strength <= 1) return Lx.danger;
+    if (_strength == 2) return Lx.wait;
+    return Lx.ok;
   }
 
   String _strengthLabel(AppLocalizations l10n) {
@@ -121,7 +121,7 @@ class _PasswordFieldState extends State<PasswordField> {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: _strengthFraction(),
-            backgroundColor: ShadColors.cardBorder,
+            backgroundColor: Lx.line2,
             valueColor: AlwaysStoppedAnimation(_strengthColor()),
             minHeight: 6,
           ),
@@ -147,9 +147,9 @@ class _RequirementItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(met ? Icons.check_circle : Icons.cancel, size: 14, color: met ? ShadColors.success : ShadColors.error),
+        Icon(met ? Icons.check_circle : Icons.cancel, size: 14, color: met ? Lx.ok : Lx.danger),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 11, color: met ? ShadColors.success : ShadColors.error)),
+        Text(label, style: TextStyle(fontSize: 11, color: met ? Lx.ok : Lx.danger)),
       ]),
     );
   }

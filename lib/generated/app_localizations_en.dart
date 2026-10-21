@@ -6032,4 +6032,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDisplayName => 'Display name';
+
+  @override
+  String get clientsNewEyebrow => 'Directory';
+
+  @override
+  String get credsTitle => 'Client created';
 }

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/client_type_badge.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../providers/client_provider.dart';
@@ -135,296 +137,225 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     }
   }
 
+  /// Mockup `.pgh`: 10px (.22em) uppercase faint group label.
   Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 10, color: ShadColors.textDisabled, letterSpacing: 1.2, fontWeight: FontWeight.w500)),
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      child: Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+  /// Mockup `.doc` row: muted label, value on the other side.
+  Widget _infoRow(String label, String value, {bool last = false, bool ltr = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
       child: Row(children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: ShadColors.crimson.withAlpha(25),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: ShadColors.crimson.withAlpha(40)),
-          ),
-          child: Icon(icon, size: 14, color: ShadColors.crimson),
-        ),
-        const SizedBox(width: 10),
+        Text(label, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary)),
-            const SizedBox(height: 1),
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-          ]),
+          child: Text(value, textAlign: TextAlign.end, textDirection: ltr ? TextDirection.ltr : null, style: Lx.text(context, size: 13.5)),
         ),
       ]),
     );
   }
 
+  /// Mockup `.chip2` / `.chip2.on`.
+  Widget _typeChip(String label, bool on, VoidCallback onTap) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+          decoration: BoxDecoration(
+            color: on ? const Color(0x33941414) : Colors.transparent,
+            borderRadius: BorderRadius.circular(Lx.rPill),
+            border: Border.all(color: on ? const Color(0x80941414) : Lx.line2),
+          ),
+          child: Text(label, style: Lx.text(context, size: 12, color: on ? Lx.ink : Lx.ink2)),
+        ),
+      );
+
+  Widget _gap() => const SizedBox(height: 14);
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) return const Scaffold(backgroundColor: Lx.page, body: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
     final l10n = AppLocalizations.of(context)!;
+    final active = _status == 'active';
+    final name = _nameCtrl.text;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, size: 18),
-          onPressed: () => Navigator.pop(context),
+    return LuxeFormTheme(
+      child: Scaffold(
+        backgroundColor: Lx.page,
+        appBar: AppBar(
+          backgroundColor: Lx.page,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          iconTheme: const IconThemeData(color: Lx.muted),
+          title: const SizedBox.shrink(),
         ),
-        title: Text(l10n.clientDetailEditTitle, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 16, fontWeight: FontWeight.w700)),
-        actions: [
-          IconButton(
-            icon: _saving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.check, size: 22),
-            tooltip: l10n.clientDetailSave,
-            onPressed: _saving ? null : _save,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Center(
-            child: GestureDetector(
-              onTap: _pickAvatar,
-              child: Stack(children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: ShadColors.crimson.withAlpha(25),
-                    border: Border.all(color: ShadColors.crimson, width: 2),
-                  ),
-                  child: _avatarUrl != null
-                      ? ClipOval(child: Image.network(_api.resolveFileUrl(_avatarUrl!), width: 72, height: 72, fit: BoxFit.cover))
-                      : Center(child: Text(l10n.clientDetailInitials, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 24, fontWeight: FontWeight.w700, color: ShadColors.gold))),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: ShadColors.gold,
-                    ),
-                    child: const Icon(Icons.camera_alt, size: 11, color: ShadColors.black),
-                  ),
-                ),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(_nameCtrl.text, style: const TextStyle(fontFamily: 'PlayfairDisplay', fontSize: 17, fontWeight: FontWeight.w700, color: ShadColors.textPrimary)),
-              const SizedBox(width: 8),
-              ClientTypeBadge(clientType: _clientType),
-            ]),
-          ),
-          const SizedBox(height: 2),
-          Center(child: Text(_emailCtrl.text, style: const TextStyle(fontSize: 11, color: ShadColors.textSecondary), textDirection: TextDirection.ltr)),
-          const SizedBox(height: 6),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: _status == 'active' ? ShadColors.success.withAlpha(25) : ShadColors.textDisabled.withAlpha(25),
-                borderRadius: BorderRadius.circular(20),
+        body: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 2, 16, 28),
+          children: [
+            // Header in the workspace `.wsh` language: 64px `.av` (tap to
+            // change), serif name + `.tagr`, email, and the `.pill` status.
+            Row(children: [
+              GestureDetector(
+                key: const ValueKey('client-avatar'),
+                onTap: _pickAvatar,
+                child: _avatarUrl != null
+                    ? CircleAvatar(radius: 32, backgroundImage: NetworkImage(_api.resolveFileUrl(_avatarUrl!)))
+                    : Container(
+                        width: 64,
+                        height: 64,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: const Color(0xFF262626), shape: BoxShape.circle, border: Border.all(color: Lx.line2)),
+                        child: Text(name.isEmpty ? '?' : name[0].toUpperCase(), style: const TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 26, color: Lx.ink)),
+                      ),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: _status == 'active' ? ShadColors.success : ShadColors.textDisabled, shape: BoxShape.circle)),
-                const SizedBox(width: 4),
-                Text(_status == 'active' ? l10n.clientDetailActive : l10n.clientDetailInactive, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _status == 'active' ? ShadColors.success : ShadColors.textDisabled)),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          _sectionLabel(l10n.clientDetailFixedInfo),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13),
-            decoration: BoxDecoration(
-              color: ShadColors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ShadColors.cardBorder),
-            ),
-            child: Column(children: [
-              _infoRow(Icons.email_outlined, l10n.clientDetailEmail, _emailCtrl.text),
-              const Divider(height: 1, color: ShadColors.cardBorder),
-              _infoRow(Icons.calendar_today_outlined, l10n.clientDetailRegisteredDate, _formatCreatedAt()),
-              const Divider(height: 1, color: ShadColors.cardBorder),
-              _infoRow(Icons.bar_chart_outlined, l10n.clientDetailSpaceStatus, _status == 'active' ? l10n.clientDetailActive : l10n.clientDetailInactive),
-            ]),
-          ),
-          const SizedBox(height: 16),
-
-          _sectionLabel(l10n.createClientType),
-          Row(children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _isBusiness = true),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _isBusiness ? ShadColors.crimson.withAlpha(40) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _isBusiness ? ShadColors.crimson.withAlpha(80) : ShadColors.inputBorder),
-                  ),
-                  child: Column(children: [
-                    const Text('🏢', style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 2),
-                    Text(l10n.clientDetailCompany, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.display(context, size: 22))),
+                    const SizedBox(width: 8),
+                    ClientTypeBadge(clientType: _clientType, compact: true),
                   ]),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _isBusiness = false),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: !_isBusiness ? ShadColors.crimson.withAlpha(40) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: !_isBusiness ? ShadColors.crimson.withAlpha(80) : ShadColors.inputBorder),
-                  ),
-                  child: Column(children: [
-                    const Text('👤', style: TextStyle(fontSize: 16)),
-                    const SizedBox(height: 2),
-                    Text(l10n.clientDetailIndividual, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: !_isBusiness ? ShadColors.textPrimary : ShadColors.textSecondary)),
-                  ]),
-                ),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 16),
-          _sectionLabel(l10n.clientDetailEditableData),
-          TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCompanyName)),
-          const SizedBox(height: 10),
-          TextField(controller: _personCtrl, decoration: InputDecoration(labelText: l10n.clientDetailContactPerson)),
-          const SizedBox(height: 10),
-          TextField(controller: _phoneCtrl, decoration: InputDecoration(labelText: l10n.clientDetailPhone), keyboardType: TextInputType.phone, textDirection: TextDirection.ltr),
-          const SizedBox(height: 10),
-          TextField(controller: _countryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCountry)),
-          const SizedBox(height: 10),
-          TextField(controller: _industryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailIndustry)),
-          const SizedBox(height: 10),
-          TextField(controller: _addressCtrl, maxLines: 2, decoration: InputDecoration(labelText: l10n.clientDetailAddress)),
-          const SizedBox(height: 10),
-          InkWell(
-            onTap: () async {
-              final d = await showDatePicker(
-                context: context,
-                initialDate: _dateOfBirth ?? DateTime(2000),
-                firstDate: DateTime(1950),
-                lastDate: DateTime.now(),
-              );
-              if (d != null) {
-                setState(() {
-                  _dateOfBirth = d;
-                  _dateOfBirthController.text = '${d.year}/${d.month}/${d.day}';
-                });
-              }
-            },
-            borderRadius: BorderRadius.circular(10),
-            child: InputDecorator(
-              decoration: InputDecoration(labelText: l10n.clientDetailDateOfBirth),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : l10n.clientDetailSelectDate,
-                      style: TextStyle(fontSize: 14, color: _dateOfBirthController.text.isNotEmpty ? ShadColors.textPrimary : ShadColors.textDisabled)),
-                  const Icon(Icons.calendar_today, size: 18, color: ShadColors.gold),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          _sectionLabel(l10n.clientDetailResetPassword),
-          PasswordField(
-            controller: _passwordCtrl,
-            labelText: l10n.clientDetailNewPassword,
-            hintText: l10n.clientDetailLeaveBlank,
-            required: false,
-          ),
-          const SizedBox(height: 16),
-
-          if (_subUsers.isNotEmpty) ...[
-            _sectionLabel(l10n.clientDetailSubUsersCount(_subUsers.length)),
-            ..._subUsers.map((su) => Container(
-              margin: const EdgeInsets.only(bottom: 7),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: ShadColors.card,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: ShadColors.cardBorder),
-              ),
-              child: Row(children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: ShadColors.goldSoft,
-                    border: Border.all(color: ShadColors.goldBorder),
-                  ),
-                  child: Center(
-                    child: Text(
-                      (su['name'] as String? ?? '?').substring(0, 1),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ShadColors.gold),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(su['name'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ShadColors.textPrimary)),
-                    Text(su['email'] ?? '', style: const TextStyle(fontSize: 10, color: ShadColors.textSecondary), overflow: TextOverflow.ellipsis),
-                  ]),
-                ),
-              ]),
-            )),
-          ],
-
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.check, size: 18, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Text(l10n.clientDetailSaveChanges),
+                  Text(_emailCtrl.text, textDirection: TextDirection.ltr, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: active ? const Color(0x668FB98B) : Lx.line2)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      LuxeStatusDot(status: active ? LxStatus.ok : LxStatus.off),
+                      const SizedBox(width: 7),
+                      Text(active ? l10n.clientDetailActive : l10n.clientDetailInactive, style: Lx.text(context, size: 11, color: Lx.ink2)),
                     ]),
+                  ),
+                ]),
               ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.clientDetailCancel),
+            ]),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: LuxeButton(label: l10n.profileChangePicture, size: LuxeButtonSize.sm, onPressed: _pickAvatar),
+              ),
             ),
-          ),
-        ],
+
+            _sectionLabel(l10n.clientDetailFixedInfo),
+            LuxeCard(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              child: Column(children: [
+                _infoRow(l10n.clientDetailEmail, _emailCtrl.text, ltr: true),
+                _infoRow(l10n.clientDetailRegisteredDate, _formatCreatedAt()),
+                _infoRow(l10n.clientDetailSpaceStatus, active ? l10n.clientDetailActive : l10n.clientDetailInactive, last: true),
+              ]),
+            ),
+
+            _sectionLabel(l10n.createClientType),
+            Wrap(spacing: 8, children: [
+              _typeChip(l10n.clientDetailCompany, _isBusiness, () => setState(() => _isBusiness = true)),
+              _typeChip(l10n.clientDetailIndividual, !_isBusiness, () => setState(() => _isBusiness = false)),
+            ]),
+
+            _sectionLabel(l10n.clientDetailEditableData),
+            TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCompanyName)),
+            _gap(),
+            TextField(controller: _personCtrl, decoration: InputDecoration(labelText: l10n.clientDetailContactPerson)),
+            _gap(),
+            TextField(controller: _phoneCtrl, decoration: InputDecoration(labelText: l10n.clientDetailPhone), keyboardType: TextInputType.phone, textDirection: TextDirection.ltr),
+            _gap(),
+            TextField(controller: _countryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCountry)),
+            _gap(),
+            TextField(controller: _industryCtrl, decoration: InputDecoration(labelText: l10n.clientDetailIndustry)),
+            _gap(),
+            TextField(controller: _addressCtrl, maxLines: 2, minLines: 1, decoration: InputDecoration(labelText: l10n.clientDetailAddress)),
+            _gap(),
+            GestureDetector(
+              key: const ValueKey('client-detail-dob'),
+              behavior: HitTestBehavior.opaque,
+              onTap: () async {
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: _dateOfBirth ?? DateTime(2000),
+                  firstDate: DateTime(1950),
+                  lastDate: DateTime.now(),
+                );
+                if (d != null) {
+                  setState(() {
+                    _dateOfBirth = d;
+                    _dateOfBirthController.text = '${d.day}/${d.month}/${d.year}';
+                  });
+                }
+              },
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l10n.clientDetailDateOfBirth, style: Lx.text(context, size: 12, color: Lx.muted)),
+                Container(
+                  padding: const EdgeInsets.only(top: 6, bottom: 9),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(
+                        _dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : l10n.clientDetailSelectDate,
+                        style: Lx.text(context, size: 15, color: _dateOfBirthController.text.isNotEmpty ? Lx.ink : Lx.faint),
+                      ),
+                    ),
+                    const LxIcon('cal', size: 18, color: Lx.muted),
+                  ]),
+                ),
+              ]),
+            ),
+
+            _sectionLabel(l10n.clientDetailResetPassword),
+            PasswordField(
+              controller: _passwordCtrl,
+              labelText: l10n.clientDetailNewPassword,
+              hintText: l10n.clientDetailLeaveBlank,
+              required: false,
+            ),
+
+            if (_subUsers.isNotEmpty) ...[
+              _sectionLabel(l10n.clientDetailSubUsersCount(_subUsers.length)),
+              LuxeCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                child: Column(children: [
+                  for (var i = 0; i < _subUsers.length; i++)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(border: i == _subUsers.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+                      child: Row(children: [
+                        LuxeAvatar(initial: ((_subUsers[i]['name'] as String?) ?? '?').isEmpty ? '?' : (_subUsers[i]['name'] as String).substring(0, 1).toUpperCase(), size: 28),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(_subUsers[i]['name'] ?? '', style: Lx.text(context, size: 13.5)),
+                            Text(_subUsers[i]['email'] ?? '', overflow: TextOverflow.ellipsis, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+                          ]),
+                        ),
+                      ]),
+                    ),
+                ]),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                    : Text(l10n.clientDetailSaveChanges, style: Lx.text(context, size: 14, color: Colors.white)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: LuxeButton(label: l10n.clientDetailCancel, size: LuxeButtonSize.lg, kind: LuxeButtonKind.quiet, onPressed: () => Navigator.pop(context)),
+            ),
+          ],
+        ),
       ),
     );
   }

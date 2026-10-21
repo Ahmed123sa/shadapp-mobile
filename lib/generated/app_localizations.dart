@@ -11543,6 +11543,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Display name'**
   String get settingsDisplayName;
+
+  /// No description provided for @clientsNewEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get clientsNewEyebrow;
+
+  /// No description provided for @credsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client created'**
+  String get credsTitle;
 }
 
 class _AppLocalizationsDelegate
