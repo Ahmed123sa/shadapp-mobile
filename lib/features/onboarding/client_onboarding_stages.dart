@@ -8,6 +8,7 @@
 // live in the screen's pinned bottom bar (buildXxxActions).
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
@@ -86,6 +87,7 @@ Widget buildWaitingStage({
   required String title,
   required String subtitle,
   bool boxed = true,
+  Widget? extra,
 }) {
   final l10n = AppLocalizations.of(context)!;
   final content = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -96,6 +98,7 @@ Widget buildWaitingStage({
         Text(title, style: Lx.display(context, size: 23)),
         const SizedBox(height: 8),
         Text(subtitle, style: Lx.text(context, size: 13.5, color: Lx.muted, height: 1.5)),
+        if (extra != null) ...[const SizedBox(height: 18), extra],
         const SizedBox(height: 14),
         Row(children: [
           const LxIcon('bell', size: 14, color: Lx.faint),
@@ -207,10 +210,19 @@ Widget buildContractReviewStage({
               style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
           const SizedBox(height: 4),
           Text('${sent['title'] ?? ''}', style: Lx.display(context, size: 19)),
-          if (clauses.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(l10n.onboardingClauseCount(clauses.length), style: Lx.text(context, size: 12, color: Lx.muted)),
-          ],
+          Builder(builder: (context) {
+            // The API has no sent_at; a sent contract's last update is the send.
+            final when = DateTime.tryParse('${sent['updated_at'] ?? ''}')?.toLocal();
+            final parts = [
+              if (when != null) l10n.onboardingSentOn(DateFormat('d MMM', Localizations.localeOf(context).toString()).format(when)),
+              if (clauses.isNotEmpty) l10n.onboardingClauseCount(clauses.length),
+            ];
+            if (parts.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(parts.join(' · '), key: const ValueKey('onboarding-contract-sub'), style: Lx.text(context, size: 12, color: Lx.muted)),
+            );
+          }),
           if (value != null) ...[
             const SizedBox(height: 10),
             Text.rich(TextSpan(children: [
@@ -300,12 +312,27 @@ Widget buildContractReviewStage({
   ]);
 }
 
+Widget _lockLine(BuildContext context, String text, {Key? key, String icon = 'lock'}) => Row(
+      key: key,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        LxIcon(icon, size: 14, color: Lx.faint),
+        const SizedBox(width: 8),
+        Flexible(child: Text(text, textAlign: TextAlign.center, style: Lx.text(context, size: 12, color: Lx.faint))),
+      ],
+    );
+
 List<Widget> buildContractReviewActions({
   required BuildContext context,
   required Map<String, dynamic>? workspace,
   required void Function(String) onRespond,
+  bool canApprove = true,
+  VoidCallback? onRequestEdit,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  if (!canApprove) {
+    return [_lockLine(context, l10n.onboardingApproveOwnerOnly, key: const ValueKey('onboarding-approve-locked'))];
+  }
   final missing = _hasMissingDocs(_sentContract(workspace));
   return [
     ElevatedButton(
@@ -316,17 +343,76 @@ List<Widget> buildContractReviewActions({
     ),
     OutlinedButton(
       key: const ValueKey('onboarding-request-edit'),
-      onPressed: () => onRespond('edit_requested'),
+      onPressed: onRequestEdit ?? () => onRespond('edit_requested'),
       style: _outlineStyle(),
       child: Text(l10n.onboarding_requestEdit),
     ),
     if (missing)
-      Row(key: const ValueKey('onboarding-docs-hint'), mainAxisAlignment: MainAxisAlignment.center, children: [
-        const LxIcon('lock', size: 14, color: Lx.faint),
-        const SizedBox(width: 8),
-        Flexible(child: Text(l10n.contractUploadRequiredFirst, textAlign: TextAlign.center, style: Lx.text(context, size: 11.5, color: Lx.faint))),
-      ]),
+      _lockLine(context, l10n.contractUploadRequiredFirst, key: const ValueKey('onboarding-docs-hint')),
   ];
+}
+
+/// Mockup `st.edit` card: label, textarea, "Send request" + "Cancel".
+Widget buildEditRequestCard({
+  required BuildContext context,
+  required TextEditingController controller,
+  required bool sending,
+  required VoidCallback onSend,
+  required VoidCallback onCancel,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  const box = OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide(color: Lx.line2));
+  return LuxeCard(
+    key: const ValueKey('onboarding-edit-card'),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(l10n.onboardingEditLabel, style: Lx.text(context, size: 12, color: Lx.muted)),
+      const SizedBox(height: 8),
+      TextField(
+        key: const ValueKey('onboarding-edit-text'),
+        controller: controller,
+        minLines: 3,
+        maxLines: 6,
+        style: Lx.text(context, size: 13),
+        decoration: InputDecoration(
+          hintText: l10n.onboardingEditHint,
+          hintStyle: Lx.text(context, size: 13, color: Lx.faint),
+          filled: false,
+          contentPadding: const EdgeInsets.all(12),
+          border: box,
+          enabledBorder: box,
+          focusedBorder: box.copyWith(borderSide: const BorderSide(color: Lx.muted)),
+        ),
+      ),
+      const SizedBox(height: 14),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        LuxeButton(
+          key: const ValueKey('onboarding-edit-send'),
+          label: l10n.onboardingSendRequest,
+          kind: LuxeButtonKind.primary,
+          onPressed: sending ? null : onSend,
+        ),
+        LuxeButton(
+          key: const ValueKey('onboarding-edit-cancel'),
+          label: l10n.onboarding_cancel,
+          onPressed: sending ? null : onCancel,
+        ),
+      ]),
+    ]),
+  );
+}
+
+/// Stage 6: "Your request" + the client's own words, quoted.
+Widget buildEditReasonQuote(BuildContext context, String reason) {
+  final l10n = AppLocalizations.of(context)!;
+  return Column(key: const ValueKey('onboarding-edit-quote'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(l10n.onboardingYourRequest.toUpperCase(), style: Lx.text(context, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.6)),
+    const SizedBox(height: 6),
+    Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 4),
+      decoration: const BoxDecoration(border: BorderDirectional(start: BorderSide(color: Lx.crimsonInk, width: 2))),
+      child: Text(reason, style: Lx.text(context, size: 13, color: Lx.ink2, height: 1.5)),
+    ),
+  ]);
 }
 
 // ── Stage 4: payment ──
@@ -396,6 +482,7 @@ Widget buildPaymentStage({
   required Map<String, dynamic>? workspace,
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
+  bool assistantCanPay = false,
 }) {
   final l10n = AppLocalizations.of(context)!;
   final f = _PaymentFigures(workspace, client, taxSettings);
@@ -407,7 +494,7 @@ Widget buildPaymentStage({
         attention: true,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.error_outline, color: Lx.crimsonInk, size: 20),
+            const LxIcon('alert', size: 18, color: Lx.crimsonInk),
             const SizedBox(width: 8),
             Expanded(child: Text(l10n.onboarding_paymentRejectedTitle, style: Lx.text(context, size: 14, weight: FontWeight.w700, color: Lx.crimsonInk))),
           ]),
@@ -457,6 +544,15 @@ Widget buildPaymentStage({
             ]),
         ]),
       ),
+    if (assistantCanPay)
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(key: const ValueKey('onboarding-pay-allowed'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const LxIcon('check', size: 14, color: Lx.faint),
+          const SizedBox(width: 8),
+          Expanded(child: Text(l10n.onboardingPayAllowed, style: Lx.text(context, size: 12, color: Lx.faint))),
+        ]),
+      ),
   ]);
 }
 
@@ -466,8 +562,12 @@ List<Widget> buildPaymentActions({
   required Map<String, dynamic>? client,
   required Map<String, dynamic>? taxSettings,
   required void Function(double suggestedAmount, int? workspaceId, String currency) onSendPayment,
+  bool canPay = true,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  if (!canPay) {
+    return [_lockLine(context, l10n.onboardingPayOwnerOnly, key: const ValueKey('onboarding-pay-locked'))];
+  }
   final f = _PaymentFigures(workspace, client, taxSettings);
   return [
     ElevatedButton(

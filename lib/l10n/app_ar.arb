@@ -1952,5 +1952,18 @@
   "clausesLead": "الثابتة بتدخل كل عقد، والاختيارية بيختارها المدير لكل عقد.",
   "settingsDisplayName": "الاسم الظاهر",
   "clientsNewEyebrow": "الدليل",
-  "credsTitle": "العميل اتعمل"
+  "credsTitle": "العميل اتعمل",
+  "onboardingSentOn": "اتبعت {date}",
+  "onboardingOwnerSignTitle": "مستنيين صاحب الحساب",
+  "onboardingOwnerSignMsg": "{name} محتاج يضيف توقيع الشركة الأول. هيوصلك إشعار لما يخلص.",
+  "onboardingApproveOwnerOnly": "الموافقة على العقد لصاحب الحساب.",
+  "onboardingPayAllowed": "تقدر ترسل دفعة لأن معاك صلاحية \"رفع إيصال الدفع\".",
+  "onboardingPayOwnerOnly": "إرسال الدفعة لصاحب الحساب.",
+  "onboardingEditLabel": "عايز تغيّر إيه؟",
+  "onboardingEditHint": "مثلاً: ياريت الدفع يتقسم على قسطين",
+  "onboardingSendRequest": "إرسال الطلب",
+  "onboardingYourRequest": "طلبك",
+  "onboardingSendPaymentTitle": "إرسال دفعة",
+  "onboardingDropTitle": "اضغط عشان تضيف ملفات",
+  "onboardingDropHint": "صور من المعرض"
 }

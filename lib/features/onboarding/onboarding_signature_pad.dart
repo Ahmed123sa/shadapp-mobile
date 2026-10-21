@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 
 enum SignatureMode { draw, type, upload }
@@ -185,7 +186,7 @@ class OnboardingSignaturePad extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.upload_outlined, size: 18, color: Lx.muted),
+                        const LxIcon('up', size: 18, color: Lx.muted),
                         const SizedBox(height: 6),
                         Text(draft.pickedName ?? l10n.signature_orUploadImage, style: Lx.text(context, size: 12.5, color: draft.pickedName != null ? Lx.ink : Lx.muted)),
                       ]),

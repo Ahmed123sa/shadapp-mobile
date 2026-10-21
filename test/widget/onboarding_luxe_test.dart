@@ -88,6 +88,7 @@ void main() {
         'value': '14500',
         'currency': 'EGP',
         'pdf_url': '/c.pdf',
+        'updated_at': '2026-10-12T10:00:00Z',
         'clauses': [{}, {}, {}],
         'required_documents': [
           {'id': 1, 'name': 'Commercial register', 'status': 'pending', 'files': [{'status': 'pending', 'file_url': '/f.pdf'}]},
@@ -117,7 +118,7 @@ void main() {
     );
     expect(find.text('Retainer 2026'), findsOneWidget);
     expect(find.textContaining('14,500'), findsOneWidget);
-    expect(find.text('3 clauses'), findsOneWidget);
+    expect(find.text('Sent 12 Oct · 3 clauses'), findsOneWidget);
     expect(find.byKey(const ValueKey('onboarding-download-pdf')), findsOneWidget);
     expect(find.text('Uploaded'), findsOneWidget);
     expect(find.text('Missing'), findsOneWidget);
@@ -260,5 +261,55 @@ void main() {
     expect(style?.fontFamily, Lx.serif);
     await pumpWithLocalizations(tester, probe(), locale: const Locale('ar'));
     expect(style?.fontFamily, Lx.arabic);
+  });
+
+  testWidgets('review actions: request edit calls the inline-edit callback; no approve right shows the owner-only line', (tester) async {
+    var editTapped = false;
+    await pumpWithLocalizations(
+      tester,
+      Builder(
+        builder: (ctx) => Column(children: [
+          ...buildContractReviewActions(context: ctx, workspace: sentWs, onRespond: (_) {}, onRequestEdit: () => editTapped = true),
+          ...buildContractReviewActions(context: ctx, workspace: sentWs, onRespond: (_) {}, canApprove: false),
+        ]),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('onboarding-request-edit')));
+    expect(editTapped, isTrue);
+    expect(find.byKey(const ValueKey('onboarding-approve-locked')), findsOneWidget);
+    expect(find.text('Approving the contract is done by the account owner.'), findsOneWidget);
+  });
+
+  testWidgets('inline edit card sends and cancels', (tester) async {
+    final ctrl = TextEditingController();
+    var sent = 0, cancelled = 0;
+    await pumpWithLocalizations(
+      tester,
+      Builder(
+        builder: (ctx) => buildEditRequestCard(context: ctx, controller: ctrl, sending: false, onSend: () => sent++, onCancel: () => cancelled++),
+      ),
+    );
+    expect(find.text('What would you like changed?'), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('onboarding-edit-text')), 'Two instalments please');
+    await tester.tap(find.byKey(const ValueKey('onboarding-edit-send')));
+    await tester.tap(find.byKey(const ValueKey('onboarding-edit-cancel')));
+    expect(ctrl.text, 'Two instalments please');
+    expect([sent, cancelled], [1, 1]);
+  });
+
+  testWidgets('edit reason quote and payment owner-only line', (tester) async {
+    await pumpWithLocalizations(
+      tester,
+      Builder(
+        builder: (ctx) => Column(children: [
+          buildEditReasonQuote(ctx, 'Split it in two'),
+          ...buildPaymentActions(context: ctx, workspace: sentWs, client: null, taxSettings: null, onSendPayment: (_, __, ___) {}, canPay: false),
+        ]),
+      ),
+    );
+    expect(find.text('YOUR REQUEST'), findsOneWidget);
+    expect(find.text('Split it in two'), findsOneWidget);
+    expect(find.byKey(const ValueKey('onboarding-pay-locked')), findsOneWidget);
+    expect(find.byKey(const ValueKey('onboarding-send-payment')), findsNothing);
   });
 }

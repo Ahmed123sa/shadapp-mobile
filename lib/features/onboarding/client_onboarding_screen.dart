@@ -12,7 +12,8 @@ import '../../core/app_log.dart';
 import 'package:provider/provider.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/helpers/required_documents_dialog.dart';
@@ -81,6 +82,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   final SignatureDraft _sigDraft = SignatureDraft();
   bool _savingSig = false;
   bool _drawing = false;
+  // Mockup `st.edit`: "Request edit" opens an inline card in the body.
+  bool _editing = false;
+  bool _sendingEdit = false;
+  final TextEditingController _editCtrl = TextEditingController();
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider(repository: PaymentRepository(api: _api));
   late final SystemSettingsProvider _systemSettingsProvider = widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
 
@@ -194,6 +199,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     WidgetsBinding.instance.removeObserver(this);
     _fcmSubscription?.cancel();
     _sigDraft.dispose();
+    _editCtrl.dispose();
     for (final unsubscribe in _reverbUnsubscribers) {
       unsubscribe();
     }
@@ -296,25 +302,10 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(backgroundColor: Lx.page, body: SafeArea(child: LoadingState(style: LoadingStyle.spinner)));
     }
     if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.error_outline, size: 64, color: ShadColors.error),
-              const SizedBox(height: 16),
-              Text(_error!, style: const TextStyle(color: ShadColors.textPrimary, fontSize: 16)),
-              const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadClientData, child: Text(AppLocalizations.of(context)!.onboarding_retry)),
-            ]),
-          ),
-        ),
-      );
+      return Scaffold(backgroundColor: Lx.page, body: SafeArea(child: ErrorState(message: _error!, onRetry: _loadClientData)));
     }
 
     final stage = _computeStage();
@@ -486,13 +477,18 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     );
   }
 
+  bool get _isSubUser => _api.role == 'sub_user';
+
   List<Widget> _stageActions(int stage) {
     switch (stage) {
       case 2:
+        if (_editing) return const [];
         return buildContractReviewActions(
           context: context,
           workspace: _workspace,
           onRespond: _respondToContract,
+          canApprove: _api.canDo('can_approve_contracts'),
+          onRequestEdit: () => setState(() => _editing = true),
         );
       case 4:
         return buildPaymentActions(
@@ -501,6 +497,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           client: _client,
           taxSettings: _taxSettings,
           onSendPayment: _showPaymentBottomSheet,
+          canPay: _api.canDo('can_upload_payment_proof'),
         );
       case 1:
       case 3:
@@ -508,6 +505,8 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       case 6:
         return const [];
       default:
+        // Only the account owner signs; an assistant just waits.
+        if (_isSubUser) return const [];
         return buildSignatureActions(context: context, draft: _sigDraft, saving: _savingSig, onSave: _saveSignature);
     }
   }
@@ -613,27 +612,60 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       case 1:
         return buildWaitingStage(context: context, title: l10n.onboarding_waitingContract, subtitle: l10n.onboarding_waitingContractSendMsg);
       case 2:
-        return buildContractReviewStage(
-          context: context,
-          workspace: _workspace,
-          onPreviewContract: _showContractModal,
-          uploadingDocId: _uploadingDocId,
-          onUploadDocument: _uploadRequiredDoc,
-          onOpenFile: _openFile,
-        );
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          buildContractReviewStage(
+            context: context,
+            workspace: _workspace,
+            onPreviewContract: _showContractModal,
+            uploadingDocId: _uploadingDocId,
+            onUploadDocument: _uploadRequiredDoc,
+            onOpenFile: _openFile,
+          ),
+          if (_editing)
+            buildEditRequestCard(
+              context: context,
+              controller: _editCtrl,
+              sending: _sendingEdit,
+              onSend: _sendEditRequest,
+              onCancel: () => setState(() {
+                _editing = false;
+                _editCtrl.clear();
+              }),
+            ),
+        ]);
       case 3:
         return buildWaitingStage(context: context, title: l10n.onboarding_waitingCompanyApproval, subtitle: l10n.onboarding_waitingCompanyReviewMsg);
       case 4:
-        return buildPaymentStage(context: context, workspace: _workspace, client: _client, taxSettings: _taxSettings);
+        return buildPaymentStage(
+          context: context,
+          workspace: _workspace,
+          client: _client,
+          taxSettings: _taxSettings,
+          assistantCanPay: _isSubUser && _api.canDo('can_upload_payment_proof'),
+        );
       case 5:
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          buildWaitingStage(context: context, title: l10n.onboarding_reviewingPayment, subtitle: l10n.onboarding_waitingActivation, boxed: false),
-          const SizedBox(height: 16),
-          buildSentPaymentCard(context: context, workspace: _workspace),
-        ]);
+        // Mockup: the sent payment sits inside the waiting column.
+        return buildWaitingStage(
+          context: context,
+          title: l10n.onboarding_reviewingPayment,
+          subtitle: l10n.onboarding_waitingActivation,
+          boxed: false,
+          extra: buildSentPaymentCard(context: context, workspace: _workspace),
+        );
       case 6:
-        return buildWaitingStage(context: context, title: l10n.onboardingWaitingEditContract, subtitle: l10n.onboardingWaitingEditContractMsg, boxed: false);
+        final reason = _editReason();
+        return buildWaitingStage(
+          context: context,
+          title: l10n.onboardingWaitingEditContract,
+          subtitle: l10n.onboardingWaitingEditContractMsg,
+          boxed: false,
+          extra: reason == null ? null : buildEditReasonQuote(context, reason),
+        );
       default:
+        if (_isSubUser) {
+          final owner = (_client?['contact_person'] ?? _client?['company_name'] ?? '').toString();
+          return buildWaitingStage(context: context, title: l10n.onboardingOwnerSignTitle, subtitle: l10n.onboardingOwnerSignMsg(owner), boxed: false);
+        }
         return buildSignatureStage(
           context: context,
           client: _client,
@@ -644,6 +676,34 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           },
         );
     }
+  }
+
+  /// The client's own words from the contract waiting on an edit.
+  String? _editReason() {
+    for (final c in safeList(_workspace?['contracts'])) {
+      if (c is Map && c['status'] == 'edit_requested') {
+        final r = (c['edit_reason'] ?? '').toString().trim();
+        if (r.isNotEmpty) return r;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _sendEditRequest() async {
+    final reason = _editCtrl.text.trim();
+    final contracts = safeList(_workspace?['contracts']).whereType<Map>().toList();
+    if (contracts.isEmpty) return;
+    final c = contracts.firstWhere((x) => x['status'] == 'sent', orElse: () => contracts.first);
+    setState(() => _sendingEdit = true);
+    final ok = await _respondToContractById(c['id'] as int, 'edit_requested', reason: reason);
+    if (!mounted) return;
+    setState(() {
+      _sendingEdit = false;
+      if (ok) {
+        _editing = false;
+        _editCtrl.clear();
+      }
+    });
   }
 
   Future<void> _contactSupport() async {
@@ -683,6 +743,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           backLabel: AppLocalizations.of(context)!.onboarding_back,
         onAction: (id, action) async {
           Navigator.pop(context);
+          // "Request edit" from the sheet opens the same inline card.
+          if (action == 'edit_requested') {
+            setState(() => _editing = true);
+            return;
+          }
           await _respondToContractById(id, action);
         },
         onRefresh: () {
@@ -705,22 +770,11 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     await _respondToContractById(c['id'] as int, action);
   }
 
-  Future<void> _respondToContractById(dynamic contractId, String action) async {
-    String? reason;
-    if (action == 'edit_requested') {
-      final controller = TextEditingController();
-      reason = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(ctx)!.requiredEdits),
-          content: TextField(controller: controller, maxLines: 3, decoration: InputDecoration(hintText: AppLocalizations.of(ctx)!.editRequestHint2)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(ctx)!.onboarding_cancel)),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(AppLocalizations.of(ctx)!.onboarding_confirmAction)),
-          ],
-        ),
-      );
-      if (reason == null) return;
+  /// Returns true when the server accepted the action.
+  Future<bool> _respondToContractById(dynamic contractId, String action, {String? reason}) async {
+    if (action == 'edit_requested' && reason == null) {
+      setState(() => _editing = true);
+      return false;
     }
     try {
       await _contractProvider.clientAction(contractId as int, action, reason: (reason != null && reason.isNotEmpty) ? reason : null);
@@ -729,21 +783,23 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Row(children: [
-            Icon(action == 'approved' ? Icons.check_circle : Icons.edit, color: action == 'approved' ? Colors.green : Colors.orange, size: 18),
+            LxIcon(action == 'approved' ? 'check' : 'msg', size: 18, color: action == 'approved' ? Lx.ok : Lx.wait),
             const SizedBox(width: 8),
-            Text(action == 'approved' ? AppLocalizations.of(context)!.onboarding_approvedMessage : AppLocalizations.of(context)!.onboarding_editSentMessage),
+            Flexible(child: Text(action == 'approved' ? AppLocalizations.of(context)!.onboarding_approvedMessage : AppLocalizations.of(context)!.onboarding_editSentMessage)),
           ]),
           duration: const Duration(seconds: 2),
         ));
       }
+      return true;
     } catch (e) {
-      if (!mounted) return;
-      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return;
-      if (!mounted) return;
-      if (await maybeShowRequiredDocumentsDialog(context, e)) return;
+      if (!mounted) return false;
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) return false;
+      if (!mounted) return false;
+      if (await maybeShowRequiredDocumentsDialog(context, e)) return false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.onboarding_failedWithError(e.toString()))));
       }
+      return false;
     }
   }
 

@@ -11555,6 +11555,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Client created'**
   String get credsTitle;
+
+  /// No description provided for @onboardingSentOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {date}'**
+  String onboardingSentOn(String date);
+
+  /// No description provided for @onboardingOwnerSignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the account owner'**
+  String get onboardingOwnerSignTitle;
+
+  /// No description provided for @onboardingOwnerSignMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs to add the company\'s e-signature first. You\'ll be notified when it\'s done.'**
+  String onboardingOwnerSignMsg(String name);
+
+  /// No description provided for @onboardingApproveOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Approving the contract is done by the account owner.'**
+  String get onboardingApproveOwnerOnly;
+
+  /// No description provided for @onboardingPayAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You can send a payment: you have the “upload payment proof” permission.'**
+  String get onboardingPayAllowed;
+
+  /// No description provided for @onboardingPayOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending the payment is done by the account owner.'**
+  String get onboardingPayOwnerOnly;
+
+  /// No description provided for @onboardingEditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like changed?'**
+  String get onboardingEditLabel;
+
+  /// No description provided for @onboardingEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Please split the payment into two instalments'**
+  String get onboardingEditHint;
+
+  /// No description provided for @onboardingSendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get onboardingSendRequest;
+
+  /// No description provided for @onboardingYourRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request'**
+  String get onboardingYourRequest;
+
+  /// No description provided for @onboardingSendPaymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a payment'**
+  String get onboardingSendPaymentTitle;
+
+  /// No description provided for @onboardingDropTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add files'**
+  String get onboardingDropTitle;
+
+  /// No description provided for @onboardingDropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Images from your gallery'**
+  String get onboardingDropHint;
 }
 
 class _AppLocalizationsDelegate

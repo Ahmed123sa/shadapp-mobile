@@ -2066,5 +2066,32 @@
   "clausesLead": "Fixed clauses go into every contract; optional ones are picked per contract.",
   "settingsDisplayName": "Display name",
   "clientsNewEyebrow": "Directory",
-  "credsTitle": "Client created"
+  "credsTitle": "Client created",
+  "onboardingSentOn": "Sent {date}",
+  "@onboardingSentOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingOwnerSignTitle": "Waiting for the account owner",
+  "onboardingOwnerSignMsg": "{name} needs to add the company's e-signature first. You'll be notified when it's done.",
+  "@onboardingOwnerSignMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingApproveOwnerOnly": "Approving the contract is done by the account owner.",
+  "onboardingPayAllowed": "You can send a payment: you have the “upload payment proof” permission.",
+  "onboardingPayOwnerOnly": "Sending the payment is done by the account owner.",
+  "onboardingEditLabel": "What would you like changed?",
+  "onboardingEditHint": "e.g. Please split the payment into two instalments",
+  "onboardingSendRequest": "Send request",
+  "onboardingYourRequest": "Your request",
+  "onboardingSendPaymentTitle": "Send a payment",
+  "onboardingDropTitle": "Tap to add files",
+  "onboardingDropHint": "Images from your gallery"
 }

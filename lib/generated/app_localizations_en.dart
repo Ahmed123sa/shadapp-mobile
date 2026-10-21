@@ -6038,4 +6038,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get credsTitle => 'Client created';
+
+  @override
+  String onboardingSentOn(String date) {
+    return 'Sent $date';
+  }
+
+  @override
+  String get onboardingOwnerSignTitle => 'Waiting for the account owner';
+
+  @override
+  String onboardingOwnerSignMsg(String name) {
+    return '$name needs to add the company\'s e-signature first. You\'ll be notified when it\'s done.';
+  }
+
+  @override
+  String get onboardingApproveOwnerOnly =>
+      'Approving the contract is done by the account owner.';
+
+  @override
+  String get onboardingPayAllowed =>
+      'You can send a payment: you have the “upload payment proof” permission.';
+
+  @override
+  String get onboardingPayOwnerOnly =>
+      'Sending the payment is done by the account owner.';
+
+  @override
+  String get onboardingEditLabel => 'What would you like changed?';
+
+  @override
+  String get onboardingEditHint =>
+      'e.g. Please split the payment into two instalments';
+
+  @override
+  String get onboardingSendRequest => 'Send request';
+
+  @override
+  String get onboardingYourRequest => 'Your request';
+
+  @override
+  String get onboardingSendPaymentTitle => 'Send a payment';
+
+  @override
+  String get onboardingDropTitle => 'Tap to add files';
+
+  @override
+  String get onboardingDropHint => 'Images from your gallery';
 }

@@ -6015,4 +6015,48 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get credsTitle => 'العميل اتعمل';
+
+  @override
+  String onboardingSentOn(String date) {
+    return 'اتبعت $date';
+  }
+
+  @override
+  String get onboardingOwnerSignTitle => 'مستنيين صاحب الحساب';
+
+  @override
+  String onboardingOwnerSignMsg(String name) {
+    return '$name محتاج يضيف توقيع الشركة الأول. هيوصلك إشعار لما يخلص.';
+  }
+
+  @override
+  String get onboardingApproveOwnerOnly => 'الموافقة على العقد لصاحب الحساب.';
+
+  @override
+  String get onboardingPayAllowed =>
+      'تقدر ترسل دفعة لأن معاك صلاحية \"رفع إيصال الدفع\".';
+
+  @override
+  String get onboardingPayOwnerOnly => 'إرسال الدفعة لصاحب الحساب.';
+
+  @override
+  String get onboardingEditLabel => 'عايز تغيّر إيه؟';
+
+  @override
+  String get onboardingEditHint => 'مثلاً: ياريت الدفع يتقسم على قسطين';
+
+  @override
+  String get onboardingSendRequest => 'إرسال الطلب';
+
+  @override
+  String get onboardingYourRequest => 'طلبك';
+
+  @override
+  String get onboardingSendPaymentTitle => 'إرسال دفعة';
+
+  @override
+  String get onboardingDropTitle => 'اضغط عشان تضيف ملفات';
+
+  @override
+  String get onboardingDropHint => 'صور من المعرض';
 }
