@@ -5,7 +5,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
-import '../../../core/theme.dart';
+import '../../../core/theme.dart' show statusLabels;
 import '../../../core/helpers/meeting_helpers.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -288,14 +288,14 @@ class _MeetingsTabState extends State<MeetingsTab> {
             ),
           if (m['notes'] != null) ...[
             const SizedBox(height: 6),
-            Text(m['notes'], style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
+            Text(m['notes'], style: Lx.text(context, size: 13, color: Lx.muted)),
           ],
           if (m['contract'] != null) ...[
             const SizedBox(height: 8),
             Row(children: [
               const Icon(Icons.description, size: 14, color: Lx.muted),
               const SizedBox(width: 4),
-              Text('${l10n.meetingContract}: ${m['contract']['title'] ?? m['contract']['reference_no'] ?? ''}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
+              Text('${l10n.meetingContract}: ${m['contract']['title'] ?? m['contract']['reference_no'] ?? ''}', style: Lx.text(context, size: 13, color: Lx.muted)),
             ]),
           ],
           if (m['passcode'] != null) ...[
@@ -303,7 +303,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
             Row(children: [
               const Icon(Icons.lock, size: 14, color: Lx.muted),
               const SizedBox(width: 4),
-              Text('${l10n.meetingPasscode}: ${m['passcode']}', style: ShadTypography.cardBody.copyWith(color: Lx.muted)),
+              Text('${l10n.meetingPasscode}: ${m['passcode']}', style: Lx.text(context, size: 13, color: Lx.muted)),
               const SizedBox(width: 6),
               InkWell(
                 onTap: () {
@@ -532,7 +532,7 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(l10n.amMeetingCreateTitle, style: ShadTypography.cardTitle),
+              Text(l10n.amMeetingCreateTitle, style: Lx.display(context, size: 22)),
             const Spacer(),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),
@@ -698,7 +698,7 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(l10n.meetingEditTitle, style: ShadTypography.cardTitle),
+              Text(l10n.meetingEditTitle, style: Lx.display(context, size: 22)),
             const Spacer(),
             IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
           ]),

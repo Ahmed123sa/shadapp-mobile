@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
-import '../../../core/theme.dart';
+import '../../../core/luxe/lx_icons.dart';
+import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../data/system_settings_repository.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/system_settings_provider.dart';
@@ -41,7 +43,12 @@ class ContractBuilder extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: Lx.sheet,
+      barrierColor: const Color(0x8C000000),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Lx.rSheet)),
+        side: BorderSide(color: Lx.line2),
+      ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.75,
         maxChildSize: 0.9,
@@ -264,195 +271,202 @@ class _ContractBuilderState extends State<ContractBuilder> {
     super.dispose();
   }
 
+  /// Mockup `.pgh`: 10px (.22em) uppercase faint group label.
+  Widget _pgh(String text) => Padding(
+        padding: const EdgeInsets.only(top: 22, bottom: 6),
+        child: Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+      );
+
+  /// `.f2` date field: label, value on the underline, calendar icon.
+  Widget _dateField(String label, DateTime? value, VoidCallback onTap, Key key) => GestureDetector(
+        key: key,
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Lx.text(context, size: 12, color: Lx.muted)),
+          Container(
+            padding: const EdgeInsets.only(top: 6, bottom: 9),
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+            child: Row(children: [
+              Expanded(
+                child: Text(
+                  value != null ? '${value.day}/${value.month}/${value.year}' : AppLocalizations.of(context)!.contractBuilderSelectDate,
+                  style: Lx.text(context, size: 15, color: value != null ? Lx.ink : Lx.faint),
+                ),
+              ),
+              const LxIcon('cal', size: 18, color: Lx.muted),
+            ]),
+          ),
+        ]),
+      );
+
+  /// A `.doc`-style list row with an optional remove (trash) action.
+  Widget _row({required Widget lead, required String text, VoidCallback? onRemove, bool last = false, bool faint = false}) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(border: last ? null : const Border(bottom: BorderSide(color: Lx.line))),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          lead,
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: Lx.text(context, size: 13, color: faint ? Lx.ink2 : Lx.ink, height: 1.6))),
+          if (onRemove != null)
+            InkResponse(
+              onTap: onRemove,
+              radius: 16,
+              child: const Padding(padding: EdgeInsets.all(3), child: LxIcon('trash', size: 15, color: Lx.danger)),
+            ),
+        ]),
+      );
+
+  /// Input + "+" add button (custom clauses / required documents).
+  Widget _adder(TextEditingController c, String hint, VoidCallback onAdd, Key key) => Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Expanded(child: TextField(controller: c, decoration: InputDecoration(hintText: hint), onSubmitted: (_) => onAdd())),
+        const SizedBox(width: 10),
+        LuxeButton(key: key, label: '+', size: LuxeButtonSize.sm, onPressed: onAdd),
+      ]);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(24, 0, 24, MediaQuery.of(context).viewInsets.bottom + 16),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(children: [
-              Text(_isEditing ? l10n.contractBuilderEditTitle : widget.isAdditional ? l10n.contractBuilderCreateExtraTitle : l10n.contractBuilderCreateNewTitle, style: ShadTypography.cardTitle),
-              const Spacer(),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-            ]),
+    Widget numCell(int i) => SizedBox(width: 18, child: Text('${i + 1}', style: Lx.text(context, size: 11, color: Lx.faint, height: 1.9)));
+    return LuxeFormTheme(
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        child: Column(children: [
+          // Mockup sheet: `.grab` + h3 serif 22.
+          Center(
+            child: Container(width: 38, height: 4, margin: const EdgeInsets.only(bottom: 16), decoration: BoxDecoration(color: Lx.line2, borderRadius: BorderRadius.circular(2))),
           ),
-          const Divider(),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              _isEditing ? l10n.contractBuilderEditTitle : widget.isAdditional ? l10n.contractBuilderCreateExtraTitle : l10n.contractBuilderCreateNewTitle,
+              style: Lx.display(context, size: 22),
+            ),
+          ),
+          const SizedBox(height: 6),
           Expanded(
             child: _templatesLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-              children: [
-                // Title
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(labelText: '${l10n.contractTitle} *', hintText: l10n.contractBuilderTitleHint),
-                ),
-                const SizedBox(height: 12),
-
-                // Value
-                TextField(
-                  controller: _valueController,
-                  decoration: InputDecoration(labelText: l10n.contractValue, prefixText: '$_selectedCurrency '),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  key: ValueKey(_selectedCurrency),
-                  initialValue: _selectedCurrency,
-                  decoration: InputDecoration(labelText: l10n.contractCurrency),
-                  items: _currencies.map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text('$c — ${_currencyLabels(l10n)[c] ?? ''}'),
-                  )).toList(),
-                  onChanged: (v) { if (v != null) setState(() => _selectedCurrency = v); },
-                ),
-                if (_showContractDates) ...[
-                  const SizedBox(height: 12),
-                  // Dates
-                  Row(children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
-                          if (d != null) setState(() => _startDate = d);
-                        },
-                        child: InputDecorator(
-                          decoration: InputDecoration(labelText: l10n.contractStartDateLabel),
-                          child: Text(_startDate != null ? '${_startDate!.year}/${_startDate!.month}/${_startDate!.day}' : l10n.contractBuilderSelectDate),
-                        ),
+                ? const Center(child: CircularProgressIndicator(color: Lx.crimsonInk))
+                : ListView(
+                    children: [
+                      TextField(
+                        controller: _titleController,
+                        decoration: InputDecoration(labelText: '${l10n.contractTitle} *', hintText: l10n.contractBuilderTitleHint),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final d = await showDatePicker(context: context, initialDate: (_startDate ?? DateTime.now()).add(const Duration(days: 30)), firstDate: _startDate ?? DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
-                          if (d != null) setState(() => _endDate = d);
-                        },
-                        child: InputDecorator(
-                          decoration: InputDecoration(labelText: l10n.contractEndDateLabel),
-                          child: Text(_endDate != null ? '${_endDate!.year}/${_endDate!.month}/${_endDate!.day}' : l10n.contractBuilderSelectDate),
+                      const SizedBox(height: 14),
+                      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: _valueController,
+                            decoration: InputDecoration(labelText: l10n.contractValue),
+                            keyboardType: TextInputType.number,
+                          ),
                         ),
-                      ),
-                    ),
-                  ]),
-                ],
-                const SizedBox(height: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: DropdownButtonFormField<String>(
+                            key: ValueKey(_selectedCurrency),
+                            initialValue: _selectedCurrency,
+                            dropdownColor: Lx.sheet,
+                            isExpanded: true,
+                            decoration: InputDecoration(labelText: l10n.contractCurrency),
+                            // Menu shows "EGP — Egyptian pound", the field just the code.
+                            selectedItemBuilder: (_) => _currencies.map((c) => Text(c, style: Lx.text(context, size: 15))).toList(),
+                            items: _currencies.map((c) => DropdownMenuItem(value: c, child: Text('$c — ${_currencyLabels(l10n)[c] ?? ''}', style: Lx.text(context, size: 14)))).toList(),
+                            onChanged: (v) {
+                              if (v != null) setState(() => _selectedCurrency = v);
+                            },
+                          ),
+                        ),
+                      ]),
+                      if (_showContractDates) ...[
+                        const SizedBox(height: 14),
+                        Row(children: [
+                          Expanded(
+                            child: _dateField(l10n.contractStartDateLabel, _startDate, () async {
+                              final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
+                              if (d != null) setState(() => _startDate = d);
+                            }, const ValueKey('cb-start')),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _dateField(l10n.contractEndDateLabel, _endDate, () async {
+                              final d = await showDatePicker(context: context, initialDate: (_startDate ?? DateTime.now()).add(const Duration(days: 30)), firstDate: _startDate ?? DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 3650)));
+                              if (d != null) setState(() => _endDate = d);
+                            }, const ValueKey('cb-end')),
+                          ),
+                        ]),
+                      ],
 
-                // Fixed Clauses
-                Text(l10n.contractBuilderFixedClauses, style: ShadTypography.sectionHeader),
-                const SizedBox(height: 8),
-                ..._fixedClauses.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Icon(Icons.check_circle, size: 18, color: ShadColors.success),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(f['content']!, style: ShadTypography.cardBody.copyWith(color: ShadColors.textSecondary))),
-                  ]),
-                )),
-                const SizedBox(height: 16),
+                      // Fixed clauses — always included.
+                      _pgh(l10n.contractBuilderFixedClauses),
+                      for (var i = 0; i < _fixedClauses.length; i++)
+                        _row(lead: numCell(i), text: _fixedClauses[i]['content']!, last: i == _fixedClauses.length - 1, faint: true),
 
-                // Optional Clauses
-                Text(l10n.contractBuilderOptionalClauses, style: ShadTypography.sectionHeader),
-                const SizedBox(height: 8),
-                ..._optionalClauses.map((o) => CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(o['content'], style: ShadTypography.cardBody),
-                  value: o['selected'],
-                  onChanged: (v) => setState(() => o['selected'] = v),
-                )),
-                const SizedBox(height: 16),
+                      // Optional clauses — mockup `.cbx` (18px, r5, crimson when on).
+                      if (_optionalClauses.isNotEmpty) _pgh(l10n.contractBuilderOptionalClauses),
+                      for (var i = 0; i < _optionalClauses.length; i++)
+                        GestureDetector(
+                          key: ValueKey('cb-optional-$i'),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => setState(() => _optionalClauses[i]['selected'] = !(_optionalClauses[i]['selected'] == true)),
+                          child: _row(
+                            lead: Container(
+                              width: 18,
+                              height: 18,
+                              margin: const EdgeInsets.only(top: 2),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _optionalClauses[i]['selected'] == true ? Lx.crimson : Colors.transparent,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(color: _optionalClauses[i]['selected'] == true ? Lx.crimson : Lx.line2),
+                              ),
+                              child: _optionalClauses[i]['selected'] == true ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+                            ),
+                            text: '${_optionalClauses[i]['content']}',
+                            last: i == _optionalClauses.length - 1,
+                          ),
+                        ),
 
-                // Custom Clauses
-                Text(l10n.contractBuilderCustomClauses, style: ShadTypography.sectionHeader),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _customClauseController,
-                      decoration: InputDecoration(hintText: l10n.contractBuilderCustomClauseHint, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle, color: ShadColors.primary),
-                    onPressed: () {
-                      final text = _customClauseController.text.trim();
-                      if (text.isNotEmpty) {
-                        setState(() { _customClauses.add(text); _customClauseController.clear(); });
-                      }
-                    },
-                  ),
-                ]),
-                ..._customClauses.asMap().entries.map((e) => Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Icon(Icons.circle, size: 6, color: ShadColors.textDisabled),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(e.value, style: ShadTypography.cardBody)),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 16, color: ShadColors.error),
-                      onPressed: () => setState(() => _customClauses.removeAt(e.key)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ]),
-                )),
-                const SizedBox(height: 16),
+                      // Custom clauses.
+                      _pgh(l10n.contractBuilderCustomClauses),
+                      _adder(_customClauseController, l10n.contractBuilderCustomClauseHint, () {
+                        final text = _customClauseController.text.trim();
+                        if (text.isNotEmpty) setState(() { _customClauses.add(text); _customClauseController.clear(); });
+                      }, const ValueKey('cb-add-clause')),
+                      for (var i = 0; i < _customClauses.length; i++)
+                        _row(lead: numCell(i), text: _customClauses[i], onRemove: () => setState(() => _customClauses.removeAt(i)), last: i == _customClauses.length - 1),
 
-                // Required Documents
-                Text(l10n.contractRequiredDocs, style: ShadTypography.sectionHeader),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _requiredDocController,
-                      decoration: InputDecoration(hintText: l10n.contractBuilderDocNameHint, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-                    ),
+                      // Required documents.
+                      _pgh(l10n.contractRequiredDocs),
+                      _adder(_requiredDocController, l10n.contractBuilderDocNameHint, () {
+                        final text = _requiredDocController.text.trim();
+                        if (text.isNotEmpty) setState(() { _requiredDocs.add(text); _requiredDocController.clear(); });
+                      }, const ValueKey('cb-add-doc')),
+                      for (var i = 0; i < _requiredDocs.length; i++)
+                        _row(
+                          lead: const Padding(padding: EdgeInsets.only(top: 2), child: LxIcon('doc', size: 16, color: Lx.muted)),
+                          text: _requiredDocs[i],
+                          onRemove: () => setState(() => _requiredDocs.removeAt(i)),
+                          last: i == _requiredDocs.length - 1,
+                        ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle, color: ShadColors.primary),
-                    onPressed: () {
-                      final text = _requiredDocController.text.trim();
-                      if (text.isNotEmpty) {
-                        setState(() { _requiredDocs.add(text); _requiredDocController.clear(); });
-                      }
-                    },
-                  ),
-                ]),
-                ..._requiredDocs.asMap().entries.map((e) => Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Icon(Icons.description, size: 16, color: ShadColors.gold),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(e.value, style: ShadTypography.cardBody)),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 16, color: ShadColors.error),
-                      onPressed: () => setState(() => _requiredDocs.removeAt(e.key)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ]),
-                )),
-                const SizedBox(height: 24),
-              ],
-            ),
           ),
           SizedBox(
             width: double.infinity,
+            height: 48,
             child: ElevatedButton(
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text(_isEditing ? l10n.contractBuilderSaveChanges : l10n.contractBuilderCreateAndSend),
+                  : Text(_isEditing ? l10n.contractBuilderSaveChanges : l10n.contractBuilderCreateAndSend, style: Lx.text(context, size: 14, color: Colors.white)),
             ),
           ),
-        ],
+        ]),
       ),
     );
   }

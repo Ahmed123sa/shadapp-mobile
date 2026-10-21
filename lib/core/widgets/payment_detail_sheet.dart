@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../luxe/tokens.dart';
-import '../theme.dart';
 import 'luxe/luxe_widgets.dart';
 
 class PaymentDetailSheet extends StatelessWidget {
@@ -130,13 +129,13 @@ class PaymentDetailSheet extends StatelessWidget {
   (String, IconData, Color) _statusInfo(String status, AppLocalizations l10n) {
     switch (status) {
       case 'scheduled':
-        return (l10n.awaitingPayment, Icons.schedule, ShadColors.gold);
+        return (l10n.awaitingPayment, Icons.schedule, Lx.wait);
       case 'pending':
         return (l10n.paymentDetail_statusUnderReview, Icons.hourglass_empty, Colors.orange);
       case 'approved':
-        return (l10n.paymentDetail_statusPaid, Icons.check_circle, ShadColors.success);
+        return (l10n.paymentDetail_statusPaid, Icons.check_circle, Lx.ok);
       case 'overdue':
-        return (l10n.paymentDetail_statusOverdue, Icons.warning_amber, ShadColors.crimson);
+        return (l10n.paymentDetail_statusOverdue, Icons.warning_amber, Lx.crimsonInk);
       default:
         return (status, Icons.help_outline, Colors.grey);
     }

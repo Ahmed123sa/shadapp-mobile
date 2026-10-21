@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/luxe/tokens.dart';
-import '../../../core/theme.dart';
 import '../../../models/client.dart';
 import '../../../models/manager.dart';
 
@@ -75,11 +74,11 @@ Widget buildContractsChartBody(BuildContext context, Map<String, dynamic> contra
 
   final contractColors = {
     'completed': Lx.ok,
-    'sent': ShadColors.blue,
+    'sent': Lx.wait,
     'client_approved': Lx.wait,
-    'company_approved': ShadColors.purple,
+    'company_approved': Lx.tuscan,
     'draft': Lx.faint,
-    'archived': ShadColors.orange,
+    'archived': Lx.faint,
     'client_rejected': Lx.danger,
     'edit_requested': Lx.wait,
   };

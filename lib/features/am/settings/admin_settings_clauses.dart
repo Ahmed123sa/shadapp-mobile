@@ -32,65 +32,51 @@ Future<void> showSaveClauseDialog({
       final localL10n = AppLocalizations.of(ctx)!;
       return StatefulBuilder(
         builder: (ctx, setDialogState) {
+          // Mockup clauseSheet look: sheet colour, r24, serif title 22,
+          // underlined fields, Fixed/Optional `.chip2`.
           return AlertDialog(
-            backgroundColor: Lx.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: Lx.sheet,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Lx.rSheet), side: const BorderSide(color: Lx.line2)),
             title: Text(
               existing == null ? localL10n.adminSettings_addClause : localL10n.adminSettings_editClause,
-              style: const TextStyle(fontFamily: Lx.serif, color: Lx.wait, fontSize: 18, fontWeight: FontWeight.w700),
+              style: Lx.display(ctx, size: 22),
             ),
-            content: SingleChildScrollView(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                TextField(
-                  controller: titleController,
-                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
-                  decoration: InputDecoration(
-                    labelText: localL10n.adminSettings_clauseName,
-                    hintText: localL10n.adminSettings_clauseNamePh,
-                    labelStyle: const TextStyle(color: Lx.muted),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
+            content: LuxeFormTheme(
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  TextField(
+                    controller: titleController,
+                    style: Lx.text(ctx, size: 15),
+                    decoration: InputDecoration(labelText: localL10n.adminSettings_clauseName, hintText: localL10n.adminSettings_clauseNamePh),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: categoryController,
-                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
-                  decoration: InputDecoration(
-                    labelText: localL10n.adminSettings_clauseCategory,
-                    labelStyle: const TextStyle(color: Lx.muted),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: categoryController,
+                    style: Lx.text(ctx, size: 15),
+                    decoration: InputDecoration(labelText: localL10n.adminSettings_clauseCategory),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contentController,
-                  maxLines: 3,
-                  style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans),
-                  decoration: InputDecoration(
-                    labelText: localL10n.adminSettings_clauseContent,
-                    hintText: localL10n.adminSettings_clauseContentPh,
-                    labelStyle: const TextStyle(color: Lx.muted),
-                    enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Lx.line2)),
-                    focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Lx.wait)),
-                    alignLabelWithHint: true,
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: contentController,
+                    minLines: 2,
+                    maxLines: 4,
+                    style: Lx.text(ctx, size: 14, height: 1.6),
+                    decoration: InputDecoration(labelText: localL10n.adminSettings_clauseContent, hintText: localL10n.adminSettings_clauseContentPh, alignLabelWithHint: true),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Row(children: [
-                  Text(localL10n.adminSettings_clauseType, style: const TextStyle(fontSize: 12, color: Lx.muted, fontFamily: Lx.sans)),
-                  const SizedBox(width: 12),
-                  _typeChip('fixed', localL10n.adminSettings_clauseFixed, type, (v) => setDialogState(() => type = v)),
-                  const SizedBox(width: 8),
-                  _typeChip('optional', localL10n.adminSettings_clauseOptional, type, (v) => setDialogState(() => type = v)),
+                  const SizedBox(height: 16),
+                  Text(localL10n.adminSettings_clauseType, style: Lx.text(ctx, size: 12, color: Lx.muted)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: [
+                    _typeChip(ctx, 'fixed', localL10n.adminSettings_clauseFixed, type, (v) => setDialogState(() => type = v)),
+                    _typeChip(ctx, 'optional', localL10n.adminSettings_clauseOptional, type, (v) => setDialogState(() => type = v)),
+                  ]),
                 ]),
-              ]),
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text(localL10n.cancel, style: const TextStyle(fontFamily: Lx.sans)),
+                child: Text(localL10n.cancel, style: Lx.text(ctx, size: 13, color: Lx.muted)),
               ),
               TextButton(
                 onPressed: () {
@@ -99,7 +85,7 @@ Future<void> showSaveClauseDialog({
                   if (title.isEmpty || content.isEmpty) return;
                   Navigator.pop(ctx, true);
                 },
-                child: Text(localL10n.save, style: const TextStyle(fontFamily: Lx.sans, fontWeight: FontWeight.w700)),
+                child: Text(localL10n.save, style: Lx.text(ctx, size: 13, weight: FontWeight.w500, color: Lx.crimsonInk)),
               ),
             ],
           );
@@ -131,18 +117,19 @@ Future<void> showSaveClauseDialog({
   if (context.mounted) setSaving(false);
 }
 
-Widget _typeChip(String value, String label, String selected, ValueChanged<String> onChanged) {
-  final isSelected = selected == value;
+/// Mockup `.chip2` / `.chip2.on` (crimson .2 fill, .5 border).
+Widget _typeChip(BuildContext context, String value, String label, String selected, ValueChanged<String> onChanged) {
+  final on = selected == value;
   return GestureDetector(
     onTap: () => onChanged(value),
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
       decoration: BoxDecoration(
-        color: isSelected ? Lx.crimson : Lx.page,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: isSelected ? Lx.crimson : Lx.line2),
+        color: on ? const Color(0x33941414) : Colors.transparent,
+        borderRadius: BorderRadius.circular(Lx.rPill),
+        border: Border.all(color: on ? const Color(0x80941414) : Lx.line2),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? Lx.ink : Lx.muted, fontFamily: Lx.sans)),
+      child: Text(label, style: Lx.text(context, size: 12, color: on ? Lx.ink : Lx.ink2)),
     ),
   );
 }
@@ -157,15 +144,15 @@ Future<void> deleteClauseTemplate({
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Lx.surface,
+      backgroundColor: Lx.sheet,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(l10n.delete, style: const TextStyle(fontFamily: Lx.serif, color: Lx.wait, fontSize: 18, fontWeight: FontWeight.w700)),
-      content: Text(l10n.adminSettings_clauseDeleteConfirm, style: const TextStyle(fontSize: 13, color: Lx.ink, fontFamily: Lx.sans)),
+      title: Text(l10n.delete, style: Lx.display(ctx, size: 22)),
+      content: Text(l10n.adminSettings_clauseDeleteConfirm, style: Lx.text(ctx, size: 13.5, color: Lx.ink2)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel, style: const TextStyle(fontFamily: Lx.sans))),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel, style: Lx.text(ctx, size: 13, color: Lx.muted))),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(l10n.delete, style: const TextStyle(fontFamily: Lx.sans, fontWeight: FontWeight.w700, color: Lx.danger)),
+          child: Text(l10n.delete, style: Lx.text(ctx, size: 13, weight: FontWeight.w500, color: Lx.danger)),
         ),
       ],
     ),

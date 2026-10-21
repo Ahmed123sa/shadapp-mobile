@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_client.dart';
+import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../core/widgets/password_field.dart';
@@ -234,7 +235,10 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
             const SizedBox(height: 16),
 
             _sectionLabel(l10n.createManagerAdditionalDetails),
-            InkWell(
+            // `.f2` date row: label, value on the underline, calendar icon.
+            GestureDetector(
+              key: const ValueKey('manager-dob'),
+              behavior: HitTestBehavior.opaque,
               onTap: () async {
                 final d = await showDatePicker(
                   context: context,
@@ -246,50 +250,45 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 if (d != null) {
                   setState(() {
                     _dob = d;
-                    _dobController.text = '${d.year}/${d.month}/${d.day}';
+                    _dobController.text = '${d.day}/${d.month}/${d.year}';
                   });
                 }
               },
-              borderRadius: BorderRadius.circular(10),
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: l10n.createManagerDateOfBirth),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(_dobController.text.isNotEmpty ? _dobController.text : l10n.createManagerSelectDate,
-                        style: TextStyle(fontSize: 14, color: _dobController.text.isNotEmpty ? Lx.ink : Lx.faint)),
-                    const Icon(Icons.calendar_today, size: 18, color: Lx.crimsonInk),
-                  ],
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(l10n.createManagerDateOfBirth, style: Lx.text(context, size: 12, color: Lx.muted)),
+                Container(
+                  padding: const EdgeInsets.only(top: 6, bottom: 9),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(_dobController.text.isNotEmpty ? _dobController.text : l10n.createManagerSelectDate,
+                          style: Lx.text(context, size: 15, color: _dobController.text.isNotEmpty ? Lx.ink : Lx.faint)),
+                    ),
+                    const LxIcon('cal', size: 18, color: Lx.muted),
+                  ]),
                 ),
-              ),
+              ]),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
 
             if (!_isEdit) ...[
+              // Mockup `.opt` + `.sw2`.
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Lx.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Lx.line2),
-                ),
-                child: Row(children: [
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line))),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l10n.createManagerAutoPassword, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Lx.ink)),
-                      const SizedBox(height: 2),
-                      Text(l10n.createManagerAutoPasswordHint, style: const TextStyle(fontSize: 10, color: Lx.muted)),
+                      Text(l10n.createManagerAutoPassword, style: Lx.text(context, size: 13.5, weight: FontWeight.w500)),
+                      Text(l10n.createManagerAutoPasswordHint, style: Lx.text(context, size: 12.5, color: Lx.muted)),
                     ]),
                   ),
-                  Switch(
-                    value: _autoPassword,
-                    activeTrackColor: Lx.crimson,
-                    onChanged: (v) => setState(() => _autoPassword = v),
-                  ),
+                  const SizedBox(width: 12),
+                  LuxeToggle(key: const ValueKey('manager-auto-password'), value: _autoPassword, onChanged: (v) => setState(() => _autoPassword = v)),
                 ]),
               ),
               if (!_autoPassword) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 PasswordField(controller: _passwordCtrl),
               ],
             ],
@@ -306,26 +305,18 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
 
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: ElevatedButton(
                 onPressed: _saving ? null : _submit,
                 child: _saving
                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                    : Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.check, size: 18, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(_isEdit ? l10n.saveChanges : l10n.createManagerCreateButton),
-                      ]),
+                    : Text(_isEdit ? l10n.saveChanges : l10n.createManagerCreateButton, style: Lx.text(context, size: 14, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancel),
-              ),
+              child: LuxeButton(label: l10n.cancel, size: LuxeButtonSize.lg, kind: LuxeButtonKind.quiet, onPressed: () => Navigator.pop(context)),
             ),
           ],
         ),
