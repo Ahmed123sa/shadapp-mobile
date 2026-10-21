@@ -572,7 +572,7 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   ]),
                   _sigprev(
                     _existingSigUrl != null
-                        ? Padding(padding: const EdgeInsets.all(10), child: Image.network(_existingSigUrl!, fit: BoxFit.contain))
+                        ? Padding(padding: const EdgeInsets.all(10), child: LuxeSignatureInk(child: Image.network(_existingSigUrl!, fit: BoxFit.contain)))
                         : Text(_existingSigText!, style: script),
                   ),
                   Text(l10n.settingsSigUsedFor, style: Lx.text(context, size: 11, color: Lx.faint)),

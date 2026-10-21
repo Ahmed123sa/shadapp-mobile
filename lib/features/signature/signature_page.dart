@@ -8,6 +8,7 @@ import '../../providers/client_provider.dart';
 import '../../providers/signature_provider.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/signature_pad_screen.dart';
+import '../../core/widgets/luxe/luxe_widgets.dart' show LuxeSignatureInk;
 
 class SignaturePage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with mocked
@@ -289,11 +290,13 @@ class _SignaturePageState extends State<SignaturePage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                  child: Image.network(_existingSigUrl!,
-                      height: 60,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.error, size: 30, color: ShadColors.error)),
+                  child: LuxeSignatureInk(
+                    child: Image.network(_existingSigUrl!,
+                        height: 60,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.error, size: 30, color: ShadColors.error)),
+                  ),
                 ),
               ),
             ),

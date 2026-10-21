@@ -226,11 +226,13 @@ class _SignatureTabState extends State<SignatureTab> {
           alignment: Alignment.center,
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Lx.line2)),
           child: _existingSigUrl != null
-              ? Image.network(
-                  _existingSigUrl!,
-                  height: 70,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.error, size: 30, color: Lx.danger),
+              ? LuxeSignatureInk(
+                  child: Image.network(
+                    _existingSigUrl!,
+                    height: 70,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.error, size: 30, color: Lx.danger),
+                  ),
                 )
               : FittedBox(
                   fit: BoxFit.scaleDown,

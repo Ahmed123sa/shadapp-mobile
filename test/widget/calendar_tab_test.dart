@@ -149,7 +149,7 @@ void main() {
     expect(find.textContaining('Kickoff'), findsNothing);
 
     failPayments = false;
-    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.tap(find.byType(OutlinedButton)); // ErrorState's Retry
     await tester.pumpAndSettle();
 
     expect(find.text('Failed to load data'), findsNothing);
