@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
-import '../../core/theme.dart';
+import 'package:provider/provider.dart';
+import '../../core/locale_provider.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../providers/auth_provider.dart';
+import 'auth_chrome.dart';
 
 /// Request a password reset link.
 ///
@@ -20,7 +23,10 @@ class ForgotPasswordPage extends StatefulWidget {
   // double) is passed via [api], so existing tests that only supply [api]
   // keep working unchanged.
   final AuthProvider? authProvider;
-  const ForgotPasswordPage({super.key, this.api, this.authProvider});
+  /// The login mockup's moving background; tests turn it off so
+  /// `pumpAndSettle` can settle.
+  final bool animateBackground;
+  const ForgotPasswordPage({super.key, this.api, this.authProvider, this.animateBackground = true});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -102,150 +108,58 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
+    // Mockup "Forgot password" / "Forgot · sent" screens: the login card on
+    // the same background — logo + "Shad.", the lead line, (sent notice),
+    // email field, "Send reset link", "Back to sign in".
     return Scaffold(
-      backgroundColor: ShadColors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => context.go('/login'),
-        ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: ShadColors.card.withAlpha(180),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: ShadColors.gold.withAlpha(40)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      key: const ValueKey('forgot-logo'),
-                      width: 56,
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF161616),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Lx.line),
-                      ),
-                      child: const Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: 'd'),
-                          TextSpan(text: '.', style: TextStyle(fontStyle: FontStyle.normal, color: Lx.crimsonInk)),
-                        ]),
-                        style: TextStyle(fontFamily: Lx.serif, fontStyle: FontStyle.italic, fontSize: 36, height: 1, color: Lx.ink),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.forgotPasswordTitle,
-                    textAlign: TextAlign.center,
-                    style: Lx.display(context, size: 22),
-                  ),
-                  const SizedBox(height: 20),
-
-                  if (_sent) ...[
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Lx.ok.withAlpha(26),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Lx.ok.withAlpha(90)),
-                      ),
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Icon(Icons.mark_email_read_outlined, size: 18, color: Lx.ok),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            l10n.forgotPasswordSent,
-                            style: const TextStyle(fontSize: 12, color: ShadColors.textPrimary, height: 1.5),
-                          ),
-                        ),
-                      ]),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () => context.go('/login'),
-                        child: Text(l10n.forgotPasswordBackToLogin),
-                      ),
-                    ),
-                  ] else ...[
+      backgroundColor: const Color(0xFF0D0D0D),
+      body: AuthBackdrop(
+        animate: widget.animateBackground,
+        child: SafeArea(
+          child: Stack(children: [
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: AuthCard(
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    const AuthLogo(key: ValueKey('forgot-logo')),
+                    const SizedBox(height: 14),
                     Text(
                       l10n.forgotPasswordSubtitle,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12, color: ShadColors.textSecondary, height: 1.5),
+                      style: Lx.text(context, size: 13, color: Lx.muted, height: 1.6),
                     ),
-                    const SizedBox(height: 20),
-
-                    if (_error != null) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: ShadColors.crimson.withAlpha(30),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: ShadColors.crimson.withAlpha(50)),
-                        ),
-                        child: Text(_error!, key: const ValueKey('forgot-error'), style: Lx.text(context, size: 12, color: ShadColors.gold)),
-                      ),
-                    ],
-
-                    TextField(
+                    const SizedBox(height: 22),
+                    if (_sent) authNotice(context, l10n.forgotPasswordSent, ok: true, key: const ValueKey('forgot-sent')),
+                    if (_error != null) authNotice(context, _error!, ok: false, key: const ValueKey('forgot-error')),
+                    authField(
+                      context,
+                      label: l10n.emailLabel,
                       controller: _emailController,
+                      hint: 'example@domain.com',
                       keyboardType: TextInputType.emailAddress,
-                      textDirection: TextDirection.ltr,
-                      autocorrect: false,
                       enabled: !_loading,
                       onSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: l10n.email,
-                        hintText: l10n.emailHint,
-                        prefixIcon: const Icon(Icons.email_outlined, size: 18),
-                      ),
                     ),
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _loading ? null : _submit,
-                        child: _loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                              )
-                            : Text(l10n.forgotPasswordSubmit),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _loading ? null : () => context.go('/login'),
-                      child: Text(
-                        l10n.forgotPasswordBackToLogin,
-                        style: const TextStyle(fontSize: 12, color: ShadColors.gold),
-                      ),
-                    ),
-                  ],
-                ],
+                    const SizedBox(height: 22),
+                    AuthButton(label: l10n.forgotPasswordSubmit, loading: _loading, onPressed: _submit),
+                    const SizedBox(height: 10),
+                    AuthLink(label: l10n.forgotPasswordBackToLogin, onTap: _loading ? null : () => context.go('/login')),
+                  ]),
+                ),
               ),
             ),
-          ),
+            // Mockup `.lang`: top-start, 38px, globe icon at white .5.
+            PositionedDirectional(
+              top: 10,
+              start: 14,
+              child: GestureDetector(
+                key: const ValueKey('forgot-lang'),
+                onTap: () => context.read<LocaleProvider>().toggle(),
+                child: SizedBox(width: 38, height: 38, child: Center(child: LxIcon('lang', size: 18, color: Colors.white.withAlpha(128)))),
+              ),
+            ),
+          ]),
         ),
       ),
     );

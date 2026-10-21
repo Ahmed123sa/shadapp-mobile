@@ -8,6 +8,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/router.dart' show homeLocationForRole;
 import '../../core/theme.dart';
@@ -308,7 +309,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           Align(
                             alignment: isAr ? Alignment.topRight : Alignment.topLeft,
                             child: IconButton(
-                              icon: const Icon(Icons.language, size: 20, color: Colors.white54),
+                              icon: LxIcon('lang', size: 18, color: Colors.white.withAlpha(128)),
                               onPressed: () => context.read<LocaleProvider>().toggle(),
                             ),
                           ),

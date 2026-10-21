@@ -16,7 +16,7 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, __) => ForgotPasswordPage(api: api)),
+        GoRoute(path: '/', builder: (_, __) => ForgotPasswordPage(api: api, animateBackground: false)),
         GoRoute(path: '/login', builder: (_, __) => const Scaffold(body: Text('LOGIN_PAGE'))),
       ],
     );
