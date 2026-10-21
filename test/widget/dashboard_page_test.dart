@@ -19,6 +19,7 @@
 // RealtimePoller reason documented there too.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shadapp_client/core/widgets/error_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/core/reverb_service.dart';
 import 'package:shadapp_client/features/dashboard/client_dashboard_screen.dart';
@@ -115,16 +116,16 @@ void main() {
 
     await pumpPage(tester, api);
 
-    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.byType(ErrorState), findsOneWidget);
 
     shouldFail = false;
     stubActiveWorkspace(httpClient);
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.tap(find.byType(OutlinedButton)); // ErrorState's Retry
     await pumpBriefly(tester);
 
     // Still stuck on the error screen despite the retry succeeding — see the
     // comment above.
-    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.byType(ErrorState), findsOneWidget);
     expect(find.byType(ClientDashboardScreen), findsNothing);
   });
 }

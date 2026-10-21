@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/loading_state.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/locale_provider.dart';
 import '../../core/reverb_service.dart';
@@ -475,25 +476,10 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(backgroundColor: Lx.page, body: SafeArea(child: LoadingState(style: LoadingStyle.spinner)));
     }
     if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.error_outline, size: 64, color: ShadColors.error),
-              const SizedBox(height: 16),
-              Text(_error!, style: const TextStyle(color: ShadColors.textPrimary, fontSize: 16)),
-              const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadClientData, child: Text(AppLocalizations.of(context)!.retry)),
-            ]),
-          ),
-        ),
-      );
+      return Scaffold(backgroundColor: Lx.page, body: SafeArea(child: ErrorState(message: _error!, onRetry: _loadClientData)));
     }
 
     return _buildDashboard();

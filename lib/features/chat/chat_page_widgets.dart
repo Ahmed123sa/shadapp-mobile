@@ -18,7 +18,6 @@ import '../../core/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/theme.dart' show statusLabels;
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/chat_contract_card.dart';
 import 'chat_shared.dart';
@@ -515,61 +514,6 @@ class LxPaymentBanner extends StatelessWidget {
     } catch (_) {
       return dateStr;
     }
-  }
-}
-
-/// Mockup sheet: serif 22 title, then `.doc` rows (doc icon, title, status
-/// dot + label). Shown inside [showLuxeSheet], which draws the grab handle.
-class ContractsSheet extends StatelessWidget {
-  final List<dynamic> contracts;
-  const ContractsSheet({super.key, required this.contracts});
-
-  static LxStatus _dot(String status) => switch (status) {
-        'active' || 'completed' || 'client_approved' => LxStatus.ok,
-        'rejected' || 'cancelled' => LxStatus.bad,
-        'draft' => LxStatus.off,
-        _ => LxStatus.wait,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final labels = statusLabels(l10n);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-      Text(l10n.contracts, style: Lx.display(context, size: 22)),
-      const SizedBox(height: 14),
-      if (contracts.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: Text(l10n.noContracts, style: Lx.text(context, size: 13, color: Lx.muted))),
-        )
-      else
-        for (final c in contracts)
-          Builder(builder: (context) {
-            final status = c['status'] as String? ?? '';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Lx.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Lx.line),
-              ),
-              child: Row(children: [
-                const LxIcon('doc', size: 18, color: Lx.muted),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(c['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: Lx.text(context, size: 13.5, color: Lx.ink, weight: FontWeight.w500)),
-                ),
-                const SizedBox(width: 10),
-                LuxeStatusDot(status: _dot(status)),
-                const SizedBox(width: 6),
-                Text(labels[status] ?? status, style: Lx.text(context, size: 11.5, color: Lx.muted)),
-              ]),
-            );
-          }),
-    ]);
   }
 }
 

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/helpers/signature_required_dialog.dart';
@@ -12,7 +11,6 @@ import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
-import '../../core/helpers/meeting_helpers.dart';
 import '../../core/helpers/realtime_poller.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/contract_provider.dart';
@@ -41,6 +39,8 @@ class ChatPage extends StatefulWidget {
   final ApiClient? api;
   final ChatProvider? chatProvider;
   final ContractProvider? contractProvider;
+  // Kept for callers; the chat no longer fetches meetings itself (the old
+  // Zoom header button was the only user).
   final MeetingProvider? meetingProvider;
 
   const ChatPage({super.key, this.onGoToPayments, this.enablePolling = true, this.reverb, this.api, this.chatProvider, this.contractProvider, this.meetingProvider});
@@ -53,7 +53,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
-  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   // No cross-tenant fallback (see docs/state-layer-migration-plan.md, P0-1):
   // a null workspaceId means "we don't know this client's workspace yet",
   // not "assume workspace 1". Every call site below guards on this being
@@ -344,58 +343,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return result;
   }
 
-  Future<void> _openContracts() async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    try {
-      final contracts = await _contractProvider.fetchWorkspaceContractsRaw(wsId);
-      if (!mounted) return;
-      showLuxeSheet(
-        context,
-        builder: (_) => ContractsSheet(contracts: contracts),
-      );
-    } catch (e, s) {
-      AppLog.error('chat_page._openContracts', e, s);
-    }
-  }
-
-  Future<void> _openLatestZoomLink() async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    try {
-      final meetings = await _meetingProvider.fetchForWorkspaceRaw(wsId);
-      if (!mounted) return;
-      String? zoomLink;
-      String? scheduledAt;
-      for (final m in meetings.reversed) {
-        final link = m['link'] as String?;
-        final status = m['status'] as String?;
-        if (link != null && status == 'scheduled') {
-          zoomLink = link;
-          scheduledAt = m['scheduled_at'] as String?;
-          break;
-        }
-      }
-      if (zoomLink == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.noActiveMeeting)));
-        return;
-      }
-      if (scheduledAt != null) {
-        final joinStatus = getMeetingJoinStatus(scheduledAt, AppLocalizations.of(context)!);
-        if (!joinStatus.canJoin) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(joinStatus.label)));
-          return;
-        }
-      }
-      final uri = Uri.tryParse(zoomLink);
-      if (uri != null && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e, s) {
-      AppLog.error('chat_page._openLatestZoomLink', e, s);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_workspaceActive) {
@@ -416,36 +363,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
 
     final l10n = AppLocalizations.of(context)!;
-    final amName = _workspaceData?['manager']?['name'] as String? ?? l10n.accountManager;
-    final amOnline = chatIsOnline(_workspaceData?['manager']);
-
-    Widget headerBtn(String key, IconData icon, VoidCallback onTap) => InkResponse(
-          key: ValueKey(key),
-          onTap: onTap,
-          radius: 20,
-          child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 18, color: Lx.muted)),
-        );
+    final amName = (_workspaceData?['manager']?['name'] as String?)?.trim();
+    final shownName = (amName == null || amName.isEmpty) ? l10n.accountManager : amName;
 
     return Column(children: [
-      // Slim header (the mockup has none; kept so the contracts list and the
-      // latest meeting link stay reachable).
+      // Mockup chat header: the manager's avatar, name (serif) and role.
+      // The old contracts / Zoom buttons are gone - contracts have their own
+      // tab and the next meeting shows as the banner above the composer.
       Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 10, 6),
+        key: const ValueKey('chat-header'),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 6),
         child: Row(children: [
-          LuxeStatusDot(status: amOnline ? LxStatus.ok : LxStatus.off),
-          const SizedBox(width: 8),
+          LuxeAvatar(initial: String.fromCharCode(shownName.runes.first)),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text.rich(
-              TextSpan(children: [
-                TextSpan(text: amName, style: Lx.text(context, size: 13, weight: FontWeight.w500)),
-                TextSpan(text: '  ${amOnline ? l10n.online : l10n.offline}', style: Lx.text(context, size: 11, color: Lx.faint)),
-              ]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(shownName, maxLines: 1, overflow: TextOverflow.ellipsis, style: Lx.display(context, size: 16)),
+              Text(l10n.accountManager.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 1.4)),
+            ]),
           ),
-          headerBtn('chat-contracts', Icons.copy_outlined, _openContracts),
-          headerBtn('chat-zoom', Icons.videocam_outlined, _openLatestZoomLink),
         ]),
       ),
       // Messages
