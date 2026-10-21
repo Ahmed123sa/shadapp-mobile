@@ -100,18 +100,27 @@ void main() {
     final provider = SubUserProvider(repository: SubUserRepository(api: api));
 
     await pumpPage(tester, provider, api);
-    await tester.tap(find.text('+ Add'));
+    // Adding now happens in the mockup's sheet (name, email, phone, birthday,
+    // password, permissions, "email the login details").
+    tester.view.physicalSize = const Size(800, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.tap(find.byKey(const ValueKey('subusers-add')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), 'New Sub');
     await tester.enterText(find.byType(TextField).at(1), 'new@x.com');
     // The password field is a PasswordField, which renders a TextFormField
     // internally rather than a plain TextField.
     await tester.enterText(find.byType(TextFormField), 'pw123456');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Sub-User'));
+    // The add sheet (fields + 11 permission switches) is taller than the
+    // test screen, so press its Save button directly.
+    tester.widget<ElevatedButton>(find.byKey(const ValueKey('subuser-sheet-save'))).onPressed!();
     await tester.pumpAndSettle();
 
     expect(sentBody!['name'], 'New Sub');
     expect(sentBody!['email'], 'new@x.com');
+    expect(sentBody!['send_email'], true);
     verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/clients/9/sub-users'))),
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
     expect(find.text('New Sub'), findsOneWidget);
@@ -153,9 +162,13 @@ void main() {
     final provider = SubUserProvider(repository: SubUserRepository(api: api));
 
     await pumpPage(tester, provider, api);
+    tester.view.physicalSize = const Size(800, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.tap(find.byKey(const ValueKey('subuser-edit-1')));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(SwitchListTile, 'Chat'));
+    await tester.tap(find.byKey(const ValueKey('subuser-perm-can_chat')));
     await tester.pumpAndSettle();
 
     expect(sentBody!['permissions']['can_chat'], true);
@@ -190,7 +203,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+    // The sheet scrolls; bring its Save button into view first.
+    await tester.ensureVisible(find.byKey(const ValueKey('subuser-sheet-save')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('subuser-sheet-save')));
     await tester.pumpAndSettle();
 
     expect(sentBody!['name'], 'Sub One Updated');

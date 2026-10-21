@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
+import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
@@ -30,8 +31,8 @@ class _SubUsersPageState extends State<SubUsersPage> {
   // (SubUser::PERMISSION_KEYS via GET /sub-user-permissions) instead of a
   // hardcoded copy in this file.
   List<String> _permissionKeys = [];
+  final _phoneController = TextEditingController();
   bool _loading = true;
-  bool _showForm = false;
   bool _saving = false;
   int? _expandedId;
   DateTime? _newDob;
@@ -40,7 +41,6 @@ class _SubUsersPageState extends State<SubUsersPage> {
   // subuser-review-plan.md م٤ — the owning client edits a sub-user's own
   // name/email/phone/DOB, and sets a new password for them (sub-users can no
   // longer do either themselves). Mirrors ClientSubUsers.tsx on the web.
-  int? _editingId;
   final _editNameController = TextEditingController();
   final _editEmailController = TextEditingController();
   final _editPhoneController = TextEditingController();
@@ -85,30 +85,48 @@ class _SubUsersPageState extends State<SubUsersPage> {
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _create() async {
+  /// Returns true when the member was created (the sheet then closes).
+  /// A new sub-user always starts with no permissions on the server, so the
+  /// ones ticked in the sheet are sent right after, in a second call.
+  Future<bool> _create(Map<String, bool> perms, bool sendEmail) async {
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    if (name.isEmpty || email.isEmpty || password.isEmpty) return;
+    if (name.isEmpty || email.isEmpty || password.isEmpty) return false;
     final cid = _api.userId;
-    if (cid == null) return;
+    if (cid == null) return false;
     setState(() => _saving = true);
+    var ok = false;
     try {
       final body = <String, dynamic>{
-        'name': name, 'email': email, 'password': password,
+        'name': name, 'email': email, 'password': password, 'send_email': sendEmail,
       };
+      final phone = _phoneController.text.trim();
+      if (phone.isNotEmpty) body['phone'] = phone;
       if (_newDob != null) body['date_of_birth'] = _newDob!.toIso8601String().substring(0, 10);
       final data = await _subUserProvider.create(cid, body);
-      _subUsers.add(data['sub_user']);
+      final created = Map<String, dynamic>.from(data['sub_user'] as Map);
+      if (perms.values.any((v) => v) && created['id'] is int) {
+        try {
+          final upd = await _subUserProvider.updatePermissions(created['id'] as int, perms);
+          created['permissions'] = upd['sub_user']?['permissions'] ?? perms;
+        } catch (_) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+        }
+      }
+      _subUsers.add(created);
       _nameController.clear();
       _emailController.clear();
       _passwordController.clear();
-      setState(() { _showForm = false; _newDob = null; });
+      _phoneController.clear();
+      _newDob = null;
+      ok = true;
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_createFailed)));
     }
     if (mounted) setState(() => _saving = false);
+    return ok;
   }
 
   Future<void> _delete(int id) async {
@@ -144,7 +162,6 @@ class _SubUsersPageState extends State<SubUsersPage> {
 
   void _startEdit(dynamic user) {
     setState(() {
-      _editingId = user['id'] as int;
       _editNameController.text = user['name'] as String? ?? '';
       _editEmailController.text = user['email'] as String? ?? '';
       _editPhoneController.text = user['phone'] as String? ?? '';
@@ -153,7 +170,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
     });
   }
 
-  Future<void> _saveEdit(int id) async {
+  Future<bool> _saveEdit(int id) async {
     final l10n = AppLocalizations.of(context)!;
     final body = <String, dynamic>{
       'name': _editNameController.text.trim(),
@@ -167,13 +184,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
       if (idx != -1) {
         setState(() {
           _subUsers[idx] = {..._subUsers[idx] as Map, ...(data['sub_user'] as Map? ?? {})};
-          _editingId = null;
         });
-      } else {
-        setState(() => _editingId = null);
       }
+      return true;
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+      return false;
     }
   }
 
@@ -235,6 +251,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneController.dispose();
     _editNameController.dispose();
     _editEmailController.dispose();
     _editPhoneController.dispose();
@@ -242,34 +259,213 @@ class _SubUsersPageState extends State<SubUsersPage> {
     super.dispose();
   }
 
+  // Mockup permission groups (`t.groups`), headed by the tab they open.
+  List<MapEntry<String, List<String>>> _groups() {
+    final l10n = AppLocalizations.of(context)!;
+    const byGroup = {
+      'chat': ['can_chat'],
+      'contracts': ['can_view_contracts', 'can_approve_contracts'],
+      'payments': ['can_view_payments', 'can_upload_payment_proof'],
+      'approvals': ['can_view_approvals', 'can_respond_approvals'],
+      'files': ['can_view_files', 'can_upload_files'],
+      'meetings': ['can_view_meetings', 'can_join_meetings'],
+    };
+    final titles = {
+      'chat': l10n.dashboard_tab_chat,
+      'contracts': l10n.dashboard_tab_contracts,
+      'payments': l10n.dashboard_tab_payments,
+      'approvals': l10n.dashboard_tab_approvals,
+      'files': l10n.dashboard_tab_files,
+      'meetings': l10n.dashboard_meetings,
+    };
+    final known = byGroup.values.expand((k) => k).toSet();
+    final out = <MapEntry<String, List<String>>>[
+      for (final g in byGroup.entries)
+        if (g.value.any(_permissionKeys.contains)) MapEntry(titles[g.key]!, g.value.where(_permissionKeys.contains).toList()),
+    ];
+    // Any key the backend adds later still shows, in its own group.
+    final extra = _permissionKeys.where((k) => !known.contains(k)).toList();
+    if (extra.isNotEmpty) out.add(MapEntry('', extra));
+    return out;
+  }
+
+  /// Mockup `.f2`: small muted label over an underline input.
+  Widget _f2(String label, Widget input) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Lx.text(context, size: 11, color: Lx.muted)),
+          input,
+        ]),
+      );
+
   Widget _fieldDob({required DateTime? value, required ValueChanged<DateTime> onPick}) {
     final l10n = AppLocalizations.of(context)!;
-    return InkWell(
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime(1990),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-          locale: Localizations.localeOf(context),
-        );
-        if (picked != null) onPick(picked);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l10n.subusers_dateOfBirth, style: Lx.text(context, size: 12, color: Lx.muted)),
-            const SizedBox(height: 4),
-            Text(
-              value != null ? '${value.day}/${value.month}/${value.year}' : l10n.subusers_notSet,
-              style: Lx.text(context, size: 15, color: value != null ? Lx.ink : Lx.faint),
+    return _f2(
+      l10n.subusers_dateOfBirth,
+      InkWell(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: value ?? DateTime(1990),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+            locale: Localizations.localeOf(context),
+          );
+          if (picked != null) onPick(picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Lx.line2))),
+          child: Row(children: [
+            Expanded(
+              child: Text(
+                value != null ? '${value.day} / ${value.month} / ${value.year}' : 'DD / MM / YYYY',
+                style: Lx.text(context, size: 15, color: value != null ? Lx.ink : Lx.faint),
+              ),
             ),
+            const LxIcon('cal', size: 16, color: Lx.faint),
           ]),
-          const Icon(Icons.calendar_today, size: 17, color: Lx.faint),
-        ]),
+        ),
       ),
     );
+  }
+
+  /// The mockup's `addSheet`, used for both adding and editing a teammate.
+  /// Adding: name, email, phone, birthday, password, the permissions to give
+  /// and "email the login details". Editing: the same fields minus the
+  /// password; each permission switch saves straight away, like before.
+  void _openMemberSheet({dynamic user}) {
+    final l10n = AppLocalizations.of(context)!;
+    final editing = user != null;
+    final id = editing ? user['id'] as int : null;
+    if (editing) _startEdit(user);
+    final draftPerms = <String, bool>{for (final k in _permissionKeys) k: false};
+    var sendEmail = true;
+    var busy = false;
+
+    showLuxeSheet<void>(context, builder: (ctx) {
+      return StatefulBuilder(builder: (ctx, setSheet) {
+        final live = editing ? _getPermissions(_subUsers.firstWhere((u) => u['id'] == id, orElse: () => user)) : null;
+        bool isOn(String k) => editing ? live![k] == true : draftPerms[k] == true;
+        final groups = _groups();
+        return LuxeFormTheme(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(editing ? (user['name'] ?? '').toString() : l10n.teamAddTitle, style: Lx.display(ctx, size: 22)),
+            const SizedBox(height: 18),
+            _f2(l10n.subusers_name, TextField(controller: editing ? _editNameController : _nameController, style: Lx.text(ctx, size: 15))),
+            _f2(
+              l10n.subusers_email,
+              TextField(
+                controller: editing ? _editEmailController : _emailController,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                style: Lx.text(ctx, size: 15),
+                decoration: const InputDecoration(hintText: 'name@company.com'),
+              ),
+            ),
+            _f2(
+              l10n.subusers_phone,
+              TextField(
+                controller: editing ? _editPhoneController : _phoneController,
+                keyboardType: TextInputType.phone,
+                textDirection: TextDirection.ltr,
+                style: Lx.text(ctx, size: 15),
+                decoration: const InputDecoration(hintText: '+20'),
+              ),
+            ),
+            _fieldDob(
+              value: editing ? _editDob : _newDob,
+              onPick: (d) {
+                setState(() {
+                  if (editing) {
+                    _editDob = d;
+                  } else {
+                    _newDob = d;
+                  }
+                });
+                setSheet(() {});
+              },
+            ),
+            if (!editing) ...[
+              PasswordField(controller: _passwordController, showRequirements: false),
+              const SizedBox(height: 8),
+            ],
+            for (final g in groups) ...[
+              if (g.key.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14, bottom: 2),
+                  child: Text(g.key.toUpperCase(), style: Lx.text(ctx, size: 10.5, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+                ),
+              for (var i = 0; i < g.value.length; i++)
+                LuxeOptRow(
+                  label: _permissionLabel(g.value[i]),
+                  last: i == g.value.length - 1,
+                  trailing: LuxeToggle(
+                    key: ValueKey('subuser-perm-${g.value[i]}'),
+                    value: isOn(g.value[i]),
+                    onChanged: (v) async {
+                      final k = g.value[i];
+                      if (editing) {
+                        await _togglePermission(id!, k, live![k] == true);
+                      } else {
+                        draftPerms[k] = v;
+                      }
+                      setSheet(() {});
+                    },
+                  ),
+                ),
+            ],
+            if (!editing)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: LuxeOptRow(
+                  label: l10n.teamSendLogin,
+                  last: true,
+                  trailing: LuxeToggle(
+                    key: const ValueKey('subuser-send-email'),
+                    value: sendEmail,
+                    onChanged: (v) => setSheet(() => sendEmail = v),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 18),
+            Row(children: [
+              Expanded(
+                child: ElevatedButton(
+                  key: const ValueKey('subuser-sheet-save'),
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          setSheet(() => busy = true);
+                          final ok = editing ? await _saveEdit(id!) : await _create(draftPerms, sendEmail);
+                          if (!ctx.mounted) return;
+                          setSheet(() => busy = false);
+                          if (ok) Navigator.pop(ctx);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Lx.crimson,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: const StadiumBorder(),
+                    elevation: 0,
+                  ),
+                  child: busy
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(editing ? l10n.subusers_save : l10n.subusers_addUser),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: LuxeButton(
+                  label: l10n.subusers_cancel,
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+            ]),
+          ]),
+        );
+      });
+    });
   }
 
   @override
@@ -283,8 +479,12 @@ class _SubUsersPageState extends State<SubUsersPage> {
         children: [
           LuxePageTitle(l10n.dashboard_team),
           Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(l10n.teamLead, style: Lx.text(context, size: 13.5, color: Lx.muted, height: 1.5)),
+          ),
+          Padding(
             padding: const EdgeInsets.only(bottom: 18),
-            child: Text('${l10n.subusers_title} (${_subUsers.length})', style: Lx.text(context, size: 13.5, color: Lx.muted)),
+            child: Text('${l10n.subusers_title} (${_subUsers.length})', style: Lx.text(context, size: 11.5, color: Lx.faint)),
           ),
           if (!_isSubUser)
             Padding(
@@ -293,44 +493,13 @@ class _SubUsersPageState extends State<SubUsersPage> {
                 width: double.infinity,
                 child: LuxeButton(
                   key: const ValueKey('subusers-add'),
-                  label: _showForm ? l10n.cancel : '+ ${l10n.subusers_add}',
-                  lxIcon: _showForm ? null : 'plus',
+                  label: l10n.teamAdd,
+                  lxIcon: 'plus',
                   kind: LuxeButtonKind.primary,
                   size: LuxeButtonSize.lg,
-                  onPressed: () => setState(() => _showForm = !_showForm),
+                  onPressed: _saving ? null : () => _openMemberSheet(),
                 ),
               ),
-            ),
-          if (_showForm)
-            LuxeCard(
-              child: Column(children: [
-                TextField(
-                  controller: _nameController,
-                  style: Lx.text(context, size: 15),
-                  decoration: InputDecoration(labelText: l10n.subusers_name, hintText: l10n.subusers_username),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _emailController,
-                  style: Lx.text(context, size: 15),
-                  decoration: InputDecoration(labelText: l10n.subusers_email, hintText: l10n.subusers_emailHint),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 14),
-                PasswordField(controller: _passwordController, showRequirements: false),
-                const SizedBox(height: 10),
-                _fieldDob(value: _newDob, onPick: (d) => setState(() => _newDob = d)),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _create,
-                    child: _saving
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(l10n.subusers_addUser),
-                  ),
-                ),
-              ]),
             ),
           if (_subUsers.isEmpty)
             Padding(
@@ -340,7 +509,6 @@ class _SubUsersPageState extends State<SubUsersPage> {
           else
             ..._subUsers.map((u) {
               final id = u['id'] as int;
-              final isEditing = _editingId == id;
               final permissions = _getPermissions(u);
               final activeKeys = _permissionKeys.where((k) => permissions[k] == true).toList();
               return LuxeCard(
@@ -359,6 +527,7 @@ class _SubUsersPageState extends State<SubUsersPage> {
                       ]),
                     ),
                   ]),
+                  // Mockup `.perm`: one small pill per permission given.
                   if (activeKeys.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
@@ -371,80 +540,32 @@ class _SubUsersPageState extends State<SubUsersPage> {
                           ),
                       ]),
                     ),
-                  if (isEditing) ...[
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _editNameController,
-                      style: Lx.text(context, size: 15),
-                      decoration: InputDecoration(labelText: l10n.subusers_name),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _editEmailController,
-                      style: Lx.text(context, size: 15),
-                      decoration: InputDecoration(labelText: l10n.subusers_email),
-                      keyboardType: TextInputType.emailAddress,
-                      textDirection: TextDirection.ltr,
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: _editPhoneController,
-                      style: Lx.text(context, size: 15),
-                      decoration: InputDecoration(labelText: l10n.subusers_phone),
-                      keyboardType: TextInputType.phone,
-                      textDirection: TextDirection.ltr,
-                    ),
-                    if (!_isSubUser)
-                      for (final key in _permissionKeys)
-                        LuxeSwitchRow(
-                          label: _permissionLabel(key),
-                          value: permissions[key] == true,
-                          onChanged: (v) => _togglePermission(u['id'], key, permissions[key] == true),
-                        ),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(
-                        child: ElevatedButton(onPressed: () => _saveEdit(id), child: Text(l10n.subusers_save)),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(onPressed: () => setState(() => _editingId = null), child: Text(l10n.subusers_cancel)),
-                      ),
-                    ]),
-                  ] else if (!_isSubUser)
+                  if (!_isSubUser)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
-                      child: Row(children: [
-                        Expanded(
-                          child: LuxeButton(
-                            key: ValueKey('subuser-edit-$id'),
-                            label: l10n.subusers_edit,
-                            size: LuxeButtonSize.sm,
-                            onPressed: () => _startEdit(u),
-                          ),
+                      child: Wrap(spacing: 8, runSpacing: 8, children: [
+                        LuxeButton(
+                          key: ValueKey('subuser-edit-$id'),
+                          label: l10n.subusers_edit,
+                          size: LuxeButtonSize.sm,
+                          onPressed: () => _openMemberSheet(user: u),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: LuxeButton(
-                            key: ValueKey('subuser-password-$id'),
-                            label: l10n.subusers_setPassword,
-                            kind: LuxeButtonKind.quiet,
-                            size: LuxeButtonSize.sm,
-                            onPressed: () => setState(() {
-                              _passwordTargetId = id;
-                              _newPasswordController.clear();
-                            }),
-                          ),
+                        LuxeButton(
+                          key: ValueKey('subuser-password-$id'),
+                          label: l10n.subusers_setPassword,
+                          kind: LuxeButtonKind.quiet,
+                          size: LuxeButtonSize.sm,
+                          onPressed: () => setState(() {
+                            _passwordTargetId = id;
+                            _newPasswordController.clear();
+                          }),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: LuxeButton(
-                            key: ValueKey('subuser-delete-$id'),
-                            label: AppLocalizations.of(context)!.delete,
-                            kind: LuxeButtonKind.danger,
-                            size: LuxeButtonSize.sm,
-                            onPressed: () => _delete(id),
-                          ),
+                        LuxeButton(
+                          key: ValueKey('subuser-delete-$id'),
+                          label: AppLocalizations.of(context)!.delete,
+                          kind: LuxeButtonKind.danger,
+                          size: LuxeButtonSize.sm,
+                          onPressed: () => _delete(id),
                         ),
                       ]),
                     ),
@@ -463,16 +584,25 @@ class _SubUsersPageState extends State<SubUsersPage> {
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(
-                        child: ElevatedButton(onPressed: () => _savePassword(id), child: Text(l10n.subusers_save)),
+                        child: ElevatedButton(
+                          onPressed: () => _savePassword(id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Lx.crimson,
+                            foregroundColor: Colors.white,
+                            shape: const StadiumBorder(),
+                            elevation: 0,
+                          ),
+                          child: Text(l10n.subusers_save),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton(
+                        child: LuxeButton(
+                          label: l10n.subusers_cancel,
                           onPressed: () => setState(() {
                             _passwordTargetId = null;
                             _newPasswordController.clear();
                           }),
-                          child: Text(l10n.subusers_cancel),
                         ),
                       ),
                     ]),

@@ -115,7 +115,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await _settingsProvider.uploadClientAvatar(cid, file);
         _load();
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_imageChanged)])));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(AppLocalizations.of(context)!.settings_imageChanged))])));
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settings_imageChangeFailed)));
     }
@@ -151,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await _settingsProvider.updateClientProfile(cid, body);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const Icon(Icons.check_circle, color: Colors.green, size: 18), const SizedBox(width: 8), Text(AppLocalizations.of(context)!.settings_saved)])));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: [const LxIcon('check', size: 18, color: Lx.ok), const SizedBox(width: 8), Flexible(child: Text(AppLocalizations.of(context)!.settings_saved))])));
         Navigator.pop(context, true);
       }
     } catch (_) {
@@ -181,19 +181,28 @@ class _SettingsPageState extends State<SettingsPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: Text(l10n.settingsClientLead, style: Lx.text(context, size: 13.5, color: Lx.muted, height: 1.5)),
+            ),
             Row(children: [
               CircleAvatar(
                 radius: 32,
                 backgroundColor: const Color(0xFF262626),
                 backgroundImage: _avatarUrl != null ? NetworkImage(_api.resolveFileUrl(_avatarUrl!)) : null,
-                child: _avatarUrl == null ? const Icon(Icons.person, size: 30, color: Lx.faint) : null,
+                child: _avatarUrl == null
+                    ? Text(
+                        _nameController.text.trim().isEmpty ? '' : String.fromCharCode(_nameController.text.trim().runes.first),
+                        style: Lx.display(context, size: 26),
+                      )
+                    : null,
               ),
               const SizedBox(width: 16),
-              OutlinedButton.icon(
+              LuxeButton(
+                key: const ValueKey('settings-change-picture'),
+                label: l10n.settings_changePicture,
+                size: LuxeButtonSize.sm,
                 onPressed: _pickAvatar,
-                icon: const Icon(Icons.camera_alt, size: 16),
-                label: Text(l10n.settings_changePicture),
-                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 14)),
               ),
             ]),
             const SizedBox(height: 14),
@@ -255,7 +264,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: Lx.text(context, size: 15, color: _dateOfBirth != null ? Lx.ink : Lx.faint),
                     ),
                   ]),
-                  const Icon(Icons.calendar_today, size: 17, color: Lx.faint),
+                  const LxIcon('cal', size: 16, color: Lx.faint),
                 ]),
               ),
             ),
@@ -264,7 +273,13 @@ class _SettingsPageState extends State<SettingsPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
-                style: ElevatedButton.styleFrom(minimumSize: const Size(0, 48)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Lx.crimson,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                  shape: const StadiumBorder(),
+                  elevation: 0,
+                ),
                 child: _saving
                     ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                     : Text(l10n.settings_save),

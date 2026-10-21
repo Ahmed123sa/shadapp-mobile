@@ -2083,5 +2083,10 @@
   "onboardingDropTitle": "Tap to add files",
   "onboardingDropHint": "Images from your gallery",
   "signatureLead": "Your e-signature, used when you approve contracts and requests.",
-  "signatureNone": "No signature saved yet"
+  "signatureNone": "No signature saved yet",
+  "teamLead": "People who can work in this workspace — each with only the access you give them.",
+  "teamAdd": "Add teammate",
+  "teamAddTitle": "Add a teammate",
+  "teamSendLogin": "Email the login details",
+  "settingsClientLead": "Your profile and language."
 }

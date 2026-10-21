@@ -6072,4 +6072,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signatureNone => 'No signature saved yet';
+
+  @override
+  String get teamLead =>
+      'People who can work in this workspace — each with only the access you give them.';
+
+  @override
+  String get teamAdd => 'Add teammate';
+
+  @override
+  String get teamAddTitle => 'Add a teammate';
+
+  @override
+  String get teamSendLogin => 'Email the login details';
+
+  @override
+  String get settingsClientLead => 'Your profile and language.';
 }

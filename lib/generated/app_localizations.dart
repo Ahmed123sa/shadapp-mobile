@@ -11615,6 +11615,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No signature saved yet'**
   String get signatureNone;
+
+  /// No description provided for @teamLead.
+  ///
+  /// In en, this message translates to:
+  /// **'People who can work in this workspace — each with only the access you give them.'**
+  String get teamLead;
+
+  /// No description provided for @teamAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add teammate'**
+  String get teamAdd;
+
+  /// No description provided for @teamAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a teammate'**
+  String get teamAddTitle;
+
+  /// No description provided for @teamSendLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Email the login details'**
+  String get teamSendLogin;
+
+  /// No description provided for @settingsClientLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile and language.'**
+  String get settingsClientLead;
 }
 
 class _AppLocalizationsDelegate

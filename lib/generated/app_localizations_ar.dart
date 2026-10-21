@@ -6048,4 +6048,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get signatureNone => 'مفيش توقيع محفوظ لسه';
+
+  @override
+  String get teamLead =>
+      'أشخاص يقدروا يشتغلوا في مساحة العمل، كل واحد بالصلاحيات اللي إنت تديها له بس.';
+
+  @override
+  String get teamAdd => 'إضافة عضو';
+
+  @override
+  String get teamAddTitle => 'إضافة عضو للفريق';
+
+  @override
+  String get teamSendLogin => 'ابعت بيانات الدخول على الإيميل';
+
+  @override
+  String get settingsClientLead => 'بياناتك واللغة.';
 }

@@ -59,7 +59,9 @@ class _MeetingsPageState extends State<MeetingsPage> {
   String _time(String? dt) {
     if (dt == null) return '';
     try {
-      final parsed = DateTime.parse(dt);
+      // The API sends UTC; show the phone's local time (Egypt), like the
+      // calendar block next to it already does.
+      final parsed = DateTime.parse(dt).toLocal();
       return '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
     } catch (_) { return dt; }
   }
@@ -136,7 +138,13 @@ class _MeetingsPageState extends State<MeetingsPage> {
 
   Widget _meetingCard(Meeting m, bool isUpcoming) {
     final l10n = AppLocalizations.of(context)!;
+    DateTime? when;
+    try {
+      when = DateTime.parse(m.scheduledAt!).toLocal();
+    } catch (_) {}
     final sub = [
+      // Upcoming cards carry the date in the calendar block; past ones show it inline.
+      if (!isUpcoming && when != null) DateFormat('EEE d MMM', Localizations.localeOf(context).toString()).format(when),
       _time(m.scheduledAt),
       if (m.durationMinutes != null) '${m.durationMinutes} min',
     ].where((e) => e.isNotEmpty).join(' · ');
