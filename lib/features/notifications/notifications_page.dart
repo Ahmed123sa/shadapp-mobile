@@ -99,6 +99,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       case 'contract_company_approved':
       case 'contract_completed':
       case 'payment_reviewed':
+      case 'payment_reviewed_staff':
       case 'approval_responded':
         return 'ok';
       case 'contract_sent':
@@ -106,6 +107,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       case 'payment_created':
       case 'payment_scheduled':
       case 'payment_reminder':
+      case 'payment_overdue_staff':
       case 'payment_schedule_updated':
         return 'w';
       case 'approval_requested':
@@ -135,10 +137,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         return 'check';
       case 'payment_created':
       case 'payment_reviewed':
+      case 'payment_reviewed_staff':
         return 'wallet';
       case 'payment_scheduled':
         return 'cal';
       case 'payment_reminder':
+      case 'payment_overdue_staff':
         return 'clock';
       case 'payment_schedule_deleted':
         return 'trash';
