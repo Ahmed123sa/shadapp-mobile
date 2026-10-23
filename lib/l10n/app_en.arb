@@ -1646,7 +1646,7 @@
   "paymentsStatusScheduled": "Scheduled",
   "paymentsStatusRejected": "Rejected",
   "paymentsRejectionReason": "Rejection Reason",
-  "paymentsRejectionReasonOptional": "Rejection Reason (Optional)",
+  "paymentsRejectionReasonOptional": "Rejection reason (required, at least 5 characters)",
   "paymentsRejectionReasonHint": "Enter rejection reason here...",
   "paymentsReuploadProof": "Re-upload Payment Proof",
   "paymentsTaxDetails": "Tax Details",

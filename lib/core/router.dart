@@ -21,6 +21,7 @@ import '../features/settings/settings_page.dart';
 import '../features/staff/staff_dashboard_page.dart';
 import '../features/am/staff/staff_page.dart';
 import '../features/am/staff/my_team_page.dart';
+import '../features/accountant/accountant_dashboard_page.dart';
 
 const _publicLocations = ['/login', '/forgot-password'];
 
@@ -36,10 +37,16 @@ bool _isStaffOnly(String location) => location.startsWith('/am/');
 const _staffAllowedPrefixes = ['/staff', '/am/workspace', '/notifications', '/profile'];
 bool _isStaffAllowed(String location) => _staffAllowedPrefixes.any(location.startsWith);
 
+// The accountant (ACCOUNTANT_ROLE_PLAN.md) sees company-wide finance and, from a
+// payment, that client's workspace (payments and contracts tabs only).
+const _accountantAllowedPrefixes = ['/accountant', '/am/workspace', '/notifications', '/profile', '/settings'];
+bool _isAccountantAllowed(String location) => _accountantAllowedPrefixes.any(location.startsWith);
+
 /// Where a role lands after login / when it opens a screen it may not see.
 String homeLocationForRole(String? role) {
   if (role == 'client' || role == 'sub_user') return '/dashboard';
   if (role == 'staff_member') return '/staff/dashboard';
+  if (role == 'accountant') return '/accountant/dashboard';
   return '/am/dashboard';
 }
 
@@ -86,6 +93,13 @@ Future<String?> resolveAuthRedirect(ApiClient api, String location) async {
   }
   if (role == 'staff_member' && !_isStaffAllowed(location)) {
     return '/staff/dashboard';
+  }
+  // The accountant home is theirs alone, and everything else is walled off.
+  if (location.startsWith('/accountant') && role != 'accountant') {
+    return homeLocationForRole(role);
+  }
+  if (role == 'accountant' && !_isAccountantAllowed(location)) {
+    return '/accountant/dashboard';
   }
   // Managing company staff is the super admin's alone.
   if (location.startsWith('/am/staff') && role != 'super_admin') {
@@ -135,6 +149,7 @@ GoRouter createRouter(ApiClient api, {String initialLocation = '/login'}) {
       GoRoute(path: '/am/finance', builder: (_, __) => const FinancePage()),
       GoRoute(path: '/am/reports', builder: (_, __) => const ReportsPage()),
       GoRoute(path: '/am/audit-logs', builder: (_, __) => const AuditLogPage()),
+      GoRoute(path: '/accountant/dashboard', builder: (_, __) => const AccountantDashboardPage()),
       GoRoute(path: '/staff/dashboard', builder: (_, __) => const StaffDashboardPage()),
       GoRoute(path: '/am/staff', builder: (_, __) => const StaffPage()),
       GoRoute(path: '/am/my-team', builder: (_, __) => const MyTeamPage()),

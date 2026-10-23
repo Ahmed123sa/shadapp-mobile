@@ -77,6 +77,8 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
   bool get _isAssistant => _api.role == 'manager_assistant';
   // Company staff (STAFF_TEAMS_PLAN.md): chat, approval requests and meetings.
   bool get _isStaff => _api.role == 'staff_member';
+  // The accountant sees only the money side: contracts (2) and payments (3).
+  bool get _isAccountant => _api.role == 'accountant';
   // Only the super admin and the client's account manager assign staff.
   bool get _canManageTeam => _api.role == 'super_admin' || _api.role == 'account_manager';
   // 0 chat, 1 files, 2 contracts, 3 payments, 4 approvals, 5 meetings,
@@ -90,6 +92,7 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
       if (i == 5) return _api.staffCan('can_view_meetings');
       return false;
     }
+    if (_isAccountant) return i == 2 || i == 3;
     if (i == 8) return _canManageTeam;
     return !(_isAssistant && i == 3);
   }

@@ -60,5 +60,6 @@ Future<String> notificationTarget(Map<String, String> data, {ApiClient? api}) as
     return '/am/workspace/$workspaceId?tab=${fcmTabIndex(type)}';
   }
   // A staff member's home is their own client list, not the AM dashboard.
+  if (role == 'accountant') return '/accountant/dashboard';
   return role == 'staff_member' ? '/staff/dashboard' : '/am/dashboard';
 }

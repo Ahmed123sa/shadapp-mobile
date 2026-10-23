@@ -1588,7 +1588,7 @@
   "paymentsStatusScheduled": "مجدول",
   "paymentsStatusRejected": "مرفوضة",
   "paymentsRejectionReason": "سبب الرفض",
-  "paymentsRejectionReasonOptional": "سبب الرفض (اختياري)",
+  "paymentsRejectionReasonOptional": "سبب الرفض (إجباري، 5 حروف على الأقل)",
   "paymentsRejectionReasonHint": "اكتب سبب الرفض هنا...",
   "paymentsReuploadProof": "إعادة إرسال إثبات الدفع",
   "paymentsTaxDetails": "تفاصيل الضريبة",

@@ -4945,7 +4945,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsRejectionReason => 'سبب الرفض';
 
   @override
-  String get paymentsRejectionReasonOptional => 'سبب الرفض (اختياري)';
+  String get paymentsRejectionReasonOptional => 'سبب الرفض (إجباري، 5 حروف على الأقل)';
 
   @override
   String get paymentsRejectionReasonHint => 'اكتب سبب الرفض هنا...';

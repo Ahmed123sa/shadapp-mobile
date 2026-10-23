@@ -170,11 +170,33 @@ void main() {
     });
   });
 
+  group('accountant', () {
+    test('lands on its own home and cannot open any other staff screen', () async {
+      final api = buildClient(token: 't', role: 'accountant');
+      expect(await resolveAuthRedirect(api, '/login'), '/accountant/dashboard');
+      expect(await resolveAuthRedirect(api, '/accountant/dashboard'), null);
+      expect(await resolveAuthRedirect(api, '/am/workspace/5?tab=3'.split('?').first), null);
+      expect(await resolveAuthRedirect(api, '/notifications'), null);
+      expect(await resolveAuthRedirect(api, '/profile'), null);
+      for (final blocked in ['/am/dashboard', '/am/finance', '/am/reports', '/am/managers', '/am/staff', '/am/clients/3', '/am/settings', '/staff/dashboard', '/dashboard']) {
+        expect(await resolveAuthRedirect(api, blocked), '/accountant/dashboard', reason: blocked);
+      }
+    });
+
+    test('the accountant home is theirs alone', () async {
+      for (final role in ['super_admin', 'account_manager', 'manager_assistant']) {
+        expect(await resolveAuthRedirect(buildClient(token: 't', role: role), '/accountant/dashboard'), '/am/dashboard', reason: role);
+      }
+      expect(await resolveAuthRedirect(buildClient(token: 't', role: 'client'), '/accountant/dashboard'), '/dashboard');
+    });
+  });
+
   group('homeLocationForRole', () {
     test('maps every role to its home', () {
       expect(homeLocationForRole('client'), '/dashboard');
       expect(homeLocationForRole('sub_user'), '/dashboard');
       expect(homeLocationForRole('staff_member'), '/staff/dashboard');
+      expect(homeLocationForRole('accountant'), '/accountant/dashboard');
       expect(homeLocationForRole('super_admin'), '/am/dashboard');
       expect(homeLocationForRole('account_manager'), '/am/dashboard');
       expect(homeLocationForRole('manager_assistant'), '/am/dashboard');

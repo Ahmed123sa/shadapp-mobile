@@ -125,5 +125,11 @@ void main() {
       final api = buildClient('staff_member');
       expect(await notificationTarget({'type': 'staff_assigned'}, api: api), '/staff/dashboard');
     });
+
+    test('accountant: a payment notification opens the payments tab, otherwise their own home', () async {
+      final api = buildClient('accountant');
+      expect(await notificationTarget({'type': 'payment_created', 'workspace_id': '9'}, api: api), '/am/workspace/9?tab=3');
+      expect(await notificationTarget({'type': 'payment_reviewed_staff'}, api: api), '/accountant/dashboard');
+    });
   });
 }

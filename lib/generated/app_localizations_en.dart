@@ -4972,7 +4972,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentsRejectionReason => 'Rejection Reason';
 
   @override
-  String get paymentsRejectionReasonOptional => 'Rejection Reason (Optional)';
+  String get paymentsRejectionReasonOptional => 'Rejection reason (required, at least 5 characters)';
 
   @override
   String get paymentsRejectionReasonHint => 'Enter rejection reason here...';

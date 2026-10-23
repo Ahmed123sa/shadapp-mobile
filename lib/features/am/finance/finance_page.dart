@@ -1,22 +1,26 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/widgets/reject_reason_dialog.dart';
 import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../providers/payment_provider.dart';
 
-/// Super-admin finance screen (staff mockup `pFinance`): totals, search,
+/// Finance screen for the super admin and the accountant (staff mockup `pFinance`): totals, search,
 /// status chips and every payment across all workspaces. Same data as the web
 /// dashboard's Finance page (`GET /all-payments`).
 class FinancePage extends StatefulWidget {
   final PaymentProvider? paymentProvider;
   final ApiClient? api;
-  const FinancePage({super.key, this.paymentProvider, this.api});
+  // True when shown inside the accountant home (which has its own top bar).
+  final bool embedded;
+  const FinancePage({super.key, this.paymentProvider, this.api, this.embedded = false});
 
   @override
   State<FinancePage> createState() => _FinancePageState();
@@ -92,6 +96,49 @@ class _FinancePageState extends State<FinancePage> {
     });
   }
 
+  int? _reviewingId;
+
+  /// Approves or rejects a pending payment (super admin / accountant only).
+  /// Rejecting needs a reason of at least 5 characters.
+  Future<void> _review(Map<String, dynamic> p, String action) async {
+    if (!_api.canReviewPayments || _reviewingId != null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final id = p['id'] as int;
+    String? reason;
+    if (action == 'rejected') {
+      reason = await showRejectReasonDialog(context);
+      if (reason == null || !mounted) return;
+    } else {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.paymentsApprovePayment),
+          content: Text(l10n.paymentsApproveConfirmMsg),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Lx.ok),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+    }
+    setState(() => _reviewingId = id);
+    try {
+      await _provider.reviewPayment(id, action, notes: reason);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(action == 'approved' ? l10n.paymentsApprovedWorkspacePending : l10n.paymentsRejectedMsg)));
+      await _load();
+    } catch (e, s) {
+      AppLog.error('finance_page._review', e, s);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorOccurred)));
+    }
+    if (mounted) setState(() => _reviewingId = null);
+  }
+
   Future<void> _openProof(String url) async {
     final uri = Uri.tryParse(_api.resolveFileUrl(url));
     final fail = AppLocalizations.of(context)!.payments_fileOpenFailed;
@@ -153,13 +200,15 @@ class _FinancePageState extends State<FinancePage> {
 
     return Scaffold(
       backgroundColor: Lx.page,
-      appBar: AppBar(
-        backgroundColor: Lx.page,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Lx.muted),
-        title: const SizedBox.shrink(),
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              backgroundColor: Lx.page,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              iconTheme: const IconThemeData(color: Lx.muted),
+              title: const SizedBox.shrink(),
+            ),
       body: RefreshIndicator(
         onRefresh: _load,
         color: Lx.crimsonInk,
@@ -359,6 +408,37 @@ class _FinancePageState extends State<FinancePage> {
               ),
             ),
         ]),
+        if (status == 'pending' && _api.canReviewPayments) ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: ElevatedButton(
+                key: ValueKey('finance-approve-${p['id']}'),
+                onPressed: _reviewingId == null ? () => _review(p, 'approved') : null,
+                child: Text(l10n.approve),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                key: ValueKey('finance-reject-${p['id']}'),
+                onPressed: _reviewingId == null ? () => _review(p, 'rejected') : null,
+                style: OutlinedButton.styleFrom(foregroundColor: Lx.danger),
+                child: Text(l10n.reject),
+              ),
+            ),
+          ]),
+        ],
+        if (p['workspace_id'] != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              key: ValueKey('finance-open-${p['id']}'),
+              // Payments tab (3) of the client's workspace; contracts are tab 2.
+              onPressed: () => context.push('/am/workspace/${p['workspace_id']}?tab=3'),
+              child: Text(clientName, overflow: TextOverflow.ellipsis),
+            ),
+          ),
       ]),
     );
   }
