@@ -13,6 +13,7 @@ import '../../core/luxe/tokens.dart';
 import '../../core/router.dart' show homeLocationForRole;
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
+import 'shad_login_motion.dart';
 
 class LoginPage extends StatefulWidget {
   final ApiClient? api;
@@ -43,16 +44,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late Animation<Offset> _cardSlide;
   late Animation<double> _fieldsFade;
 
-  // ── SHAD: Single mysterious reveal (once, 3s) ──
-  late AnimationController _shimmerController;
-  bool _shimmerComplete = false;
-
-  // ── SHAD: Static glow after reveal ──
-  late AnimationController _logoGlowController;
-  late Animation<double> _logoGlowAnim;
-
-  // ── "Shorter Road.": Letter-by-letter staggered reveal ──
-  late AnimationController _roadRevealController;
+  // Goes up on every failed sign-in so the tagline plays its "loop back and
+  // straighten" motion (see ShadTagline).
+  int _errorTick = 0;
 
   // ── Card Shake on Error ──
   late AnimationController _shakeController;
@@ -83,31 +77,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _fieldsFade = CurvedAnimation(parent: _fieldsController, curve: Curves.easeOut);
 
     _particlesController = AnimationController(vsync: this, duration: const Duration(seconds: 60))..repeat();
-
-    // ── SHAD reveal: once, 3 seconds ──
-    _shimmerController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 3000),
-    );
-    _shimmerController.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() => _shimmerComplete = true);
-        _logoGlowController.forward();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) _roadRevealController.forward();
-        });
-      }
-    });
-
-    // ── SHAD glow: fades in after reveal ──
-    _logoGlowController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1000),
-    );
-    _logoGlowAnim = CurvedAnimation(parent: _logoGlowController, curve: Curves.easeOut);
-
-    // ── "Shorter Road." letter reveal: 1.4s, starts after SHAD ──
-    _roadRevealController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1400),
-    );
 
     _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
 
@@ -141,10 +110,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) _fieldsController.forward();
     });
-    // SHAD reveal starts slightly after card enters
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) _shimmerController.forward();
-    });
   }
 
   void _onFocusChange() {
@@ -164,9 +129,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _cardController.dispose();
     _particlesController.dispose();
     _fieldsController.dispose();
-    _shimmerController.dispose();
-    _logoGlowController.dispose();
-    _roadRevealController.dispose();
     _shakeController.dispose();
     _breathController.dispose();
     _focusGlowController.dispose();
@@ -175,15 +137,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  void _signalError() {
+    _shakeController.forward(from: 0);
+    if (mounted) setState(() => _errorTick++);
+  }
+
   Future<void> _login() async {
+    if (_loading.value) return;
     final l10n = AppLocalizations.of(context)!;
     if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
       _error.value = l10n.enterEmailAndPassword;
-      _shakeController.forward(from: 0);
+      _signalError();
       return;
     }
     _loading.value = true;
     _error.value = null;
+    // After a good sign-in the loader keeps running while the next screen
+    // opens, so the button is only released when the attempt failed.
+    var signedIn = false;
     try {
       // Staff-vs-client endpoint selection, the sub_user branch, and storing
       // the token/role/user data all live in AuthProvider.authenticate() now
@@ -196,32 +167,33 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       );
 
       if (!mounted) return;
+      signedIn = true;
       context.go(homeLocationForRole(_authProvider.role));
     } on ValidationException {
       // The only case that genuinely means the email/password were rejected.
       _error.value = l10n.invalidCredentialsMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } on AuthException {
       _error.value = l10n.invalidCredentialsMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } on RateLimitException {
       _error.value = l10n.tooManyAttemptsMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } on ConnectionException {
       _error.value = l10n.connectionFailedMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } on ServerException {
       _error.value = l10n.serverErrorMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } catch (e, s) {
       // Anything reaching here is unclassified, so don't guess at a cause the
       // way this used to by blaming the credentials. Surface the real error in
       // debug builds so it can actually be diagnosed.
       AppLog.error('login_page._login', e, s);
       _error.value = kDebugMode ? '$e' : l10n.serverErrorMessage;
-      _shakeController.forward(from: 0);
+      _signalError();
     } finally {
-      _loading.value = false;
+      if (!signedIn) _loading.value = false;
     }
   }
 
@@ -386,74 +358,35 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 12),
 
-                                      // ── Shad.: Mysterious Reveal + Glow ──
-                                      AnimatedBuilder(
-                                        animation: Listenable.merge([
-                                          _shimmerController,
-                                          _logoGlowAnim,
+                                      // ── Shad.: still, white with the crimson dot ──
+                                      const Text.rich(
+                                        TextSpan(children: [
+                                          TextSpan(text: 'Shad'),
+                                          TextSpan(text: '.', style: TextStyle(color: Lx.crimsonInk)),
                                         ]),
-                                        builder: (context, _) {
-                                          if (_shimmerComplete) {
-                                            // After reveal: white + crimson dot + soft gold glow
-                                            final glow = _logoGlowAnim.value;
-                                            return Text.rich(
-                                              TextSpan(children: const [
-                                                TextSpan(text: 'Shad'),
-                                                TextSpan(text: '.', style: TextStyle(color: Lx.crimsonInk)),
-                                              ]),
-                                              key: const ValueKey('login-title'),
-                                              style: TextStyle(
-                                                fontSize: 34, fontWeight: FontWeight.w500,
-                                                letterSpacing: 1.4, color: Colors.white,
-                                                fontFamily: Lx.serif,
-                                                shadows: [
-                                                  Shadow(
-                                                    color: ShadColors.gold.withAlpha((glow * 100).toInt()),
-                                                    blurRadius: lerpDouble(0, 8, glow)!,
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                          // During reveal: gold sweep diagonal
-                                          return ShaderMask(
-                                            blendMode: BlendMode.srcIn,
-                                            shaderCallback: (bounds) {
-                                              return LinearGradient(
-                                                colors: const [
-                                                  Colors.white30, Colors.white, ShadColors.gold,
-                                                  Colors.white, Colors.white30,
-                                                ],
-                                                stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
-                                                begin: const Alignment(-1.0, -1.0),
-                                                end: const Alignment(1.0, 1.0),
-                                                transform: _SlidingGradient(
-                                                  slidePercent: _shimmerController.value,
-                                                ),
-                                              ).createShader(bounds);
-                                            },
-                                            child: const Text('Shad.', style: TextStyle(
-                                              fontSize: 34, fontWeight: FontWeight.w500,
-                                              letterSpacing: 1.4, color: Colors.white,
-                                              fontFamily: Lx.serif,
-                                            )),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(height: 2),
-
-                                      // ── "Shorter Road.": Letter-by-letter reveal ──
-                                      _StaggeredText(
-                                        text: 'Shorter Road.',
-                                        animation: _roadRevealController,
+                                        key: ValueKey('login-title'),
                                         style: TextStyle(
-                                          fontSize: 13,
-                                          color: ShadColors.gold.withAlpha(180),
+                                          fontSize: 34, fontWeight: FontWeight.w500,
+                                          letterSpacing: 1.4, color: Colors.white,
                                           fontFamily: Lx.serif,
-                                          fontStyle: FontStyle.italic,
                                         ),
                                       ),
-                                      const SizedBox(height: 26),
+
+                                      // ── "Shorter Road.": a twisted line that straightens into the word ──
+                                      Align(
+                                        heightFactor: 0.75,
+                                        child: ShadTagline(
+                                          key: const ValueKey('login-tagline'),
+                                          errorTick: _errorTick,
+                                          style: TextStyle(
+                                            fontSize: 19,
+                                            color: ShadColors.gold.withAlpha(180),
+                                            fontFamily: Lx.serif,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
 
                                       ValueListenableBuilder<String?>(
                                         valueListenable: _error,
@@ -614,84 +547,42 @@ class _LoginButtonState extends State<_LoginButton> {
         duration: const Duration(milliseconds: 100),
         child: SizedBox(
           width: double.infinity,
-          child: Opacity(
-            opacity: widget.loading ? 0.6 : 1,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Color(0xFFA51A1A), Color(0xFF941414)],
-                ),
+          // Loading is not disabled: the button keeps its full colour and the
+          // line loader says it is working.
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Color(0xFFA51A1A), Color(0xFF941414)],
               ),
-              child: ElevatedButton(
-                key: const ValueKey('login-submit'),
-                onPressed: widget.loading ? null : widget.onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  disabledBackgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  shadowColor: Colors.transparent,
-                  elevation: 0,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: widget.loading
-                    ? const SizedBox(width: 22, height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                    : Text(widget.label, style: Lx.text(context, size: 14, weight: FontWeight.w500, color: Colors.white)),
+            ),
+            child: ElevatedButton(
+              key: const ValueKey('login-submit'),
+              onPressed: widget.loading ? null : widget.onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                disabledBackgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.loading) ...[
+                    const ShadButtonLoader(key: ValueKey('login-loader')),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(widget.label, style: Lx.text(context, size: 14, weight: FontWeight.w500, color: Colors.white)),
+                ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── Shimmer Gradient Transform (single axis) ──
-class _SlidingGradient extends GradientTransform {
-  final double slidePercent;
-  const _SlidingGradient({required this.slidePercent});
-
-  @override
-  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
-    return Matrix4.translationValues(bounds.width * (2 * slidePercent - 1), 0, 0);
-  }
-}
-
-// ── Staggered Letter Reveal ──
-class _StaggeredText extends StatelessWidget {
-  final String text;
-  final Animation<double> animation;
-  final TextStyle style;
-  const _StaggeredText({required this.text, required this.animation, required this.style});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        final chars = text.split('');
-        final staggerInterval = 0.85 / max(chars.length, 1);
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          textDirection: TextDirection.ltr,
-          children: List.generate(chars.length, (i) {
-            final charStart = i * staggerInterval;
-            final charEnd = min(charStart + 0.25, 1.0);
-            final localProgress = ((animation.value - charStart) / (charEnd - charStart)).clamp(0.0, 1.0);
-            final eased = Curves.easeOut.transform(localProgress);
-            return Opacity(
-              opacity: eased * 0.7,
-              child: Transform.translate(
-                offset: Offset(0, (1 - eased) * 6),
-                child: Text(chars[i], style: style),
-              ),
-            );
-          }),
-        );
-      },
     );
   }
 }
