@@ -28,7 +28,7 @@ import '../../providers/client_provider.dart';
 import '../../providers/contract_provider.dart';
 import '../../providers/file_provider.dart';
 import '../../providers/signature_provider.dart';
-import '../../core/widgets/signature_pad_screen.dart' show renderSignaturePng;
+import '../../core/widgets/signature_pad_screen.dart' show SignaturePadScreen, renderSignaturePng;
 import '../../providers/payment_provider.dart';
 import '../../providers/system_settings_provider.dart';
 import '../contracts/contract_detail_modal.dart';
@@ -561,6 +561,37 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
     _sigDraft.pick(result.files.single.path!, result.files.single.name);
   }
 
+  /// The same full-screen landscape pad the admin signs on. Saving there
+  /// uploads the signature straight away, like the admin's own flow.
+  Future<void> _openFullscreenPad() async {
+    final cid = _api.userId;
+    if (cid == null || _savingSig) return;
+    final bytes = await SignaturePadScreen.show(context);
+    if (bytes == null || !mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _savingSig = true);
+    String message;
+    var ok = false;
+    try {
+      final file = File('${Directory.systemTemp.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+      await _signatureProvider.uploadImage(cid, file);
+      message = l10n.signature_saved;
+      ok = true;
+    } catch (e, s) {
+      AppLog.error('client_onboarding._openFullscreenPad', e, s);
+      message = l10n.signature_saveFailed;
+    } finally {
+      if (mounted) setState(() => _savingSig = false);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (ok) {
+      _sigDraft.clear();
+      await _loadClientData();
+    }
+  }
+
   /// Saves whatever the box holds: the drawing (as a cropped transparent PNG),
   /// the typed name, or the picked image — the same three calls the signature
   /// page makes. On success the client reloads and moves to the next stage.
@@ -655,6 +686,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
           client: _client,
           draft: _sigDraft,
           onPickImage: _pickSignatureImage,
+          onOpenFullscreen: _openFullscreenPad,
           onDrawingChanged: (v) {
             if (_drawing != v) setState(() => _drawing = v);
           },

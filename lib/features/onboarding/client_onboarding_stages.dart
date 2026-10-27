@@ -49,12 +49,13 @@ Widget buildSignatureStage({
   required SignatureDraft draft,
   required VoidCallback onPickImage,
   required ValueChanged<bool> onDrawingChanged,
+  VoidCallback? onOpenFullscreen,
 }) {
   final l10n = AppLocalizations.of(context)!;
   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     _h2(context, l10n.onboarding_welcomeName(client?['contact_person'] ?? '')),
     _lead(context, l10n.onboarding_addSignaturePrompt),
-    OnboardingSignaturePad(draft: draft, onPickImage: onPickImage, onDrawingChanged: onDrawingChanged),
+    OnboardingSignaturePad(draft: draft, onPickImage: onPickImage, onDrawingChanged: onDrawingChanged, onOpenFullscreen: onOpenFullscreen),
   ]);
 }
 

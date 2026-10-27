@@ -82,7 +82,10 @@ class OnboardingSignaturePad extends StatelessWidget {
   final SignatureDraft draft;
   final VoidCallback onPickImage;
   final ValueChanged<bool> onDrawingChanged; // true while a finger is down
-  const OnboardingSignaturePad({super.key, required this.draft, required this.onPickImage, required this.onDrawingChanged});
+  /// Opens the full-screen landscape pad (the one the admin uses) so the
+  /// client has room to sign; shown in draw mode only.
+  final VoidCallback? onOpenFullscreen;
+  const OnboardingSignaturePad({super.key, required this.draft, required this.onPickImage, required this.onDrawingChanged, this.onOpenFullscreen});
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +160,24 @@ class OnboardingSignaturePad extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (onOpenFullscreen != null)
+                  PositionedDirectional(
+                    bottom: 2,
+                    end: 6,
+                    child: InkWell(
+                      key: const ValueKey('sig-fullscreen'),
+                      borderRadius: BorderRadius.circular(Lx.rPill),
+                      onTap: onOpenFullscreen,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.open_in_full, size: 14, color: Lx.muted),
+                          const SizedBox(width: 6),
+                          Text(l10n.signatureDrawSignature, style: Lx.text(context, size: 11.5, color: Lx.muted)),
+                        ]),
+                      ),
+                    ),
+                  ),
               ] else if (draft.mode == SignatureMode.type)
                 Center(
                   child: Padding(
