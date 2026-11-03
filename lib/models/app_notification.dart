@@ -6,6 +6,9 @@ class AppNotification {
   final String? type;
   final String title;
   final String message;
+  // English text sent by the server next to the Arabic (null on old rows).
+  final String? titleEn;
+  final String? messageEn;
   final String? readAt;
   final String createdAt;
   final String? workspaceId;
@@ -16,6 +19,8 @@ class AppNotification {
     this.type,
     this.title = '',
     this.message = '',
+    this.titleEn,
+    this.messageEn,
     this.readAt,
     this.createdAt = '',
     this.workspaceId,
@@ -23,6 +28,12 @@ class AppNotification {
   });
 
   bool get isUnread => readAt == null;
+
+  /// The title in [lang] ('ar' or 'en'); English falls back to the stored
+  /// Arabic when the row has no English text.
+  String titleFor(String lang) => lang == 'en' && (titleEn ?? '').isNotEmpty ? titleEn! : title;
+
+  String messageFor(String lang) => lang == 'en' && (messageEn ?? '').isNotEmpty ? messageEn! : message;
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? {};
@@ -38,6 +49,8 @@ class AppNotification {
       // stored before ح3 shipped never got backfilled), so this rendered an
       // empty line for those instead of falling back.
       message: _str(data['message']) ?? _str(data['body']) ?? '',
+      titleEn: _str(data['title_en']),
+      messageEn: _str(data['message_en']) ?? _str(data['body_en']),
       readAt: _str(json['read_at']),
       createdAt: _str(json['created_at']) ?? '',
       workspaceId: _idStr(data['workspace_id']),

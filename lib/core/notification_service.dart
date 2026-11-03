@@ -56,6 +56,14 @@ class NotificationService {
   final ApiClient _api;
 
   String? _fcmToken;
+
+  /// Language of this device's push texts ('ar'/'en'), sent with the token so
+  /// the server pushes in it. Set from the app language (main.dart).
+  static String localeCode = 'en';
+
+  /// The instance that owns the cached token, so a language change can
+  /// re-register it from anywhere.
+  static NotificationService? instance;
   bool _initialized = false;
   StreamSubscription? _messageSubscription;
 
@@ -64,6 +72,7 @@ class NotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
+    instance = this;
 
     await _initLocalNotifications();
     await _requestPermission();
@@ -182,6 +191,7 @@ class NotificationService {
       await _api.post('/notifications/register-token', {
         'token': token,
         'device_type': deviceType,
+        'locale': localeCode,
       });
     } catch (e, s) {
       AppLog.error('NotificationService._registerToken', e, s);

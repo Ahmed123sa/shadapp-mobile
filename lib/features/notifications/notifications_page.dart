@@ -273,11 +273,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
               const SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(notif.title, style: Lx.text(context, size: 14, weight: isUnread ? FontWeight.w500 : FontWeight.w400, color: isUnread ? Lx.ink : Lx.ink2)),
-                  if (notif.message.isNotEmpty)
+                  Text(notif.titleFor(Localizations.localeOf(context).languageCode), style: Lx.text(context, size: 14, weight: isUnread ? FontWeight.w500 : FontWeight.w400, color: isUnread ? Lx.ink : Lx.ink2)),
+                  if (notif.messageFor(Localizations.localeOf(context).languageCode).isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(notif.message, style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.55)),
+                      child: Text(notif.messageFor(Localizations.localeOf(context).languageCode), style: Lx.text(context, size: 12.5, color: Lx.muted, height: 1.55)),
                     ),
                   Padding(
                     padding: const EdgeInsets.only(top: 6),

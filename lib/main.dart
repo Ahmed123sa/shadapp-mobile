@@ -106,6 +106,14 @@ void main() async {
 
   final localeProvider = LocaleProvider();
   await localeProvider.init();
+  // Tell the server this device's language so pushes arrive in it, now and
+  // whenever the user switches.
+  NotificationService.localeCode = localeProvider.locale.languageCode;
+  NotificationService.instance?.registerCurrentToken();
+  localeProvider.addListener(() {
+    NotificationService.localeCode = localeProvider.locale.languageCode;
+    NotificationService.instance?.registerCurrentToken();
+  });
   runApp(
     // Only LocaleProvider is actually read via the provider tree
     // (context.read<LocaleProvider>() in login_page.dart,
