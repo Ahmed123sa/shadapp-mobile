@@ -124,6 +124,30 @@ void main() {
         )).called(1);
   });
 
+  // The sheet's Edit button used to pop the sheet twice (once in the screen's
+  // onAction, once in the sheet itself), which removed the onboarding screen
+  // too: a black screen, and the reason card never showed.
+  testWidgets('asking for an edit from the contract sheet closes only the sheet and opens the reason card', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"active","contracts":[{"id":7,"status":"sent","title":"Villa Deal"}],"payments":[]}}}');
+
+    await pumpScreen(tester, api);
+
+    await tester.tap(find.byKey(const ValueKey('onboarding-preview-contract')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('contract-modal-title')), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Edit'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('contract-modal-title')), findsNothing);
+    expect(find.byType(ClientOnboardingScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('onboarding-edit-card')), findsOneWidget);
+  });
+
   // client-signature-plan.md ن3 — _computeStage() now keeps a client with no
   // saved signature on the signature stage even once a contract is sitting
   // at 'sent', instead of jumping them straight to the approve screen (which

@@ -754,13 +754,17 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
       builder: (_) => ContractDetailModal(
         contract: c,
         workspaceId: _workspace?['id'] as int?,
+        api: _api,
         onAction: (id, action) async {
-          Navigator.pop(context);
-          // "Request edit" from the sheet opens the same inline card.
+          // "Request edit" from the sheet opens the same inline card. The sheet
+          // closes itself right after this returns, so closing it here too
+          // popped it twice and took the onboarding screen with it (a black
+          // screen and no card).
           if (action == 'edit_requested') {
             setState(() => _editing = true);
             return;
           }
+          Navigator.pop(context);
           await _respondToContractById(id, action);
         },
         onRefresh: () {
