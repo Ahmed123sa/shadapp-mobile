@@ -119,6 +119,48 @@ class _PaymentsPageState extends State<PaymentsPage> {
         .fold<double>(0, (sum, p) => sum + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
 
+  /// Small tax card under the progress bar: the contracts' value, the tax at
+  /// each contract's own rate (one row per contract when rates differ) and the
+  /// total including tax. Stays visible after the balance is fully paid.
+  Widget _taxCard(BuildContext context, String cur) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+    num n(Object? v) => num.tryParse('${v ?? 0}') ?? 0;
+    final ts = _taxSummary!;
+    final contracts = (ts['contracts'] is List) ? (ts['contracts'] as List).whereType<Map>().toList() : <Map>[];
+    final rows = <Widget>[];
+    Widget row(String l, String v, {bool bold = false}) => Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Flexible(child: Text(l, style: Lx.text(context, size: 11.5, color: bold ? Lx.ink : Lx.muted, weight: bold ? FontWeight.w600 : FontWeight.w400))),
+            Text('$v $cur', textDirection: TextDirection.ltr, style: Lx.text(context, size: 11.5, color: bold ? Lx.ink : Lx.muted, weight: bold ? FontWeight.w600 : FontWeight.w400)),
+          ]),
+        );
+    rows.add(row(ar ? 'قيمة العقود' : 'Contracts value', f(n(ts['contracts_total']))));
+    if (contracts.length > 1) {
+      for (final c in contracts) {
+        rows.add(row(ar ? 'ضريبة ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)' : 'Tax · ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)', f(n(c['tax_amount']))));
+      }
+    } else {
+      rows.add(row(ar ? 'ضريبة ${f(n(ts['tax_percentage']))}%' : 'Tax ${f(n(ts['tax_percentage']))}%', f(n(ts['tax_amount']))));
+    }
+    rows.add(row(ar ? 'الإجمالي شامل الضريبة' : 'Total incl. tax', f(n(ts['grand_total'])), bold: true));
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        key: const ValueKey('payments-tax-card'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Lx.surface,
+          borderRadius: BorderRadius.circular(Lx.rCard),
+          border: Border.all(color: Lx.line2),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+      ),
+    );
+  }
+
   String get _contractCurrency {
     final contracts = _payableContracts;
     if (contracts.isEmpty) return 'SAR';
@@ -295,15 +337,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   const SizedBox(width: 7),
                   Text(l10n.payments_paidInFull, style: Lx.text(context, size: 12, color: Lx.ok)),
                 ]),
-              )
-            else if (_taxSummary != null && (_taxSummary!['tax_percentage'] ?? 0) > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  l10n.payments_taxSummary(_taxSummary!['tax_amount'] ?? 0, contractCur, _taxSummary!['tax_percentage'], _taxSummary!['contracts_total'] ?? 0),
-                  style: Lx.text(context, size: 10, color: Lx.muted),
-                ),
               ),
+            if (_taxSummary != null && (num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0)
+              _taxCard(context, contractCur),
             const SizedBox(height: 16),
 
             SingleChildScrollView(

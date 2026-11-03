@@ -67,6 +67,20 @@ void main() {
     expect(find.text('Contract value excludes VAT'), findsOneWidget);
   });
 
+  testWidgets('a business contract with tax shows its own rate, tax amount and total on the card', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    stubCommon(httpClient,
+        contractsJson: '{"contracts":[{"id":1,"title":"Villa Renovation Deal","status":"client_approved","value":1000,"currency":"SAR",'
+            '"tax_percentage":12,"tax_amount":120,"total_with_tax":1120}]}');
+
+    await pumpPage(tester, api);
+
+    expect(find.text('+ Tax 12% (120) · Total 1120'), findsOneWidget);
+    expect(find.text('Contract value excludes VAT'), findsNothing);
+  });
+
   testWidgets('approving a contract posts the client-action and refreshes the list', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

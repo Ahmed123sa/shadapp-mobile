@@ -515,6 +515,7 @@ Widget buildEditReasonQuote(BuildContext context, String reason) {
 
 class _PaymentFigures {
   double total = 0, paid = 0, tax = 0, taxPct = 0;
+  bool _serverTax = false;
   String currency = 'SAR';
   String? startDate, endDate;
   Map<String, dynamic>? lastRejected;
@@ -533,6 +534,12 @@ class _PaymentFigures {
       for (final c in safeList(ws['contracts'])) {
         if (c is Map) {
           total += double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          // The server prices each contract with its own locked rate.
+          final serverTax = double.tryParse((c['tax_amount'] ?? '').toString());
+          if (serverTax != null) {
+            _serverTax = true;
+            tax += serverTax;
+          }
           currency = (c['currency'] as String?) ?? currency;
           if (c['start_date'] != null) startDate = (c['start_date'] as String).split('T')[0];
           if (c['end_date'] != null) endDate = (c['end_date'] as String).split('T')[0];
@@ -548,7 +555,11 @@ class _PaymentFigures {
         }
       }
     }
-    if (isBusiness && taxPct > 0) tax = total * taxPct / 100;
+    if (_serverTax) {
+      if (total > 0) taxPct = tax * 100 / total;
+    } else if (isBusiness && taxPct > 0) {
+      tax = total * taxPct / 100;
+    }
   }
 }
 

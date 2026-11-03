@@ -256,7 +256,13 @@ class _ContractsPageState extends State<ContractsPage> {
         if (_clientType == 'business')
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text(l10n.contractValueExcludesVat, style: Lx.text(context, size: 10, color: Lx.muted)),
+            child: Text(
+              (num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0) > 0
+                  ? _taxLine(context, c)
+                  : l10n.contractValueExcludesVat,
+              key: ValueKey('contract-tax-${c['id']}'),
+              style: Lx.text(context, size: 10, color: Lx.muted),
+            ),
           ),
         if (status == 'edit_requested' && c['edit_reason'] != null && (c['edit_reason'] as String).isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -417,4 +423,15 @@ class _ContractsPageState extends State<ContractsPage> {
       ),
     );
   }
+}
+
+
+/// "+ tax 12% (120) · total 1,120" for a business contract that carries tax.
+String _taxLine(BuildContext context, Map c) {
+  final ar = Localizations.localeOf(context).languageCode == 'ar';
+  String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  final pct = num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0;
+  final tax = num.tryParse('${c['tax_amount'] ?? 0}') ?? 0;
+  final total = num.tryParse('${c['total_with_tax'] ?? 0}') ?? 0;
+  return ar ? '+ ضريبة ${f(pct)}% (${f(tax)}) · الإجمالي ${f(total)}' : '+ Tax ${f(pct)}% (${f(tax)}) · Total ${f(total)}';
 }

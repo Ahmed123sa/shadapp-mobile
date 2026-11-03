@@ -40,6 +40,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
   final _passwordController = TextEditingController();
   final _dateOfBirthController = TextEditingController();
   final _notesController = TextEditingController();
+  final _taxController = TextEditingController();
   DateTime? _dateOfBirth;
   File? _avatarFile;
   bool _isBusiness = true;
@@ -62,6 +63,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
         'industry': _industryController.text.trim(),
         if (_addressController.text.trim().isNotEmpty) 'address': _addressController.text.trim(),
         'client_type': _isBusiness ? 'business' : 'individual',
+        if (_isBusiness && num.tryParse(_taxController.text.trim()) != null) 'tax_percentage': num.parse(_taxController.text.trim()),
         if (_dateOfBirth != null) 'date_of_birth': _dateOfBirth!.toIso8601String(),
         if (!_autoPassword) 'password': _passwordController.text.trim(),
         if (_notesController.text.trim().isNotEmpty) 'notes': _notesController.text.trim(),
@@ -279,6 +281,7 @@ class _CreateClientPageState extends State<CreateClientPage> {
                 ]),
               ),
 
+
               _sectionLabel(l10n.createClientCompanyData),
               TextFormField(
                 controller: _nameController,
@@ -315,6 +318,26 @@ class _CreateClientPageState extends State<CreateClientPage> {
                   return null;
                 },
               ),
+
+              if (_isBusiness) ...[
+                _sectionLabel(Localizations.localeOf(context).languageCode == 'ar' ? 'نسبة الضريبة (%)' : 'Tax rate (%)'),
+                TextFormField(
+                  key: const ValueKey('client-tax-field'),
+                  controller: _taxController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textDirection: TextDirection.ltr,
+                  decoration: InputDecoration(hintText: Localizations.localeOf(context).languageCode == 'ar' ? 'سيب فاضي لاستخدام النسبة الافتراضية' : 'Leave empty for the default rate'),
+                  validator: (v) {
+                    final s = v?.trim() ?? '';
+                    if (s.isEmpty) return null;
+                    final n = num.tryParse(s);
+                    if (n == null || n < 0 || n > 100) {
+                      return Localizations.localeOf(context).languageCode == 'ar' ? 'النسبة من 0 إلى 100' : 'Rate must be 0 to 100';
+                    }
+                    return null;
+                  },
+                ),
+              ],
 
               _sectionLabel(l10n.createClientAdditionalDetails),
               TextFormField(controller: _countryController, decoration: InputDecoration(labelText: l10n.country, hintText: l10n.countryHint)),

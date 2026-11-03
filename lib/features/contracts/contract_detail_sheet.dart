@@ -203,7 +203,13 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                 if (widget.clientType == 'business')
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(l10n.contractValueExcludesVat, style: const TextStyle(fontSize: 11, color: Lx.muted)),
+                    child: Text(
+                      (num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0) > 0
+                          ? _sheetTaxLine(context, c)
+                          : l10n.contractValueExcludesVat,
+                      key: const ValueKey('contract-sheet-tax'),
+                      style: const TextStyle(fontSize: 11, color: Lx.muted),
+                    ),
                   ),
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -602,4 +608,14 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileOpenFailed)));
     }
   }
+}
+
+
+String _sheetTaxLine(BuildContext context, Map c) {
+  final ar = Localizations.localeOf(context).languageCode == 'ar';
+  String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  final pct = num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0;
+  final tax = num.tryParse('${c['tax_amount'] ?? 0}') ?? 0;
+  final total = num.tryParse('${c['total_with_tax'] ?? 0}') ?? 0;
+  return ar ? '+ ضريبة ${f(pct)}% (${f(tax)}) · الإجمالي ${f(total)}' : '+ Tax ${f(pct)}% (${f(tax)}) · Total ${f(total)}';
 }
