@@ -95,6 +95,43 @@ void main() {
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path == '/workspaces/5/files/9')), headers: any(named: 'headers'))).called(1);
   });
 
+  // After the client approved, the company still reviews each required
+  // document: the sheet keeps listing them, with the reason and an upload for a
+  // rejected one.
+  testWidgets('after the client approved, a rejected required document shows its reason and can be replaced', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    stubCommon(httpClient);
+
+    await pumpModal(tester, api, contract: {
+      'id': 1,
+      'title': 'Villa Deal',
+      'status': 'client_approved',
+      'required_documents': [
+        {
+          'id': 10,
+          'name': 'National ID',
+          'files': [
+            {'id': 1, 'status': 'rejected', 'rejection_reason': 'Blurry copy'},
+          ],
+        },
+        {
+          'id': 11,
+          'name': 'Commercial Register',
+          'files': [
+            {'id': 2, 'status': 'approved'},
+          ],
+        },
+      ],
+    });
+
+    expect(find.byKey(const ValueKey('contract-modal-doc-0')), findsOneWidget);
+    expect(find.textContaining('Blurry copy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('contract-modal-upload-0')), findsOneWidget);
+    // An accepted document needs nothing more from the client.
+    expect(find.byKey(const ValueKey('contract-modal-upload-1')), findsNothing);
+  });
+
   // subuser-review-plan.md م٦ — same gating as contracts_page.dart's embedded
   // ContractDetailSheet, applied here since this modal shares the pattern.
   group('sub-user action gating (م٦)', () {

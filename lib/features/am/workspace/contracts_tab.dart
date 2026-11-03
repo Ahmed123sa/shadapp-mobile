@@ -22,7 +22,10 @@ class ContractsTab extends StatefulWidget {
   // site.
   final ApiClient? api;
   final ContractProvider? contractProvider;
-  const ContractsTab({super.key, this.workspaceId, this.api, this.contractProvider});
+  /// Opens the workspace's Files tab, where the required documents are
+  /// reviewed. Null where there is no such tab to go to.
+  final VoidCallback? onGoToFiles;
+  const ContractsTab({super.key, this.workspaceId, this.api, this.contractProvider, this.onGoToFiles});
 
   @override
   State<ContractsTab> createState() => _ContractsTabState();
@@ -118,6 +121,62 @@ class _ContractsTabState extends State<ContractsTab> {
     final t = DateTime.tryParse(date?.toString() ?? '')?.toLocal();
     if (t == null) return '';
     return DateFormat('d MMM', Localizations.localeOf(context).toString()).format(t);
+  }
+
+  /// ok (one file approved), missing (none), rejected (all refused) or pending.
+  String _docState(Map d) {
+    final files = ((d['files'] as List<dynamic>?) ?? const []).whereType<Map>().toList();
+    if (files.any((f) => f['status'] == 'approved')) return 'ok';
+    if (files.isEmpty) return 'missing';
+    return files.every((f) => f['status'] == 'rejected') ? 'rejected' : 'pending';
+  }
+
+  /// The required documents of a contract the client approved, each with where
+  /// it stands, and a way to the Files tab to review them.
+  Widget _docsBlock(Map<String, dynamic> c, List<Map> docs, List<String> states, bool blocked) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String t(String a, String e) => ar ? a : e;
+    final label = {
+      'ok': t('مقبول', 'Approved'),
+      'pending': t('قيد المراجعة', 'Under review'),
+      'rejected': t('مرفوض', 'Rejected'),
+      'missing': t('ماترفعش', 'Not uploaded'),
+    };
+    final dot = {'ok': LxStatus.ok, 'pending': LxStatus.wait, 'rejected': LxStatus.bad, 'missing': LxStatus.bad};
+    return Padding(
+      key: ValueKey('contract-docs-${c['id']}'),
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        LuxeKind(t('المستندات المطلوبة', 'Required documents')),
+        const SizedBox(height: 4),
+        for (var i = 0; i < docs.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Row(children: [
+              Expanded(child: Text('${docs[i]['name'] ?? ''}', style: Lx.text(context, size: 13))),
+              LuxeStatusDot(status: dot[states[i]]!),
+              const SizedBox(width: 7),
+              Text(label[states[i]]!, style: Lx.text(context, size: 12, color: Lx.ink2)),
+            ]),
+          ),
+        if (blocked) ...[
+          const SizedBox(height: 6),
+          Text(t('الاعتماد مقفول لحد ما كل المستندات المطلوبة تتقبل.', 'Approving is locked until every required document is accepted.'),
+              style: Lx.text(context, size: 11.5, color: Lx.faint, height: 1.5)),
+          if (widget.onGoToFiles != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: LuxeButton(
+                key: ValueKey('contract-docs-review-${c['id']}'),
+                label: t('راجع في تاب الملفات', 'Review in Files'),
+                lxIcon: 'doc',
+                size: LuxeButtonSize.sm,
+                onPressed: widget.onGoToFiles,
+              ),
+            ),
+        ],
+      ]),
+    );
   }
 
   Future<void> _openPdf(Map<String, dynamic> c) async {
@@ -451,6 +510,14 @@ class _ContractsTabState extends State<ContractsTab> {
               final when = _shortDate(c['company_signed_at'] ?? c['updated_at'] ?? c['created_at']);
               final sub = [statusLabels(l10n)[status] ?? status, when].where((e) => e.isNotEmpty).join(' · ');
               final steps = [l10n.contractStepSent, l10n.contractStepClientApproved, l10n.contractStepCompanyApproved, l10n.contractStepActive];
+              // The company can approve only when every required document has an
+              // accepted file (the server enforces the same).
+              final reqDocs = ((c['required_documents'] as List<dynamic>?) ?? const [])
+                  .whereType<Map>()
+                  .where((d) => d['is_required'] != false && d['is_required'] != 0)
+                  .toList();
+              final docStates = [for (final d in reqDocs) _docState(d)];
+              final docsBlocked = status == 'client_approved' && docStates.any((s) => s != 'ok');
               final buttons = <Widget>[
                 for (final a in actions)
                   LuxeButton(
@@ -466,7 +533,7 @@ class _ContractsTabState extends State<ContractsTab> {
                     size: LuxeButtonSize.sm,
                     kind: (a == 'company-approve' || a == 'send') ? LuxeButtonKind.primary : LuxeButtonKind.outline,
                     onPressed: a == 'company-approve'
-                        ? () => _companyApproveWithSignature(c)
+                        ? (docsBlocked ? null : () => _companyApproveWithSignature(c))
                         : () => _action(c['id'], a, destructive: a == 'archive' || a == 'complete'),
                   ),
                 if (editable && canManage && !isSA)
@@ -515,6 +582,7 @@ class _ContractsTabState extends State<ContractsTab> {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(l10n.contractValueExclVat, style: Lx.text(context, size: 10.5, color: Lx.faint)),
                     ),
+                  if (status == 'client_approved' && reqDocs.isNotEmpty) _docsBlock(c, reqDocs, docStates, docsBlocked),
                   if (inFlow)
                     LuxeLabeledSteps(labels: steps, current: _stepFor(status))
                   else

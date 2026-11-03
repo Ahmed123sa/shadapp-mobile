@@ -79,6 +79,19 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  // The waiting stage has a pulsing dot that never stops animating, so
+  // pumpAndSettle would time out there: pump a few fixed frames instead.
+  Future<void> pumpWaitingScreen(WidgetTester tester, dynamic api) async {
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: ClientOnboardingScreen(api: api, reverb: ReverbService.forTesting(), enableFcm: false),
+    ));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+  }
+
   // The payment bottom sheet's own SingleChildScrollView is the last
   // Scrollable in the tree once it's open (it's inserted into the root
   // Overlay above the main screen's content) — its "Send Payment" submit
@@ -146,6 +159,41 @@ void main() {
     expect(find.byKey(const ValueKey('contract-modal-title')), findsNothing);
     expect(find.byType(ClientOnboardingScreen), findsOneWidget);
     expect(find.byKey(const ValueKey('onboarding-edit-card')), findsOneWidget);
+  });
+
+  // After the client approved, the company still has to accept each required
+  // document: a rejected one shows why and can be replaced from the waiting stage.
+  testWidgets('waiting for the company shows a rejected document, its reason and an upload for a replacement', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"pending","contracts":[{"id":7,"status":"client_approved","required_documents":['
+        '{"id":2,"name":"National ID","is_required":true,"files":[{"id":6,"status":"rejected","rejection_reason":"Blurry copy"}]},'
+        '{"id":3,"name":"Commercial Register","is_required":true,"files":[{"id":8,"status":"pending"}]}]}],"payments":[]}}}');
+
+    await pumpWaitingScreen(tester, api);
+
+    expect(find.byKey(const ValueKey('contract-docs-review')), findsOneWidget);
+    expect(find.text('National ID'), findsOneWidget);
+    expect(find.text('Reason: Blurry copy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('contract-docs-replace-0')), findsOneWidget);
+    expect(find.text('Under review'), findsOneWidget);
+    expect(find.byKey(const ValueKey('contract-docs-replace-1')), findsNothing);
+  });
+
+  testWidgets('waiting for the company with every document accepted looks as it always did', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":"2026-01-01T00:00:00Z","client_type":"individual",'
+        '"workspace":{"id":5,"status":"pending","contracts":[{"id":7,"status":"client_approved","required_documents":['
+        '{"id":2,"name":"National ID","is_required":true,"files":[{"id":6,"status":"approved"}]}]}],"payments":[]}}}');
+
+    await pumpWaitingScreen(tester, api);
+
+    expect(find.byKey(const ValueKey('waiting-card')), findsOneWidget);
+    expect(find.byKey(const ValueKey('contract-docs-review')), findsNothing);
   });
 
   // client-signature-plan.md ن3 — _computeStage() now keeps a client with no

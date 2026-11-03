@@ -313,6 +313,105 @@ Widget buildContractReviewStage({
   ]);
 }
 
+/// Where one required document stands, from its files: ok (one is approved),
+/// missing (none), rejected (every file was refused) or pending (waiting).
+String contractDocState(Map d) {
+  final files = safeList(d['files']).whereType<Map>().toList();
+  if (files.any((f) => f['status'] == 'approved')) return 'ok';
+  if (files.isEmpty) return 'missing';
+  return files.every((f) => f['status'] == 'rejected') ? 'rejected' : 'pending';
+}
+
+/// The contract the client already approved and the company has not, if any.
+Map? clientApprovedContract(Map<String, dynamic>? workspace) {
+  final contracts = workspace != null ? safeList(workspace['contracts']).whereType<Map>().toList() : <Map>[];
+  for (final c in contracts) {
+    if (c['status'] == 'client_approved') return c;
+  }
+  return null;
+}
+
+/// After the client approved, the company still has to accept every required
+/// document. Lists them with where each stands, why a rejected one was refused,
+/// and lets the client send a replacement. Draws nothing when all are accepted.
+Widget buildContractDocsReview({
+  required BuildContext context,
+  required Map? contract,
+  required int? uploadingDocId,
+  required void Function(int contractId, int docId) onUploadDocument,
+  required bool canUpload,
+}) {
+  if (contract == null) return const SizedBox.shrink();
+  final ar = Localizations.localeOf(context).languageCode == 'ar';
+  String t(String a, String e) => ar ? a : e;
+  final docs = safeList(contract['required_documents'])
+      .whereType<Map>()
+      .where((d) => d['is_required'] != false && d['is_required'] != 0)
+      .toList();
+  if (docs.isEmpty || docs.every((d) => contractDocState(d) == 'ok')) return const SizedBox.shrink();
+
+  final label = {
+    'ok': t('مقبول', 'Approved'),
+    'pending': t('قيد المراجعة', 'Under review'),
+    'rejected': t('مرفوض', 'Rejected'),
+    'missing': t('ماترفعش', 'Not uploaded'),
+  };
+  final dot = {'ok': LxStatus.ok, 'pending': LxStatus.wait, 'rejected': LxStatus.bad, 'missing': LxStatus.bad};
+
+  return LuxeCard(
+    key: const ValueKey('contract-docs-review'),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(t('المستندات تحت المراجعة', 'Documents under review').toUpperCase(),
+          style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+      const SizedBox(height: 6),
+      Text(t('الشركة بتعتمد العقد لما كل المستندات المطلوبة تتقبل.', 'The company approves the contract once every required document is accepted.'),
+          style: Lx.text(context, size: 12, color: Lx.muted, height: 1.5)),
+      const SizedBox(height: 4),
+      for (var i = 0; i < docs.length; i++)
+        Builder(builder: (_) {
+          final d = docs[i];
+          final state = contractDocState(d);
+          final id = d['id'] as int?;
+          final busy = uploadingDocId != null && uploadingDocId == id;
+          final files = safeList(d['files']).whereType<Map>().toList();
+          final rejected = files.reversed.firstWhere((f) => f['status'] == 'rejected', orElse: () => const {});
+          final reason = (rejected['rejection_reason'] ?? '').toString();
+          return Container(
+            key: ValueKey('contract-docs-review-$i'),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(border: i == docs.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${d['name'] ?? ''}', style: Lx.text(context, size: 13.5)),
+                  const SizedBox(height: 3),
+                  Row(children: [
+                    LuxeStatusDot(status: dot[state]!),
+                    const SizedBox(width: 7),
+                    Text(label[state]!, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                  ]),
+                  if (state == 'rejected' && reason.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(t('السبب: $reason', 'Reason: $reason'), style: Lx.text(context, size: 11, color: Lx.danger)),
+                    ),
+                ]),
+              ),
+              if ((state == 'rejected' || state == 'missing') && canUpload && id != null)
+                LuxeButton(
+                  key: ValueKey('contract-docs-replace-$i'),
+                  label: busy ? t('بيترفع...', 'Uploading...') : (state == 'rejected' ? t('ارفع بديل', 'Upload replacement') : t('ارفع', 'Upload')),
+                  lxIcon: 'up',
+                  size: LuxeButtonSize.sm,
+                  onPressed: busy ? null : () => onUploadDocument(contract['id'] as int, id),
+                ),
+            ]),
+          );
+        }),
+    ]),
+  );
+}
+
 Widget _lockLine(BuildContext context, String text, {Key? key}) => Row(
       key: key,
       mainAxisAlignment: MainAxisAlignment.center,

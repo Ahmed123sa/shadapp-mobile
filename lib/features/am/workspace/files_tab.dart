@@ -311,7 +311,10 @@ class _FilesTabState extends State<FilesTab> {
                   final uploader = f['uploaded_by'] is Map ? (f['uploaded_by'] as Map)['name']?.toString() : null;
                   final created = DateTime.tryParse(f['created_at']?.toString() ?? '')?.toLocal();
                   final dateText = created == null ? null : DateFormat('d MMM', Localizations.localeOf(context).toString()).format(created);
-                  final meta = [uploader, dateText, fileSize].where((e) => e != null && e.isNotEmpty).join(' · ');
+                  // A file for a contract's required document says which document
+                  // and which contract, instead of only its own file name.
+                  final docTag = f['contract_required_document_id'] != null ? f['tag'] as String? : null;
+                  final meta = [docTag, uploader, dateText, fileSize].where((e) => e != null && e.isNotEmpty).join(' · ');
                   Future<void> open() async {
                     if (f['file_url'] == null) return;
                     final uri = Uri.tryParse(_api.resolveFileUrl(f['file_url'] as String));

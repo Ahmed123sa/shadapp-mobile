@@ -17,6 +17,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/core/widgets/luxe/luxe_widgets.dart';
 import 'package:shadapp_client/features/am/workspace/contracts_tab.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../helpers/mock_http_client.dart';
@@ -127,6 +128,53 @@ void main() {
           headers: any(named: 'headers'),
           body: any(named: 'body'),
         )).called(1);
+  });
+
+  // The company can approve only once every required document is accepted:
+  // the card lists them, the button is off and a shortcut leads to the Files tab.
+  testWidgets('company approval is locked while a required document is not accepted, with a way to the Files tab', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'super_admin';
+    stubCommon(
+      httpClient,
+      contractsJson: '{"contracts":[{"id":1,"title":"Renovation Deal","status":"client_approved","value":500,"currency":"SAR",'
+          '"required_documents":[{"id":10,"name":"Commercial Register","is_required":true,"files":[{"id":5,"status":"pending"}]},'
+          '{"id":11,"name":"National ID","is_required":true,"files":[{"id":6,"status":"rejected"}]}]}]}',
+    );
+    var wentToFiles = 0;
+
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: ContractsTab(workspaceId: 5, api: api, onGoToFiles: () => wentToFiles++)),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('contract-docs-1')), findsOneWidget);
+    expect(find.text('Commercial Register'), findsOneWidget);
+    expect(find.text('Under review'), findsOneWidget);
+    expect(find.text('Rejected'), findsOneWidget);
+    expect(tester.widget<LuxeButton>(find.widgetWithText(LuxeButton, 'Company Approve')).onPressed, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('contract-docs-review-1')));
+    expect(wentToFiles, 1);
+  });
+
+  testWidgets('company approval is open once every required document is accepted', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'super_admin';
+    stubCommon(
+      httpClient,
+      contractsJson: '{"contracts":[{"id":1,"title":"Renovation Deal","status":"client_approved","value":500,"currency":"SAR",'
+          '"required_documents":[{"id":10,"name":"Commercial Register","is_required":true,"files":[{"id":5,"status":"approved"}]}]}]}',
+    );
+
+    await pumpTab(tester, api);
+
+    expect(tester.widget<LuxeButton>(find.widgetWithText(LuxeButton, 'Company Approve')).onPressed, isNotNull);
+    expect(find.byKey(const ValueKey('contract-docs-review-1')), findsNothing);
   });
 
   const clientApproved =

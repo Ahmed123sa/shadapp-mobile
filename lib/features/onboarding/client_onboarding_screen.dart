@@ -659,7 +659,24 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> with Wi
             ),
         ]);
       case 3:
-        return buildWaitingStage(context: context, title: l10n.onboarding_waitingCompanyApproval, subtitle: l10n.onboarding_waitingCompanyReviewMsg);
+        // While some required document is not accepted yet, it is listed under
+        // the waiting message (with an upload for a rejected one). Otherwise the
+        // stage looks exactly as before.
+        final docsReview = buildContractDocsReview(
+          context: context,
+          contract: clientApprovedContract(_workspace),
+          uploadingDocId: _uploadingDocId,
+          onUploadDocument: _uploadRequiredDoc,
+          canUpload: _api.canDo('can_upload_files'),
+        );
+        final hasDocsReview = docsReview.key != null;
+        return buildWaitingStage(
+          context: context,
+          title: l10n.onboarding_waitingCompanyApproval,
+          subtitle: l10n.onboarding_waitingCompanyReviewMsg,
+          boxed: !hasDocsReview,
+          extra: hasDocsReview ? docsReview : null,
+        );
       case 4:
         return buildPaymentStage(context: context, workspace: _workspace, client: _client, taxSettings: _taxSettings);
       case 5:
