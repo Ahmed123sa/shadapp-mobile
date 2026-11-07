@@ -299,7 +299,7 @@ Widget _buildTextBubble(
               if (m['edited_at'] != null) Text(l10n.edited, style: Lx.text(context, size: 10, color: Lx.faint)),
               if (m['edited_at'] != null && isClient && m['id'] != null) const SizedBox(width: 4),
               if (isClient && m['id'] != null)
-                Text(m['read_at'] != null ? '✓✓' : '✓', style: Lx.text(context, size: 10, color: Lx.ink2)),
+                Icon(m['read_at'] != null ? Icons.done_all : Icons.done, size: 13, color: Lx.ink2),
             ]),
           ),
       ],

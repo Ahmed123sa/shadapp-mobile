@@ -281,7 +281,7 @@ Widget _textBubble(
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               if (m['edited_at'] != null) Text('(${l10n.chatEdited})', style: Lx.text(context, size: 10, color: Lx.faint)),
               if (m['edited_at'] != null && isMine && m['id'] != null) const SizedBox(width: 4),
-              if (isMine && m['id'] != null) Text(m['read_at'] != null ? '✓✓' : '✓', style: Lx.text(context, size: 10, color: Lx.ink2)),
+              if (isMine && m['id'] != null) Icon(m['read_at'] != null ? Icons.done_all : Icons.done, size: 13, color: Lx.ink2),
             ]),
           ),
       ],

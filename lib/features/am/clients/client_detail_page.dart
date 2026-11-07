@@ -100,7 +100,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     try {
       await _clientProvider.uploadAvatar(widget.clientId, file);
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailImageChanged}')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientDetailImageChanged)));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.clientDetailImageChangeFailed}: $e')));
     }
@@ -125,7 +125,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
         if (_passwordCtrl.text.trim().isNotEmpty) 'password': _passwordCtrl.text.trim(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailSaved}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientDetailSaved)));
         Navigator.pop(context, true);
       }
     } catch (_) {

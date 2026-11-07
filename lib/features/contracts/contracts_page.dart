@@ -13,6 +13,7 @@ import '../../core/widgets/error_state.dart';
 import '../../data/file_repository.dart';
 import '../../providers/contract_provider.dart';
 import '../../providers/file_provider.dart';
+import '../../core/widgets/ads_split.dart';
 import 'contract_detail_sheet.dart';
 
 class ContractsPage extends StatefulWidget {
@@ -246,7 +247,10 @@ class _ContractsPageState extends State<ContractsPage> {
       attention: needsAction,
       onTap: () => _showDetailModal(c),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        LuxeKind(isExtra ? l10n.additionalContract : l10n.mainContract),
+        Row(children: [
+          LuxeKind(isExtra ? l10n.additionalContract : l10n.mainContract),
+          if (contractHasAds(c)) ...[const SizedBox(width: 8), const AdsBadge()],
+        ]),
         const SizedBox(height: 4),
         Text(c['title'] ?? '', style: Lx.text(context, size: 16)),
         const SizedBox(height: 2),
@@ -264,6 +268,7 @@ class _ContractsPageState extends State<ContractsPage> {
               style: Lx.text(context, size: 10, color: Lx.muted),
             ),
           ),
+        if (contractHasAds(c)) AdsSplit(contract: c, currency: currency, size: 11),
         if (status == 'edit_requested' && c['edit_reason'] != null && (c['edit_reason'] as String).isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(

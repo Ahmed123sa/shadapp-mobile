@@ -1,3 +1,4 @@
+import '../../core/widgets/ads_split.dart';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -184,6 +185,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
             ])),
           ),
         ),
+      if (contractHasAds(c)) AdsSplit(contract: c, currency: currency),
       if (c['start_date'] != null)
         Padding(
           padding: const EdgeInsets.only(top: 6),

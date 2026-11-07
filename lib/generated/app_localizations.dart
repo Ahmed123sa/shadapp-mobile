@@ -707,7 +707,7 @@ abstract class AppLocalizations {
   /// No description provided for @clientCreated.
   ///
   /// In en, this message translates to:
-  /// **'✅ Client created'**
+  /// **'Client created'**
   String get clientCreated;
 
   /// No description provided for @clientCreateFailed.
@@ -5999,19 +5999,19 @@ abstract class AppLocalizations {
   /// No description provided for @approvedLabel.
   ///
   /// In en, this message translates to:
-  /// **'✓ Approved'**
+  /// **'Approved'**
   String get approvedLabel;
 
   /// No description provided for @rejectedLabel.
   ///
   /// In en, this message translates to:
-  /// **'✗ Rejected'**
+  /// **'Rejected'**
   String get rejectedLabel;
 
   /// No description provided for @editRequestedLabel.
   ///
   /// In en, this message translates to:
-  /// **'✎ Edit requested'**
+  /// **'Edit requested'**
   String get editRequestedLabel;
 
   /// No description provided for @downloadApprovalCert.
@@ -11645,6 +11645,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile and language.'**
   String get settingsClientLead;
+
+  /// No description provided for @adsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads contract'**
+  String get adsToggle;
+
+  /// No description provided for @adsToggleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The agency fee is part of the contract value, not added on top.'**
+  String get adsToggleHint;
+
+  /// No description provided for @adsPercentageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads management fee (%)'**
+  String get adsPercentageLabel;
+
+  /// No description provided for @adsPercentageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a percentage between 0.01 and 100.'**
+  String get adsPercentageInvalid;
+
+  /// No description provided for @adsFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads management fee ({percent}%)'**
+  String adsFee(Object percent);
+
+  /// No description provided for @adsBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad budget'**
+  String get adsBudget;
+
+  /// No description provided for @adsBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads'**
+  String get adsBadge;
 }
 
 class _AppLocalizationsDelegate

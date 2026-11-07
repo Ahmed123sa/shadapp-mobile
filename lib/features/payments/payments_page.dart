@@ -1,3 +1,4 @@
+import '../../core/widgets/ads_split.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -117,6 +118,38 @@ class _PaymentsPageState extends State<PaymentsPage> {
     return _payments
         .where((p) => p['status'] == 'approved')
         .fold<double>(0, (sum, p) => sum + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
+  }
+
+  /// The ads contracts in the payments summary (empty for a normal client).
+  List<Map> get _adsContracts {
+    final cs = _taxSummary?['contracts'];
+    if (cs is! List) return const [];
+    return cs.whereType<Map>().where(contractHasAds).toList();
+  }
+
+  /// Fee and budget of each ads contract. The total below it is unchanged: the
+  /// fee is inside the contract value.
+  Widget _adsCard(BuildContext context, String cur) {
+    final many = ((_taxSummary?['contracts'] as List?)?.length ?? 0) > 1;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        key: const ValueKey('payments-ads-card'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Lx.surface,
+          borderRadius: BorderRadius.circular(Lx.rCard),
+          border: Border.all(color: Lx.line2),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (final c in _adsContracts) ...[
+            if (many) Text('${c['title'] ?? ''}', style: Lx.text(context, size: 11.5, color: Lx.ink, weight: FontWeight.w600)),
+            AdsSplit(contract: c, currency: cur),
+          ],
+        ]),
+      ),
+    );
   }
 
   /// Small tax card under the progress bar: the contracts' value, the tax at
@@ -338,6 +371,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   Text(l10n.payments_paidInFull, style: Lx.text(context, size: 12, color: Lx.ok)),
                 ]),
               ),
+            if (_adsContracts.isNotEmpty) _adsCard(context, contractCur),
             if (_taxSummary != null && (num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0)
               _taxCard(context, contractCur),
             const SizedBox(height: 16),

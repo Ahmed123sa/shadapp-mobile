@@ -1,3 +1,4 @@
+import '../../../core/widgets/ads_split.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -247,6 +248,19 @@ class _PaymentsTabState extends State<PaymentsTab> {
         borderRadius: BorderRadius.circular(3),
         child: LinearProgressIndicator(value: progress, minHeight: 6, backgroundColor: Lx.line2, valueColor: const AlwaysStoppedAnimation(Lx.ok)),
       ),
+      if (_adsContracts.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        LuxeCard(
+          key: const ValueKey('payments-tab-ads-card'),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final c in _adsContracts) ...[
+              if (_adsContracts.length > 1 || ((_taxSummary?['contracts'] as List?)?.length ?? 0) > 1)
+                Text('${c['title'] ?? ''}', style: Lx.text(context, size: 12, color: Lx.ink, weight: FontWeight.w600)),
+              AdsSplit(contract: c, currency: cur, size: 12),
+            ],
+          ]),
+        ),
+      ],
       if (_taxSummary != null && _taxNum(_taxSummary!['tax_percentage']) > 0) ...[
         const SizedBox(height: 14),
         LuxeCard(
@@ -262,6 +276,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
       ],
       const SizedBox(height: 16),
     ]);
+  }
+
+  /// The ads contracts in the tax summary (empty for a normal client).
+  List<Map> get _adsContracts {
+    final cs = _taxSummary?['contracts'];
+    if (cs is! List) return const [];
+    return cs.whereType<Map>().where(contractHasAds).toList();
   }
 
   Widget _taxRow(String a, String b, {bool bold = false}) => Padding(

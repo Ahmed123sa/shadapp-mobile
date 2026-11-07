@@ -7,6 +7,7 @@ import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart' show statusLabels;
 import '../../../core/widgets/luxe/luxe_widgets.dart';
+import '../../../core/widgets/ads_split.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -219,6 +220,7 @@ class _ContractsTabState extends State<ContractsTab> {
             padding: const EdgeInsets.only(top: 2),
             child: Text(l10n.contractValueExclVat, style: Lx.text(ctx, size: 11, color: Lx.faint)),
           ),
+        if (contractHasAds(c)) AdsSplit(contract: c, currency: '${c['currency'] ?? 'SAR'}'),
         if (c['start_date'] != null)
           Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -582,6 +584,7 @@ class _ContractsTabState extends State<ContractsTab> {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(l10n.contractValueExclVat, style: Lx.text(context, size: 10.5, color: Lx.faint)),
                     ),
+                  if (contractHasAds(c)) AdsSplit(contract: c, currency: '${c['currency'] ?? 'SAR'}'),
                   if (status == 'client_approved' && reqDocs.isNotEmpty) _docsBlock(c, reqDocs, docStates, docsBlocked),
                   if (inFlow)
                     LuxeLabeledSteps(labels: steps, current: _stepFor(status))

@@ -11,6 +11,7 @@
 // contract detail sheets) but were never the same code, same as
 // chat_page.dart/chat_tab.dart's near-duplicate bubbles documented in
 // docs/state-layer-migration-plan.md, بند ٥ — this split does not merge them.
+import '../../core/widgets/ads_split.dart';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -211,6 +212,7 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       style: const TextStyle(fontSize: 11, color: Lx.muted),
                     ),
                   ),
+                if (contractHasAds(c)) AdsSplit(contract: c, currency: c['currency'] as String? ?? 'SAR'),
                 const SizedBox(height: 12),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),

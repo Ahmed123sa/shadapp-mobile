@@ -14,6 +14,7 @@ import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
+import '../../core/widgets/ads_split.dart';
 import 'onboarding_signature_pad.dart';
 
 // ── shared bits ──
@@ -230,6 +231,7 @@ Widget buildContractReviewStage({
               TextSpan(text: _fmt(value), style: Lx.display(context, size: 20)),
               TextSpan(text: '  ${sent['currency'] ?? ''}', style: Lx.text(context, size: 11, color: Lx.muted)),
             ])),
+            if (contractHasAds(sent)) AdsSplit(contract: sent, currency: '${sent['currency'] ?? 'SAR'}', size: 12),
           ],
           const SizedBox(height: 14),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -518,6 +520,7 @@ class _PaymentFigures {
   bool _serverTax = false;
   String currency = 'SAR';
   String? startDate, endDate;
+  final List<Map> adsContracts = [];
   Map<String, dynamic>? lastRejected;
   int? workspaceId;
 
@@ -541,6 +544,7 @@ class _PaymentFigures {
             tax += serverTax;
           }
           currency = (c['currency'] as String?) ?? currency;
+          if (contractHasAds(c)) adsContracts.add(c);
           if (c['start_date'] != null) startDate = (c['start_date'] as String).split('T')[0];
           if (c['end_date'] != null) endDate = (c['end_date'] as String).split('T')[0];
         }
@@ -561,6 +565,11 @@ class _PaymentFigures {
       tax = total * taxPct / 100;
     }
   }
+}
+
+String _pctLabel(Object? v) {
+  final n = num.tryParse('${v ?? 0}') ?? 0;
+  return n == n.roundToDouble() ? n.toInt().toString() : n.toStringAsFixed(2);
 }
 
 String _fmt(double v) {
@@ -621,6 +630,10 @@ Widget buildPaymentStage({
       key: const ValueKey('payment-bill-card'),
       child: Column(children: [
         _billRow(context, l10n.onboarding_amount, f.total, f.currency),
+        for (final c in f.adsContracts) ...[
+          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsFee(_pctLabel(c['ads_percentage']))}', double.tryParse('${c['ads_amount']}') ?? 0, f.currency),
+          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsBudget}', double.tryParse('${c['ads_budget']}') ?? 0, f.currency),
+        ],
         if (f.tax > 0) _billRow(context, l10n.onboarding_tax, f.tax, f.currency),
         _billRow(context, l10n.onboarding_total, f.grand, f.currency, strong: true),
         _billRow(context, l10n.onboarding_paidAmount, f.paid, f.currency),

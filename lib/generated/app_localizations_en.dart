@@ -314,7 +314,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesHint => 'Additional notes...';
 
   @override
-  String get clientCreated => '✅ Client created';
+  String get clientCreated => 'Client created';
 
   @override
   String get clientCreateFailed => 'Failed to create client';
@@ -3062,13 +3062,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestEdit => 'Request Edit';
 
   @override
-  String get approvedLabel => '✓ Approved';
+  String get approvedLabel => 'Approved';
 
   @override
-  String get rejectedLabel => '✗ Rejected';
+  String get rejectedLabel => 'Rejected';
 
   @override
-  String get editRequestedLabel => '✎ Edit requested';
+  String get editRequestedLabel => 'Edit requested';
 
   @override
   String get downloadApprovalCert => 'Download Approval Certificate';
@@ -6088,4 +6088,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsClientLead => 'Your profile and language.';
+
+  @override
+  String get adsToggle => 'Ads contract';
+
+  @override
+  String get adsToggleHint => 'The agency fee is part of the contract value, not added on top.';
+
+  @override
+  String get adsPercentageLabel => 'Ads management fee (%)';
+
+  @override
+  String get adsPercentageInvalid => 'Enter a percentage between 0.01 and 100.';
+
+  @override
+  String adsFee(Object percent) {
+    return 'Ads management fee ($percent%)';
+  }
+
+  @override
+  String get adsBudget => 'Ad budget';
+
+  @override
+  String get adsBadge => 'Ads';
 }

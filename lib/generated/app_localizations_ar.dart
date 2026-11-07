@@ -177,7 +177,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get contractsLoadFailed => 'فشل تحميل العقود';
 
   @override
-  String get contractUpdated => '✅ تم تحديث العقد';
+  String get contractUpdated => 'تم تحديث العقد';
 
   @override
   String get errorOccurred => 'حدث خطأ';
@@ -314,7 +314,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notesHint => 'ملاحظات إضافية...';
 
   @override
-  String get clientCreated => '✅ تم إنشاء العميل';
+  String get clientCreated => 'تم إنشاء العميل';
 
   @override
   String get clientCreateFailed => 'فشل إنشاء العميل';
@@ -3050,13 +3050,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get requestEdit => 'طلب تعديل';
 
   @override
-  String get approvedLabel => '✓ تمت الموافقة';
+  String get approvedLabel => 'تمت الموافقة';
 
   @override
-  String get rejectedLabel => '✗ تم الرفض';
+  String get rejectedLabel => 'تم الرفض';
 
   @override
-  String get editRequestedLabel => '✎ طلب تعديل';
+  String get editRequestedLabel => 'طلب تعديل';
 
   @override
   String get downloadApprovalCert => 'تحميل شهادة الموافقة';
@@ -3123,7 +3123,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get goToPaymentPage => 'يمكنك التوجه إلى صفحة الدفع لإتمام الدفعة';
 
   @override
-  String get proceedToPayment => '💳 انتقال إلى الدفع';
+  String get proceedToPayment => 'انتقال إلى الدفع';
 
   @override
   String get youApprovedThisContract => 'تمت موافقتك على هذا العقد';
@@ -3502,7 +3502,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get amManageManagers => 'إدارة المديرين';
 
   @override
-  String get amMeetingCreated => '✅ تم إنشاء الاجتماع';
+  String get amMeetingCreated => 'تم إنشاء الاجتماع';
 
   @override
   String get amMeetingCreateFailed => 'فشل إنشاء الاجتماع';
@@ -3625,7 +3625,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvalActionFailed => 'فشل تنفيذ الإجراء';
 
   @override
-  String get approvalApproved => '✅ تمت الموافقة';
+  String get approvalApproved => 'تمت الموافقة';
 
   @override
   String get approvalAttachFiles => 'إرفاق ملفات';
@@ -3649,7 +3649,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvalEditReasonLabel => 'سبب التعديل:';
 
   @override
-  String get approvalEditRequested => '✎ تم طلب تعديل';
+  String get approvalEditRequested => 'تم طلب تعديل';
 
   @override
   String get approvalEditTitle => 'طلب تعديل';
@@ -3675,7 +3675,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvalRequestEdit => 'طلب تعديل';
 
   @override
-  String get approvalRequestSent => '✅ تم إرسال طلب الموافقة';
+  String get approvalRequestSent => 'تم إرسال طلب الموافقة';
 
   @override
   String get approvalSendButton => 'إرسال طلب موافقة';
@@ -3942,7 +3942,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatApprovalRequestFailed => 'فشل طلب الموافقة';
 
   @override
-  String get chatApprovedStatus => '✓ تمت الموافقة';
+  String get chatApprovedStatus => 'تمت الموافقة';
 
   @override
   String get chatAttachFailed => 'فشل إرسال المرفق';
@@ -4023,7 +4023,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatReadOnly => 'عرض المحادثة فقط';
 
   @override
-  String get chatRejectedStatus => '✗ تم الرفض';
+  String get chatRejectedStatus => 'تم الرفض';
 
   @override
   String get chatReplyAction => 'رد';
@@ -4032,7 +4032,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatRequestClientApproval => 'طلب موافقة العميل';
 
   @override
-  String get chatRequestedEditStatus => '✎ طلب تعديل';
+  String get chatRequestedEditStatus => 'طلب تعديل';
 
   @override
   String get chatToday => 'اليوم';
@@ -4084,7 +4084,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clientDetailFixedInfo => 'معلومات ثابتة';
 
   @override
-  String get clientDetailImageChanged => '✅ تم تغيير الصورة';
+  String get clientDetailImageChanged => 'تم تغيير الصورة';
 
   @override
   String get clientDetailImageChangeFailed => 'فشل تغيير الصورة';
@@ -4123,7 +4123,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clientDetailSaveChanges => 'حفظ التعديلات';
 
   @override
-  String get clientDetailSaved => '✅ تم حفظ التعديلات';
+  String get clientDetailSaved => 'تم حفظ التعديلات';
 
   @override
   String get clientDetailSaveFailed => 'فشل الحفظ';
@@ -4193,11 +4193,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get contractBuilderCreateAndSend => 'إنشاء وإرسال';
 
   @override
-  String get contractBuilderCreatedAndSent => '✅ تم إنشاء وإرسال العقد';
+  String get contractBuilderCreatedAndSent => 'تم إنشاء وإرسال العقد';
 
   @override
   String get contractBuilderCreatedSendFailed =>
-      '⚠️ تم إنشاء العقد ولكن فشل الإرسال';
+      'تم إنشاء العقد ولكن فشل الإرسال';
 
   @override
   String get contractBuilderCreateExtraTitle => 'إنشاء عقد خدمة إضافية';
@@ -4372,7 +4372,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get createClientEmail => 'البريد';
 
   @override
-  String get createClientEmailCopied => '✅ تم نسخ البريد';
+  String get createClientEmailCopied => 'تم نسخ البريد';
 
   @override
   String get createClientIndividual => 'فرد';
@@ -4390,13 +4390,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get createClientPassword => 'كلمة المرور';
 
   @override
-  String get createClientPasswordCopied => '✅ تم نسخ كلمة المرور';
+  String get createClientPasswordCopied => 'تم نسخ كلمة المرور';
 
   @override
   String get createClientSelectDate => 'اختر التاريخ';
 
   @override
-  String get createClientSuccess => '✓ تم إنشاء العميل بنجاح';
+  String get createClientSuccess => 'تم إنشاء العميل بنجاح';
 
   @override
   String get createClientType => 'نوع العميل';
@@ -4525,13 +4525,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get filesConfirmRejection => 'تأكيد الرفض';
 
   @override
-  String get filesDefinitionAdded => '✅ تم إضافة التعريف';
+  String get filesDefinitionAdded => 'تم إضافة التعريف';
 
   @override
   String get filesDefinitionAddFailed => 'فشل إضافة التعريف';
 
   @override
-  String get filesDefinitionDeleted => '✅ تم حذف التعريف';
+  String get filesDefinitionDeleted => 'تم حذف التعريف';
 
   @override
   String get filesDefinitionDeleteFailed => 'فشل حذف التعريف';
@@ -4579,7 +4579,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get filesUploadFailed => 'فشل رفع الملف';
 
   @override
-  String get filesUploadSuccess => '✅ تم رفع الملف';
+  String get filesUploadSuccess => 'تم رفع الملف';
 
   @override
   String get managerDetailActive => 'نشط';
@@ -4628,7 +4628,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingCancelFailed => 'فشل إلغاء الاجتماع';
 
   @override
-  String get meetingCancelSuccess => '✅ تم إلغاء الاجتماع';
+  String get meetingCancelSuccess => 'تم إلغاء الاجتماع';
 
   @override
   String get meetingCancelTitle => 'إلغاء الاجتماع';
@@ -4645,7 +4645,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingCompleteFailed => 'فشل إكمال الاجتماع';
 
   @override
-  String get meetingCompleteSuccess => '✅ تم إكمال الاجتماع';
+  String get meetingCompleteSuccess => 'تم إكمال الاجتماع';
 
   @override
   String get meetingCompleteTitle => 'إكمال الاجتماع';
@@ -4663,7 +4663,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingKeep => 'إبقاء';
 
   @override
-  String get meetingLinkCopied => '✅ تم نسخ الرابط';
+  String get meetingLinkCopied => 'تم نسخ الرابط';
 
   @override
   String get meetingNotesHint => 'رابط الاجتماع أو ملاحظات إضافية...';
@@ -4672,7 +4672,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingPasscode => 'رمز المرور';
 
   @override
-  String get meetingPasscodeCopied => '✅ تم نسخ رمز المرور';
+  String get meetingPasscodeCopied => 'تم نسخ رمز المرور';
 
   @override
   String get meetingRelatedContract => 'العقد المرتبط';
@@ -4690,7 +4690,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingUpdateFailed => 'فشل تحديث الاجتماع';
 
   @override
-  String get meetingUpdateSuccess => '✅ تم تحديث الاجتماع';
+  String get meetingUpdateSuccess => 'تم تحديث الاجتماع';
 
   @override
   String get monthApril => 'أبريل';
@@ -4739,11 +4739,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentsApprovedWorkspaceActive =>
-      '✅ تم اعتماد الدفعة — مساحة العمل نشطة';
+      'تم اعتماد الدفعة — مساحة العمل نشطة';
 
   @override
   String get paymentsApprovedWorkspacePending =>
-      '✅ تم اعتماد الدفعة — سيتم تفعيل مساحة العمل عند اكتمال الإجراءات';
+      'تم اعتماد الدفعة — سيتم تفعيل مساحة العمل عند اكتمال الإجراءات';
 
   @override
   String get paymentsApprovePayment => 'اعتماد الدفعة';
@@ -4791,7 +4791,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsFileOpenFailed => 'فشل فتح الملف';
 
   @override
-  String get paymentsInstallmentCleared => '✅ تم مسح القسط';
+  String get paymentsInstallmentCleared => 'تم مسح القسط';
 
   @override
   String get paymentsInstallmentClearFailed => 'فشل مسح القسط';
@@ -4807,7 +4807,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get paymentsInstallmentUpdated => '✅ تم تحديث القسط';
+  String get paymentsInstallmentUpdated => 'تم تحديث القسط';
 
   @override
   String get paymentsInstallmentUpdateFailed => 'فشل تحديث القسط';
@@ -4883,7 +4883,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsRejectConfirmMsg => 'هل أنت متأكد من رفض هذه الدفعة؟';
 
   @override
-  String get paymentsRejectedMsg => '❌ تم رفض الدفعة';
+  String get paymentsRejectedMsg => 'تم رفض الدفعة';
 
   @override
   String get paymentsRejectPayment => 'رفض الدفعة';
@@ -4901,7 +4901,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentsRequestPayment => 'طلب دفعة';
 
   @override
-  String get paymentsRequestSent => '✅ تم إرسال طلب الدفعة';
+  String get paymentsRequestSent => 'تم إرسال طلب الدفعة';
 
   @override
   String paymentsScheduleCount(Object count) {
@@ -4909,7 +4909,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get paymentsScheduledSuccess => '✅ تمت جدولة الدفعات';
+  String get paymentsScheduledSuccess => 'تمت جدولة الدفعات';
 
   @override
   String get paymentsScheduleFailed => 'فشل جدولة الدفعات';
@@ -5142,7 +5142,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'النسبة المئوية للضريبة المضافة على قيمة العقود للعملاء من نوع شركات';
 
   @override
-  String get settingsImageChanged => '✅ تم تغيير الصورة';
+  String get settingsImageChanged => 'تم تغيير الصورة';
 
   @override
   String get settingsImageChangeFailed => 'فشل تغيير الصورة';
@@ -5163,7 +5163,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsSaveChanges => 'حفظ التغييرات';
 
   @override
-  String get settingsSaved => '✅ تم حفظ الإعدادات';
+  String get settingsSaved => 'تم حفظ الإعدادات';
 
   @override
   String get settingsSaveFailed => 'فشل حفظ الإعدادات';
@@ -5187,7 +5187,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsTaxRate => 'نسبة الضريبة (%)';
 
   @override
-  String get settingsTaxSaved => '✅ تم حفظ نسبة الضريبة';
+  String get settingsTaxSaved => 'تم حفظ نسبة الضريبة';
 
   @override
   String get settingsTaxSaveFailed => 'فشل حفظ الضريبة';
@@ -5205,7 +5205,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get signatureCurrentSignature => 'التوقيع الحالي';
 
   @override
-  String get signatureDeleted => '✅ تم حذف التوقيع';
+  String get signatureDeleted => 'تم حذف التوقيع';
 
   @override
   String get signatureDeleteFailed => 'فشل حذف التوقيع';
@@ -5214,7 +5214,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get signatureDrawMode => 'رسم';
 
   @override
-  String get signatureSaved => '✅ تم حفظ التوقيع';
+  String get signatureSaved => 'تم حفظ التوقيع';
 
   @override
   String get signatureSaveFailed => 'فشل حفظ التوقيع';
@@ -6064,4 +6064,27 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsClientLead => 'بياناتك واللغة.';
+
+  @override
+  String get adsToggle => 'عقد إعلانات';
+
+  @override
+  String get adsToggleHint => 'نسبة الشركة جزء من قيمة العقد وليست إضافة عليها.';
+
+  @override
+  String get adsPercentageLabel => 'نسبة إدارة الإعلانات (%)';
+
+  @override
+  String get adsPercentageInvalid => 'اكتب نسبة بين 0.01 و100.';
+
+  @override
+  String adsFee(Object percent) {
+    return 'نسبة إدارة الإعلانات ($percent%)';
+  }
+
+  @override
+  String get adsBudget => 'ميزانية الإعلانات';
+
+  @override
+  String get adsBadge => 'إعلانات';
 }
