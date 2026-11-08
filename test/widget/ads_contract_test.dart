@@ -1,6 +1,7 @@
 // Ads contracts: the agency's management fee is a share of the contract value
 // (inside it, never on top). The server sends the split already computed; the
-// app shows it and lets the manager switch a contract to an ads contract.
+// app shows it and lets the manager switch a contract to an ads contract. The
+// tax is charged on the fee only.
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -8,8 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/core/widgets/ads_split.dart';
 import 'package:shadapp_client/features/am/widgets/contract_builder.dart';
+import 'package:shadapp_client/features/onboarding/client_onboarding_stages.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../helpers/mock_http_client.dart';
+import '../helpers/pump_app.dart';
 
 void main() {
   setUpAll(() {
@@ -69,6 +72,65 @@ void main() {
       await tester.pumpWidget(wrap(const AdsSplit(contract: normalContract, currency: 'SAR')));
 
       expect(find.byKey(const ValueKey('ads-split')), findsNothing);
+    });
+  });
+
+  // The tax of an ads contract is charged on the agency fee only: a 50,000
+  // contract with a 20% fee (10,000) and a 14% tax owes 1,400, total 51,400.
+  group('onboarding payment stage taxes an ads contract on its fee', () {
+    const bigAds = {
+      'id': 9,
+      'status': 'company_approved',
+      'title': 'Big ads',
+      'value': '50000',
+      'currency': 'EGP',
+      'ads_percentage': 20,
+      'ads_amount': 10000,
+      'ads_budget': 40000,
+    };
+
+    // An amount as its own bill row shows it. textContaining would also match
+    // "51,400" when looking for "1,400".
+    Finder amount(String figure) => find.byWidgetPredicate(
+          (w) => w is Text && (w.textSpan?.toPlainText() ?? w.data ?? '').startsWith('$figure '),
+        );
+
+    Future<void> pumpStage(WidgetTester tester, Map<String, dynamic> contract) async {
+      await pumpWithLocalizations(
+        tester,
+        SingleChildScrollView(
+          child: Builder(
+            builder: (ctx) => buildPaymentStage(
+              context: ctx,
+              workspace: {'id': 5, 'contracts': [contract], 'payments': []},
+              client: {'client_type': 'business'},
+              taxSettings: {'corporate_tax_percentage': {'value': '14'}},
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('uses the tax the server computed', (tester) async {
+      await pumpStage(tester, {...bigAds, 'tax_percentage': 14, 'tax_amount': 1400});
+
+      expect(amount('1,400'), findsOneWidget); // tax row
+      expect(amount('51,400'), findsNWidgets(2)); // total and remaining
+    });
+
+    testWidgets('computes the same figure itself when the server sent none', (tester) async {
+      await pumpStage(tester, bigAds);
+
+      expect(amount('1,400'), findsOneWidget);
+      expect(amount('51,400'), findsNWidgets(2));
+      expect(amount('7,000'), findsNothing); // 14% of the whole 50,000
+    });
+
+    testWidgets('a normal contract is still taxed on its whole value', (tester) async {
+      await pumpStage(tester, {'id': 8, 'status': 'company_approved', 'value': '50000', 'currency': 'EGP'});
+
+      expect(amount('7,000'), findsOneWidget);
+      expect(amount('57,000'), findsNWidgets(2));
     });
   });
 

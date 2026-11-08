@@ -517,6 +517,10 @@ Widget buildEditReasonQuote(BuildContext context, String reason) {
 
 class _PaymentFigures {
   double total = 0, paid = 0, tax = 0, taxPct = 0;
+  // What the tax is charged on: the whole value of a normal contract, only
+  // the agency fee of an ads contract (the ad budget inside is not taxed).
+  double _taxBase = 0;
+  double? _serverPct;
   bool _serverTax = false;
   String currency = 'SAR';
   String? startDate, endDate;
@@ -536,12 +540,15 @@ class _PaymentFigures {
       workspaceId = ws['id'] as int?;
       for (final c in safeList(ws['contracts'])) {
         if (c is Map) {
-          total += double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          final value = double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          total += value;
+          _taxBase += contractHasAds(c) ? (double.tryParse((c['ads_amount'] ?? '0').toString()) ?? 0.0) : value;
           // The server prices each contract with its own locked rate.
           final serverTax = double.tryParse((c['tax_amount'] ?? '').toString());
           if (serverTax != null) {
             _serverTax = true;
             tax += serverTax;
+            _serverPct = double.tryParse((c['tax_percentage'] ?? '').toString()) ?? _serverPct;
           }
           currency = (c['currency'] as String?) ?? currency;
           if (contractHasAds(c)) adsContracts.add(c);
@@ -560,9 +567,15 @@ class _PaymentFigures {
       }
     }
     if (_serverTax) {
-      if (total > 0) taxPct = tax * 100 / total;
+      // The rate the server priced with; dividing by the contract value would
+      // understate it for an ads contract, which is taxed on its fee only.
+      if (_serverPct != null) {
+        taxPct = _serverPct!;
+      } else if (_taxBase > 0) {
+        taxPct = tax * 100 / _taxBase;
+      }
     } else if (isBusiness && taxPct > 0) {
-      tax = total * taxPct / 100;
+      tax = _taxBase * taxPct / 100;
     }
   }
 }

@@ -418,7 +418,7 @@ class LxMeetingBanner extends StatelessWidget {
     final showJoin = link != null && canJoin && inWindow;
     return GestureDetector(
       key: const ValueKey('chat-meeting-banner'),
-      onTap: !showJoin ? null : (onTap ?? () => launchUrl(Uri.parse(link!), mode: LaunchMode.externalApplication)),
+      onTap: !showJoin ? null : (onTap ?? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
