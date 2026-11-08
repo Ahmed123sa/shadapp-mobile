@@ -28,16 +28,25 @@ void main() {
       expect(status.canJoin, isFalse);
     });
 
-    test('allows joining up to 15 minutes after the scheduled time', () {
-      final status = getMeetingJoinStatus(iso(const Duration(minutes: -10)), en);
+    test('allows joining until the meeting ends (30 minutes when the length is unknown)', () {
+      final status = getMeetingJoinStatus(iso(const Duration(minutes: -20)), en);
       expect(status.canJoin, isTrue);
       expect(status.label, en.meetings_joinNow);
     });
 
-    test('reports Ended more than 15 minutes after the scheduled time', () {
-      final status = getMeetingJoinStatus(iso(const Duration(minutes: -20)), en);
+    test('reports Ended once the default 30 minutes are over', () {
+      final status = getMeetingJoinStatus(iso(const Duration(minutes: -40)), en);
       expect(status.canJoin, isFalse);
       expect(status.label, en.meetings_ended);
+    });
+
+    test('follows the meeting duration when it is known', () {
+      final running = getMeetingJoinStatus(iso(const Duration(minutes: -40)), en, durationMinutes: 60);
+      expect(running.canJoin, isTrue);
+
+      final over = getMeetingJoinStatus(iso(const Duration(minutes: -70)), en, durationMinutes: 60);
+      expect(over.canJoin, isFalse);
+      expect(over.label, en.meetings_ended);
     });
 
     test('reports hours left, then days left, further out', () {

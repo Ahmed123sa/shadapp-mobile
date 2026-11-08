@@ -15,6 +15,7 @@
 import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
+import '../../core/helpers/meeting_helpers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
@@ -401,18 +402,23 @@ class LxMeetingBanner extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final title = meeting['title'] as String? ?? l10n.upcomingMeeting;
     final link = meeting['link'] as String?;
+    // Same window as every other join button: 15 minutes before the start
+    // until the meeting ends. Outside it the banner only tells the time.
     var timeLabel = '';
+    var inWindow = false;
     try {
-      final diff = DateTime.parse(meeting['scheduled_at']).toLocal().difference(DateTime.now());
-      timeLabel = diff.inMinutes < 60
-          ? l10n.inMinutes(diff.inMinutes)
-          : diff.inHours < 24
-              ? l10n.inHours(diff.inHours)
-              : l10n.inDays(diff.inDays);
+      final status = getMeetingJoinStatus(
+        meeting['scheduled_at'] as String,
+        l10n,
+        durationMinutes: meeting['duration_minutes'] as int?,
+      );
+      timeLabel = status.label;
+      inWindow = status.canJoin;
     } catch (_) {}
+    final showJoin = link != null && canJoin && inWindow;
     return GestureDetector(
       key: const ValueKey('chat-meeting-banner'),
-      onTap: onTap ?? (link != null ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication) : null),
+      onTap: !showJoin ? null : (onTap ?? () => launchUrl(Uri.parse(link!), mode: LaunchMode.externalApplication)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -430,8 +436,9 @@ class LxMeetingBanner extends StatelessWidget {
               if (timeLabel.isNotEmpty) Text(timeLabel, style: Lx.text(context, size: 11, color: Lx.muted)),
             ]),
           ),
-          if (link != null && canJoin)
+          if (showJoin)
             Container(
+              key: const ValueKey('chat-meeting-join'),
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(Lx.rPill), border: Border.all(color: Lx.line2)),
               child: Text(l10n.join, style: Lx.text(context, size: 11.5)),

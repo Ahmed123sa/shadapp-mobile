@@ -446,7 +446,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(children: [
             if (_nextMeeting != null)
-              LxMeetingBanner(meeting: _nextMeeting!, canJoin: !isSA, onTap: () => _enterMeeting(_nextMeeting!)),
+              LxMeetingBanner(meeting: _nextMeeting!, canJoin: _api.staffCan('can_join_meetings'), onTap: () => _enterMeeting(_nextMeeting!)),
             if (_nextPayment != null)
               LxPaymentBanner(payment: _nextPayment!, onTap: () => _onPaymentBannerTap(_nextPayment!)),
           ]),
