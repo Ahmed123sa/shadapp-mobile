@@ -241,6 +241,9 @@ Widget _textBubble(
 ]) {
   final l10n = AppLocalizations.of(context)!;
   final isMine = !isClient; // staff side
+  // `m` arrives untyped; a typed copy for the helpers that want one, made
+  // without a cast so `m` itself is not narrowed.
+  final Map<String, dynamic> msg = Map<String, dynamic>.from(m);
   final bubble = Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     decoration: BoxDecoration(
@@ -274,6 +277,7 @@ Widget _textBubble(
             m: m,
             fallbackFileName: l10n.attachment,
           ),
+        ...chatApprovalFileCards(api: api, m: msg, fallbackFileName: l10n.attachment),
         Text(m['message'] ?? '', style: Lx.text(context, size: 13.5, height: 1.65)),
         if (m['edited_at'] != null || (isMine && m['id'] != null))
           Padding(
@@ -315,7 +319,13 @@ Widget _textBubble(
               ]),
             ]),
             const SizedBox(height: 6),
-            Text(m['message'] ?? '', style: Lx.display(context, size: 18)),
+            if ('${m['message'] ?? ''}'.trim().isNotEmpty) Text(m['message'], style: Lx.display(context, size: 18)),
+            if (m['type'] == 'file' && m['file_url'] != null) ...[
+              const SizedBox(height: 10),
+              chatFileAttachment(api: api, m: m, fallbackFileName: l10n.attachment),
+            ],
+            ...chatApprovalFileCards(api: api, m: msg, fallbackFileName: l10n.attachment)
+                .map((w) => Padding(padding: const EdgeInsets.only(top: 10), child: w)),
           ]),
         ),
       if (m['action_taken'] == true)

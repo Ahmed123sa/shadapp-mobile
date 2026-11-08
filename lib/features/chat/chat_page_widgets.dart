@@ -276,6 +276,7 @@ Widget _buildTextBubble(
         m: m,
         fallbackFileName: l10n.attachment,
       ),
+    ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment),
   ];
 
   final bubble = Container(
@@ -334,7 +335,14 @@ Widget _buildTextBubble(
               ]),
             ]),
             const SizedBox(height: 6),
-            Text(m['message'] ?? '', style: Lx.display(context, size: 18)),
+            if ('${m['message'] ?? ''}'.trim().isNotEmpty) Text(m['message'], style: Lx.display(context, size: 18)),
+            // The file(s) being approved: the message's own, or the ones the
+            // approval carries. A file-only request used to show an empty card.
+            if (m['type'] == 'file' && m['file_url'] != null) ...[
+              const SizedBox(height: 10),
+              chatFileAttachment(api: api, m: m, fallbackFileName: l10n.attachment),
+            ],
+            ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment).map((w) => Padding(padding: const EdgeInsets.only(top: 10), child: w)),
             // subuser-review-plan.md م٦ — responding to an approval
             // request maps to can_respond_approvals, per the plan's
             // action table (same key as the approvals tab).

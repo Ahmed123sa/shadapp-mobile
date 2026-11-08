@@ -10,6 +10,7 @@ import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../models/approval.dart';
+import '../chat/chat_shared.dart' show chatFileAttachment;
 import '../../providers/approval_provider.dart';
 
 class ApprovalsPage extends StatefulWidget {
@@ -185,6 +186,17 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                 if (a.referenceNo != null) ...[
                   const SizedBox(height: 2),
                   Text('${l10n.approvals_referenceNo}: ${a.referenceNo}', style: Lx.text(context, size: 11.5, color: Lx.faint)),
+                ],
+                // The files being approved, so the request can be judged here
+                // without going back to the chat.
+                if (a.files.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  for (final f in a.files)
+                    chatFileAttachment(
+                      api: _api,
+                      m: {'file_url': f['file_url'], 'file_name': f['name'], 'file_size': f['size']},
+                      fallbackFileName: l10n.attachment,
+                    ),
                 ],
                 const SizedBox(height: 8),
                 Row(mainAxisSize: MainAxisSize.min, children: [

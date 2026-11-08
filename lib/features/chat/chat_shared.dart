@@ -251,8 +251,12 @@ Widget chatFileAttachment({
   required Map<String, dynamic> m,
   required String fallbackFileName,
 }) {
-  final fileName = m['file_name'] as String? ?? fallbackFileName;
-  final fileSize = m['file_size'] as int?;
+  // The message only holds the file's URL. When an approval carries the same
+  // file, its name and size are used so the card reads "1.jpg", not "Attachment".
+  final approvalFiles = m['approval']?['files'];
+  final approvalFile = approvalFiles is List && approvalFiles.isNotEmpty && approvalFiles.first is Map ? approvalFiles.first as Map : null;
+  final fileName = m['file_name'] as String? ?? approvalFile?['name'] as String? ?? fallbackFileName;
+  final fileSize = (m['file_size'] ?? approvalFile?['size']) is num ? ((m['file_size'] ?? approvalFile?['size']) as num).toInt() : null;
   String sizeText = '';
   if (fileSize != null) {
     if (fileSize > 1024 * 1024) {
@@ -303,4 +307,26 @@ Widget chatFileAttachment({
       ),
     ),
   );
+}
+
+/// The files an approval request carries, as file cards. A file sent in chat is
+/// the message's own (drawn by [chatFileAttachment]); an approval raised from
+/// the Approvals tab is a text message whose files live on the approval.
+List<Widget> chatApprovalFileCards({
+  required ApiClient api,
+  required Map<String, dynamic> m,
+  required String fallbackFileName,
+}) {
+  if (m['type'] == 'file') return const [];
+  final files = m['approval']?['files'];
+  if (files is! List) return const [];
+  return [
+    for (final f in files)
+      if (f is Map && f['file_url'] != null)
+        chatFileAttachment(
+          api: api,
+          m: {'file_url': f['file_url'], 'file_name': f['name'], 'file_size': f['size']},
+          fallbackFileName: fallbackFileName,
+        ),
+  ];
 }

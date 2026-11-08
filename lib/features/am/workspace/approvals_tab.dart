@@ -11,6 +11,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../models/approval.dart';
+import '../../chat/chat_shared.dart' show chatFileAttachment;
 import '../../../providers/approval_provider.dart';
 
 class ApprovalsTab extends StatefulWidget {
@@ -261,6 +262,15 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           Text(statusLabels(l10n)[status] ?? status, style: Lx.text(context, size: 12, color: Lx.ink2)),
                         ]),
                       ]),
+                      if (a.files.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        for (final f in a.files)
+                          chatFileAttachment(
+                            api: _api,
+                            m: {'file_url': f['file_url'], 'file_name': f['name'], 'file_size': f['size']},
+                            fallbackFileName: l10n.attachment,
+                          ),
+                      ],
                       if (hasCertificate)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
