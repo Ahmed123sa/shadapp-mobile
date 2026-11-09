@@ -102,6 +102,76 @@ void main() {
     verify(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path == '/contracts/1')), headers: any(named: 'headers'))).called(1);
   });
 
+  // Delete is offered only for a contract that was saved and never sent.
+  group('delete is for drafts only', () {
+    testWidgets('a contract the client has seen shows no Delete button, in any status', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'account_manager';
+      stubCommon(httpClient, contractsJson: '{"contracts":['
+          '{"id":1,"title":"Asked","status":"edit_requested","value":500,"currency":"SAR"},'
+          '{"id":2,"title":"Sent","status":"sent","value":500,"currency":"SAR"},'
+          '{"id":3,"title":"Approved","status":"company_approved","value":500,"currency":"SAR"},'
+          '{"id":4,"title":"Draft","status":"draft","value":500,"currency":"SAR"}]}');
+      // Tall enough that all four cards are built, not only the first ones.
+      tester.view.physicalSize = const Size(800, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await pumpTab(tester, api);
+
+      expect(find.byKey(const ValueKey('contract-delete-1')), findsNothing);
+      expect(find.byKey(const ValueKey('contract-delete-2')), findsNothing);
+      expect(find.byKey(const ValueKey('contract-delete-3')), findsNothing);
+      expect(find.byKey(const ValueKey('contract-delete-4')), findsOneWidget);
+    });
+
+    testWidgets('cancelling the confirmation deletes nothing', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'account_manager';
+      stubCommon(httpClient, contractsJson: '{"contracts":[{"id":1,"title":"Draft","status":"draft","value":500,"currency":"SAR"}]}');
+
+      await pumpTab(tester, api);
+
+      await tester.tap(find.byKey(const ValueKey('contract-delete-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => httpClient.delete(any(), headers: any(named: 'headers')));
+    });
+
+    testWidgets('when the server refuses, its reason is shown', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'account_manager';
+      stubCommon(httpClient, contractsJson: '{"contracts":[{"id":1,"title":"Draft","status":"draft","value":500,"currency":"SAR"}]}');
+      when(() => httpClient.delete(any(), headers: any(named: 'headers'))).thenAnswer(
+          (_) async => jsonResponse('{"message":"Already sent, cannot delete.","code":"contract_not_deletable"}', 422));
+
+      await pumpTab(tester, api);
+
+      await tester.tap(find.byKey(const ValueKey('contract-delete-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Already sent, cannot delete.'), findsOneWidget);
+    });
+
+    testWidgets('a super admin sees no Delete button on a draft', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'super_admin';
+      stubCommon(httpClient, contractsJson: '{"contracts":[{"id":1,"title":"Draft","status":"draft","value":500,"currency":"SAR"}]}');
+
+      await pumpTab(tester, api);
+
+      expect(find.byKey(const ValueKey('contract-delete-1')), findsNothing);
+    });
+  });
+
   testWidgets('company-approving with a manually entered signature posts it', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

@@ -300,8 +300,14 @@ class _ContractsTabState extends State<ContractsTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleted)));
         _load();
       }
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleteFailed)));
+    } catch (e, s) {
+      AppLog.error('contracts_tab._deleteContract', e, s);
+      if (!mounted) return;
+      // The server says why when the contract can no longer be deleted (it
+      // was sent meanwhile); show that instead of the generic failure.
+      final base = AppLocalizations.of(context)!.contractDeleteFailed;
+      final reason = e is ValidationException ? e.message : '';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason.isEmpty ? base : '$base\n$reason')));
     }
   }
 
@@ -538,7 +544,9 @@ class _ContractsTabState extends State<ContractsTab> {
                         ? (docsBlocked ? null : () => _companyApproveWithSignature(c))
                         : () => _action(c['id'], a, destructive: a == 'archive' || a == 'complete'),
                   ),
-                if (editable && canManage && !isSA)
+                // Delete only a contract that was saved and never sent; once
+                // the client has seen it (even with an edit request) it stays.
+                if (status == 'draft' && canManage && !isSA)
                   LuxeButton(
                     key: ValueKey('contract-delete-${c['id']}'),
                     label: l10n.delete,
