@@ -21,6 +21,7 @@
   "rejected": "Rejected",
   "editRequested": "Edit requested",
   "attachment": "Attachment",
+  "removeAttachment": "Remove attachment",
   "waitingClientApproval": "Waiting for client approval",
   "client": "Client",
   "accountManager": "Account Manager",

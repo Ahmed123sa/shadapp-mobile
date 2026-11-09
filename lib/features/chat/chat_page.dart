@@ -59,6 +59,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   // null instead, same pattern as am/workspace/chat_tab.dart's _wsId.
   int? get _wsId => _api.workspaceId;
   final _controller = TextEditingController();
+  // Picked in the composer, sent with the text when the user taps send.
+  File? _pendingFile;
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
   bool _loading = true;
@@ -246,7 +248,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     markRead: _markRead,
     consumeRequiresAction: () => false,
     logTag: 'chat_page',
+    file: _pendingFile,
+    clearFile: () => _pendingFile = null,
+    onFileFailed: _restoreFailedSend,
   );
+
+  /// The send failed: give the file and the text back so nothing is lost.
+  void _restoreFailedSend(File file, String text, bool requiresAction) {
+    if (!mounted) return;
+    setState(() {
+      _pendingFile = file;
+      if (_controller.text.isEmpty) _controller.text = text;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.attachmentSendFailed)));
+  }
 
   Future<void> _saveEdit() => chatSaveEdit(
     controller: _controller,
@@ -260,20 +275,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     logTag: 'chat_page',
   );
 
-  Future<void> _sendWithAttachment() async {
+  /// Picking a file no longer sends it: it waits in the composer (with a way
+  /// to remove it) and goes out with the text when the user taps send.
+  Future<void> _pickAttachment() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
     );
-    if (result == null || result.files.isEmpty || _wsId == null) return;
-    final file = File(result.files.single.path!);
-    try {
-      await _chatProvider.uploadFile(_wsId!, file);
-      _load();
-    } catch (e, s) {
-      AppLog.error('chat_page._sendWithAttachment', e, s);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.attachmentSendFailed)));
-    }
+    if (result == null || result.files.isEmpty || result.files.single.path == null) return;
+    setState(() => _pendingFile = File(result.files.single.path!));
   }
 
   Future<void> _approve(int contractId) async {
@@ -450,6 +460,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ),
               ]),
             ),
+          if (_pendingFile != null && _editingMessage == null)
+            LxPendingAttachment(file: _pendingFile!, onRemove: () => setState(() => _pendingFile = null)),
           Row(children: [
             Expanded(
               child: Container(
@@ -458,7 +470,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   InkResponse(
                     key: const ValueKey('chat-attach'),
                     radius: 18,
-                    onTap: _editingMessage != null ? null : _sendWithAttachment,
+                    onTap: _editingMessage != null ? null : _pickAttachment,
                     child: const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: LxIcon('clip', size: 18, color: Lx.faint)),
                   ),
                   const SizedBox(width: 8),

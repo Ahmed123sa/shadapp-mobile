@@ -72,6 +72,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get attachment => 'مرفق';
 
   @override
+  String get removeAttachment => 'إزالة المرفق';
+
+  @override
   String get waitingClientApproval => 'انتظار موافقة العميل';
 
   @override

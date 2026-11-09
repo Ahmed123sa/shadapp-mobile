@@ -224,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Attachment'**
   String get attachment;
 
+  /// No description provided for @removeAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove attachment'**
+  String get removeAttachment;
+
   /// No description provided for @waitingClientApproval.
   ///
   /// In en, this message translates to:

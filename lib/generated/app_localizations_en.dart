@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachment => 'Attachment';
 
   @override
+  String get removeAttachment => 'Remove attachment';
+
+  @override
   String get waitingClientApproval => 'Waiting for client approval';
 
   @override

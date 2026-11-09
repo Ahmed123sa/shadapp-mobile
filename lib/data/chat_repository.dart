@@ -48,6 +48,17 @@ class ChatRepository {
   Future<void> uploadFile(int workspaceId, File file) =>
       _api.multipartPost('/workspaces/$workspaceId/chat', {}, file: file, fileField: 'file');
 
+  /// A file with its text, sent as one message. [message] is only included
+  /// when it is not empty, and `requires_action` / `reply_to_id` only when set,
+  /// like [sendMessage].
+  Future<void> sendMessageWithFile(int workspaceId, File file, {String message = '', int? replyToId, bool requiresAction = false}) {
+    final fields = <String, dynamic>{};
+    if (message.isNotEmpty) fields['message'] = message;
+    if (requiresAction) fields['requires_action'] = '1';
+    if (replyToId != null) fields['reply_to_id'] = replyToId;
+    return _api.multipartPost('/workspaces/$workspaceId/chat', fields, file: file, fileField: 'file');
+  }
+
   /// [reason] is only included in the request body when non-null, matching
   /// the original inline behavior (used for the 'edit_requested' action).
   Future<void> respond(int messageId, {required String action, String? reason}) {

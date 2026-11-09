@@ -21,6 +21,7 @@
   "rejected": "تم الرفض",
   "editRequested": "طلب تعديل",
   "attachment": "مرفق",
+  "removeAttachment": "إزالة المرفق",
   "waitingClientApproval": "انتظار موافقة العميل",
   "client": "عميل",
   "accountManager": "مدير الحساب",
