@@ -2096,5 +2096,14 @@
   "adsPercentageInvalid": "Enter a percentage between 0.01 and 100.",
   "adsFee": "Ads management fee ({percent}%)",
   "adsBudget": "Ad budget",
-  "adsBadge": "Ads"
+  "adsBadge": "Ads",
+  "adsConversionLabel": "Dollar conversion fee (% of ad budget)",
+  "adsConversionHint": "Added on top of the contract value and not taxed. Leave empty for none.",
+  "adsConversionInvalid": "Enter a percentage between 0 and 100.",
+  "adsConversion": "Dollar conversion fee ({percent}%)",
+  "adsConversionTotal": "Dollar conversion fees",
+  "adsExclConversion": "Contract value excludes the conversion fee",
+  "taxExcludedToggle": "Exclude tax",
+  "taxExcludedHint": "No tax is charged on this contract.",
+  "totalDue": "Total due"
 }

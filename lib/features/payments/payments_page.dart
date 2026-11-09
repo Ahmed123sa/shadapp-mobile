@@ -170,14 +170,25 @@ class _PaymentsPageState extends State<PaymentsPage> {
           ]),
         );
     rows.add(row(ar ? 'قيمة العقود' : 'Contracts value', f(n(ts['contracts_total']))));
+    // Dollar-conversion fees: added on top of the value, never taxed.
+    for (final c in contracts.where(contractHasConversion)) {
+      final label = ar ? 'رسوم التحويل الدولاري (${f(n(c['conversion_percentage']))}%)' : 'Dollar conversion fee (${f(n(c['conversion_percentage']))}%)';
+      rows.add(row(contracts.length > 1 ? '${c['title'] ?? ''} · $label' : label, f(n(c['conversion_amount']))));
+    }
     if (contracts.length > 1) {
       for (final c in contracts) {
+        if (c['tax_excluded'] == true) continue;
         rows.add(row(ar ? 'ضريبة ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)' : 'Tax · ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)', f(n(c['tax_amount']))));
       }
-    } else {
+    } else if (n(ts['tax_amount']) > 0) {
       rows.add(row(ar ? 'ضريبة ${f(n(ts['tax_percentage']))}%' : 'Tax ${f(n(ts['tax_percentage']))}%', f(n(ts['tax_amount']))));
     }
-    rows.add(row(ar ? 'الإجمالي شامل الضريبة' : 'Total incl. tax', f(n(ts['grand_total'])), bold: true));
+    final hasConversionFee = n(ts['conversion_total']) > 0;
+    rows.add(row(
+      hasConversionFee ? (ar ? 'الإجمالي المستحق' : 'Total due') : (ar ? 'الإجمالي شامل الضريبة' : 'Total incl. tax'),
+      f(n(ts['grand_total'])),
+      bold: true,
+    ));
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Container(
@@ -208,7 +219,11 @@ class _PaymentsPageState extends State<PaymentsPage> {
     }
     final contracts = _payableContracts;
     if (contracts.isNotEmpty) {
-      return contracts.fold<double>(0, (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0));
+      // No summary from the server: the value plus any dollar-conversion fee.
+      return contracts.fold<double>(
+        0,
+        (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0) + (num.tryParse('${c['conversion_amount'] ?? 0}')?.toDouble() ?? 0),
+      );
     }
     return _payments.fold<double>(0, (s, p) => s + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
@@ -372,7 +387,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 ]),
               ),
             if (_adsContracts.isNotEmpty) _adsCard(context, contractCur),
-            if (_taxSummary != null && (num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0)
+            if (_taxSummary != null &&
+                ((num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0 || (num.tryParse('${_taxSummary!['conversion_total'] ?? 0}') ?? 0) > 0))
               _taxCard(context, contractCur),
             const SizedBox(height: 16),
 

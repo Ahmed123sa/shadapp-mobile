@@ -6090,4 +6090,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adsBadge => 'إعلانات';
+
+  @override
+  String get adsConversionLabel => 'رسوم التحويل الدولاري (% من ميزانية الإعلانات)';
+
+  @override
+  String get adsConversionHint => 'تُضاف فوق قيمة العقد ولا تُحسب عليها ضريبة. اتركها فاضية لو مفيش.';
+
+  @override
+  String get adsConversionInvalid => 'اكتب نسبة بين 0 و100.';
+
+  @override
+  String adsConversion(Object percent) {
+    return 'رسوم التحويل الدولاري ($percent%)';
+  }
+
+  @override
+  String get adsConversionTotal => 'رسوم التحويل الدولاري';
+
+  @override
+  String get adsExclConversion => 'قيمة العقد غير شاملة رسوم التحويل';
+
+  @override
+  String get taxExcludedToggle => 'استثناء الضريبة';
+
+  @override
+  String get taxExcludedHint => 'لا تُحسب ضريبة على هذا العقد.';
+
+  @override
+  String get totalDue => 'الإجمالي المستحق';
 }

@@ -10,6 +10,13 @@ bool contractHasAds(Map? c) {
   return c['ads_percentage'] != null && c['ads_amount'] != null && c['ads_budget'] != null;
 }
 
+/// An ads contract with a dollar-conversion fee above zero. The fee is added on
+/// top of the value (never inside it, never taxed).
+bool contractHasConversion(Map? c) {
+  if (!contractHasAds(c)) return false;
+  return (num.tryParse('${c!['conversion_amount'] ?? 0}') ?? 0) > 0;
+}
+
 String _pct(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
 /// The two lines under a contract value: the fee, then the budget.
@@ -43,6 +50,16 @@ class AdsSplit extends StatelessWidget {
         children: [
           line(l10n.adsFee(_pct(n(contract['ads_percentage']))), n(contract['ads_amount'])),
           line(l10n.adsBudget, n(contract['ads_budget'])),
+          if (contractHasConversion(contract)) ...[
+            KeyedSubtree(
+              key: const ValueKey('ads-conversion'),
+              child: line(l10n.adsConversion(_pct(n(contract['conversion_percentage']))), n(contract['conversion_amount'])),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(l10n.adsExclConversion, style: Lx.text(context, size: size, color: Lx.muted)),
+            ),
+          ],
         ],
       ),
     );

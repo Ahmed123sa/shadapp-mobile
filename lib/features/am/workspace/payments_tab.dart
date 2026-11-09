@@ -101,7 +101,11 @@ class _PaymentsTabState extends State<PaymentsTab> {
     }
     final contracts = _payableContracts;
     if (contracts.isNotEmpty) {
-      return contracts.fold<double>(0, (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0));
+      // No summary from the server: the value plus any dollar-conversion fee.
+      return contracts.fold<double>(
+        0,
+        (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0) + (num.tryParse('${c['conversion_amount'] ?? 0}')?.toDouble() ?? 0),
+      );
     }
     return _payments.fold<double>(0, (s, p) => s + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
@@ -261,16 +265,21 @@ class _PaymentsTabState extends State<PaymentsTab> {
           ]),
         ),
       ],
-      if (_taxSummary != null && _taxNum(_taxSummary!['tax_percentage']) > 0) ...[
+      if (_taxSummary != null &&
+          ((_taxNum(_taxSummary!['tax_percentage']) > 0 && _taxNum(_taxSummary!['tax_amount']) > 0) || _taxNum(_taxSummary!['conversion_total']) > 0)) ...[
         const SizedBox(height: 14),
         LuxeCard(
+          key: const ValueKey('payments-tab-tax-card'),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             LuxeKind(l10n.paymentsTaxDetails),
             const SizedBox(height: 8),
             _taxRow(l10n.paymentsContractsValue, '${_taxNum(_taxSummary!['contracts_total']).toStringAsFixed(2)} $cur'),
-            _taxRow(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])), '${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $cur'),
+            if (_taxNum(_taxSummary!['conversion_total']) > 0)
+              _taxRow(l10n.adsConversionTotal, '${_taxNum(_taxSummary!['conversion_total']).toStringAsFixed(2)} $cur'),
+            if (_taxNum(_taxSummary!['tax_amount']) > 0)
+              _taxRow(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])), '${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $cur'),
             const Divider(height: 14, color: Lx.line),
-            _taxRow(l10n.paymentsTotalRow, '${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $cur', bold: true),
+            _taxRow(_taxNum(_taxSummary!['conversion_total']) > 0 ? l10n.totalDue : l10n.paymentsTotalRow, '${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $cur', bold: true),
           ]),
         ),
       ],

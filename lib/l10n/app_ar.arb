@@ -1975,5 +1975,14 @@
   "adsPercentageInvalid": "اكتب نسبة بين 0.01 و100.",
   "adsFee": "نسبة إدارة الإعلانات ({percent}%)",
   "adsBudget": "ميزانية الإعلانات",
-  "adsBadge": "إعلانات"
+  "adsBadge": "إعلانات",
+  "adsConversionLabel": "رسوم التحويل الدولاري (% من ميزانية الإعلانات)",
+  "adsConversionHint": "تُضاف فوق قيمة العقد ولا تُحسب عليها ضريبة. اتركها فاضية لو مفيش.",
+  "adsConversionInvalid": "اكتب نسبة بين 0 و100.",
+  "adsConversion": "رسوم التحويل الدولاري ({percent}%)",
+  "adsConversionTotal": "رسوم التحويل الدولاري",
+  "adsExclConversion": "قيمة العقد غير شاملة رسوم التحويل",
+  "taxExcludedToggle": "استثناء الضريبة",
+  "taxExcludedHint": "لا تُحسب ضريبة على هذا العقد.",
+  "totalDue": "الإجمالي المستحق"
 }

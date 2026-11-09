@@ -6114,4 +6114,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adsBadge => 'Ads';
+
+  @override
+  String get adsConversionLabel => 'Dollar conversion fee (% of ad budget)';
+
+  @override
+  String get adsConversionHint => 'Added on top of the contract value and not taxed. Leave empty for none.';
+
+  @override
+  String get adsConversionInvalid => 'Enter a percentage between 0 and 100.';
+
+  @override
+  String adsConversion(Object percent) {
+    return 'Dollar conversion fee ($percent%)';
+  }
+
+  @override
+  String get adsConversionTotal => 'Dollar conversion fees';
+
+  @override
+  String get adsExclConversion => 'Contract value excludes the conversion fee';
+
+  @override
+  String get taxExcludedToggle => 'Exclude tax';
+
+  @override
+  String get taxExcludedHint => 'No tax is charged on this contract.';
+
+  @override
+  String get totalDue => 'Total due';
 }

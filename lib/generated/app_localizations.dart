@@ -11693,6 +11693,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ads'**
   String get adsBadge;
+
+  /// No description provided for @adsConversionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dollar conversion fee (% of ad budget)'**
+  String get adsConversionLabel;
+
+  /// No description provided for @adsConversionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Added on top of the contract value and not taxed. Leave empty for none.'**
+  String get adsConversionHint;
+
+  /// No description provided for @adsConversionInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a percentage between 0 and 100.'**
+  String get adsConversionInvalid;
+
+  /// No description provided for @adsConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Dollar conversion fee ({percent}%)'**
+  String adsConversion(Object percent);
+
+  /// No description provided for @adsConversionTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Dollar conversion fees'**
+  String get adsConversionTotal;
+
+  /// No description provided for @adsExclConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract value excludes the conversion fee'**
+  String get adsExclConversion;
+
+  /// No description provided for @taxExcludedToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude tax'**
+  String get taxExcludedToggle;
+
+  /// No description provided for @taxExcludedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No tax is charged on this contract.'**
+  String get taxExcludedHint;
+
+  /// No description provided for @totalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total due'**
+  String get totalDue;
 }
 
 class _AppLocalizationsDelegate
