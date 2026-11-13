@@ -135,4 +135,26 @@ void main() {
 
     expect(find.byKey(const ValueKey('profile-dob')), findsNothing);
   });
+
+  // App Store Guideline 5.1.1(v): /profile is the only settings screen these
+  // two roles have. The flow itself is in delete_account_button_test.
+  for (final role in ['staff_member', 'accountant']) {
+    testWidgets('$role: offers account deletion', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = role;
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+        (_) async => jsonResponse('{"user":{"name":"Ahmed","avatar_url":null}}'),
+      );
+      final provider = AuthProvider(api: api);
+
+      await pumpPage(tester, provider, api);
+      final deleteButton = find.byKey(const ValueKey('delete-account'));
+      await tester.scrollUntilVisible(deleteButton, 200, scrollable: find.byType(Scrollable).first);
+      await tester.tap(deleteButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete your account?'), findsOneWidget);
+    });
+  }
 }

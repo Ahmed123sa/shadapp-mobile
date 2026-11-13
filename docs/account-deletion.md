@@ -1,18 +1,23 @@
 # Account deletion (App Store Guideline 5.1.1(v))
 
 Apple rejected the build because the app shows a sign-up screen but had no
-way to delete an account from inside the app. The mobile side is now in place;
-**the backend endpoint below still has to be added to `shadapp-backend`**
-before the flow works end to end.
+way to delete an account from inside the app.
+
+The first fix (`caa5276`) was lost in the merge of upstream's Luxe redesign
+(`e153b6f`): upstream never had the button, so both settings pages came back
+without it, and Apple rejected the next build for the same reason. Upstream
+still doesn't have it, so **check the deletion tests after every merge from
+upstream** (see below).
 
 ## Where it is in the app
 
-| Role                        | Path                                              |
-| --------------------------- | ------------------------------------------------- |
-| Client (active workspace)   | Dashboard → ⚙ Settings → *Delete account*         |
-| Client (still onboarding)   | Onboarding header → ⚙ Settings → *Delete account* |
-| Sub-user                    | Dashboard → ⚙ Settings → *Delete account*         |
-| Account manager / SA        | Settings tab → bottom of the page                 |
+| Role                                  | Path                                                  |
+| ------------------------------------- | ----------------------------------------------------- |
+| Client (active workspace)             | Avatar → Settings → bottom of the page                |
+| Client (still onboarding)             | Avatar → Settings → bottom of the page                |
+| Sub-user                              | Avatar → Settings → bottom of the page                |
+| Account manager / assistant / SA      | Avatar → Settings → bottom of the page                |
+| Staff member / accountant             | Avatar → Settings (`/profile`) → bottom of the page   |
 
 Flow: *Delete account* → confirmation dialog explaining what's deleted and
 what's retained → password re-entry → *Delete permanently* → signed out,
@@ -20,6 +25,12 @@ back on the login screen with "Your account has been deleted."
 
 Code: `lib/features/settings/delete_account_button.dart`,
 `AuthProvider.deleteAccount()`.
+
+Tests that fail if a screen loses the entry point, to run after a merge:
+
+```bash
+flutter test test/widget/settings_page_test.dart test/widget/admin_settings_page_test.dart test/widget/profile_page_test.dart test/widget/client_onboarding_screen_test.dart test/widget/delete_account_button_test.dart
+```
 
 ## Backend contract
 
@@ -29,8 +40,14 @@ Content-Type: application/json
 { "password": "<current password>" }
 ```
 
+The route is live in production (checked 2026-11-06: `GET /api/auth/account`
+answers 405 with `Allow: DELETE`). Its behaviour for each role has not been
+tested from the app yet.
+
 One route for every account type: resolve the account from the token
 (`$request->user()` is the `User`, `Client` or `SubUser` the token belongs to).
+It has to stay open to every role, including those `restrict.roles` walls off
+(accountant) — otherwise they see the button and get a 403.
 
 | Outcome                    | Response                                                       |
 | -------------------------- | -------------------------------------------------------------- |

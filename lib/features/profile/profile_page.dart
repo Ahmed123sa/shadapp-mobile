@@ -11,6 +11,7 @@ import '../../core/luxe/tokens.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/auth_provider.dart';
+import '../settings/delete_account_button.dart';
 
 class ProfilePage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with a mocked
@@ -241,6 +242,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       : Text(l10n.profile_save),
                 ),
               ),
+              const SizedBox(height: 40),
+              DeleteAccountButton(authProvider: _authProvider),
             ],
           ),
         ),

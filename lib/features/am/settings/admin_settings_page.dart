@@ -19,6 +19,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/signature_provider.dart';
 import '../../../providers/system_settings_provider.dart';
+import '../../settings/delete_account_button.dart';
 import 'admin_settings_clauses.dart';
 
 class AdminSettingsPage extends StatefulWidget {
@@ -823,6 +824,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
               onDelete: _deleteClause,
             ),
           ],
+          const SizedBox(height: 40),
+          DeleteAccountButton(authProvider: _authProvider),
+          const SizedBox(height: 32),
         ],
       ),
     );

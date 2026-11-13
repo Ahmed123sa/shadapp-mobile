@@ -275,4 +275,23 @@ void main() {
           body: any(named: 'body'),
         )).called(1);
   });
+
+  // App Store Guideline 5.1.1(v): this page is the only way these roles reach
+  // account deletion. The flow itself is in delete_account_button_test.
+  for (final role in ['super_admin', 'account_manager', 'manager_assistant']) {
+    testWidgets('$role: offers account deletion at the bottom of the page', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = role;
+      stubCommon(httpClient);
+
+      await pumpPage(tester, api);
+      final deleteButton = find.byKey(const ValueKey('delete-account'));
+      await scrollTo(tester, deleteButton);
+      await tester.tap(deleteButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete your account?'), findsOneWidget);
+    });
+  }
 }

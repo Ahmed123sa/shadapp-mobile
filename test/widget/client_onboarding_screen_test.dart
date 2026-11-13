@@ -22,6 +22,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/core/reverb_service.dart';
 import 'package:shadapp_client/features/onboarding/client_onboarding_screen.dart';
@@ -102,6 +103,39 @@ void main() {
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path == '/settings')), headers: any(named: 'headers'))).called(1);
     expect(find.text('Welcome Ali'), findsOneWidget);
     expect(find.byKey(const ValueKey('onboarding-sign')), findsOneWidget);
+  });
+
+  // App Store Guideline 5.1.1(v): Settings is the only way a client still in
+  // onboarding reaches account deletion.
+  testWidgets('the more sheet opens Settings', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.userId = 10;
+    stubGets(httpClient, clientJson: '{"client":{"id":10,"contact_person":"Ali","signed_at":null,"client_type":"individual",'
+        '"workspace":{"id":5,"status":"pending","contracts":[],"payments":[]}}}');
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => ClientOnboardingScreen(api: api, reverb: ReverbService.forTesting(), enableFcm: false),
+        ),
+        GoRoute(path: '/settings', builder: (_, __) => const Scaffold(body: Text('SETTINGS_PAGE'))),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('lx-avatar')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('onboarding-more-settings')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('SETTINGS_PAGE'), findsOneWidget);
   });
 
   testWidgets('approving a sent contract posts client-action', (tester) async {

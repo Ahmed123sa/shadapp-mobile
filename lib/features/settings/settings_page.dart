@@ -12,6 +12,7 @@ import '../../core/widgets/client_type_badge.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import 'delete_account_button.dart';
 
 class SettingsPage extends StatefulWidget {
   // Optional so this screen can be pumped in a widget test with a mocked
@@ -322,6 +323,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                     : Text(l10n.settings_save),
               ),
+            ),
+            const SizedBox(height: 40),
+            DeleteAccountButton(
+              authProvider: _authProvider,
+              // Only the client owner has a team to take down with them.
+              warning: _isSubUser ? null : l10n.deleteAccount_teamWarning,
             ),
           ],
         ),

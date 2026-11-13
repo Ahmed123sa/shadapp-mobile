@@ -152,4 +152,24 @@ void main() {
     expect(find.text('Delete your account?'), findsOneWidget);
     expect(find.text('Team members you added will lose access too.'), findsOneWidget);
   });
+
+  testWidgets('sub_user role: offers account deletion without the team warning', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.role = 'sub_user';
+    api.subUserId = 3;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"sub_user":{"id":3,"email":"sub@acme.com","phone":"0500000000"}}'),
+    );
+    final provider = SettingsProvider(repository: SettingsRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+    final deleteButton = find.text('Delete account');
+    await tester.scrollUntilVisible(deleteButton, 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(deleteButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete your account?'), findsOneWidget);
+    expect(find.text('Team members you added will lose access too.'), findsNothing);
+  });
 }

@@ -381,7 +381,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
   }
 
   /// The mockup's "More" sheet, trimmed to what exists during onboarding:
-  /// who you are, language, logout.
+  /// who you are, settings, language, logout. Settings has to stay: it's the
+  /// only way a client still in onboarding reaches account deletion (App
+  /// Store Guideline 5.1.1(v)).
   void _showMoreSheet() {
     final l10n = AppLocalizations.of(context)!;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
@@ -405,6 +407,15 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
               ]),
             ),
           ]),
+        ),
+        LuxeMoreRow(
+          key: const ValueKey('onboarding-more-settings'),
+          lxIcon: 'gear',
+          label: l10n.settings_title,
+          onTap: () {
+            Navigator.pop(ctx);
+            context.push('/settings');
+          },
         ),
         LuxeMoreRow(
           key: const ValueKey('onboarding-more-language'),
