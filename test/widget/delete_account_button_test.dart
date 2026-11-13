@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shadapp_client/core/remote_config_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/core/api_client.dart';
@@ -14,6 +15,8 @@ import '../helpers/mock_http_client.dart';
 void main() {
   setUpAll(() {
     registerFallbackValue(Uri.parse('http://localhost'));
+    // The delete-account section is gated by Remote Config; tests run with it on.
+    RemoteConfigService.deleteAccountEnabled.value = true;
   });
 
   // clearToken() on a successful delete goes through SharedPreferences.
@@ -47,6 +50,19 @@ void main() {
   }
 
   Finder confirmButton() => find.widgetWithText(ElevatedButton, 'Delete permanently');
+
+  testWidgets('hidden when the delete_account Remote Config flag is false', (tester) async {
+    RemoteConfigService.deleteAccountEnabled.value = false;
+    addTearDown(() => RemoteConfigService.deleteAccountEnabled.value = true);
+    final api = buildTestApiClient(client: MockHttpClient());
+    await pumpButton(tester, api);
+
+    expect(find.byKey(const ValueKey('delete-account')), findsNothing);
+
+    RemoteConfigService.deleteAccountEnabled.value = true;
+    await tester.pump();
+    expect(find.byKey(const ValueKey('delete-account')), findsOneWidget);
+  });
 
   testWidgets('the confirm button stays disabled until a password is entered', (tester) async {
     final api = buildTestApiClient(client: MockHttpClient());

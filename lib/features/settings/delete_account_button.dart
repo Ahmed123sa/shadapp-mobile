@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
+
 import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
+import '../../core/remote_config_service.dart';
 import '../../core/reverb_service.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/auth_provider.dart';
@@ -62,6 +64,14 @@ class DeleteAccountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gated by the `delete_account` Remote Config key — hidden unless true.
+    return ValueListenableBuilder<bool>(
+      valueListenable: RemoteConfigService.deleteAccountEnabled,
+      builder: (context, enabled, _) => enabled ? _buildButton(context) : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildButton(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       LuxeButton(
@@ -154,39 +164,44 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         icon: const LxIcon('alert', size: 34, color: Lx.crimsonInk),
         title: Text(l10n.deleteAccount_title),
         content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l10n.deleteAccount_body, style: Lx.text(context, size: 14, color: Lx.ink2, height: 1.4)),
-            if (widget.warning != null) ...[
-              const SizedBox(height: 12),
-              Text(widget.warning!, style: Lx.text(context, size: 14, color: Lx.wait)),
-            ],
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscured,
-              enabled: !_deleting,
-              autocorrect: false,
-              enableSuggestions: false,
-              textDirection: TextDirection.ltr,
-              style: Lx.text(context, size: 15),
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) {
-                if (_canSubmit) _submit();
-              },
-              decoration: InputDecoration(
-                labelText: l10n.deleteAccount_passwordLabel,
-                errorText: _passwordError,
-                suffixIcon: IconButton(
-                  icon: Icon(_obscured ? Icons.visibility_off : Icons.visibility, size: 18, color: Lx.muted),
-                  onPressed: () => setState(() => _obscured = !_obscured),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.deleteAccount_body,
+                    style: Lx.text(context, size: 14, color: Lx.ink2, height: 1.4)),
+                if (widget.warning != null) ...[
+                  const SizedBox(height: 12),
+                  Text(widget.warning!, style: Lx.text(context, size: 14, color: Lx.wait)),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscured,
+                  enabled: !_deleting,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textDirection: TextDirection.ltr,
+                  style: Lx.text(context, size: 15),
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) {
+                    if (_canSubmit) _submit();
+                  },
+                  decoration: InputDecoration(
+                    labelText: l10n.deleteAccount_passwordLabel,
+                    errorText: _passwordError,
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscured ? Icons.visibility_off : Icons.visibility,
+                          size: 18, color: Lx.muted),
+                      onPressed: () => setState(() => _obscured = !_obscured),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: Lx.text(context, size: 13, color: Lx.danger)),
-            ],
-          ]),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: Lx.text(context, size: 13, color: Lx.danger)),
+                ],
+              ]),
         ),
         actions: [
           TextButton(
@@ -196,7 +211,10 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           ElevatedButton(
             onPressed: _canSubmit ? _submit : null,
             child: _deleting
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                 : Text(l10n.deleteAccount_confirm),
           ),
         ],

@@ -95,31 +95,17 @@ class NotificationService {
     await _initLocalNotifications();
     await _requestPermission();
 
-    try {
-      // On iOS, FCM's getToken() throws
-      // firebase_messaging/apns-token-not-set if it's called before iOS has
-      // handed the app its APNs device token, which can take a moment right
-      // after launch. Wait for it first so getToken() doesn't throw here.
-      if (!kIsWeb && Platform.isIOS) {
-        String? apnsToken = await _firebaseMessaging.getAPNSToken();
-        var attempts = 0;
-        while (apnsToken == null && attempts < 10) {
-          await Future.delayed(const Duration(seconds: 1));
-          apnsToken = await _firebaseMessaging.getAPNSToken();
-          attempts++;
-        }
-      }
-
-      _fcmToken = await _firebaseMessaging.getToken();
-      if (_fcmToken != null) {
-        _registerToken(_fcmToken!);
-      }
-    } catch (e, s) {
-      // Push notifications are a nice-to-have, not something app startup
-      // should ever crash over — any failure here (this case or otherwise)
-      // is logged and swallowed instead of propagating.
-      AppLog.error('NotificationService.init.getToken', e, s);
-    }
+    // No token work here. Fetching the FCM token used to happen inline at
+    // this point too — an up-to-10s APNs poll and then an awaited getToken()
+    // — on top of the deferred _acquireFcmToken() below. That held the first
+    // frame for the full wait on any iOS build without APNs (the simulator, a
+    // profile missing aps-environment) and registered the token twice.
+    // _acquireFcmToken() is now the only path: bounded and off the startup
+    // path. Until it lands, registerCurrentToken() is a silent no-op — which
+    // is fine either way round: a token that lands before main.dart sets
+    // localeCode gets re-sent by main.dart's own registerCurrentToken() call,
+    // and one that lands after is registered with the right locale (and, if
+    // the user logged in meanwhile, the right session) to begin with.
 
     // Wired before the token work below: these are local stream hookups that
     // can't fail, and they need to be live whether or not this device ever
@@ -286,6 +272,13 @@ class NotificationService {
   Future<void> _registerToken(String token) async {
     final deviceType = _getDeviceType();
     try {
+      // Startup (the deferred FCM fetch and main.dart's locale call) runs
+      // whether or not anyone is logged in. Without a session the endpoint
+      // can only answer 401, which ApiClient treats as an expired session:
+      // it wipes stored auth and bounces to /login, and a 401 landing just
+      // after a login could wipe the brand-new token. The FCM token stays
+      // cached; AuthProvider re-sends it via registerCurrentToken() on login.
+      if (await _api.getToken() == null) return;
       await _api.post('/notifications/register-token', {
         'token': token,
         'device_type': deviceType,

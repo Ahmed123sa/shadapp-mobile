@@ -33,6 +33,7 @@ dependencies:
   flutter_map: ^7.0.2
   flutter_svg: ^2.0.10
   latlong2: ^0.9.1
+  firebase_remote_config: ^5.5.0
 
 dev_dependencies:
   flutter_test:

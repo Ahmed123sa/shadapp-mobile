@@ -5,9 +5,9 @@ import 'package:shadapp_client/core/notification_service.dart';
 import '../helpers/mock_http_client.dart';
 
 // plans/notifications-badges-toasts-plan.md ن1 — NotificationService.init()
-// registers the device's FCM token once at app startup, before the user is
-// necessarily logged in, so that first attempt 401s and is silently
-// swallowed. registerCurrentToken() is what AuthProvider calls right after a
+// fetches the device's FCM token at app startup, before the user is
+// necessarily logged in, so registration is skipped until there is a
+// session. registerCurrentToken() is what AuthProvider calls right after a
 // successful login to resend the (by-then cached) token now that there's a
 // session for it to attach to.
 //
@@ -72,6 +72,16 @@ void main() {
           .thenThrow(Exception('network down'));
 
       await expectLater(service.registerCurrentToken(token: 'x'), completes);
+    });
+
+    test('skips the request while logged out, so a guaranteed 401 never expires the session', () async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient, token: null);
+      final service = NotificationService.forTesting(api: api);
+
+      await service.registerCurrentToken(token: 'fcm-token');
+
+      verifyNever(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')));
     });
   });
 }

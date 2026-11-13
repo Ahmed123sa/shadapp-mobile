@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shadapp_client/core/remote_config_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadapp_client/data/settings_repository.dart';
 import 'package:shadapp_client/features/settings/settings_page.dart';
@@ -12,6 +13,8 @@ import '../helpers/mock_http_client.dart';
 void main() {
   setUpAll(() {
     registerFallbackValue(Uri.parse('http://localhost'));
+    // The delete-account section is gated by Remote Config; tests run with it on.
+    RemoteConfigService.deleteAccountEnabled.value = true;
   });
 
   // The sub_user save path calls ApiClient.setUserData(), which reads

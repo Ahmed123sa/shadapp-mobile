@@ -12,6 +12,7 @@ import '../../core/app_log.dart';
 import '../../core/locale_provider.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
+import '../../core/remote_config_service.dart';
 import '../../core/router.dart' show homeLocationForRole;
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -489,23 +490,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                           ),
                           const SizedBox(height: 50),
-                          TextButton(
-                            // This button existed but was wired to
-                            // an empty callback — it looked
-                            // functional and silently did nothing.
-                            onPressed: () => context.push('/register'),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              l10n.registerNow,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white.withAlpha(160),
-                                  fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
-                            ),
+                          // Gated by the `register_screen` Remote Config key.
+                          ValueListenableBuilder<bool>(
+                            valueListenable: RemoteConfigService.registerEnabled,
+                            builder: (context, enabled, _) => !enabled
+                                ? const SizedBox.shrink()
+                                : TextButton(
+                                    onPressed: () => context.push('/register'),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      l10n.registerNow,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white.withAlpha(160),
+                                          fontFamily: isAr ? 'NotoSansArabic' : 'Archivo'),
+                                    ),
+                                  ),
                           ),
                         ],
                       ),
