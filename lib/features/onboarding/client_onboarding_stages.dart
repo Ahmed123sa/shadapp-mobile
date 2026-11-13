@@ -14,6 +14,7 @@ import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
+import '../../core/widgets/ads_split.dart';
 import 'onboarding_signature_pad.dart';
 
 // ── shared bits ──
@@ -49,12 +50,13 @@ Widget buildSignatureStage({
   required SignatureDraft draft,
   required VoidCallback onPickImage,
   required ValueChanged<bool> onDrawingChanged,
+  VoidCallback? onOpenFullscreen,
 }) {
   final l10n = AppLocalizations.of(context)!;
   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     _h2(context, l10n.onboarding_welcomeName(client?['contact_person'] ?? '')),
     _lead(context, l10n.onboarding_addSignaturePrompt),
-    OnboardingSignaturePad(draft: draft, onPickImage: onPickImage, onDrawingChanged: onDrawingChanged),
+    OnboardingSignaturePad(draft: draft, onPickImage: onPickImage, onDrawingChanged: onDrawingChanged, onOpenFullscreen: onOpenFullscreen),
   ]);
 }
 
@@ -229,6 +231,7 @@ Widget buildContractReviewStage({
               TextSpan(text: _fmt(value), style: Lx.display(context, size: 20)),
               TextSpan(text: '  ${sent['currency'] ?? ''}', style: Lx.text(context, size: 11, color: Lx.muted)),
             ])),
+            if (contractHasAds(sent)) AdsSplit(contract: sent, currency: '${sent['currency'] ?? 'SAR'}', size: 12),
           ],
           const SizedBox(height: 14),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -310,6 +313,105 @@ Widget buildContractReviewStage({
         ]),
       ),
   ]);
+}
+
+/// Where one required document stands, from its files: ok (one is approved),
+/// missing (none), rejected (every file was refused) or pending (waiting).
+String contractDocState(Map d) {
+  final files = safeList(d['files']).whereType<Map>().toList();
+  if (files.any((f) => f['status'] == 'approved')) return 'ok';
+  if (files.isEmpty) return 'missing';
+  return files.every((f) => f['status'] == 'rejected') ? 'rejected' : 'pending';
+}
+
+/// The contract the client already approved and the company has not, if any.
+Map? clientApprovedContract(Map<String, dynamic>? workspace) {
+  final contracts = workspace != null ? safeList(workspace['contracts']).whereType<Map>().toList() : <Map>[];
+  for (final c in contracts) {
+    if (c['status'] == 'client_approved') return c;
+  }
+  return null;
+}
+
+/// After the client approved, the company still has to accept every required
+/// document. Lists them with where each stands, why a rejected one was refused,
+/// and lets the client send a replacement. Draws nothing when all are accepted.
+Widget buildContractDocsReview({
+  required BuildContext context,
+  required Map? contract,
+  required int? uploadingDocId,
+  required void Function(int contractId, int docId) onUploadDocument,
+  required bool canUpload,
+}) {
+  if (contract == null) return const SizedBox.shrink();
+  final ar = Localizations.localeOf(context).languageCode == 'ar';
+  String t(String a, String e) => ar ? a : e;
+  final docs = safeList(contract['required_documents'])
+      .whereType<Map>()
+      .where((d) => d['is_required'] != false && d['is_required'] != 0)
+      .toList();
+  if (docs.isEmpty || docs.every((d) => contractDocState(d) == 'ok')) return const SizedBox.shrink();
+
+  final label = {
+    'ok': t('مقبول', 'Approved'),
+    'pending': t('قيد المراجعة', 'Under review'),
+    'rejected': t('مرفوض', 'Rejected'),
+    'missing': t('ماترفعش', 'Not uploaded'),
+  };
+  final dot = {'ok': LxStatus.ok, 'pending': LxStatus.wait, 'rejected': LxStatus.bad, 'missing': LxStatus.bad};
+
+  return LuxeCard(
+    key: const ValueKey('contract-docs-review'),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(t('المستندات تحت المراجعة', 'Documents under review').toUpperCase(),
+          style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
+      const SizedBox(height: 6),
+      Text(t('الشركة بتعتمد العقد لما كل المستندات المطلوبة تتقبل.', 'The company approves the contract once every required document is accepted.'),
+          style: Lx.text(context, size: 12, color: Lx.muted, height: 1.5)),
+      const SizedBox(height: 4),
+      for (var i = 0; i < docs.length; i++)
+        Builder(builder: (_) {
+          final d = docs[i];
+          final state = contractDocState(d);
+          final id = d['id'] as int?;
+          final busy = uploadingDocId != null && uploadingDocId == id;
+          final files = safeList(d['files']).whereType<Map>().toList();
+          final rejected = files.reversed.firstWhere((f) => f['status'] == 'rejected', orElse: () => const {});
+          final reason = (rejected['rejection_reason'] ?? '').toString();
+          return Container(
+            key: ValueKey('contract-docs-review-$i'),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(border: i == docs.length - 1 ? null : const Border(bottom: BorderSide(color: Lx.line))),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${d['name'] ?? ''}', style: Lx.text(context, size: 13.5)),
+                  const SizedBox(height: 3),
+                  Row(children: [
+                    LuxeStatusDot(status: dot[state]!),
+                    const SizedBox(width: 7),
+                    Text(label[state]!, style: Lx.text(context, size: 12, color: Lx.ink2)),
+                  ]),
+                  if (state == 'rejected' && reason.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(t('السبب: $reason', 'Reason: $reason'), style: Lx.text(context, size: 11, color: Lx.danger)),
+                    ),
+                ]),
+              ),
+              if ((state == 'rejected' || state == 'missing') && canUpload && id != null)
+                LuxeButton(
+                  key: ValueKey('contract-docs-replace-$i'),
+                  label: busy ? t('بيترفع...', 'Uploading...') : (state == 'rejected' ? t('ارفع بديل', 'Upload replacement') : t('ارفع', 'Upload')),
+                  lxIcon: 'up',
+                  size: LuxeButtonSize.sm,
+                  onPressed: busy ? null : () => onUploadDocument(contract['id'] as int, id),
+                ),
+            ]),
+          );
+        }),
+    ]),
+  );
 }
 
 Widget _lockLine(BuildContext context, String text, {Key? key}) => Row(
@@ -415,12 +517,21 @@ Widget buildEditReasonQuote(BuildContext context, String reason) {
 
 class _PaymentFigures {
   double total = 0, paid = 0, tax = 0, taxPct = 0;
+  // What the tax is charged on: the whole value of a normal contract, only
+  // the agency fee of an ads contract (the ad budget inside is not taxed).
+  double _taxBase = 0;
+  double? _serverPct;
+  bool _serverTax = false;
   String currency = 'SAR';
   String? startDate, endDate;
+  final List<Map> adsContracts = [];
   Map<String, dynamic>? lastRejected;
   int? workspaceId;
 
-  double get grand => total + tax;
+  // Dollar-conversion fees: added on top of the value, never taxed.
+  double conversion = 0;
+
+  double get grand => total + conversion + tax;
   double get remaining => grand - paid;
 
   _PaymentFigures(Map<String, dynamic>? ws, Map<String, dynamic>? client, Map<String, dynamic>? taxSettings) {
@@ -432,8 +543,22 @@ class _PaymentFigures {
       workspaceId = ws['id'] as int?;
       for (final c in safeList(ws['contracts'])) {
         if (c is Map) {
-          total += double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          final value = double.tryParse((c['value'] ?? '0').toString()) ?? 0.0;
+          total += value;
+          // A contract excluded from tax adds nothing to the taxable base.
+          if (c['tax_excluded'] != true) {
+            _taxBase += contractHasAds(c) ? (double.tryParse((c['ads_amount'] ?? '0').toString()) ?? 0.0) : value;
+          }
+          if (contractHasConversion(c)) conversion += double.tryParse('${c['conversion_amount']}') ?? 0.0;
+          // The server prices each contract with its own locked rate.
+          final serverTax = double.tryParse((c['tax_amount'] ?? '').toString());
+          if (serverTax != null) {
+            _serverTax = true;
+            tax += serverTax;
+            _serverPct = double.tryParse((c['tax_percentage'] ?? '').toString()) ?? _serverPct;
+          }
           currency = (c['currency'] as String?) ?? currency;
+          if (contractHasAds(c)) adsContracts.add(c);
           if (c['start_date'] != null) startDate = (c['start_date'] as String).split('T')[0];
           if (c['end_date'] != null) endDate = (c['end_date'] as String).split('T')[0];
         }
@@ -448,8 +573,23 @@ class _PaymentFigures {
         }
       }
     }
-    if (isBusiness && taxPct > 0) tax = total * taxPct / 100;
+    if (_serverTax) {
+      // The rate the server priced with; dividing by the contract value would
+      // understate it for an ads contract, which is taxed on its fee only.
+      if (_serverPct != null) {
+        taxPct = _serverPct!;
+      } else if (_taxBase > 0) {
+        taxPct = tax * 100 / _taxBase;
+      }
+    } else if (isBusiness && taxPct > 0) {
+      tax = _taxBase * taxPct / 100;
+    }
   }
+}
+
+String _pctLabel(Object? v) {
+  final n = num.tryParse('${v ?? 0}') ?? 0;
+  return n == n.roundToDouble() ? n.toInt().toString() : n.toStringAsFixed(2);
 }
 
 String _fmt(double v) {
@@ -510,8 +650,14 @@ Widget buildPaymentStage({
       key: const ValueKey('payment-bill-card'),
       child: Column(children: [
         _billRow(context, l10n.onboarding_amount, f.total, f.currency),
+        for (final c in f.adsContracts) ...[
+          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsFee(_pctLabel(c['ads_percentage']))}', double.tryParse('${c['ads_amount']}') ?? 0, f.currency),
+          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsBudget}', double.tryParse('${c['ads_budget']}') ?? 0, f.currency),
+        ],
+        for (final c in f.adsContracts.where(contractHasConversion))
+          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsConversion(_pctLabel(c['conversion_percentage']))}', double.tryParse('${c['conversion_amount']}') ?? 0, f.currency),
         if (f.tax > 0) _billRow(context, l10n.onboarding_tax, f.tax, f.currency),
-        _billRow(context, l10n.onboarding_total, f.grand, f.currency, strong: true),
+        _billRow(context, f.conversion > 0 ? l10n.totalDue : l10n.onboarding_total, f.grand, f.currency, strong: true),
         _billRow(context, l10n.onboarding_paidAmount, f.paid, f.currency),
         _billRow(context, l10n.onboarding_remainingAmount2, f.remaining, f.currency, last: true),
       ]),

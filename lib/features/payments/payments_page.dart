@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
+import '../../core/widgets/ads_split.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
@@ -120,6 +121,115 @@ class _PaymentsPageState extends State<PaymentsPage> {
         0, (sum, p) => sum + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
 
+  /// The ads contracts in the payments summary (empty for a normal client).
+  List<Map> get _adsContracts {
+    final cs = _taxSummary?['contracts'];
+    if (cs is! List) return const [];
+    return cs.whereType<Map>().where(contractHasAds).toList();
+  }
+
+  /// Fee and budget of each ads contract. The total below it is unchanged: the
+  /// fee is inside the contract value.
+  Widget _adsCard(BuildContext context, String cur) {
+    final many = ((_taxSummary?['contracts'] as List?)?.length ?? 0) > 1;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        key: const ValueKey('payments-ads-card'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Lx.surface,
+          borderRadius: BorderRadius.circular(Lx.rCard),
+          border: Border.all(color: Lx.line2),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (final c in _adsContracts) ...[
+            if (many)
+              Text('${c['title'] ?? ''}',
+                  style: Lx.text(context, size: 11.5, color: Lx.ink, weight: FontWeight.w600)),
+            AdsSplit(contract: c, currency: cur),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  /// Small tax card under the progress bar: the contracts' value, the tax at
+  /// each contract's own rate (one row per contract when rates differ) and the
+  /// total including tax. Stays visible after the balance is fully paid.
+  Widget _taxCard(BuildContext context, String cur) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+    num n(Object? v) => num.tryParse('${v ?? 0}') ?? 0;
+    final ts = _taxSummary!;
+    final contracts =
+        (ts['contracts'] is List) ? (ts['contracts'] as List).whereType<Map>().toList() : <Map>[];
+    final rows = <Widget>[];
+    Widget row(String l, String v, {bool bold = false}) => Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Flexible(
+                child: Text(l,
+                    style: Lx.text(context,
+                        size: 11.5,
+                        color: bold ? Lx.ink : Lx.muted,
+                        weight: bold ? FontWeight.w600 : FontWeight.w400))),
+            Text('$v $cur',
+                textDirection: TextDirection.ltr,
+                style: Lx.text(context,
+                    size: 11.5,
+                    color: bold ? Lx.ink : Lx.muted,
+                    weight: bold ? FontWeight.w600 : FontWeight.w400)),
+          ]),
+        );
+    rows.add(row(ar ? 'قيمة العقود' : 'Contracts value', f(n(ts['contracts_total']))));
+    // Dollar-conversion fees: added on top of the value, never taxed.
+    for (final c in contracts.where(contractHasConversion)) {
+      final label = ar
+          ? 'رسوم التحويل الدولاري (${f(n(c['conversion_percentage']))}%)'
+          : 'Dollar conversion fee (${f(n(c['conversion_percentage']))}%)';
+      rows.add(row(contracts.length > 1 ? '${c['title'] ?? ''} · $label' : label,
+          f(n(c['conversion_amount']))));
+    }
+    if (contracts.length > 1) {
+      for (final c in contracts) {
+        if (c['tax_excluded'] == true) continue;
+        rows.add(row(
+            ar
+                ? 'ضريبة ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)'
+                : 'Tax · ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)',
+            f(n(c['tax_amount']))));
+      }
+    } else if (n(ts['tax_amount']) > 0) {
+      rows.add(row(
+          ar ? 'ضريبة ${f(n(ts['tax_percentage']))}%' : 'Tax ${f(n(ts['tax_percentage']))}%',
+          f(n(ts['tax_amount']))));
+    }
+    final hasConversionFee = n(ts['conversion_total']) > 0;
+    rows.add(row(
+      hasConversionFee
+          ? (ar ? 'الإجمالي المستحق' : 'Total due')
+          : (ar ? 'الإجمالي شامل الضريبة' : 'Total incl. tax'),
+      f(n(ts['grand_total'])),
+      bold: true,
+    ));
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        key: const ValueKey('payments-tax-card'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Lx.surface,
+          borderRadius: BorderRadius.circular(Lx.rCard),
+          border: Border.all(color: Lx.line2),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+      ),
+    );
+  }
+
   String get _contractCurrency {
     final contracts = _payableContracts;
     if (contracts.isEmpty) return 'SAR';
@@ -134,8 +244,14 @@ class _PaymentsPageState extends State<PaymentsPage> {
     }
     final contracts = _payableContracts;
     if (contracts.isNotEmpty) {
+      // No summary from the server: the value plus any dollar-conversion fee.
       return contracts.fold<double>(
-          0, (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0));
+        0,
+        (sum, c) =>
+            sum +
+            (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0) +
+            (num.tryParse('${c['conversion_amount'] ?? 0}')?.toDouble() ?? 0),
+      );
     }
     return _payments.fold<double>(
         0, (s, p) => s + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
@@ -336,16 +452,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
                   const SizedBox(width: 7),
                   Text(l10n.payments_paidInFull, style: Lx.text(context, size: 12, color: Lx.ok)),
                 ]),
-              )
-            else if (_taxSummary != null && (_taxSummary!['tax_percentage'] ?? 0) > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  l10n.payments_taxSummary(_taxSummary!['tax_amount'] ?? 0, contractCur,
-                      _taxSummary!['tax_percentage'], _taxSummary!['contracts_total'] ?? 0),
-                  style: Lx.text(context, size: 10, color: Lx.muted),
-                ),
               ),
+            if (_adsContracts.isNotEmpty) _adsCard(context, contractCur),
+            if (_taxSummary != null &&
+                ((num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0 ||
+                    (num.tryParse('${_taxSummary!['conversion_total'] ?? 0}') ?? 0) > 0))
+              _taxCard(context, contractCur),
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

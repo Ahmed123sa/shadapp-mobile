@@ -60,6 +60,30 @@ void main() {
     expect(find.text('No payments'), findsNothing);
   });
 
+  testWidgets('shows the tax card with each contract at its own rate, and keeps it when fully paid', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      return jsonResponse(
+        '{"payments":[{"id":1,"amount":6170,"currency":"SAR","status":"approved"}],"available_methods":[],'
+        '"tax_summary":{"contracts_total":5500,"tax_percentage":12,"tax_amount":670,"grand_total":6170,'
+        '"contracts":[{"id":1,"title":"Retainer","value":5000,"tax_percentage":12,"tax_amount":600,"total":5600},'
+        '{"id":2,"title":"Extra","value":500,"tax_percentage":14,"tax_amount":70,"total":570}]}}',
+      );
+    });
+
+    await pumpPage(tester, api);
+
+    final card = find.byKey(const ValueKey('payments-tax-card'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.textContaining('Retainer')), findsOneWidget);
+    expect(find.descendant(of: card, matching: find.textContaining('(14%)')), findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('6170 SAR')), findsOneWidget);
+  });
+
   testWidgets('shows the empty state when there are no payments', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);

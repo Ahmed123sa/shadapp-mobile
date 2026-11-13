@@ -22,7 +22,7 @@ import '../../core/reverb_service.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
-import '../../core/widgets/signature_pad_screen.dart' show renderSignaturePng;
+import '../../core/widgets/signature_pad_screen.dart' show SignaturePadScreen, renderSignaturePng;
 import '../../data/client_repository.dart';
 import '../../data/file_repository.dart';
 import '../../data/payment_repository.dart';
@@ -614,6 +614,38 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
     _sigDraft.pick(result.files.single.path!, result.files.single.name);
   }
 
+  /// The same full-screen landscape pad the admin signs on. Saving there
+  /// uploads the signature straight away, like the admin's own flow.
+  Future<void> _openFullscreenPad() async {
+    final cid = _api.userId;
+    if (cid == null || _savingSig) return;
+    final bytes = await SignaturePadScreen.show(context);
+    if (bytes == null || !mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _savingSig = true);
+    String message;
+    var ok = false;
+    try {
+      final file = File(
+          '${Directory.systemTemp.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+      await _signatureProvider.uploadImage(cid, file);
+      message = l10n.signature_saved;
+      ok = true;
+    } catch (e, s) {
+      AppLog.error('client_onboarding._openFullscreenPad', e, s);
+      message = l10n.signature_saveFailed;
+    } finally {
+      if (mounted) setState(() => _savingSig = false);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (ok) {
+      _sigDraft.clear();
+      await _loadClientData();
+    }
+  }
+
   /// Saves whatever the box holds: the drawing (as a cropped transparent PNG),
   /// the typed name, or the picked image — the same three calls the signature
   /// page makes. On success the client reloads and moves to the next stage.
@@ -685,10 +717,24 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
             ),
         ]);
       case 3:
+        // While some required document is not accepted yet, it is listed under
+        // the waiting message (with an upload for a rejected one). Otherwise the
+        // stage looks exactly as before.
+        final docsReview = buildContractDocsReview(
+          context: context,
+          contract: clientApprovedContract(_workspace),
+          uploadingDocId: _uploadingDocId,
+          onUploadDocument: _uploadRequiredDoc,
+          canUpload: _api.canDo('can_upload_files'),
+        );
+        final hasDocsReview = docsReview.key != null;
         return buildWaitingStage(
-            context: context,
-            title: l10n.onboarding_waitingCompanyApproval,
-            subtitle: l10n.onboarding_waitingCompanyReviewMsg);
+          context: context,
+          title: l10n.onboarding_waitingCompanyApproval,
+          subtitle: l10n.onboarding_waitingCompanyReviewMsg,
+          boxed: !hasDocsReview,
+          extra: hasDocsReview ? docsReview : null,
+        );
       case 4:
         return buildPaymentStage(
             context: context, workspace: _workspace, client: _client, taxSettings: _taxSettings);
@@ -716,6 +762,7 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
           client: _client,
           draft: _sigDraft,
           onPickImage: _pickSignatureImage,
+          onOpenFullscreen: _openFullscreenPad,
           onDrawingChanged: (v) {
             if (_drawing != v) setState(() => _drawing = v);
           },
@@ -783,13 +830,17 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
       builder: (_) => ContractDetailModal(
         contract: c,
         workspaceId: _workspace?['id'] as int?,
+        api: _api,
         onAction: (id, action) async {
-          Navigator.pop(context);
-          // "Request edit" from the sheet opens the same inline card.
+          // "Request edit" from the sheet opens the same inline card. The sheet
+          // closes itself right after this returns, so closing it here too
+          // popped it twice and took the onboarding screen with it (a black
+          // screen and no card).
           if (action == 'edit_requested') {
             setState(() => _editing = true);
             return;
           }
+          Navigator.pop(context);
           await _respondToContractById(id, action);
         },
         onRefresh: () {

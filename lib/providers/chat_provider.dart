@@ -35,6 +35,10 @@ class ChatProvider {
   /// See [ChatRepository.uploadFile].
   Future<void> uploadFile(int workspaceId, File file) => _repo.uploadFile(workspaceId, file);
 
+  /// See [ChatRepository.sendMessageWithFile].
+  Future<void> sendMessageWithFile(int workspaceId, File file, {String message = '', int? replyToId, bool requiresAction = false}) =>
+      _repo.sendMessageWithFile(workspaceId, file, message: message, replyToId: replyToId, requiresAction: requiresAction);
+
   /// See [ChatRepository.respond].
   Future<void> respond(int messageId, {required String action, String? reason}) =>
       _repo.respond(messageId, action: action, reason: reason);

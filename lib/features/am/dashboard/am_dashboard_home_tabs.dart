@@ -303,10 +303,14 @@ Widget _activity(BuildContext context, List<AppNotification> items) {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(shown[i].title.isNotEmpty ? shown[i].title : shown[i].message,
+                  Text(
+                      shown[i].titleFor(Localizations.localeOf(context).languageCode).isNotEmpty
+                          ? shown[i].titleFor(Localizations.localeOf(context).languageCode)
+                          : shown[i].messageFor(Localizations.localeOf(context).languageCode),
                       style: Lx.text(context, size: 13.5)),
-                  if (shown[i].title.isNotEmpty && shown[i].message.isNotEmpty)
-                    Text(shown[i].message,
+                  if (shown[i].titleFor(Localizations.localeOf(context).languageCode).isNotEmpty &&
+                      shown[i].messageFor(Localizations.localeOf(context).languageCode).isNotEmpty)
+                    Text(shown[i].messageFor(Localizations.localeOf(context).languageCode),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Lx.text(context, size: 12.5, color: Lx.muted)),

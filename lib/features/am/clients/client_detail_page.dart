@@ -42,6 +42,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
   String? _status;
   String? _clientType;
   bool _isBusiness = true;
+  final _taxCtrl = TextEditingController();
+  num? _originalTax;
   String? _createdAt;
   List<dynamic> _subUsers = [];
 
@@ -80,6 +82,8 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
       _status = client['status'] as String? ?? 'inactive';
       _clientType = client['client_type'] as String?;
       _isBusiness = _clientType != 'individual';
+      _originalTax = num.tryParse('${client['tax_percentage'] ?? ''}');
+      _taxCtrl.text = _originalTax == null ? '' : _originalTax.toString();
       _avatarUrl = client['avatar_url'] as String?;
       _createdAt = client['created_at'] as String?;
       _subUsers = client['sub_users'] as List<dynamic>? ?? [];
@@ -96,7 +100,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
     try {
       await _clientProvider.uploadAvatar(widget.clientId, file);
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailImageChanged}')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientDetailImageChanged)));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context)!.clientDetailImageChangeFailed}: $e')));
     }
@@ -115,10 +119,13 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
         'address': _addressCtrl.text.trim(),
         if (_dateOfBirth != null) 'date_of_birth': _dateOfBirth!.toIso8601String(),
         'client_type': _isBusiness ? 'business' : 'individual',
+        // Sent only when changed: only the super admin and the client's own
+        // manager may set it, so an untouched value must not be re-sent.
+        if (_isBusiness && num.tryParse(_taxCtrl.text.trim()) != null && num.parse(_taxCtrl.text.trim()) != _originalTax) 'tax_percentage': num.parse(_taxCtrl.text.trim()),
         if (_passwordCtrl.text.trim().isNotEmpty) 'password': _passwordCtrl.text.trim(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ ${AppLocalizations.of(context)!.clientDetailSaved}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.clientDetailSaved)));
         Navigator.pop(context, true);
       }
     } catch (_) {
@@ -258,6 +265,7 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
               _typeChip(l10n.clientDetailIndividual, !_isBusiness, () => setState(() => _isBusiness = false)),
             ]),
 
+
             _sectionLabel(l10n.clientDetailEditableData),
             TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: l10n.clientDetailCompanyName)),
             _gap(),
@@ -305,6 +313,17 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                 ),
               ]),
             ),
+
+            if (_isBusiness) ...[
+              _sectionLabel(Localizations.localeOf(context).languageCode == 'ar' ? 'نسبة الضريبة (%)' : 'Tax rate (%)'),
+              TextField(
+                key: const ValueKey('client-tax-field'),
+                controller: _taxCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(helperText: Localizations.localeOf(context).languageCode == 'ar' ? 'تنطبق على العقود الجديدة. المعتمدة بتفضل بنسبتها.' : 'Applies to new contracts. Approved ones keep their rate.'),
+              ),
+            ],
 
             _sectionLabel(l10n.clientDetailResetPassword),
             PasswordField(

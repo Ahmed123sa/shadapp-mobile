@@ -64,6 +64,8 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   final _controller = TextEditingController();
+  // Picked in the composer, sent with the text when the user taps send.
+  File? _pendingFile;
   final _scrollController = ScrollController();
   List<dynamic> _messages = [];
   bool _loading = true;
@@ -247,7 +249,22 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
           return needsApproval;
         },
         logTag: 'chat_tab',
+        file: _pendingFile,
+        clearFile: () => _pendingFile = null,
+        onFileFailed: _restoreFailedSend,
       );
+
+  /// The send failed: give the file and the text back so nothing is lost.
+  void _restoreFailedSend(File file, String text, bool requiresAction) {
+    if (!mounted) return;
+    setState(() {
+      _pendingFile = file;
+      if (requiresAction) _requestApproval = true;
+      if (_controller.text.isEmpty) _controller.text = text;
+    });
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatAttachFailed)));
+  }
 
   Future<void> _saveEdit() => chatSaveEdit(
         controller: _controller,
@@ -342,22 +359,16 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _sendWithAttachment() async {
+  /// Picking a file no longer sends it: it waits in the composer (with a way
+  /// to remove it) and goes out with the text, and the "needs approval"
+  /// switch, when the manager taps send.
+  Future<void> _pickAttachment() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
     );
-    if (result == null || result.files.isEmpty || _wsId == null) return;
-    final file = File(result.files.single.path!);
-    try {
-      await _chatProvider.uploadFile(_wsId!, file);
-      _load();
-    } catch (e, s) {
-      AppLog.error('chat_tab._sendWithAttachment', e, s);
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatAttachFailed)));
-    }
+    if (result == null || result.files.isEmpty || result.files.single.path == null) return;
+    setState(() => _pendingFile = File(result.files.single.path!));
   }
 
   Future<void> _enterMeetingById(int meetingId) async {
@@ -459,7 +470,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
             if (_nextMeeting != null)
               LxMeetingBanner(
                   meeting: _nextMeeting!,
-                  canJoin: !isSA,
+                  canJoin: _api.staffCan('can_join_meetings'),
                   onTap: () => _enterMeeting(_nextMeeting!)),
             if (_nextPayment != null)
               LxPaymentBanner(
@@ -569,6 +580,12 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 ),
               ]),
             ),
+          if (_pendingFile != null && _editingMessage == null && _api.staffCan('can_send_chat'))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: LxPendingAttachment(
+                  file: _pendingFile!, onRemove: () => setState(() => _pendingFile = null)),
+            ),
           // Staff without "send" on this client can read but not write (PLAN_2 ق٣).
           if (!_api.staffCan('can_send_chat'))
             Padding(
@@ -594,7 +611,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                       InkResponse(
                         key: const ValueKey('chat-attach'),
                         radius: 18,
-                        onTap: _editingMessage != null ? null : _sendWithAttachment,
+                        onTap: _editingMessage != null ? null : _pickAttachment,
                         child: const Padding(
                             padding: EdgeInsets.symmetric(vertical: 6),
                             child: LxIcon('clip', size: 18, color: Lx.faint)),

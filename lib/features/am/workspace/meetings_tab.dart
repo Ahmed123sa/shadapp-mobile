@@ -373,7 +373,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
                     content: Row(children: [
                   const Icon(Icons.check_circle, color: Colors.green, size: 18),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(AppLocalizations.of(context)!.meetingPasscodeCopied))
+                  Text(AppLocalizations.of(context)!.meetingPasscodeCopied)
                 ])));
               },
               child: const Icon(Icons.copy, size: 14, color: Lx.crimson),
@@ -386,7 +386,8 @@ class _MeetingsTabState extends State<MeetingsTab> {
           const SizedBox(height: 12),
           Builder(
             builder: (ctx) {
-              final joinStatus = getMeetingJoinStatus(m['scheduled_at'], AppLocalizations.of(ctx)!);
+              final joinStatus = getMeetingJoinStatus(m['scheduled_at'], AppLocalizations.of(ctx)!,
+                  durationMinutes: m['duration_minutes'] as int?);
               final isZoom = m['zoom_meeting_id'] != null;
               final hostUserId = m['host_user_id'] as int?;
               final isHost = hostUserId == null || hostUserId == _api.userId;

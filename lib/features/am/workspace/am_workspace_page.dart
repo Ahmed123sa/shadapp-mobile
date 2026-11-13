@@ -308,6 +308,13 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
     );
   }
 
+  /// Switches to the Files tab (index 1 of the full layout) when it is visible
+  /// for this user. A contract's documents are reviewed there.
+  void _goToFilesTab() {
+    final position = _visibleTabs.indexOf(1);
+    if (position >= 0) _tabController.animateTo(position);
+  }
+
   /// The widget for a tab of the full 9-tab layout (see [_isTabVisible]).
   Widget _tabChild(int i) {
     switch (i) {
@@ -326,7 +333,10 @@ class _AmWorkspacePageState extends State<AmWorkspacePage> with SingleTickerProv
             workspaceId: widget.workspaceId, fileProvider: _childFileProvider, api: _api);
       case 2:
         return ContractsTab(
-            workspaceId: widget.workspaceId, api: _api, contractProvider: _childContractProvider);
+            workspaceId: widget.workspaceId,
+            api: _api,
+            contractProvider: _childContractProvider,
+            onGoToFiles: _goToFilesTab);
       case 3:
         return PaymentsTab(
           onWorkspaceUpdate: _fetchWorkspace,

@@ -17,6 +17,7 @@ import 'package:shadapp_client/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/helpers/meeting_helpers.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/chat_contract_card.dart';
@@ -313,6 +314,7 @@ Widget _buildTextBubble(
         m: m,
         fallbackFileName: l10n.attachment,
       ),
+    ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment),
   ];
 
   final bubble = Container(
@@ -341,8 +343,7 @@ Widget _buildTextBubble(
                 Text(l10n.edited, style: Lx.text(context, size: 10, color: Lx.faint)),
               if (m['edited_at'] != null && isClient && m['id'] != null) const SizedBox(width: 4),
               if (isClient && m['id'] != null)
-                Text(m['read_at'] != null ? '✓✓' : '✓',
-                    style: Lx.text(context, size: 10, color: Lx.ink2)),
+                Icon(m['read_at'] != null ? Icons.done_all : Icons.done, size: 13, color: Lx.ink2),
             ]),
           ),
       ],
@@ -384,7 +385,16 @@ Widget _buildTextBubble(
               ]),
             ]),
             const SizedBox(height: 6),
-            Text(m['message'] ?? '', style: Lx.display(context, size: 18)),
+            if ('${m['message'] ?? ''}'.trim().isNotEmpty)
+              Text(m['message'], style: Lx.display(context, size: 18)),
+            // The file(s) being approved: the message's own, or the ones the
+            // approval carries. A file-only request used to show an empty card.
+            if (m['type'] == 'file' && m['file_url'] != null) ...[
+              const SizedBox(height: 10),
+              chatFileAttachment(api: api, m: m, fallbackFileName: l10n.attachment),
+            ],
+            ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment)
+                .map((w) => Padding(padding: const EdgeInsets.only(top: 10), child: w)),
             // subuser-review-plan.md م٦ — responding to an approval
             // request maps to can_respond_approvals, per the plan's
             // action table (same key as the approvals tab).
@@ -458,21 +468,25 @@ class LxMeetingBanner extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final title = meeting['title'] as String? ?? l10n.upcomingMeeting;
     final link = meeting['link'] as String?;
+    // Same window as every other join button: 15 minutes before the start
+    // until the meeting ends. Outside it the banner only tells the time.
     var timeLabel = '';
+    var inWindow = false;
     try {
-      final diff = DateTime.parse(meeting['scheduled_at']).toLocal().difference(DateTime.now());
-      timeLabel = diff.inMinutes < 60
-          ? l10n.inMinutes(diff.inMinutes)
-          : diff.inHours < 24
-              ? l10n.inHours(diff.inHours)
-              : l10n.inDays(diff.inDays);
+      final status = getMeetingJoinStatus(
+        meeting['scheduled_at'] as String,
+        l10n,
+        durationMinutes: meeting['duration_minutes'] as int?,
+      );
+      timeLabel = status.label;
+      inWindow = status.canJoin;
     } catch (_) {}
+    final showJoin = link != null && canJoin && inWindow;
     return GestureDetector(
       key: const ValueKey('chat-meeting-banner'),
-      onTap: onTap ??
-          (link != null
-              ? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication)
-              : null),
+      onTap: !showJoin
+          ? null
+          : (onTap ?? () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -494,8 +508,9 @@ class LxMeetingBanner extends StatelessWidget {
                 Text(timeLabel, style: Lx.text(context, size: 11, color: Lx.muted)),
             ]),
           ),
-          if (link != null && canJoin)
+          if (showJoin)
             Container(
+              key: const ValueKey('chat-meeting-join'),
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(Lx.rPill),

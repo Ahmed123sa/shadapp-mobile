@@ -39,6 +39,7 @@ import '../contracts/contracts_page.dart';
 import '../payments/payments_page.dart';
 import '../chat/chat_page.dart';
 import '../approvals/approvals_page.dart';
+import '../assistant/client_assistant_sheet.dart';
 import '../files/client_files_page.dart';
 import '../meetings/meetings_page.dart';
 import '../subusers/subusers_page.dart';
@@ -165,6 +166,25 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
   }
 
   int? _targetPaymentId;
+
+  /// An answer of the assistant sends the client to a tab of the workspace
+  /// (CLIENT_ASSISTANT_PLAN.md ٨). A tab that is locked at this stage, or that
+  /// a sub-user may not open, is simply not opened.
+  void _goToAssistantTarget(String target) {
+    const bottom = ['contracts', 'payments', 'chat', 'approvals', 'files'];
+    final i = bottom.indexOf(target);
+    if (i >= 0) {
+      if (_isTabLocked(i) || !_isTabAllowedByPermission(target)) return;
+    } else if (target == 'meetings') {
+      if (!_isTabAllowedByPermission('meetings')) return;
+    } else {
+      return;
+    }
+    final index = i >= 0 ? i : 5;
+    setState(() => _selectedIndex = index);
+    if (index == 0) _contractRefreshNotifier.value++;
+    if (index == 4) _fileRefreshNotifier.value++;
+  }
 
   void _goToPayments({int? targetPaymentId}) {
     setState(() {
@@ -531,8 +551,15 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> with Widg
     ];
     final moreIndex = navItems.length - 1;
 
+    final wsId = _workspace?['id'] as int?;
+
     return Scaffold(
       backgroundColor: Lx.page,
+      // The assistant button sits above the bottom bar and draws nothing until
+      // the server says the assistant is on (CLIENT_ASSISTANT_PLAN.md ٨).
+      floatingActionButton: wsId == null
+          ? null
+          : ClientAssistantFab(key: ValueKey('assistant-$wsId'), api: _api, workspaceId: wsId, onNavigate: _goToAssistantTarget),
       body: SafeArea(
         bottom: false,
         child: LuxeGlow(

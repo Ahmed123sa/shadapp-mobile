@@ -337,7 +337,8 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
           else
             ..._files.map((f) {
               final status = f['status'] as String? ?? 'pending';
-              final tag = f['tag'] as String? ?? '';
+              final isEn = Localizations.localeOf(context).languageCode == 'en';
+              final tag = (isEn ? f['tag_en'] as String? : null) ?? f['tag'] as String? ?? '';
               final date = (f['created_at'] as String?)?.split('T').first;
               final meta = [
                 if (f['definition_name'] != null) f['definition_name'].toString(),
@@ -387,7 +388,11 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                       : LxStatus.wait;
               return _fileCard(
                 key: ValueKey('payment-file-card-${pf['id']}'),
-                name: pf['name'] ?? '',
+                name: (Localizations.localeOf(context).languageCode == 'en'
+                        ? pf['name_en'] as String?
+                        : null) ??
+                    pf['name'] ??
+                    '',
                 meta: meta,
                 fileUrl: pf['file_url'] as String?,
                 status: Row(mainAxisSize: MainAxisSize.min, children: [

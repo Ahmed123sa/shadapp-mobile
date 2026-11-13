@@ -18,6 +18,9 @@ class Approval {
   /// am/workspace/approvals_tab.dart to hide the approve/reject buttons on a
   /// request the current user made themselves.
   final int? requestedBy;
+  /// The files attached to the request (name, size, file_url), whether it was
+  /// raised from the Approvals tab or from a chat message.
+  final List<Map<String, dynamic>> files;
 
   const Approval({
     required this.id,
@@ -32,6 +35,7 @@ class Approval {
     this.reason,
     this.certificatePdfUrl,
     this.requestedBy,
+    this.files = const [],
   });
 
   bool get isCompleted => status == 'approved' || status == 'completed' || status == 'edit_requested';
@@ -58,6 +62,11 @@ class Approval {
       reason: _str(json['reason']),
       certificatePdfUrl: certificate != null ? _str(certificate['pdf_url']) : null,
       requestedBy: _int(json['requested_by']),
+      files: [
+        if (json['files'] is List)
+          for (final f in json['files'] as List)
+            if (f is Map && f['file_url'] != null) Map<String, dynamic>.from(f),
+      ],
     );
   }
 }

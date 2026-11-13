@@ -8,6 +8,7 @@ import '../../core/helpers/signature_required_dialog.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/ads_split.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
@@ -295,7 +296,10 @@ class _ContractsPageState extends State<ContractsPage> {
       attention: needsAction,
       onTap: () => _showDetailModal(c),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        LuxeKind(isExtra ? l10n.additionalContract : l10n.mainContract),
+        Row(children: [
+          LuxeKind(isExtra ? l10n.additionalContract : l10n.mainContract),
+          if (contractHasAds(c)) ...[const SizedBox(width: 8), const AdsBadge()],
+        ]),
         const SizedBox(height: 4),
         Text(c['title'] ?? '', style: Lx.text(context, size: 16)),
         const SizedBox(height: 2),
@@ -305,9 +309,15 @@ class _ContractsPageState extends State<ContractsPage> {
         if (_clientType == 'business')
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text(l10n.contractValueExcludesVat,
-                style: Lx.text(context, size: 10, color: Lx.muted)),
+            child: Text(
+              (num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0) > 0
+                  ? _taxLine(context, c)
+                  : l10n.contractValueExcludesVat,
+              key: ValueKey('contract-tax-${c['id']}'),
+              style: Lx.text(context, size: 10, color: Lx.muted),
+            ),
           ),
+        if (contractHasAds(c)) AdsSplit(contract: c, currency: currency, size: 11),
         if (status == 'edit_requested' &&
             c['edit_reason'] != null &&
             (c['edit_reason'] as String).isNotEmpty) ...[
@@ -475,4 +485,16 @@ class _ContractsPageState extends State<ContractsPage> {
       ),
     );
   }
+}
+
+/// "+ tax 12% (120) · total 1,120" for a business contract that carries tax.
+String _taxLine(BuildContext context, Map c) {
+  final ar = Localizations.localeOf(context).languageCode == 'ar';
+  String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  final pct = num.tryParse('${c['tax_percentage'] ?? 0}') ?? 0;
+  final tax = num.tryParse('${c['tax_amount'] ?? 0}') ?? 0;
+  final total = num.tryParse('${c['total_with_tax'] ?? 0}') ?? 0;
+  return ar
+      ? '+ ضريبة ${f(pct)}% (${f(tax)}) · الإجمالي ${f(total)}'
+      : '+ Tax ${f(pct)}% (${f(tax)}) · Total ${f(total)}';
 }

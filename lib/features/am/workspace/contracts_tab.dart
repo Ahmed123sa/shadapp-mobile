@@ -8,6 +8,7 @@ import '../../../core/app_log.dart';
 import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/theme.dart' show statusLabels;
+import '../../../core/widgets/ads_split.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
@@ -23,7 +24,12 @@ class ContractsTab extends StatefulWidget {
   // site.
   final ApiClient? api;
   final ContractProvider? contractProvider;
-  const ContractsTab({super.key, this.workspaceId, this.api, this.contractProvider});
+
+  /// Opens the workspace's Files tab, where the required documents are
+  /// reviewed. Null where there is no such tab to go to.
+  final VoidCallback? onGoToFiles;
+  const ContractsTab(
+      {super.key, this.workspaceId, this.api, this.contractProvider, this.onGoToFiles});
 
   @override
   State<ContractsTab> createState() => _ContractsTabState();
@@ -135,6 +141,69 @@ class _ContractsTabState extends State<ContractsTab> {
     return DateFormat('d MMM', Localizations.localeOf(context).toString()).format(t);
   }
 
+  /// ok (one file approved), missing (none), rejected (all refused) or pending.
+  String _docState(Map d) {
+    final files = ((d['files'] as List<dynamic>?) ?? const []).whereType<Map>().toList();
+    if (files.any((f) => f['status'] == 'approved')) return 'ok';
+    if (files.isEmpty) return 'missing';
+    return files.every((f) => f['status'] == 'rejected') ? 'rejected' : 'pending';
+  }
+
+  /// The required documents of a contract the client approved, each with where
+  /// it stands, and a way to the Files tab to review them.
+  Widget _docsBlock(Map<String, dynamic> c, List<Map> docs, List<String> states, bool blocked) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    String t(String a, String e) => ar ? a : e;
+    final label = {
+      'ok': t('مقبول', 'Approved'),
+      'pending': t('قيد المراجعة', 'Under review'),
+      'rejected': t('مرفوض', 'Rejected'),
+      'missing': t('ماترفعش', 'Not uploaded'),
+    };
+    final dot = {
+      'ok': LxStatus.ok,
+      'pending': LxStatus.wait,
+      'rejected': LxStatus.bad,
+      'missing': LxStatus.bad
+    };
+    return Padding(
+      key: ValueKey('contract-docs-${c['id']}'),
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        LuxeKind(t('المستندات المطلوبة', 'Required documents')),
+        const SizedBox(height: 4),
+        for (var i = 0; i < docs.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Row(children: [
+              Expanded(child: Text('${docs[i]['name'] ?? ''}', style: Lx.text(context, size: 13))),
+              LuxeStatusDot(status: dot[states[i]]!),
+              const SizedBox(width: 7),
+              Text(label[states[i]]!, style: Lx.text(context, size: 12, color: Lx.ink2)),
+            ]),
+          ),
+        if (blocked) ...[
+          const SizedBox(height: 6),
+          Text(
+              t('الاعتماد مقفول لحد ما كل المستندات المطلوبة تتقبل.',
+                  'Approving is locked until every required document is accepted.'),
+              style: Lx.text(context, size: 11.5, color: Lx.faint, height: 1.5)),
+          if (widget.onGoToFiles != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: LuxeButton(
+                key: ValueKey('contract-docs-review-${c['id']}'),
+                label: t('راجع في تاب الملفات', 'Review in Files'),
+                lxIcon: 'doc',
+                size: LuxeButtonSize.sm,
+                onPressed: widget.onGoToFiles,
+              ),
+            ),
+        ],
+      ]),
+    );
+  }
+
   Future<void> _openPdf(Map<String, dynamic> c) async {
     final url = _api.resolveFileUrl(c['pdf_url'] as String);
     final uri = Uri.tryParse(url);
@@ -187,6 +256,7 @@ class _ContractsTabState extends State<ContractsTab> {
             padding: const EdgeInsets.only(top: 2),
             child: Text(l10n.contractValueExclVat, style: Lx.text(ctx, size: 11, color: Lx.faint)),
           ),
+        if (contractHasAds(c)) AdsSplit(contract: c, currency: '${c['currency'] ?? 'SAR'}'),
         if (c['start_date'] != null)
           Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -282,10 +352,15 @@ class _ContractsTabState extends State<ContractsTab> {
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleted)));
         _load();
       }
-    } catch (_) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.contractDeleteFailed)));
+    } catch (e, s) {
+      AppLog.error('contracts_tab._deleteContract', e, s);
+      if (!mounted) return;
+      // The server says why when the contract can no longer be deleted (it
+      // was sent meanwhile); show that instead of the generic failure.
+      final base = AppLocalizations.of(context)!.contractDeleteFailed;
+      final reason = e is ValidationException ? e.message : '';
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(reason.isEmpty ? base : '$base\n$reason')));
     }
   }
 
@@ -537,6 +612,14 @@ class _ContractsTabState extends State<ContractsTab> {
                 l10n.contractStepCompanyApproved,
                 l10n.contractStepActive
               ];
+              // The company can approve only when every required document has an
+              // accepted file (the server enforces the same).
+              final reqDocs = ((c['required_documents'] as List<dynamic>?) ?? const [])
+                  .whereType<Map>()
+                  .where((d) => d['is_required'] != false && d['is_required'] != 0)
+                  .toList();
+              final docStates = [for (final d in reqDocs) _docState(d)];
+              final docsBlocked = status == 'client_approved' && docStates.any((s) => s != 'ok');
               final buttons = <Widget>[
                 for (final a in actions)
                   LuxeButton(
@@ -554,10 +637,12 @@ class _ContractsTabState extends State<ContractsTab> {
                         ? LuxeButtonKind.primary
                         : LuxeButtonKind.outline,
                     onPressed: a == 'company-approve'
-                        ? () => _companyApproveWithSignature(c)
+                        ? (docsBlocked ? null : () => _companyApproveWithSignature(c))
                         : () => _action(c['id'], a, destructive: a == 'archive' || a == 'complete'),
                   ),
-                if (editable && canManage && !isSA)
+                // Delete only a contract that was saved and never sent; once
+                // the client has seen it (even with an edit request) it stays.
+                if (status == 'draft' && canManage && !isSA)
                   LuxeButton(
                     key: ValueKey('contract-delete-${c['id']}'),
                     label: l10n.delete,
@@ -611,6 +696,10 @@ class _ContractsTabState extends State<ContractsTab> {
                       child: Text(l10n.contractValueExclVat,
                           style: Lx.text(context, size: 10.5, color: Lx.faint)),
                     ),
+                  if (contractHasAds(c))
+                    AdsSplit(contract: c, currency: '${c['currency'] ?? 'SAR'}'),
+                  if (status == 'client_approved' && reqDocs.isNotEmpty)
+                    _docsBlock(c, reqDocs, docStates, docsBlocked),
                   if (inFlow)
                     LuxeLabeledSteps(labels: steps, current: _stepFor(status))
                   else

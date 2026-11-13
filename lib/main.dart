@@ -129,6 +129,15 @@ Future<Widget> _bootstrap() async {
     AppLog.error('main.localeProvider', e, s);
   }
 
+  // Tell the server this device's language so pushes arrive in it, now and
+  // whenever the user switches.
+  NotificationService.localeCode = localeProvider.locale.languageCode;
+  NotificationService.instance?.registerCurrentToken();
+  localeProvider.addListener(() {
+    NotificationService.localeCode = localeProvider.locale.languageCode;
+    NotificationService.instance?.registerCurrentToken();
+  });
+
   // Only LocaleProvider is actually read via the provider tree
   // (context.read<LocaleProvider>() in login_page.dart,
   // client_onboarding_screen.dart, client_dashboard_screen.dart, and

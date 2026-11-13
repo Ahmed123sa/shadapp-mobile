@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../core/api_client.dart';
 import '../../core/app_log.dart';
 import '../../core/luxe/lx_icons.dart';
@@ -157,19 +160,33 @@ Future<void> chatSend({
   required VoidCallback markRead,
   required bool Function() consumeRequiresAction,
   required String logTag,
+  // The file picked before sending, with its text in one message. Both
+  // callbacks are needed together: clear the picked file once it is taken, and
+  // hand it back (with the text) when the send fails so nothing is lost.
+  File? file,
+  VoidCallback? clearFile,
+  void Function(File file, String text, bool requiresAction)? onFileFailed,
 }) async {
   final text = controller.text.trim();
-  if (text.isEmpty || wsId == null) return;
+  if ((text.isEmpty && file == null) || wsId == null) return;
   controller.clear();
   final requiresAction = consumeRequiresAction();
   final replyId = replyTo?['id'];
-  setState(clearReplyTo);
+  setState(() {
+    clearReplyTo();
+    clearFile?.call();
+  });
   try {
-    await chatProvider.sendMessage(wsId, text, requiresAction: requiresAction, replyToId: replyId as int?);
+    if (file != null) {
+      await chatProvider.sendMessageWithFile(wsId, file, message: text, requiresAction: requiresAction, replyToId: replyId as int?);
+    } else {
+      await chatProvider.sendMessage(wsId, text, requiresAction: requiresAction, replyToId: replyId as int?);
+    }
     load();
     markRead();
   } catch (e, s) {
     AppLog.error('$logTag._send', e, s);
+    if (file != null) onFileFailed?.call(file, text, requiresAction);
   }
 }
 
@@ -251,8 +268,12 @@ Widget chatFileAttachment({
   required Map<String, dynamic> m,
   required String fallbackFileName,
 }) {
-  final fileName = m['file_name'] as String? ?? fallbackFileName;
-  final fileSize = m['file_size'] as int?;
+  // The message only holds the file's URL. When an approval carries the same
+  // file, its name and size are used so the card reads "1.jpg", not "Attachment".
+  final approvalFiles = m['approval']?['files'];
+  final approvalFile = approvalFiles is List && approvalFiles.isNotEmpty && approvalFiles.first is Map ? approvalFiles.first as Map : null;
+  final fileName = m['file_name'] as String? ?? approvalFile?['name'] as String? ?? fallbackFileName;
+  final fileSize = (m['file_size'] ?? approvalFile?['size']) is num ? ((m['file_size'] ?? approvalFile?['size']) as num).toInt() : null;
   String sizeText = '';
   if (fileSize != null) {
     if (fileSize > 1024 * 1024) {
@@ -303,4 +324,73 @@ Widget chatFileAttachment({
       ),
     ),
   );
+}
+
+/// The files an approval request carries, as file cards. A file sent in chat is
+/// the message's own (drawn by [chatFileAttachment]); an approval raised from
+/// the Approvals tab is a text message whose files live on the approval.
+List<Widget> chatApprovalFileCards({
+  required ApiClient api,
+  required Map<String, dynamic> m,
+  required String fallbackFileName,
+}) {
+  if (m['type'] == 'file') return const [];
+  final files = m['approval']?['files'];
+  if (files is! List) return const [];
+  return [
+    for (final f in files)
+      if (f is Map && f['file_url'] != null)
+        chatFileAttachment(
+          api: api,
+          m: {'file_url': f['file_url'], 'file_name': f['name'], 'file_size': f['size']},
+          fallbackFileName: fallbackFileName,
+        ),
+  ];
+}
+
+/// The file picked in the composer, shown before it is sent so it can be
+/// checked or taken back. Picking a file used to send it at once, with no way
+/// to add text or change your mind.
+class LxPendingAttachment extends StatelessWidget {
+  final File file;
+  final VoidCallback onRemove;
+  const LxPendingAttachment({super.key, required this.file, required this.onRemove});
+
+  static String _sizeText(File file) {
+    try {
+      final bytes = file.lengthSync();
+      return bytes > 1024 * 1024 ? '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB' : '${(bytes / 1024).ceil()} KB';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final name = file.path.split(RegExp(r'[\\/]')).last;
+    final size = _sizeText(file);
+    return Container(
+      key: const ValueKey('chat-pending-attachment'),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 4, 6),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.line2)),
+      child: Row(children: [
+        const LxIcon('clip', size: 16, color: Lx.faint),
+        const SizedBox(width: 8),
+        Expanded(child: Text(name, style: Lx.text(context, size: 12.5), maxLines: 1, overflow: TextOverflow.ellipsis)),
+        if (size.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Text(size, style: Lx.text(context, size: 11, color: Lx.faint)),
+        ],
+        IconButton(
+          key: const ValueKey('chat-pending-remove'),
+          tooltip: l10n.removeAttachment,
+          onPressed: onRemove,
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.close, size: 16, color: Lx.ink2),
+        ),
+      ]),
+    );
+  }
 }

@@ -39,7 +39,8 @@ class NotificationService {
   /// [NotificationService()] always uses) or the real Firebase plugins (never
   /// touched here since [init] is never called on this instance).
   @visibleForTesting
-  factory NotificationService.forTesting({required ApiClient api}) => NotificationService._(api: api);
+  factory NotificationService.forTesting({required ApiClient api}) =>
+      NotificationService._(api: api);
 
   // `late` matters here, not just style: an eager `final _firebaseMessaging =
   // FirebaseMessaging.instance;` ran the instant ANY NotificationService was
@@ -58,6 +59,14 @@ class NotificationService {
   final ApiClient _api;
 
   String? _fcmToken;
+
+  /// Language of this device's push texts ('ar'/'en'), sent with the token so
+  /// the server pushes in it. Set from the app language (main.dart).
+  static String localeCode = 'en';
+
+  /// The instance that owns the cached token, so a language change can
+  /// re-register it from anywhere.
+  static NotificationService? instance;
   bool _initialized = false;
   StreamSubscription? _messageSubscription;
 
@@ -81,6 +90,7 @@ class NotificationService {
   /// exactly that. Push is optional; being able to open the app is not.
   Future<void> init() async {
     if (_initialized) return;
+    instance = this;
 
     await _initLocalNotifications();
     await _requestPermission();
@@ -158,7 +168,7 @@ class NotificationService {
       AppLog.info(
         'NotificationService',
         'getInitialMessage() did not settle in $_messagingTimeout; '
-        'no cold-start notification to route.',
+            'no cold-start notification to route.',
       );
     } catch (e, s) {
       AppLog.error('NotificationService._handleInitialMessage', e, s);
@@ -279,6 +289,7 @@ class NotificationService {
       await _api.post('/notifications/register-token', {
         'token': token,
         'device_type': deviceType,
+        'locale': localeCode,
       });
     } catch (e, s) {
       AppLog.error('NotificationService._registerToken', e, s);

@@ -12,6 +12,7 @@ import '../../core/app_log.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/theme.dart' show statusLabels;
+import '../../core/widgets/ads_split.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../data/file_repository.dart';
 import '../../providers/contract_provider.dart';
@@ -215,6 +216,7 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                 ])),
               ),
             ),
+          if (contractHasAds(c)) AdsSplit(contract: c, currency: currency),
           if (c['start_date'] != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -262,15 +264,31 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
               ),
           ],
 
-          // Required documents (only while the contract waits on the client)
-          if (requiredDocs.isNotEmpty && needsAction) ...[
+          // Required documents: while the contract waits on the client, and after
+          // the client approved while the company still has to accept each one (a
+          // rejected one can be replaced).
+          if (requiredDocs.isNotEmpty && (needsAction || status == 'client_approved')) ...[
             const SizedBox(height: 18),
             LuxeKind(l10n.contractRequiredDocsLabel),
             const SizedBox(height: 4),
             for (var i = 0; i < requiredDocs.length; i++)
               Builder(builder: (context) {
                 final doc = requiredDocs[i];
-                final docStatus = doc['status'] as String? ?? 'pending';
+                // From the document's own files when it has any (approved if one is,
+                // rejected if all are, else waiting); otherwise whatever it carries.
+                final docFiles =
+                    (doc['files'] as List<dynamic>?)?.whereType<Map>().toList() ?? const <Map>[];
+                final docStatus = docFiles.isNotEmpty
+                    ? (docFiles.any((f) => f['status'] == 'approved')
+                        ? 'approved'
+                        : docFiles.every((f) => f['status'] == 'rejected')
+                            ? 'rejected'
+                            : 'pending')
+                    : (doc['status'] as String? ?? 'pending');
+                final rejectedFile = docFiles.reversed
+                    .firstWhere((f) => f['status'] == 'rejected', orElse: () => const {});
+                final rejectionReason =
+                    (doc['rejection_reason'] ?? rejectedFile['rejection_reason'])?.toString();
                 final dot = docStatus == 'approved'
                     ? LxStatus.ok
                     : docStatus == 'rejected'
@@ -296,10 +314,12 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
                           Text(statusLabels(l10n)[docStatus] ?? docStatus,
                               style: Lx.text(context, size: 12, color: Lx.ink2)),
                         ]),
-                        if (doc['rejection_reason'] != null)
+                        if (rejectionReason != null &&
+                            rejectionReason.isNotEmpty &&
+                            (docStatus == 'rejected' || doc['rejection_reason'] != null))
                           Padding(
                             padding: const EdgeInsets.only(top: 3),
-                            child: Text(l10n.rejectionReason(doc['rejection_reason'] as String),
+                            child: Text(l10n.rejectionReason(rejectionReason),
                                 style: Lx.text(context, size: 11, color: Lx.danger)),
                           ),
                       ]),

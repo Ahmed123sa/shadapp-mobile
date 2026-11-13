@@ -193,7 +193,8 @@ class _MeetingsPageState extends State<MeetingsPage> {
         if (m.status == 'scheduled' && m.link != null)
           Builder(
             builder: (ctx) {
-              final joinStatus = getMeetingJoinStatus(m.scheduledAt!, AppLocalizations.of(ctx)!);
+              final joinStatus = getMeetingJoinStatus(m.scheduledAt!, AppLocalizations.of(ctx)!,
+                  durationMinutes: m.durationMinutes);
               // subuser-review-plan.md م٦ — joining a meeting maps to
               // can_join_meetings, per the plan's action table.
               final canJoin = joinStatus.canJoin && _api.canDo('can_join_meetings');

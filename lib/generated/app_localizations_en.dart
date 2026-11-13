@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachment => 'Attachment';
 
   @override
+  String get removeAttachment => 'Remove attachment';
+
+  @override
   String get waitingClientApproval => 'Waiting for client approval';
 
   @override
@@ -314,7 +317,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesHint => 'Additional notes...';
 
   @override
-  String get clientCreated => '✅ Client created';
+  String get clientCreated => 'Client created';
 
   @override
   String get clientCreateFailed => 'Failed to create client';
@@ -3062,13 +3065,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestEdit => 'Request Edit';
 
   @override
-  String get approvedLabel => '✓ Approved';
+  String get approvedLabel => 'Approved';
 
   @override
-  String get rejectedLabel => '✗ Rejected';
+  String get rejectedLabel => 'Rejected';
 
   @override
-  String get editRequestedLabel => '✎ Edit requested';
+  String get editRequestedLabel => 'Edit requested';
 
   @override
   String get downloadApprovalCert => 'Download Approval Certificate';
@@ -6234,4 +6237,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccount_done => 'Your account has been deleted.';
+
+  @override
+  String get adsToggle => 'Ads contract';
+
+  @override
+  String get adsToggleHint =>
+      'The agency fee is part of the contract value, not added on top.';
+
+  @override
+  String get adsPercentageLabel => 'Ads management fee (%)';
+
+  @override
+  String get adsPercentageInvalid => 'Enter a percentage between 0.01 and 100.';
+
+  @override
+  String adsFee(Object percent) {
+    return 'Ads management fee ($percent%)';
+  }
+
+  @override
+  String get adsBudget => 'Ad budget';
+
+  @override
+  String get adsBadge => 'Ads';
+
+  @override
+  String get adsConversionLabel => 'Dollar conversion fee (% of ad budget)';
+
+  @override
+  String get adsConversionHint =>
+      'Added on top of the contract value and not taxed. Leave empty for none.';
+
+  @override
+  String get adsConversionInvalid => 'Enter a percentage between 0 and 100.';
+
+  @override
+  String adsConversion(Object percent) {
+    return 'Dollar conversion fee ($percent%)';
+  }
+
+  @override
+  String get adsConversionTotal => 'Dollar conversion fees';
+
+  @override
+  String get adsExclConversion => 'Contract value excludes the conversion fee';
+
+  @override
+  String get taxExcludedToggle => 'Exclude tax';
+
+  @override
+  String get taxExcludedHint => 'No tax is charged on this contract.';
+
+  @override
+  String get totalDue => 'Total due';
 }

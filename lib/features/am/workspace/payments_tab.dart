@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
 import '../../../core/luxe/tokens.dart';
+import '../../../core/widgets/ads_split.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -107,8 +108,14 @@ class _PaymentsTabState extends State<PaymentsTab> {
     }
     final contracts = _payableContracts;
     if (contracts.isNotEmpty) {
+      // No summary from the server: the value plus any dollar-conversion fee.
       return contracts.fold<double>(
-          0, (sum, c) => sum + (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0));
+        0,
+        (sum, c) =>
+            sum +
+            (num.tryParse(c['value']?.toString() ?? '')?.toDouble() ?? 0) +
+            (num.tryParse('${c['conversion_amount'] ?? 0}')?.toDouble() ?? 0),
+      );
     }
     return _payments.fold<double>(
         0, (s, p) => s + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
@@ -288,18 +295,44 @@ class _PaymentsTabState extends State<PaymentsTab> {
             backgroundColor: Lx.line2,
             valueColor: const AlwaysStoppedAnimation(Lx.ok)),
       ),
-      if (_taxSummary != null && _taxNum(_taxSummary!['tax_percentage']) > 0) ...[
+      if (_adsContracts.isNotEmpty) ...[
         const SizedBox(height: 14),
         LuxeCard(
+          key: const ValueKey('payments-tab-ads-card'),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final c in _adsContracts) ...[
+              if (_adsContracts.length > 1 ||
+                  ((_taxSummary?['contracts'] as List?)?.length ?? 0) > 1)
+                Text('${c['title'] ?? ''}',
+                    style: Lx.text(context, size: 12, color: Lx.ink, weight: FontWeight.w600)),
+              AdsSplit(contract: c, currency: cur, size: 12),
+            ],
+          ]),
+        ),
+      ],
+      if (_taxSummary != null &&
+          ((_taxNum(_taxSummary!['tax_percentage']) > 0 &&
+                  _taxNum(_taxSummary!['tax_amount']) > 0) ||
+              _taxNum(_taxSummary!['conversion_total']) > 0)) ...[
+        const SizedBox(height: 14),
+        LuxeCard(
+          key: const ValueKey('payments-tab-tax-card'),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             LuxeKind(l10n.paymentsTaxDetails),
             const SizedBox(height: 8),
             _taxRow(l10n.paymentsContractsValue,
                 '${_taxNum(_taxSummary!['contracts_total']).toStringAsFixed(2)} $cur'),
-            _taxRow(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])),
-                '${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $cur'),
+            if (_taxNum(_taxSummary!['conversion_total']) > 0)
+              _taxRow(l10n.adsConversionTotal,
+                  '${_taxNum(_taxSummary!['conversion_total']).toStringAsFixed(2)} $cur'),
+            if (_taxNum(_taxSummary!['tax_amount']) > 0)
+              _taxRow(l10n.paymentsTaxRow(_taxNum(_taxSummary!['tax_percentage'])),
+                  '${_taxNum(_taxSummary!['tax_amount']).toStringAsFixed(2)} $cur'),
             const Divider(height: 14, color: Lx.line),
-            _taxRow(l10n.paymentsTotalRow,
+            _taxRow(
+                _taxNum(_taxSummary!['conversion_total']) > 0
+                    ? l10n.totalDue
+                    : l10n.paymentsTotalRow,
                 '${_taxNum(_taxSummary!['grand_total']).toStringAsFixed(2)} $cur',
                 bold: true),
           ]),
@@ -307,6 +340,13 @@ class _PaymentsTabState extends State<PaymentsTab> {
       ],
       const SizedBox(height: 16),
     ]);
+  }
+
+  /// The ads contracts in the tax summary (empty for a normal client).
+  List<Map> get _adsContracts {
+    final cs = _taxSummary?['contracts'];
+    if (cs is! List) return const [];
+    return cs.whereType<Map>().where(contractHasAds).toList();
   }
 
   Widget _taxRow(String a, String b, {bool bold = false}) => Padding(

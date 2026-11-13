@@ -14,6 +14,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../models/approval.dart';
 import '../../../providers/approval_provider.dart';
+import '../../chat/chat_shared.dart' show chatFileAttachment;
 
 class ApprovalsTab extends StatefulWidget {
   final int? workspaceId;
@@ -278,24 +279,22 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                             overflow: TextOverflow.ellipsis),
                       ],
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          if (requestedByName.isNotEmpty) ...[
-                            Icon(Icons.person_outline, size: 13, color: Lx.muted),
-                            const SizedBox(width: 4),
-                            Text(requestedByName,
-                                style: const TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.w500, color: Lx.muted)),
-                            const SizedBox(width: 12),
-                          ],
-                          if (createdAt != null) ...[
-                            Icon(Icons.access_time, size: 13, color: Lx.muted),
-                            const SizedBox(width: 4),
-                            Text(createdAt.split('T')[0],
-                                style: const TextStyle(fontSize: 12, color: Lx.muted)),
-                          ],
+                      Row(children: [
+                        if (requestedByName.isNotEmpty) ...[
+                          Icon(Icons.person_outline, size: 13, color: Lx.muted),
+                          const SizedBox(width: 4),
+                          Text(requestedByName,
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w500, color: Lx.muted)),
+                          const SizedBox(width: 12),
                         ],
-                      ),
+                        if (createdAt != null) ...[
+                          Icon(Icons.access_time, size: 13, color: Lx.muted),
+                          const SizedBox(width: 4),
+                          Text(createdAt.split('T')[0],
+                              style: const TextStyle(fontSize: 12, color: Lx.muted)),
+                        ],
+                      ]),
                       if (a.referenceNo != null) ...[
                         const SizedBox(height: 6),
                         Container(
@@ -318,6 +317,19 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
                           style: Lx.text(context, size: 12, color: Lx.ink2)),
                     ]),
                   ]),
+                  if (a.files.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    for (final f in a.files)
+                      chatFileAttachment(
+                        api: _api,
+                        m: {
+                          'file_url': f['file_url'],
+                          'file_name': f['name'],
+                          'file_size': f['size']
+                        },
+                        fallbackFileName: l10n.attachment,
+                      ),
+                  ],
                   if (hasCertificate)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),

@@ -71,7 +71,7 @@ class MeetingChip extends StatelessWidget {
 
     Widget? action;
     if (scheduledAt != null && link != null && status == 'scheduled') {
-      final joinStatus = getMeetingJoinStatus(scheduledAt, l10n);
+      final joinStatus = getMeetingJoinStatus(scheduledAt, l10n, durationMinutes: duration);
       final buttonLabel = onEnter != null
           ? ((isHost ?? true) ? l10n.meeting_startAsHost : l10n.meeting_join)
           : joinStatus.label;

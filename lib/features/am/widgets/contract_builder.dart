@@ -73,6 +73,11 @@ class _ContractBuilderState extends State<ContractBuilder> {
       widget.systemSettingsProvider ?? SystemSettingsProvider(repository: SystemSettingsRepository(api: _api));
   final _titleController = TextEditingController();
   final _valueController = TextEditingController();
+  final _adsPctController = TextEditingController();
+  final _convPctController = TextEditingController();
+  bool _taxExcluded = false;
+  bool _isAds = false;
+  bool _adsTried = false;
   final _customClauseController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
@@ -91,6 +96,12 @@ class _ContractBuilderState extends State<ContractBuilder> {
   void _populateFromContract(Map<String, dynamic> data) {
     _titleController.text = data['title'] ?? '';
     _valueController.text = (data['value'] ?? 0).toString();
+    final adsRaw = num.tryParse('${data['ads_percentage'] ?? ''}');
+    _isAds = adsRaw != null;
+    if (adsRaw != null) _adsPctController.text = adsRaw == adsRaw.roundToDouble() ? adsRaw.toInt().toString() : adsRaw.toString();
+    final convRaw = num.tryParse('${data['conversion_percentage'] ?? ''}');
+    if (convRaw != null) _convPctController.text = convRaw == convRaw.roundToDouble() ? convRaw.toInt().toString() : convRaw.toString();
+    _taxExcluded = data['tax_excluded'] == true || data['tax_excluded'] == 1;
     _selectedCurrency = data['currency'] as String? ?? 'SAR';
     if (data['start_date'] != null) _startDate = DateTime.tryParse(data['start_date'].toString());
     if (data['end_date'] != null) _endDate = DateTime.tryParse(data['end_date'].toString());
@@ -214,6 +225,30 @@ class _ContractBuilderState extends State<ContractBuilder> {
       setState(() => _error = l10n.contractBuilderValueRequired);
       return;
     }
+    double? adsPct;
+    if (_isAds) {
+      adsPct = double.tryParse(_adsPctController.text.trim());
+      if (adsPct == null || adsPct < 0.01 || adsPct > 100) {
+        setState(() {
+          _adsTried = true;
+          _error = l10n.adsPercentageInvalid;
+        });
+        return;
+      }
+    }
+    // The dollar-conversion fee only exists on an ads contract; empty or 0 means none.
+    double? convPct;
+    if (_isAds && _convPctController.text.trim().isNotEmpty) {
+      final v = double.tryParse(_convPctController.text.trim());
+      if (v == null || v < 0 || v > 100) {
+        setState(() {
+          _adsTried = true;
+          _error = l10n.adsConversionInvalid;
+        });
+        return;
+      }
+      if (v > 0) convPct = v;
+    }
     if (wsId == null && !_isEditing) {
       setState(() => _error = l10n.contractBuilderCreateFailed);
       return;
@@ -243,6 +278,10 @@ class _ContractBuilderState extends State<ContractBuilder> {
         'title': _titleController.text.trim(),
         'value': value,
         'currency': _selectedCurrency,
+        // Null clears it on an edit; a create only sends it for an ads contract.
+        if (_isAds) 'ads_percentage': adsPct else if (_isEditing) 'ads_percentage': null,
+        if (convPct != null) 'conversion_percentage': convPct else if (_isEditing) 'conversion_percentage': null,
+        if (_taxExcluded || _isEditing) 'tax_excluded': _taxExcluded,
         'clauses': clauses,
         'required_documents': requiredDocs,
         if (_startDate != null) 'start_date': _startDate!.toIso8601String(),
@@ -289,6 +328,8 @@ class _ContractBuilderState extends State<ContractBuilder> {
   void dispose() {
     _titleController.dispose();
     _valueController.dispose();
+    _adsPctController.dispose();
+    _convPctController.dispose();
     _customClauseController.dispose();
     _requiredDocController.dispose();
     super.dispose();
@@ -299,6 +340,117 @@ class _ContractBuilderState extends State<ContractBuilder> {
         padding: const EdgeInsets.only(top: 22, bottom: 6),
         child: Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
       );
+
+  /// The "Ads contract" switch. Ticking it reveals the percentage (the
+  /// agency's fee, inside the contract value); unticking makes it normal again.
+  Widget _adsField(AppLocalizations l10n) {
+    final invalid = _isAds && _adsTried && !(() {
+      final v = double.tryParse(_adsPctController.text.trim());
+      return v != null && v >= 0.01 && v <= 100;
+    })();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Semantics(
+        checked: _isAds,
+        label: l10n.adsToggle,
+        onTap: () => setState(() => _isAds = !_isAds),
+        excludeSemantics: true,
+        child: GestureDetector(
+          key: const ValueKey('cb-ads-toggle'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _isAds = !_isAds),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Row(children: [
+              Container(
+                width: 18,
+                height: 18,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _isAds ? Lx.crimson : Colors.transparent,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: _isAds ? Lx.crimson : Lx.line2),
+                ),
+                child: _isAds ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(l10n.adsToggle, style: Lx.text(context, size: 14))),
+            ]),
+          ),
+        ),
+      ),
+      Text(l10n.adsToggleHint, style: Lx.text(context, size: 11.5, color: Lx.muted)),
+      if (_isAds)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: TextField(
+            key: const ValueKey('cb-ads-percent'),
+            controller: _adsPctController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(labelText: l10n.adsPercentageLabel, errorText: invalid ? l10n.adsPercentageInvalid : null),
+          ),
+        ),
+      if (_isAds)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: TextField(
+            key: const ValueKey('cb-conversion-percent'),
+            controller: _convPctController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: l10n.adsConversionLabel,
+              helperText: l10n.adsConversionHint,
+              helperMaxLines: 3,
+              errorText: _adsTried && !(() {
+                final t = _convPctController.text.trim();
+                if (t.isEmpty) return true;
+                final v = double.tryParse(t);
+                return v != null && v >= 0 && v <= 100;
+              })()
+                  ? l10n.adsConversionInvalid
+                  : null,
+            ),
+          ),
+        ),
+    ]);
+  }
+
+  /// "Exclude tax" switch: takes the contract out of tax. Works on any contract.
+  Widget _taxExcludedField(AppLocalizations l10n) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Semantics(
+        checked: _taxExcluded,
+        label: l10n.taxExcludedToggle,
+        onTap: () => setState(() => _taxExcluded = !_taxExcluded),
+        excludeSemantics: true,
+        child: GestureDetector(
+          key: const ValueKey('cb-tax-excluded-toggle'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _taxExcluded = !_taxExcluded),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Row(children: [
+              Container(
+                width: 18,
+                height: 18,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _taxExcluded ? Lx.crimson : Colors.transparent,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: _taxExcluded ? Lx.crimson : Lx.line2),
+                ),
+                child: _taxExcluded ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(l10n.taxExcludedToggle, style: Lx.text(context, size: 14))),
+            ]),
+          ),
+        ),
+      ),
+      Text(l10n.taxExcludedHint, style: Lx.text(context, size: 11.5, color: Lx.muted)),
+    ]);
+  }
 
   /// `.f2` date field: label, value on the underline, calendar icon.
   Widget _dateField(String label, DateTime? value, VoidCallback onTap, Key key) => GestureDetector(
@@ -404,6 +556,9 @@ class _ContractBuilderState extends State<ContractBuilder> {
                           ),
                         ),
                       ]),
+                      const SizedBox(height: 14),
+                      _adsField(l10n),
+                      _taxExcludedField(l10n),
                       if (_showContractDates) ...[
                         const SizedBox(height: 14),
                         Row(children: [
