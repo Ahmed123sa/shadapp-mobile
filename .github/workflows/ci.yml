@@ -19,10 +19,17 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # Pinned to the Flutter version the team builds the app with. "Latest
+      # stable" made CI test with a different SDK than the shipped app and
+      # broke on every Flutter release (3.47 deprecated material.dart in every
+      # file). Upgrading Flutter is a deliberate change: bump this line in the
+      # same PR that moves the code to the new SDK.
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.44.2
+          cache: true
 
       # assets/env.txt is gitignored (see env.txt.example) and is only ever
       # read at runtime by dotenv.load() in main.dart, which no test calls —
