@@ -234,12 +234,18 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     if (atBottom) _markRead();
   }
 
+  bool _sending = false;
+
   Future<void> _send() => chatSend(
         controller: _controller,
         wsId: _wsId,
         replyTo: _replyTo,
         chatProvider: _chatProvider,
-        setState: setState,
+        setState: (fn) {
+          if (mounted) setState(fn);
+        },
+        isSending: () => _sending,
+        setSending: (v) => _sending = v,
         clearReplyTo: () => _replyTo = null,
         load: _load,
         markRead: _markRead,
@@ -635,7 +641,7 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                                 : l10n.typeMessage,
                             hintStyle: Lx.text(context, size: 14, color: Lx.faint),
                           ),
-                          onSubmitted: (_) => _editingMessage != null ? _saveEdit() : _send(),
+                          onSubmitted: (_) => _sending ? null : (_editingMessage != null ? _saveEdit() : _send()),
                         ),
                       ),
                     ]),
@@ -644,15 +650,22 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
                 const SizedBox(width: 10),
                 GestureDetector(
                   key: const ValueKey('chat-send'),
-                  onTap: _editingMessage != null ? _saveEdit : _send,
+                  onTap: _sending ? null : (_editingMessage != null ? _saveEdit : _send),
                   child: Container(
                     width: 40,
                     height: 40,
                     decoration: const BoxDecoration(color: Lx.crimson, shape: BoxShape.circle),
                     child: Center(
-                      child: _editingMessage != null
-                          ? const Icon(Icons.check, size: 18, color: Colors.white)
-                          : const LxIcon('send', size: 18, color: Colors.white),
+                      child: _sending
+                          ? const SizedBox(
+                              key: ValueKey('chat-sending'),
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : _editingMessage != null
+                              ? const Icon(Icons.check, size: 18, color: Colors.white)
+                              : const LxIcon('send', size: 18, color: Colors.white),
                     ),
                   ),
                 ),

@@ -1,6 +1,7 @@
 // Picking a file in the chat composer no longer sends it at once: it waits as a
 // chip (with a way to remove it) and goes out with the text when the user taps
 // send. If the send fails, the file and the text come back.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -56,8 +57,12 @@ void main() {
     bool requiresAction = false,
     void Function(File, String, bool)? onFailed,
     VoidCallback? clearFile,
+    bool Function()? isSending,
+    void Function(bool)? setSending,
   }) =>
       chatSend(
+        isSending: isSending,
+        setSending: setSending,
         controller: controller,
         wsId: 4,
         replyTo: replyTo,
@@ -130,6 +135,85 @@ void main() {
       expect(backFile, same(file));
       expect(backText, 'Please look');
       expect(backSwitch, isTrue);
+    });
+  });
+
+  group('send lock', () {
+    test('a second tap while uploading sends nothing more', () async {
+      final gate = Completer<http.StreamedResponse>();
+      var sends = 0;
+      when(() => httpClient.send(any())).thenAnswer((_) {
+        sends++;
+        return gate.future;
+      });
+      var sending = false;
+      Future<void> tap() => send(picked: file, isSending: () => sending, setSending: (v) => sending = v);
+
+      final first = tap();
+      await tap();
+      await tap();
+      // The upload reads the file from disk before the request goes out.
+      for (var i = 0; i < 100 && sends == 0; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(sends, 1);
+      expect(sending, isTrue);
+
+      gate.complete(http.StreamedResponse(Stream.value(utf8.encode('{}')), 200));
+      await first;
+      expect(sending, isFalse);
+    });
+
+    test('the file stays picked until the send succeeds, and on failure', () async {
+      captureMultipart(status: 500);
+      var cleared = false;
+
+      await send(picked: file, clearFile: () => cleared = true);
+
+      expect(cleared, isFalse);
+    });
+
+    test('the text stays in the field when the send fails', () async {
+      captureMultipart(status: 500);
+      controller.text = 'keep me';
+
+      await send(picked: file);
+
+      expect(controller.text, 'keep me');
+    });
+  });
+
+  group('chatFileAttachment', () {
+    testWidgets('an image shows as a large preview with name and size', (tester) async {
+      final api = buildTestApiClient(client: httpClient);
+      await pumpWithLocalizations(
+        tester,
+        chatFileAttachment(
+          api: api,
+          m: {'file_url': '/storage/chat-attachments/x.jpg', 'file_name': 'photo.jpg', 'file_size': 2048},
+          fallbackFileName: 'Attachment',
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('chat-image-preview')), findsOneWidget);
+      expect(find.text('photo.jpg'), findsOneWidget);
+      expect(find.text('2 KB'), findsOneWidget);
+    });
+
+    testWidgets('a document stays a file card', (tester) async {
+      final api = buildTestApiClient(client: httpClient);
+      await pumpWithLocalizations(
+        tester,
+        chatFileAttachment(
+          api: api,
+          m: {'file_url': '/storage/chat-attachments/x.pdf', 'file_name': 'contract.pdf', 'file_size': 2048},
+          fallbackFileName: 'Attachment',
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('chat-image-preview')), findsNothing);
+      expect(find.text('contract.pdf'), findsOneWidget);
+      expect(find.text('PDF'), findsOneWidget);
     });
   });
 

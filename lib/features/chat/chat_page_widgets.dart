@@ -289,6 +289,8 @@ Widget _buildTextBubble(
   void Function(int msgId, String action) onRespondToMessage,
 ) {
   final l10n = AppLocalizations.of(context)!;
+  // A bubble holding only a file has no text line, so no empty gap under it.
+  final hasText = '${m['message'] ?? ''}'.trim().isNotEmpty;
   final extras = <Widget>[
     if (replyTo != null)
       Container(
@@ -313,8 +315,9 @@ Widget _buildTextBubble(
         api: api,
         m: m,
         fallbackFileName: l10n.attachment,
+        gap: hasText ? 8 : 0,
       ),
-    ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment),
+    ...chatApprovalFileCards(api: api, m: m, fallbackFileName: l10n.attachment, gap: hasText ? 8 : 0),
   ];
 
   final bubble = Container(
@@ -334,7 +337,7 @@ Widget _buildTextBubble(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ...extras,
-        Text(m['message'] ?? '', style: Lx.text(context, size: 13.5, height: 1.65)),
+        if (hasText) Text(m['message'] ?? '', style: Lx.text(context, size: 13.5, height: 1.65)),
         if (m['edited_at'] != null || (isClient && m['id'] != null))
           Padding(
             padding: const EdgeInsets.only(top: 3),

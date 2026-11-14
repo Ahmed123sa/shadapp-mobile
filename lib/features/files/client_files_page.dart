@@ -156,6 +156,19 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     if (mounted) setState(() => _uploading = false);
   }
 
+  /// The X shows only on a file this client side uploaded itself, that is not
+  /// approved yet and does not belong to an approval. Manager files and
+  /// approval attachments are not the client's to remove.
+  bool _canDelete(dynamic f) {
+    if (f['status'] == 'approved' || f['approval_id'] != null) return false;
+    final type = '${f['uploaded_by_type'] ?? ''}';
+    final mine = _api.subUserId != null ? type.endsWith('SubUser') : type.endsWith('Client');
+    if (!mine) return false;
+    final myId = _api.subUserId ?? _api.userId;
+    final uploader = f['uploaded_by_id'];
+    return myId == null || uploader == null || '$uploader' == '$myId';
+  }
+
   Future<void> _deleteFile(dynamic file) async {
     final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
@@ -368,7 +381,7 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
                 note: f['rejection_reason'] != null
                     ? l10n.rejectionReason(f['rejection_reason'])
                     : null,
-                onDelete: status != 'approved' ? () => _deleteFile(f) : null,
+                onDelete: _canDelete(f) ? () => _deleteFile(f) : null,
               );
             }),
           if (_paymentFiles.isNotEmpty) ...[

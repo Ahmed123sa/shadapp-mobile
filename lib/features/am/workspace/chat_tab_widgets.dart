@@ -320,9 +320,15 @@ Widget _textBubble(
             api: api,
             m: m,
             fallbackFileName: l10n.attachment,
+            gap: '${m['message'] ?? ''}'.trim().isNotEmpty ? 8 : 0,
           ),
-        ...chatApprovalFileCards(api: api, m: msg, fallbackFileName: l10n.attachment),
-        Text(m['message'] ?? '', style: Lx.text(context, size: 13.5, height: 1.65)),
+        ...chatApprovalFileCards(
+            api: api,
+            m: msg,
+            fallbackFileName: l10n.attachment,
+            gap: '${m['message'] ?? ''}'.trim().isNotEmpty ? 8 : 0),
+        if ('${m['message'] ?? ''}'.trim().isNotEmpty)
+          Text(m['message'] ?? '', style: Lx.text(context, size: 13.5, height: 1.65)),
         if (m['edited_at'] != null || (isMine && m['id'] != null))
           Padding(
             padding: const EdgeInsets.only(top: 3),

@@ -89,6 +89,25 @@ void main() {
     expect(find.text('No files'), findsOneWidget);
   });
 
+  testWidgets('X shows only on the client\'s own, unapproved, non-approval files', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"files":['
+          '{"id":1,"name":"mine.pdf","status":"pending","uploaded_by_type":"App\\\\Models\\\\Client"},'
+          '{"id":2,"name":"from-manager.pdf","status":"approved","uploaded_by_type":"App\\\\Models\\\\User"},'
+          '{"id":3,"name":"manager-pending.pdf","status":"pending","uploaded_by_type":"App\\\\Models\\\\User"},'
+          '{"id":4,"name":"approval-file.pdf","status":"pending","approval_id":9,"uploaded_by_type":"App\\\\Models\\\\User"}'
+          '],"definitions":[],"paymentFiles":[]}'),
+    );
+    final provider = FileProvider(repository: FileRepository(api: api));
+
+    await pumpPage(tester, provider, api);
+
+    expect(find.byIcon(Icons.close), findsOneWidget);
+  });
+
   testWidgets('deleting a file: confirming calls DELETE then reloads', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
@@ -97,7 +116,7 @@ void main() {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async {
       getCalls++;
       if (getCalls == 1) {
-        return jsonResponse('{"files":[{"id":1,"name":"passport.pdf","status":"pending"}],"definitions":[],"paymentFiles":[]}');
+        return jsonResponse('{"files":[{"id":1,"name":"passport.pdf","status":"pending","uploaded_by_type":"App\\\\Models\\\\Client"}],"definitions":[],"paymentFiles":[]}');
       }
       return jsonResponse('{"files":[],"definitions":[],"paymentFiles":[]}');
     });

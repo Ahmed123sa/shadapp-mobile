@@ -166,15 +166,20 @@ Future<void> chatSend({
   File? file,
   VoidCallback? clearFile,
   void Function(File file, String text, bool requiresAction)? onFileFailed,
+  // While a send is in flight the button is locked, so a second tap (often on
+  // a weak connection) cannot send the same file again. The picked file and
+  // the text stay in the composer until the send succeeds.
+  bool Function()? isSending,
+  void Function(bool sending)? setSending,
 }) async {
+  if (isSending?.call() == true) return;
   final text = controller.text.trim();
   if ((text.isEmpty && file == null) || wsId == null) return;
-  controller.clear();
   final requiresAction = consumeRequiresAction();
   final replyId = replyTo?['id'];
   setState(() {
     clearReplyTo();
-    clearFile?.call();
+    setSending?.call(true);
   });
   try {
     if (file != null) {
@@ -182,11 +187,17 @@ Future<void> chatSend({
     } else {
       await chatProvider.sendMessage(wsId, text, requiresAction: requiresAction, replyToId: replyId as int?);
     }
+    setState(() {
+      if (controller.text.trim() == text) controller.clear();
+      clearFile?.call();
+    });
     load();
     markRead();
   } catch (e, s) {
     AppLog.error('$logTag._send', e, s);
     if (file != null) onFileFailed?.call(file, text, requiresAction);
+  } finally {
+    setState(() => setSending?.call(false));
   }
 }
 
@@ -267,6 +278,8 @@ Widget chatFileAttachment({
   required ApiClient api,
   required Map<String, dynamic> m,
   required String fallbackFileName,
+  // Space under the card. Bubbles pass 0 and space their own content.
+  double gap = 8,
 }) {
   // The message only holds the file's URL. When an approval carries the same
   // file, its name and size are used so the card reads "1.jpg", not "Attachment".
@@ -292,6 +305,48 @@ Widget chatFileAttachment({
     }
   }
 
+  final isImage = const {'JPG', 'JPEG', 'PNG', 'GIF', 'WEBP'}.contains(ext);
+  if (isImage) {
+    // A picture is shown large inside the bubble, with its name and size
+    // under it. Tap opens it full size. If it cannot load, the card below is
+    // used instead.
+    return Builder(
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: gap),
+        child: GestureDetector(
+          key: const ValueKey('chat-image-preview'),
+          onTap: open,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 240),
+                child: Image.network(
+                  api.resolveFileUrl(m['file_url'] as String),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (_, child, progress) => progress == null
+                      ? child
+                      : const SizedBox(
+                          height: 160,
+                          child: Center(child: CircularProgressIndicator(color: Lx.crimsonInk, strokeWidth: 2)),
+                        ),
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    height: 80,
+                    child: Center(child: LxIcon('clip', size: 20, color: Lx.faint)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(fileName, style: Lx.text(context, size: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+            if (sizeText.isNotEmpty) Text(sizeText, style: Lx.text(context, size: 11, color: Lx.faint)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   // Mockup `.fcard`: line-2 border r12, padding 10 12, gap 12 — `.fic`
   // (34×42, r6, extension at the bottom, 8.5px .1em muted), `.fn` 12.5 /
   // `.fs` 11 faint, then the download link.
@@ -299,7 +354,7 @@ Widget chatFileAttachment({
     builder: (context) => GestureDetector(
       onTap: open,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: EdgeInsets.only(bottom: gap),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Lx.line2)),
         child: Row(children: [
@@ -333,6 +388,7 @@ List<Widget> chatApprovalFileCards({
   required ApiClient api,
   required Map<String, dynamic> m,
   required String fallbackFileName,
+  double gap = 8,
 }) {
   if (m['type'] == 'file') return const [];
   final files = m['approval']?['files'];
@@ -344,6 +400,7 @@ List<Widget> chatApprovalFileCards({
           api: api,
           m: {'file_url': f['file_url'], 'file_name': f['name'], 'file_size': f['size']},
           fallbackFileName: fallbackFileName,
+          gap: gap,
         ),
   ];
 }
