@@ -1,0 +1,26 @@
+# One line-ending style for every text file in the repo (LF), whatever the
+# editor or OS (Windows, macOS). Without this, a file saved on one machine
+# shows as fully "changed" on the other.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files: never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.jar binary
+*.jks binary
+*.keystore binary
+*.p12 binary
+*.mobileprovision binary
