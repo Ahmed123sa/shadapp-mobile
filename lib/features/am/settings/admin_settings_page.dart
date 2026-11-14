@@ -140,9 +140,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final list = (data['templates'] as List<dynamic>? ?? []);
       if (mounted) setState(() => _clauses = list.whereType<Map<String, dynamic>>().toList());
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.adminSettings_clausesLoadFailed)));
+      }
     }
     if (mounted) setState(() => _clausesLoading = false);
   }
@@ -192,17 +193,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final body = <String, dynamic>{'name': _nameController.text.trim()};
       if (!isAM) body['official_email'] = _emailController.text.trim();
       await _authProvider.updateProfileRaw(body);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.settingsSaved))
         ])));
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${AppLocalizations.of(context)!.settingsSaveFailed}: $e')));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -210,25 +213,28 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   Future<void> _saveTax() async {
     final value = double.tryParse(_taxController.text.trim());
     if (value == null || value < 0 || value > 100) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.settingsTaxInvalid)));
+      }
       return;
     }
     setState(() => _taxSaving = true);
     try {
       await _systemSettingsProvider.updateSetting('corporate_tax_percentage', value);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.settingsTaxSaved))
         ])));
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${AppLocalizations.of(context)!.settingsTaxSaveFailed}: $e')));
+      }
     }
     if (mounted) setState(() => _taxSaving = false);
   }
@@ -334,17 +340,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       final user = response['user'] as Map<String, dynamic>?;
       if (user != null) _avatarUrl = user['avatar_url'] as String?;
       if (mounted) setState(() {});
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.settingsImageChanged))
         ])));
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('${AppLocalizations.of(context)!.settingsImageChangeFailed}: $e')));
+      }
     }
   }
 
@@ -366,9 +374,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         _load();
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${AppLocalizations.of(context)!.signatureSaveFailed}: $e')));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -381,17 +390,19 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         _existingSigText = null;
       });
       await _load();
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Text(AppLocalizations.of(context)!.signatureDeleted)
         ])));
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${AppLocalizations.of(context)!.signatureDeleteFailed}: $e')));
+      }
     }
   }
 
@@ -411,9 +422,10 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         _load();
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${AppLocalizations.of(context)!.signatureSaveFailed}: $e')));
+      }
     }
   }
 
@@ -523,10 +535,11 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading)
+    if (_loading) {
       return const Scaffold(
           backgroundColor: Lx.page,
           body: Center(child: CircularProgressIndicator(color: Lx.crimsonInk)));
+    }
     final isAM = _api.role == 'account_manager' || _api.role == 'manager_assistant';
     final l10n = AppLocalizations.of(context)!;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';

@@ -120,9 +120,10 @@ class _MeetingsTabState extends State<MeetingsTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.meetingCancelFailed)));
+      }
     }
   }
 
@@ -156,9 +157,10 @@ class _MeetingsTabState extends State<MeetingsTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.meetingCompleteFailed)));
+      }
     }
   }
 
@@ -597,9 +599,10 @@ class _CreateMeetingFormState extends State<_CreateMeetingForm> {
         widget.onCreated();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingCreateFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -794,9 +797,10 @@ class _EditMeetingFormState extends State<_EditMeetingForm> {
         widget.onUpdated();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.meetingUpdateFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }

@@ -234,9 +234,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
         widget.onWorkspaceUpdate?.call();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)));
+      }
     }
   }
 
@@ -524,8 +525,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
     if (_loading) return const LoadingState(itemCount: 3);
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
     final l10n = AppLocalizations.of(context)!;
-    if (_payments.isEmpty)
+    if (_payments.isEmpty) {
       return EmptyState(icon: Icons.payment_outlined, title: l10n.paymentsEmpty);
+    }
     final isAM = _api.role == 'account_manager';
 
     return LuxeFormTheme(
@@ -792,9 +794,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
       }
     } catch (e, s) {
       AppLog.error('payments_tab._updateSchedule', e, s);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.paymentsInstallmentUpdateFailed)));
+      }
     }
   }
 
@@ -828,9 +831,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
       }
     } catch (e, s) {
       AppLog.error('payments_tab._deleteSchedule', e, s);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.paymentsInstallmentClearFailed)));
+      }
     }
   }
 

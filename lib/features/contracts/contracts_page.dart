@@ -88,11 +88,12 @@ class _ContractsPageState extends State<ContractsPage> {
       _clientType = wsData['client']?['client_type'] as String?;
       _workspaceStatus = (wsData['workspace']?['status'] ?? wsData['status']) as String?;
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -149,12 +150,14 @@ class _ContractsPageState extends State<ContractsPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null))
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) {
         return;
+      }
       if (!mounted) return;
       if (await maybeShowRequiredDocumentsDialog(context, e)) return;
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.actionFailed)));
+      }
     }
   }
 

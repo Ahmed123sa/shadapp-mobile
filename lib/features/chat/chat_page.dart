@@ -305,8 +305,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _load();
     } catch (e, s) {
       AppLog.error('chat_page._approve', e, s);
-      if (mounted)
+      if (mounted) {
         await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null);
+      }
     }
   }
 
@@ -328,9 +329,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         }
       } catch (e, s) {
         AppLog.error('chat_page._respondToMessage(edit_requested)', e, s);
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.actionFailed)));
+        }
       }
     } else {
       try {
@@ -339,11 +341,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       } catch (e, s) {
         AppLog.error('chat_page._respondToMessage', e, s);
         if (!mounted) return;
-        if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null))
+        if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) {
           return;
-        if (mounted)
+        }
+        if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.actionFailed)));
+        }
       }
     }
   }

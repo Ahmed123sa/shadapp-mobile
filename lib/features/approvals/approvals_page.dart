@@ -77,9 +77,10 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
           _load();
         }
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(l10n.approvals_actionFailed)));
+        }
       }
     } else {
       final confirm = await showDialog<bool>(
@@ -111,9 +112,10 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
           _load();
         }
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(l10n.approvals_actionFailed)));
+        }
       }
     }
   }

@@ -268,7 +268,9 @@ Widget _activity(BuildContext context, List<AppNotification> items) {
     if (t.contains('reject') ||
         t.contains('request') ||
         t.contains('pending') ||
-        t.contains('submitted')) return LxStatus.bad;
+        t.contains('submitted')) {
+      return LxStatus.bad;
+    }
     return LxStatus.wait;
   }
 
@@ -276,8 +278,9 @@ Widget _activity(BuildContext context, List<AppNotification> items) {
     final t = DateTime.tryParse(iso)?.toLocal();
     if (t == null) return '';
     final now = DateTime.now();
-    if (t.year == now.year && t.month == now.month && t.day == now.day)
+    if (t.year == now.year && t.month == now.month && t.day == now.day) {
       return DateFormat('HH:mm').format(t);
+    }
     final y = now.subtract(const Duration(days: 1));
     if (t.year == y.year && t.month == y.month && t.day == y.day) return l10n.chatYesterday;
     return DateFormat('d MMM', Localizations.localeOf(context).toString()).format(t);

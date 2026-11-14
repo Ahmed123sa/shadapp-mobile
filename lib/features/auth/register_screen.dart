@@ -181,13 +181,6 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v) ? null : message;
   }
 
-  String? _phoneValidator(String? value, String message) {
-    final v = (value ?? '').trim();
-    if (v.isEmpty) return message;
-    final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-    return digits.length >= 7 ? null : message;
-  }
-
   // ── Build ───────────────────────────────────────────────────────────────
 
   @override

@@ -285,9 +285,10 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       _load();
     } catch (e, s) {
       AppLog.error('chat_tab._requireAction', e, s);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.chatApprovalRequestFailed)));
+      }
     }
   }
 

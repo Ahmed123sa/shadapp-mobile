@@ -148,9 +148,10 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
       await _fileProvider.uploadFile(wsId, fields, file: file);
       _load();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('${l10n.files_uploadFailed}: $e')));
+      }
     }
     if (mounted) setState(() => _uploading = false);
   }
@@ -178,13 +179,15 @@ class _ClientFilesPageState extends State<ClientFilesPage> {
     if (wsId == null) return;
     try {
       await _fileProvider.deleteFile(wsId, file['id']);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.files_deleted)));
+      }
       _load();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.fileDeleteFailed(e))));
+      }
     }
   }
 

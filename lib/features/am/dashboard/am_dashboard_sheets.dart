@@ -278,9 +278,10 @@ class _CreateMeetingSheetState extends State<CreateMeetingSheet> {
       });
       widget.onCreated();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingCreateFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }

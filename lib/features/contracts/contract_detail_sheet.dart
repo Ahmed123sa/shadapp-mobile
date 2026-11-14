@@ -102,19 +102,21 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
       } else {
         await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.documentUploaded))
         ])));
+      }
       widget.onRefresh();
       await _loadUploadedFiles();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
+      }
     }
     if (mounted) setState(() => _uploading = false);
   }

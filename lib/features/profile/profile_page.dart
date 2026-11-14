@@ -70,17 +70,19 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _authProvider.uploadAvatar(file);
       _load();
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const LxIcon('check', size: 18, color: Lx.ok),
           const SizedBox(width: 8),
           Flexible(child: Text(AppLocalizations.of(context)!.profile_imageChanged))
         ])));
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.profile_imageChangeFailed)));
+      }
     }
   }
 
@@ -117,9 +119,10 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.pop(context, true);
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.profile_saveFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }

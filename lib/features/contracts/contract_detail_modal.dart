@@ -69,8 +69,9 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
   Future<void> _loadFullContract({bool force = false}) async {
     final existingClauses = widget.contract['clauses'] as List<dynamic>?;
     final existingReqDocs = widget.contract['required_documents'] as List<dynamic>?;
-    if (!force && ((existingClauses?.isNotEmpty == true) || (existingReqDocs?.isNotEmpty == true)))
+    if (!force && ((existingClauses?.isNotEmpty == true) || (existingReqDocs?.isNotEmpty == true))) {
       return;
+    }
 
     final wsId = widget.workspaceId ?? _api.workspaceId;
     if (wsId == null) return;
@@ -124,22 +125,24 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
       } else {
         await _fileProvider.uploadFile(wsId, fields, file: File(pf.path!));
       }
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const LxIcon('check', size: 18, color: Lx.ok),
           const SizedBox(width: 8),
           Flexible(child: Text(AppLocalizations.of(context)!.documentUploaded))
         ])));
+      }
       widget.onRefresh();
       await Future.wait([
         _loadUploadedFiles(),
         _loadFullContract(force: true),
       ]);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context)!.documentUploadFailed(e.toString()))));
+      }
     }
     if (mounted) setState(() => _uploading = false);
   }
@@ -619,14 +622,16 @@ class _ContractDetailModalState extends State<ContractDetailModal> {
 
     try {
       await _fileProvider.deleteFile(wsId, file['id']);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fileDeleted)));
+      }
       await _loadUploadedFiles();
       widget.onRefresh();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.fileDeleteFailed(e.toString()))));
+      }
     }
   }
 }

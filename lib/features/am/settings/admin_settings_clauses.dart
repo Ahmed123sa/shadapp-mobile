@@ -123,14 +123,16 @@ Future<void> showSaveClauseDialog({
   try {
     if (existing == null) {
       await contractProvider.createClauseTemplate(body);
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseAdded)));
+      }
     } else {
       await contractProvider.updateClauseTemplate(existing['id'] as int, body);
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseUpdated)));
+      }
     }
     await reloadClauses();
   } catch (e) {
@@ -187,9 +189,10 @@ Future<void> deleteClauseTemplate({
   if (ok != true) return;
   try {
     await contractProvider.deleteClauseTemplate(clause['id'] as int);
-    if (context.mounted)
+    if (context.mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseDeleted)));
+    }
     await reloadClauses();
   } catch (e) {
     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
@@ -222,9 +225,10 @@ Future<void> saveClauseTemplateOrder({
   try {
     final ids = clauses.map((c) => c['id']).toList();
     await contractProvider.reorderClauseTemplates(ids);
-    if (context.mounted)
+    if (context.mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(l10n.adminSettings_clauseOrderSaved)));
+    }
   } catch (e) {
     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     await reloadClauses();

@@ -101,9 +101,10 @@ class _ContractsTabState extends State<ContractsTab> {
         await _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)));
+      }
     }
   }
 
@@ -438,9 +439,10 @@ class _ContractsTabState extends State<ContractsTab> {
           _load();
         }
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           messenger
               .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)));
+        }
       }
       return;
     }
@@ -497,9 +499,10 @@ class _ContractsTabState extends State<ContractsTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         messenger
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorOccurred)));
+      }
     }
   }
 

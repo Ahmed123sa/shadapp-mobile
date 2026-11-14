@@ -117,7 +117,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
     final contractsList = safeList(ws['contracts']);
     final paymentsList = safeList(ws['payments']);
     if (paymentsList
-        .any((p) => p is Map && (p['status'] == 'approved' || p['status'] == 'pending'))) return 5;
+        .any((p) => p is Map && (p['status'] == 'approved' || p['status'] == 'pending'))) {
+      return 5;
+    }
     if (contractsList.any((c) => c is Map && c['status'] == 'completed')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'archived')) return 4;
     if (contractsList.any((c) => c is Map && c['status'] == 'company_approved')) return 4;
@@ -186,7 +188,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
         final type = msg.data['type'] as String? ?? '';
         if (!(type.startsWith('contract.') ||
             type.startsWith('payment.') ||
-            type.startsWith('workspace.'))) return;
+            type.startsWith('workspace.'))) {
+          return;
+        }
         _loadClientData();
         _contractRefreshNotifier.value++;
         final body = msg.notification?.body ?? msg.data['message'] as String?;
@@ -891,8 +895,9 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen>
       return true;
     } catch (e) {
       if (!mounted) return false;
-      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null))
+      if (await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null)) {
         return false;
+      }
       if (!mounted) return false;
       if (await maybeShowRequiredDocumentsDialog(context, e)) return false;
       if (mounted) {

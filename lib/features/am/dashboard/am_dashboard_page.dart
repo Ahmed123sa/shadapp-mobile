@@ -296,9 +296,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         if (!mounted) return;
         context.push('/am/workspace/${newWs['id']}');
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(AppLocalizations.of(context)!.amWorkspaceCreateFailed)));
+        }
       }
       return;
     }
@@ -652,9 +653,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       );
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.amMeetingsLoadFailed)));
+      }
     }
   }
 
@@ -680,9 +682,10 @@ class _AmDashboardPageState extends State<AmDashboardPage> {
         ),
       );
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.amClientsLoadFailed)));
+      }
     }
   }
 }

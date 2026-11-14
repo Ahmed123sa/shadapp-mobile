@@ -121,17 +121,19 @@ class _SettingsPageState extends State<SettingsPage> {
         await _settingsProvider.uploadClientAvatar(cid, file);
         _load();
       }
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const LxIcon('check', size: 18, color: Lx.ok),
           const SizedBox(width: 8),
           Flexible(child: Text(AppLocalizations.of(context)!.settings_imageChanged))
         ])));
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.settings_imageChangeFailed)));
+      }
     }
   }
 
@@ -152,8 +154,9 @@ class _SettingsPageState extends State<SettingsPage> {
           'name': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
         };
-        if (_dateOfBirth != null)
+        if (_dateOfBirth != null) {
           body['date_of_birth'] = _dateOfBirth!.toIso8601String().substring(0, 10);
+        }
         await _settingsProvider.updateSubUserProfile(sid, body);
         await _api.setUserData(name: _nameController.text.trim());
       } else {
@@ -162,8 +165,9 @@ class _SettingsPageState extends State<SettingsPage> {
         final body = <String, dynamic>{
           'contact_person': _nameController.text.trim(),
         };
-        if (_dateOfBirth != null)
+        if (_dateOfBirth != null) {
           body['date_of_birth'] = _dateOfBirth!.toIso8601String().substring(0, 10);
+        }
         await _settingsProvider.updateClientProfile(cid, body);
       }
       if (mounted) {
@@ -176,9 +180,10 @@ class _SettingsPageState extends State<SettingsPage> {
         Navigator.pop(context, true);
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.settings_saveFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
   }

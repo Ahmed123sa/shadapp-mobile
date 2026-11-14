@@ -84,18 +84,20 @@ class _FilesTabState extends State<FilesTab> {
     final file = File(result.files.single.path!);
     try {
       await _fileProvider.uploadFile(widget.workspaceId!, {}, file: file);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.filesUploadSuccess))
         ])));
+      }
       _load();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesUploadFailed)));
+      }
     }
   }
 
@@ -144,18 +146,20 @@ class _FilesTabState extends State<FilesTab> {
         'description': descCtrl.text.trim(),
         'is_required': isRequired.value,
       });
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Row(children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
           Expanded(child: Text(AppLocalizations.of(context)!.filesDefinitionAdded))
         ])));
+      }
       _load();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.filesDefinitionAddFailed)));
+      }
     }
   }
 
@@ -191,9 +195,10 @@ class _FilesTabState extends State<FilesTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.filesDefinitionDeleteFailed)));
+      }
     }
   }
 
@@ -226,9 +231,10 @@ class _FilesTabState extends State<FilesTab> {
       await _fileProvider.reviewFile(fileId, action: action, reason: reason);
       _load();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.filesActionFailed)));
+      }
     }
   }
 

@@ -116,9 +116,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
           final upd = await _subUserProvider.updatePermissions(created['id'] as int, perms);
           created['permissions'] = upd['sub_user']?['permissions'] ?? perms;
         } catch (_) {
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+          }
         }
       }
       _subUsers.add(created);
@@ -129,9 +130,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
       _newDob = null;
       ok = true;
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.subusers_createFailed)));
+      }
     }
     if (mounted) setState(() => _saving = false);
     return ok;
@@ -146,9 +148,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
         if (_expandedId == id) _expandedId = null;
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.subusers_deleteFailed)));
+      }
     }
   }
 
@@ -166,9 +169,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
         });
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+      }
     }
   }
 
@@ -200,9 +204,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
       }
       return true;
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.subusers_updateFailed)));
+      }
       return false;
     }
   }
@@ -222,9 +227,10 @@ class _SubUsersPageState extends State<SubUsersPage> {
         if (mounted && _passwordSuccessId == id) setState(() => _passwordSuccessId = null);
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.subusers_passwordChangeFailed)));
+      }
     }
   }
 

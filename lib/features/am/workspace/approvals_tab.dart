@@ -99,9 +99,10 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.approvalSendFailed)));
+      }
     }
     if (mounted) setState(() => _sending = false);
   }
@@ -122,9 +123,10 @@ class _ApprovalsTabState extends State<ApprovalsTab> {
         _load();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.approvalActionFailed)));
+      }
     }
   }
 
