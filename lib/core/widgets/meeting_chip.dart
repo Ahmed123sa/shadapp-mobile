@@ -7,6 +7,7 @@ import '../luxe/tokens.dart';
 import '../theme.dart';
 import '../helpers/meeting_helpers.dart';
 import 'luxe/luxe_widgets.dart';
+import 'meeting_answer.dart';
 
 class MeetingChip extends StatelessWidget {
   final Map<String, dynamic> metadata;
@@ -15,7 +16,17 @@ class MeetingChip extends StatelessWidget {
   /// the manager/super admin the host. Clients leave it null.
   final Future<void> Function(int meetingId)? onEnter;
   final bool? isHost;
-  const MeetingChip({super.key, required this.metadata, this.onEnter, this.isHost});
+
+  /// Client side: when set, the card asks whether the time works and calls
+  /// this with the answer ('accepted' / 'declined', optional note). Everyone
+  /// else (staff) sees the client's answer as a status line instead.
+  final Future<void> Function(int meetingId, String response, String? note)? onRespond;
+
+  /// Whether this card may still be answered: it is the newest card of its
+  /// meeting and the meeting has not started yet.
+  final bool canAnswer;
+
+  const MeetingChip({super.key, required this.metadata, this.onEnter, this.isHost, this.onRespond, this.canAnswer = false});
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +178,18 @@ class MeetingChip extends StatelessWidget {
           if (action != null) ...[
             const SizedBox(height: 12),
             Align(alignment: AlignmentDirectional.centerStart, child: action),
+          ],
+          if (status == 'scheduled') ...[
+            const SizedBox(height: 10),
+            if (onRespond != null && metadata['meeting_id'] is int)
+              MeetingAnswer(
+                response: metadata['client_response'],
+                note: metadata['client_response_note'],
+                canAnswer: canAnswer,
+                onAnswer: (response, note) => onRespond!(metadata['meeting_id'] as int, response, note),
+              )
+            else if (onRespond == null)
+              MeetingResponseBadge(response: metadata['client_response'], note: metadata['client_response_note']),
           ],
         ],
       ),

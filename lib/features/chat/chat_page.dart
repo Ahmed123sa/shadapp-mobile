@@ -63,6 +63,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late final ApiClient _api = widget.api ?? ApiClient();
   late final ChatProvider _chatProvider = widget.chatProvider ?? ChatProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
+  late final MeetingProvider _meetingProvider = widget.meetingProvider ?? MeetingProvider();
   // No cross-tenant fallback (see docs/state-layer-migration-plan.md, P0-1):
   // a null workspaceId means "we don't know this client's workspace yet",
   // not "assume workspace 1". Every call site below guards on this being
@@ -314,6 +315,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (mounted) {
         await maybeShowSignatureRequiredDialog(context, e, isSubUser: _api.subUserId != null);
       }
+    }
+  }
+
+  /// The client accepts or declines the time of a meeting from its chat card.
+  Future<void> _respondToMeeting(int meetingId, String response, String? note) async {
+    try {
+      await _meetingProvider.respondToMeeting(meetingId, response, note: note);
+      if (mounted) _load();
+    } catch (e, st) {
+      AppLog.error('chat_page._respondToMeeting', e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.meetingAnswerFailed)));
+      }
+      rethrow;
     }
   }
 
@@ -610,6 +626,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         api: _api,
         onApprove: _approve,
         onRespondToMessage: _respondToMessage,
+        onRespondToMeeting: _respondToMeeting,
         onGoToPayments: widget.onGoToPayments != null ? () => widget.onGoToPayments!.call() : null,
         onLongPressMessage: _showReplyMenu,
       );

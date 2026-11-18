@@ -548,6 +548,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingChipRescheduled => 'Rescheduled';
 
   @override
+  String get meetingResponsePending => 'Waiting for the client\'s answer';
+
+  @override
+  String get meetingResponseAccepted => 'Client accepted this time';
+
+  @override
+  String get meetingResponseDeclined => 'Client asked for another time';
+
+  @override
+  String meetingResponseNote(Object note) {
+    return 'Note: $note';
+  }
+
+  @override
+  String get meetingAnswerQuestion => 'Does this time work for you?';
+
+  @override
+  String get meetingAnswerAccept => 'Accept this time';
+
+  @override
+  String get meetingAnswerDecline => 'Not suitable';
+
+  @override
+  String get meetingAnswerNoteHint =>
+      'Suggest another time or leave a note (optional)';
+
+  @override
+  String get meetingAnswerSend => 'Send';
+
+  @override
+  String get meetingAnswerCancel => 'Cancel';
+
+  @override
+  String get meetingAnswerYouAccepted => 'You accepted this time';
+
+  @override
+  String get meetingAnswerYouDeclined => 'You said this time is not suitable';
+
+  @override
+  String get meetingAnswerChange => 'Change answer';
+
+  @override
+  String get meetingAnswerFailed => 'Could not send your answer. Try again.';
+
+  @override
   String get passwordFieldLabel => 'Password';
 
   @override
@@ -6243,7 +6288,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adsToggleHint =>
-      'The agency fee is part of the contract value, not added on top.';
+      'The contract value is the ad budget. The agency fee is added on top of it.';
+
+  @override
+  String get adsPreviewFee => 'Agency fee on top';
+
+  @override
+  String get adsPreviewBeforeTax => 'Total before tax';
 
   @override
   String get adsPercentageLabel => 'Ads management fee (%)';
@@ -6267,7 +6318,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adsConversionHint =>
-      'Added on top of the contract value and not taxed. Leave empty for none.';
+      'Added on top, calculated on the full ad budget, and not taxed. Leave empty for none.';
 
   @override
   String get adsConversionInvalid => 'Enter a percentage between 0 and 100.';
