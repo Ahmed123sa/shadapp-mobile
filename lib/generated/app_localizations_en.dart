@@ -6291,4 +6291,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get totalDue => 'Total due';
+
+  @override
+  String get payMethodTitle => 'Where to transfer';
+
+  @override
+  String get payMethodTransferTo => 'Transfer to';
+
+  @override
+  String get payMethodKindWallet => 'Wallet';
+
+  @override
+  String get payMethodKindInstapay => 'InstaPay';
+
+  @override
+  String get payMethodKindBank => 'Bank account';
+
+  @override
+  String get payMethodKindCheque => 'Cheque';
+
+  @override
+  String get payMethodFieldPhone => 'Mobile number';
+
+  @override
+  String get payMethodFieldAccountName => 'Account holder';
+
+  @override
+  String get payMethodFieldAccountNumber => 'Account number';
+
+  @override
+  String get payMethodFieldBankName => 'Bank';
+
+  @override
+  String get payMethodFieldIban => 'IBAN';
+
+  @override
+  String get payMethodFieldSwift => 'SWIFT';
+
+  @override
+  String get payMethodFieldInstructions => 'Instructions';
+
+  @override
+  String get payMethodCopy => 'Copy';
+
+  @override
+  String get payMethodCopied => 'Copied';
+
+  @override
+  String get payMethodTotalToTransfer => 'Total to transfer';
+
+  @override
+  String get payMethodChooseFirst => 'Choose where you are transferring to.';
+
+  @override
+  String payMethodFee(Object percent) {
+    return 'Fee ($percent%)';
+  }
 }

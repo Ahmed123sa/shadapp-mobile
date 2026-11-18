@@ -146,6 +146,8 @@ void main() {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
       final uri = inv.positionalArguments[0] as Uri;
       if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      // The sheet asks for the company's payment methods; none configured here.
+      if (uri.path.endsWith('/payment-methods')) return jsonResponse('{"methods":[]}');
       loadCount++;
       return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
     });
@@ -172,6 +174,53 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
     expect(find.text('Payment request sent'), findsOneWidget);
     expect(loadCount, 2); // initial load + reload after successful submit
+  });
+
+  testWidgets('with company payment methods configured, the client picks one and the request carries its id', (tester) async {
+    final httpClient = MockHttpClient();
+    final api = buildTestApiClient(client: httpClient);
+    api.workspaceId = 5;
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+      final uri = inv.positionalArguments[0] as Uri;
+      if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
+      if (uri.path.endsWith('/payment-methods')) {
+        return jsonResponse('{"methods":[{"id":7,"kind":"wallet","label":"Vodafone Cash","details":{"phone":"01012345678"},"fee_percent":1}]}');
+      }
+      return jsonResponse('{"payments":[],"available_methods":["bank_transfer"],"tax_summary":null}');
+    });
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await pumpPage(tester, api);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('payment-amount')), '1000');
+    await tester.pumpAndSettle();
+
+    // The old fixed chips are gone; sending without a pick is refused in the sheet.
+    expect(find.byKey(const ValueKey('pay-method-bank_transfer')), findsNothing);
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+    expect(sentBody, isNull);
+    expect(find.text('Choose where you are transferring to.'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const ValueKey('pay-method-id-7')));
+    await tester.tap(find.byKey(const ValueKey('pay-method-id-7')));
+    await tester.pumpAndSettle();
+    expect(find.text('01012345678'), findsOneWidget);
+    expect(find.text('1,010 SAR'), findsOneWidget);
+
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Payment'));
+    await tester.pumpAndSettle();
+
+    expect(sentBody!['payment_method_id'], 7);
+    expect(sentBody!.containsKey('method_type'), isFalse);
+    expect(sentBody!['amount'], 1000.0);
   });
 
   testWidgets('requesting a payment with an invalid amount shows a validation message and does not call the API', (tester) async {

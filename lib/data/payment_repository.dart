@@ -30,6 +30,18 @@ class PaymentRepository {
     return safeList(res['payments']);
   }
 
+  /// The company's payment methods open to this workspace's client (his
+  /// account type only). [currency] / [contractId] narrow it: wallet and
+  /// InstaPay disappear for a non-EGP contract.
+  Future<List<Map<String, dynamic>>> fetchMethods(int workspaceId, {String? currency, int? contractId}) async {
+    final q = <String, String>{
+      if (currency != null && currency.isNotEmpty) 'currency': currency,
+      if (contractId != null) 'contract_id': '$contractId',
+    };
+    final res = await _api.get('/workspaces/$workspaceId/payment-methods${q.isEmpty ? '' : '?${Uri(queryParameters: q).query}'}');
+    return safeList(res['methods']).whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
   /// Raw `/workspaces/:id/payments` envelope — payments_page.dart also reads
   /// the sibling `available_methods` and `tax_summary` fields from the same
   /// response, which [fetchForWorkspace] discards.
@@ -95,12 +107,16 @@ class PaymentRepository {
   Future<Map<String, dynamic>> uploadProof(
     int workspaceId,
     dynamic paymentId,
-    String methodType, {
+    String? methodType, {
+    int? paymentMethodId,
     List<File>? files,
     List<Uint8List>? bytesFiles,
     List<String>? bytesNames,
   }) {
-    final fields = <String, dynamic>{'method_type': methodType};
+    final fields = <String, dynamic>{
+      if (methodType != null) 'method_type': methodType,
+      if (paymentMethodId != null) 'payment_method_id': paymentMethodId,
+    };
     if (files != null && files.isNotEmpty) {
       return _api.multipartPut(
         '/workspaces/$workspaceId/payments/$paymentId',

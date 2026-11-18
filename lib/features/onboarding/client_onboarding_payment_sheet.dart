@@ -21,6 +21,7 @@ import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/payment_provider.dart';
+import '../payments/payment_method_picker.dart';
 
 void showOnboardingPaymentSheet({
   required BuildContext context,
@@ -49,6 +50,7 @@ void showOnboardingPaymentSheet({
   final amountCtrl =
       TextEditingController(text: suggestedAmount > 0 ? suggestedAmount.toStringAsFixed(0) : '');
   final selectedMethod = ValueNotifier<String>('bank_transfer');
+  final choice = PaymentMethodChoice();
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
   final errorNotifier = ValueNotifier<String?>(null);
@@ -114,30 +116,39 @@ void showOnboardingPaymentSheet({
               ]),
               const SizedBox(height: 20),
               label(l10n.onboarding_paymentMethodField),
-              ValueListenableBuilder<String>(
-                valueListenable: selectedMethod,
-                builder: (_, val, __) => Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final e in methodLabels.entries)
-                      GestureDetector(
-                        key: ValueKey('pay-method-${e.key}'),
-                        onTap: () => selectedMethod.value = e.key,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: val == e.key ? const Color(0x33941414) : null,
-                            borderRadius: BorderRadius.circular(Lx.rPill),
-                            border: Border.all(
-                                color: val == e.key ? const Color(0x80941414) : Lx.line2),
+              PaymentMethodPicker(
+                choice: choice,
+                currency: currency,
+                amount: () => double.tryParse(amountCtrl.text),
+                amountListenable: amountCtrl,
+                fetch: (cur) => workspaceId == null
+                    ? Future.value(const [])
+                    : paymentProvider.fetchMethods(workspaceId, currency: cur),
+                fallback: ValueListenableBuilder<String>(
+                    valueListenable: selectedMethod,
+                    builder: (_, val, __) => Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final e in methodLabels.entries)
+                          GestureDetector(
+                            key: ValueKey('pay-method-${e.key}'),
+                            onTap: () => selectedMethod.value = e.key,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: val == e.key ? const Color(0x33941414) : null,
+                                borderRadius: BorderRadius.circular(Lx.rPill),
+                                border: Border.all(
+                                    color: val == e.key ? const Color(0x80941414) : Lx.line2),
+                              ),
+                              child: Text(e.value,
+                                  style:
+                                      Lx.text(ctx, size: 12, color: val == e.key ? Lx.ink : Lx.ink2)),
+                            ),
                           ),
-                          child: Text(e.value,
-                              style:
-                                  Lx.text(ctx, size: 12, color: val == e.key ? Lx.ink : Lx.ink2)),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -252,6 +263,7 @@ void showOnboardingPaymentSheet({
                               amountCtrl,
                               currency,
                               selectedMethod.value,
+                              choice,
                               proofFiles,
                               paymentProvider,
                               loadClientData,
@@ -280,6 +292,7 @@ Future<void> _submitPaymentOnboarding(
   TextEditingController amountCtrl,
   String currency,
   String methodType,
+  PaymentMethodChoice choice,
   List<Map<String, dynamic>> proofFiles,
   PaymentProvider paymentProvider,
   Future<void> Function() loadClientData,
@@ -296,6 +309,11 @@ Future<void> _submitPaymentOnboarding(
     if (ctx.mounted) setSheetState(() {});
     return;
   }
+  if (choice.required && choice.methodId == null) {
+    errorNotifier.value = l10n.payMethodChooseFirst;
+    if (ctx.mounted) setSheetState(() {});
+    return;
+  }
   if (workspaceId == null) {
     errorNotifier.value = l10n.onboarding_workspaceUnavailable;
     if (ctx.mounted) setSheetState(() {});
@@ -307,7 +325,7 @@ Future<void> _submitPaymentOnboarding(
     final fields = <String, dynamic>{
       'amount': amount,
       'currency': currency,
-      'method_type': methodType,
+      if (choice.methodId != null) 'payment_method_id': choice.methodId else 'method_type': methodType,
     };
 
     final nativeFiles =

@@ -6267,4 +6267,60 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get totalDue => 'الإجمالي المستحق';
+
+  @override
+  String get payMethodTitle => 'التحويل على';
+
+  @override
+  String get payMethodTransferTo => 'حوّل إلى';
+
+  @override
+  String get payMethodKindWallet => 'محفظة';
+
+  @override
+  String get payMethodKindInstapay => 'إنستاباي';
+
+  @override
+  String get payMethodKindBank => 'حساب بنكي';
+
+  @override
+  String get payMethodKindCheque => 'شيك';
+
+  @override
+  String get payMethodFieldPhone => 'رقم الموبايل';
+
+  @override
+  String get payMethodFieldAccountName => 'اسم صاحب الحساب';
+
+  @override
+  String get payMethodFieldAccountNumber => 'رقم الحساب';
+
+  @override
+  String get payMethodFieldBankName => 'البنك';
+
+  @override
+  String get payMethodFieldIban => 'IBAN';
+
+  @override
+  String get payMethodFieldSwift => 'SWIFT';
+
+  @override
+  String get payMethodFieldInstructions => 'تعليمات';
+
+  @override
+  String get payMethodCopy => 'نسخ';
+
+  @override
+  String get payMethodCopied => 'تم النسخ';
+
+  @override
+  String get payMethodTotalToTransfer => 'الإجمالي المطلوب تحويله';
+
+  @override
+  String get payMethodChooseFirst => 'اختار التحويل على أنهي حساب.';
+
+  @override
+  String payMethodFee(Object percent) {
+    return 'رسوم ($percent%)';
+  }
 }
