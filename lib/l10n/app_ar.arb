@@ -2030,5 +2030,35 @@
   "adsExclConversion": "قيمة العقد غير شاملة رسوم التحويل",
   "taxExcludedToggle": "استثناء الضريبة",
   "taxExcludedHint": "لا تُحسب ضريبة على هذا العقد.",
-  "totalDue": "الإجمالي المستحق"
+  "totalDue": "الإجمالي المستحق",
+  "payMethodTitle": "التحويل على",
+  "payMethodTransferTo": "حوّل إلى",
+  "payMethodKindWallet": "محفظة",
+  "payMethodKindInstapay": "إنستاباي",
+  "payMethodKindBank": "حساب بنكي",
+  "payMethodKindCheque": "شيك",
+  "payMethodFieldPhone": "رقم الموبايل",
+  "payMethodFieldAccountName": "اسم صاحب الحساب",
+  "payMethodFieldAccountNumber": "رقم الحساب",
+  "payMethodFieldBankName": "البنك",
+  "payMethodFieldIban": "IBAN",
+  "payMethodFieldSwift": "SWIFT",
+  "payMethodFieldInstructions": "تعليمات",
+  "payMethodCopy": "نسخ",
+  "payMethodCopied": "تم النسخ",
+  "payMethodTotalToTransfer": "الإجمالي المطلوب تحويله",
+  "payMethodChooseFirst": "اختار التحويل على أنهي حساب.",
+  "payMethodFee": "رسوم ({percent}%)",
+  "@payMethodFee": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "payMethodFeeAmount": "رسوم {amount} {currency}",
+  "@payMethodFeeAmount": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  }
 }

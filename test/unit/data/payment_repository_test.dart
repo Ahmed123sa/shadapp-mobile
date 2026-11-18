@@ -139,6 +139,34 @@ void main() {
         headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
   });
 
+  test('uploadProof sends payment_method_id instead of method_type when a configured method is picked', () async {
+    Map<String, dynamic>? sentBody;
+    when(() => httpClient.put(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((inv) async {
+      sentBody = jsonDecode(inv.namedArguments[#body] as String) as Map<String, dynamic>;
+      return jsonResponse('{}');
+    });
+
+    await repo.uploadProof(5, 9, null, paymentMethodId: 3);
+
+    expect(sentBody, {'payment_method_id': 3});
+  });
+
+  test('fetchMethods asks for the workspace methods with the currency and contract', () async {
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse('{"methods":[{"id":1,"label":"Vodafone Cash"}]}'),
+    );
+
+    final methods = await repo.fetchMethods(5, currency: 'EGP', contractId: 7);
+
+    expect(methods.single['label'], 'Vodafone Cash');
+    verify(() => httpClient.get(
+        any(that: predicate<Uri>((u) =>
+            u.path.endsWith('/workspaces/5/payment-methods') &&
+            u.queryParameters['currency'] == 'EGP' &&
+            u.queryParameters['contract_id'] == '7')),
+        headers: any(named: 'headers'))).called(1);
+  });
+
   // PHP does not parse the body of a multipart PUT request at all (files
   // and fields both go missing), so a real PUT here would silently drop the
   // proof file it's supposed to attach — the exact bug this sends a POST

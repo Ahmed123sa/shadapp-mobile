@@ -12023,6 +12023,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total due'**
   String get totalDue;
+
+  /// No description provided for @payMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to transfer'**
+  String get payMethodTitle;
+
+  /// No description provided for @payMethodTransferTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer to'**
+  String get payMethodTransferTo;
+
+  /// No description provided for @payMethodKindWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get payMethodKindWallet;
+
+  /// No description provided for @payMethodKindInstapay.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay'**
+  String get payMethodKindInstapay;
+
+  /// No description provided for @payMethodKindBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank account'**
+  String get payMethodKindBank;
+
+  /// No description provided for @payMethodKindCheque.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheque'**
+  String get payMethodKindCheque;
+
+  /// No description provided for @payMethodFieldPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number'**
+  String get payMethodFieldPhone;
+
+  /// No description provided for @payMethodFieldAccountName.
+  ///
+  /// In en, this message translates to:
+  /// **'Account holder'**
+  String get payMethodFieldAccountName;
+
+  /// No description provided for @payMethodFieldAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account number'**
+  String get payMethodFieldAccountNumber;
+
+  /// No description provided for @payMethodFieldBankName.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get payMethodFieldBankName;
+
+  /// No description provided for @payMethodFieldIban.
+  ///
+  /// In en, this message translates to:
+  /// **'IBAN'**
+  String get payMethodFieldIban;
+
+  /// No description provided for @payMethodFieldSwift.
+  ///
+  /// In en, this message translates to:
+  /// **'SWIFT'**
+  String get payMethodFieldSwift;
+
+  /// No description provided for @payMethodFieldInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get payMethodFieldInstructions;
+
+  /// No description provided for @payMethodCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get payMethodCopy;
+
+  /// No description provided for @payMethodCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get payMethodCopied;
+
+  /// No description provided for @payMethodTotalToTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Total to transfer'**
+  String get payMethodTotalToTransfer;
+
+  /// No description provided for @payMethodChooseFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where you are transferring to.'**
+  String get payMethodChooseFirst;
+
+  /// No description provided for @payMethodFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee ({percent}%)'**
+  String payMethodFee(Object percent);
+
+  /// No description provided for @payMethodFeeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee {amount} {currency}'**
+  String payMethodFeeAmount(Object amount, Object currency);
 }
 
 class _AppLocalizationsDelegate

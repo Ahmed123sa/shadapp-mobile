@@ -18,10 +18,10 @@ void main() {
       '"workspace":{"client":{"company_name":"Orbit Clinics"},"manager":{"name":"Mariam Fathy"}}}],"current_page":1,"last_page":2,"total":30},'
       '"stats":{"total_count":30,"approved_count":20,"pending_count":4,"approved_by_currency":{"EGP":79500,"USD":100}}}';
 
-  Future<MockHttpClient> pumpPage(WidgetTester tester) async {
+  Future<MockHttpClient> pumpPage(WidgetTester tester, {String data = body}) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
-    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async => jsonResponse(body));
+    when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((_) async => jsonResponse(data));
     final provider = PaymentProvider(repository: PaymentRepository(api: api));
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
@@ -46,6 +46,23 @@ void main() {
     expect(find.text('4'), findsOneWidget); // pending
     verify(() => httpClient.get(any(that: predicate<Uri>((u) => u.path.endsWith('/all-payments') && u.queryParameters['page'] == '1')),
         headers: any(named: 'headers'))).called(1);
+  });
+
+  testWidgets('a card shows the company account the client picked and the wallet fee', (tester) async {
+    await pumpPage(tester,
+        data: '{"payments":{"data":[{"id":31,"amount":"2000","currency":"EGP","status":"pending","method_type":"mobile_wallet",'
+            '"payment_method":{"id":3,"kind":"wallet","label":"Vodafone Cash"},"fee_amount":"20.00","created_at":"2026-10-17T10:00:00Z",'
+            '"workspace":{"client":{"company_name":"Orbit Clinics"},"manager":{"name":"Mariam Fathy"}}},'
+            '{"id":30,"amount":"500","currency":"EGP","status":"pending","method_type":"instapay","created_at":"2026-10-17T10:00:00Z",'
+            '"workspace":{"client":{"company_name":"Relax"},"manager":{"name":"Taha Ahmed"}}}],"current_page":1,"last_page":1,"total":2},'
+            '"stats":{"total_count":2,"approved_count":0,"pending_count":2}}');
+
+    expect(find.text('#31 · VODAFONE CASH'), findsOneWidget);
+    expect(find.byKey(const ValueKey('finance-fee-31')), findsOneWidget);
+    expect(find.text('Fee 20 EGP'), findsOneWidget);
+    // A payment with no company account keeps its plain method and shows no fee.
+    expect(find.text('#30 · INSTAPAY'), findsOneWidget);
+    expect(find.byKey(const ValueKey('finance-fee-30')), findsNothing);
   });
 
   testWidgets('a status chip refetches with that status', (tester) async {

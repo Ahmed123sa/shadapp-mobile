@@ -75,7 +75,7 @@ void main() {
     await repo.reviewFile(7, action: 'rejected', reason: 'blurry scan');
 
     expect(sentBody!['action'], 'rejected');
-    expect(sentBody!['reason'], 'blurry scan');
+    expect(sentBody!['rejection_reason'], 'blurry scan');
   });
 
   test('reviewFile omits the reason key when approving', () async {
@@ -87,6 +87,6 @@ void main() {
 
     await repo.reviewFile(7, action: 'approved');
 
-    expect(sentBody!.containsKey('reason'), isFalse);
+    expect(sentBody!.containsKey('rejection_reason'), isFalse);
   });
 }

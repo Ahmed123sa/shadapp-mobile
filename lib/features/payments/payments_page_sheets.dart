@@ -31,6 +31,7 @@ import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../providers/payment_provider.dart';
+import 'payment_method_picker.dart';
 
 // ── Luxe sheet pieces (mockup `paySheet`), shared by both sheets ──
 
@@ -234,6 +235,7 @@ void showRequestPaymentSheet({
       getAvailableMethods().isNotEmpty ? getAvailableMethods() : methodLabels.keys.toList();
   final amountCtrl = TextEditingController();
   final selectedMethod = ValueNotifier<String>(available.first);
+  final choice = PaymentMethodChoice();
   // Only let the user pick a contract when there is more than one payable
   // contract; 0/1 keeps the legacy auto-link behaviour byte-identical and the
   // payload stays contract_id-free so the backend falls back to the latest
@@ -353,7 +355,19 @@ void showRequestPaymentSheet({
               ],
               const SizedBox(height: 16),
               _label(ctx, pl10n.payments_paymentMethod),
-              _methodChips(ctx, methodLabels, selectedMethod),
+              ValueListenableBuilder<int?>(
+                valueListenable: selectedContract,
+                builder: (_, contractId, __) => PaymentMethodPicker(
+                  choice: choice,
+                  currency: currencyFor(contractId),
+                  amount: () => double.tryParse(amountCtrl.text),
+                  amountListenable: amountCtrl,
+                  fetch: (cur) => api.workspaceId == null
+                      ? Future.value(const [])
+                      : paymentProvider.fetchMethods(api.workspaceId!, currency: cur, contractId: contractId),
+                  fallback: _methodChips(ctx, methodLabels, selectedMethod),
+                ),
+              ),
               const SizedBox(height: 16),
               _label(ctx, pl10n.payments_attachProof),
               ..._proofPicker(ctx, pl10n.onboardingDropTitle, proofFiles, setSheetState),
@@ -370,6 +384,7 @@ void showRequestPaymentSheet({
                         amountCtrl,
                         currencyFor(selectedContract.value),
                         selectedMethod.value,
+                        choice,
                         selectedContract.value,
                         proofFiles,
                         paymentProvider,
@@ -390,6 +405,7 @@ Future<void> _submitPaymentDashboard(
   TextEditingController amountCtrl,
   String currency,
   String methodType,
+  PaymentMethodChoice choice,
   int? contractId,
   List<Map<String, dynamic>> proofFiles,
   PaymentProvider paymentProvider,
@@ -408,6 +424,11 @@ Future<void> _submitPaymentDashboard(
     if (ctx.mounted) setSheetState(() {});
     return;
   }
+  if (choice.required && choice.methodId == null) {
+    errorNotifier.value = l10n.payMethodChooseFirst;
+    if (ctx.mounted) setSheetState(() {});
+    return;
+  }
   final wsId = api.workspaceId;
   if (wsId == null) {
     errorNotifier.value = l10n.payments_workspaceUnavailable;
@@ -420,7 +441,8 @@ Future<void> _submitPaymentDashboard(
     final fields = <String, dynamic>{
       'amount': amount,
       'currency': currency,
-      'method_type': methodType,
+      // A configured method carries its own type; the server derives it.
+      if (choice.methodId != null) 'payment_method_id': choice.methodId else 'method_type': methodType,
       if (contractId != null) 'contract_id': contractId,
     };
 
@@ -493,6 +515,7 @@ void showScheduledPaymentSheet({
   final available =
       getAvailableMethods().isNotEmpty ? getAvailableMethods() : methodLabels.keys.toList();
   final selectedMethod = ValueNotifier<String>(available.first);
+  final choice = PaymentMethodChoice();
   List<Map<String, dynamic>> proofFiles = [];
   final uploadingNotifier = ValueNotifier<bool>(false);
   final errorNotifier = ValueNotifier<String?>(null);
@@ -529,7 +552,15 @@ void showScheduledPaymentSheet({
               ),
               const SizedBox(height: 18),
               _label(ctx, l10n.payments_paymentMethodLabel),
-              _methodChips(ctx, methodLabels, selectedMethod),
+              PaymentMethodPicker(
+                choice: choice,
+                currency: currency,
+                amount: () => amt?.toDouble(),
+                fetch: (cur) => api.workspaceId == null
+                    ? Future.value(const [])
+                    : paymentProvider.fetchMethods(api.workspaceId!, currency: cur, contractId: p['contract_id'] as int?),
+                fallback: _methodChips(ctx, methodLabels, selectedMethod),
+              ),
               const SizedBox(height: 16),
               _label(ctx, cl10n.payments_attachProofLabel),
               ..._proofPicker(ctx, cl10n.onboardingDropTitle, proofFiles, setSheetState),
@@ -545,6 +576,7 @@ void showScheduledPaymentSheet({
                         errorNotifier,
                         paymentId,
                         selectedMethod.value,
+                        choice,
                         proofFiles,
                         paymentProvider,
                         api,
@@ -563,6 +595,7 @@ Future<void> _submitScheduledPaymentProof(
   ValueNotifier<String?> errorNotifier,
   dynamic paymentId,
   String methodType,
+  PaymentMethodChoice choice,
   List<Map<String, dynamic>> proofFiles,
   PaymentProvider paymentProvider,
   ApiClient api,
@@ -572,6 +605,11 @@ Future<void> _submitScheduledPaymentProof(
   errorNotifier.value = null;
   if (proofFiles.isEmpty) {
     errorNotifier.value = l10n.payments_requireProof;
+    if (ctx.mounted) setSheetState(() {});
+    return;
+  }
+  if (choice.required && choice.methodId == null) {
+    errorNotifier.value = l10n.payMethodChooseFirst;
     if (ctx.mounted) setSheetState(() {});
     return;
   }
@@ -598,7 +636,8 @@ Future<void> _submitScheduledPaymentProof(
     await paymentProvider.uploadPaymentProof(
       wsId,
       paymentId,
-      methodType,
+      choice.methodId == null ? methodType : null,
+      paymentMethodId: choice.methodId,
       files: nativeFiles.isNotEmpty ? nativeFiles : null,
       bytesFiles: bytesFiles.isNotEmpty ? bytesFiles : null,
       bytesNames: bytesFiles.isNotEmpty ? bytesNames : null,

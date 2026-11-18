@@ -93,10 +93,16 @@ class PaymentProvider {
   Future<Map<String, dynamic>> uploadPaymentProof(
     int workspaceId,
     dynamic paymentId,
-    String methodType, {
+    String? methodType, {
+    int? paymentMethodId,
     List<File>? files,
     List<Uint8List>? bytesFiles,
     List<String>? bytesNames,
   }) =>
-      _repo.uploadProof(workspaceId, paymentId, methodType, files: files, bytesFiles: bytesFiles, bytesNames: bytesNames);
+      _repo.uploadProof(workspaceId, paymentId, methodType, paymentMethodId: paymentMethodId, files: files, bytesFiles: bytesFiles, bytesNames: bytesNames);
+
+  /// The payment methods this workspace's client may use — see
+  /// [PaymentRepository.fetchMethods].
+  Future<List<Map<String, dynamic>>> fetchMethods(int workspaceId, {String? currency, int? contractId}) =>
+      _repo.fetchMethods(workspaceId, currency: currency, contractId: contractId);
 }

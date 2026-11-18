@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/helpers/payment_method_text.dart';
 import '../../../core/luxe/tokens.dart';
 import '../../../core/widgets/ads_split.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -401,7 +402,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
       'mobile_wallet': l10n.paymentsMethodMobileWallet,
       'cheque': l10n.paymentsMethodCheque
     };
-    final method = (p['method_type'] as String?) ?? '';
+    final rawMethod = (p['method_type'] as String?) ?? '';
+    final method = paymentMethodName(p, methodLabels[rawMethod] ?? rawMethod);
+    final fee = paymentFee(p);
     final created = _formatDate(p['created_at'] as String?);
     final amount = num.tryParse('${p['amount'] ?? 0}');
     final currency = p['currency'] as String? ?? 'SAR';
@@ -425,7 +428,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
       key: ValueKey('ws-payment-${p['id']}'),
       attention: isPending,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (method.isNotEmpty) LuxeKind(methodLabels[method] ?? method),
+        if (method.isNotEmpty) LuxeKind(method),
         Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(_installmentLabel(_payments.length - 1 - i, l10n),
@@ -434,6 +437,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
         if (created.isNotEmpty) Text(created, style: Lx.text(context, size: 12.5, color: Lx.muted)),
         if (p['contract'] is Map && p['contract']['title'] != null)
           Text('${p['contract']['title']}', style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        if (fee != null)
+          Text(l10n.payMethodFeeAmount(lxFormatMoney(fee), '${p['currency'] ?? 'SAR'}'),
+              key: ValueKey('ws-payment-fee-${p['id']}'), style: Lx.text(context, size: 12.5, color: Lx.muted)),
         const SizedBox(height: 10),
         Directionality(
           textDirection: TextDirection.ltr,

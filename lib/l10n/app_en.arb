@@ -2151,5 +2151,35 @@
   "adsExclConversion": "Contract value excludes the conversion fee",
   "taxExcludedToggle": "Exclude tax",
   "taxExcludedHint": "No tax is charged on this contract.",
-  "totalDue": "Total due"
+  "totalDue": "Total due",
+  "payMethodTitle": "Where to transfer",
+  "payMethodTransferTo": "Transfer to",
+  "payMethodKindWallet": "Wallet",
+  "payMethodKindInstapay": "InstaPay",
+  "payMethodKindBank": "Bank account",
+  "payMethodKindCheque": "Cheque",
+  "payMethodFieldPhone": "Mobile number",
+  "payMethodFieldAccountName": "Account holder",
+  "payMethodFieldAccountNumber": "Account number",
+  "payMethodFieldBankName": "Bank",
+  "payMethodFieldIban": "IBAN",
+  "payMethodFieldSwift": "SWIFT",
+  "payMethodFieldInstructions": "Instructions",
+  "payMethodCopy": "Copy",
+  "payMethodCopied": "Copied",
+  "payMethodTotalToTransfer": "Total to transfer",
+  "payMethodChooseFirst": "Choose where you are transferring to.",
+  "payMethodFee": "Fee ({percent}%)",
+  "@payMethodFee": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "payMethodFeeAmount": "Fee {amount} {currency}",
+  "@payMethodFeeAmount": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  }
 }
