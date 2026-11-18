@@ -26,7 +26,7 @@ void main() {
     'currency': 'SAR',
     'ads_percentage': 10,
     'ads_amount': 1000,
-    'ads_budget': 9000,
+    'ads_budget': 10000,
   };
   const normalContract = {
     'id': 701,
@@ -58,7 +58,7 @@ void main() {
       expect(find.text('Ads management fee (10%)'), findsOneWidget);
       expect(find.text('Ad budget'), findsOneWidget);
       expect(find.textContaining('1,000'), findsOneWidget);
-      expect(find.textContaining('9,000'), findsOneWidget);
+      expect(find.textContaining('10,000'), findsOneWidget);
     });
 
     testWidgets('shows the same lines in Arabic', (tester) async {
@@ -76,7 +76,7 @@ void main() {
   });
 
   // The tax of an ads contract is charged on the agency fee only: a 50,000
-  // contract with a 20% fee (10,000) and a 14% tax owes 1,400, total 51,400.
+  // budget with a 20% fee on top (10,000) and a 14% tax owes 1,400, total 61,400.
   group('onboarding payment stage taxes an ads contract on its fee', () {
     const bigAds = {
       'id': 9,
@@ -86,11 +86,11 @@ void main() {
       'currency': 'EGP',
       'ads_percentage': 20,
       'ads_amount': 10000,
-      'ads_budget': 40000,
+      'ads_budget': 50000,
     };
 
     // An amount as its own bill row shows it. textContaining would also match
-    // "51,400" when looking for "1,400".
+    // "61,400" when looking for "1,400".
     Finder amount(String figure) => find.byWidgetPredicate(
           (w) => w is Text && (w.textSpan?.toPlainText() ?? w.data ?? '').startsWith('$figure '),
         );
@@ -115,14 +115,14 @@ void main() {
       await pumpStage(tester, {...bigAds, 'tax_percentage': 14, 'tax_amount': 1400});
 
       expect(amount('1,400'), findsOneWidget); // tax row
-      expect(amount('51,400'), findsNWidgets(2)); // total and remaining
+      expect(amount('61,400'), findsNWidgets(2)); // total and remaining
     });
 
     testWidgets('computes the same figure itself when the server sent none', (tester) async {
       await pumpStage(tester, bigAds);
 
       expect(amount('1,400'), findsOneWidget);
-      expect(amount('51,400'), findsNWidgets(2));
+      expect(amount('61,400'), findsNWidgets(2));
       expect(amount('7,000'), findsNothing); // 14% of the whole 50,000
     });
 
@@ -159,6 +159,25 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('cb-ads-toggle')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('cb-ads-percent')), findsOneWidget);
+    });
+
+    testWidgets('previews the fee on top of the budget and the total before tax', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      stubTemplates(httpClient);
+
+      await pumpBuilder(tester, api);
+
+      await tester.enterText(find.byType(TextField).at(1), '100000');
+      await tester.tap(find.byKey(const ValueKey('cb-ads-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('cb-ads-preview')), findsNothing);
+      await tester.enterText(find.byKey(const ValueKey('cb-ads-percent')), '20');
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('cb-ads-preview')), findsOneWidget);
+      expect(find.text('20,000 SAR'), findsOneWidget);
+      expect(find.text('120,000 SAR'), findsOneWidget);
     });
 
     testWidgets('an ads contract is created with its percentage', (tester) async {

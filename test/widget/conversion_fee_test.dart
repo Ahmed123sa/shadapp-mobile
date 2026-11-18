@@ -1,10 +1,10 @@
-// Ads contracts can carry a dollar-conversion fee: a share of the ad budget,
-// added on top of the contract value and never taxed. Any contract can also be
-// taken out of tax with a switch.
+// Ads contracts can carry a dollar-conversion fee: a share of the full ad
+// budget, added on top and never taxed. Any contract can also be taken out of
+// tax with a switch.
 //
-// Reference: value 100,000, company fee 10% (10,000), ad budget 90,000,
-// conversion 5% of the budget (4,500), tax 14% on the fee only (1,400):
-// total due 105,900, or 104,500 with the tax switched off.
+// Reference: ad budget 100,000, company fee 10% on top (10,000), conversion 5%
+// of the budget (5,000), tax 14% on the fee only (1,400): total due 116,400,
+// or 115,000 with the tax switched off.
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -30,9 +30,9 @@ void main() {
     'currency': 'SAR',
     'ads_percentage': 10,
     'ads_amount': 10000,
-    'ads_budget': 90000,
+    'ads_budget': 100000,
     'conversion_percentage': 5,
-    'conversion_amount': 4500,
+    'conversion_amount': 5000,
   };
   const adsOnly = {
     'id': 711,
@@ -42,7 +42,7 @@ void main() {
     'currency': 'SAR',
     'ads_percentage': 10,
     'ads_amount': 10000,
-    'ads_budget': 90000,
+    'ads_budget': 100000,
     'conversion_percentage': null,
     'conversion_amount': null,
   };
@@ -62,20 +62,18 @@ void main() {
       expect(contractHasConversion(null), isFalse);
     });
 
-    testWidgets('shows the fee and says the value excludes it, in English', (tester) async {
+    testWidgets('shows the conversion fee, in English', (tester) async {
       await tester.pumpWidget(wrap(const AdsSplit(contract: withConversion, currency: 'SAR')));
 
       expect(find.byKey(const ValueKey('ads-conversion')), findsOneWidget);
       expect(find.text('Dollar conversion fee (5%)'), findsOneWidget);
-      expect(find.textContaining('4,500'), findsOneWidget);
-      expect(find.text('Contract value excludes the conversion fee'), findsOneWidget);
+      expect(find.textContaining('5,000'), findsOneWidget);
     });
 
     testWidgets('shows the same in Arabic', (tester) async {
       await tester.pumpWidget(wrap(const AdsSplit(contract: withConversion, currency: 'SAR'), locale: const Locale('ar')));
 
       expect(find.textContaining('رسوم التحويل الدولاري'), findsOneWidget);
-      expect(find.text('قيمة العقد غير شاملة رسوم التحويل'), findsOneWidget);
     });
 
     testWidgets('an ads contract without a conversion fee shows no conversion line', (tester) async {
@@ -83,7 +81,6 @@ void main() {
 
       expect(find.byKey(const ValueKey('ads-split')), findsOneWidget);
       expect(find.byKey(const ValueKey('ads-conversion')), findsNothing);
-      expect(find.text('Contract value excludes the conversion fee'), findsNothing);
     });
   });
 
@@ -112,9 +109,9 @@ void main() {
     testWidgets('uses the figures the server computed', (tester) async {
       await pumpStage(tester, {...withConversion, 'tax_percentage': 14, 'tax_amount': 1400});
 
-      expect(amount('4,500'), findsOneWidget); // conversion row
+      expect(amount('5,000'), findsOneWidget); // conversion row
       expect(amount('1,400'), findsOneWidget); // tax row
-      expect(amount('105,900'), findsNWidgets(2)); // total due and remaining
+      expect(amount('116,400'), findsNWidgets(2)); // total due and remaining
       expect(find.text('Total due'), findsOneWidget);
     });
 
@@ -122,14 +119,14 @@ void main() {
       await pumpStage(tester, Map<String, dynamic>.from(withConversion));
 
       expect(amount('1,400'), findsOneWidget);
-      expect(amount('105,900'), findsNWidgets(2));
+      expect(amount('116,400'), findsNWidgets(2));
     });
 
     testWidgets('a contract excluded from tax pays no tax but still pays the conversion fee', (tester) async {
       await pumpStage(tester, {...withConversion, 'tax_excluded': true});
 
       expect(amount('1,400'), findsNothing);
-      expect(amount('104,500'), findsNWidgets(2));
+      expect(amount('115,000'), findsNWidgets(2));
     });
 
     testWidgets('a normal contract is unchanged', (tester) async {

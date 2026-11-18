@@ -1160,6 +1160,90 @@ abstract class AppLocalizations {
   /// **'Rescheduled'**
   String get meetingChipRescheduled;
 
+  /// No description provided for @meetingResponsePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the client\'s answer'**
+  String get meetingResponsePending;
+
+  /// No description provided for @meetingResponseAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Client accepted this time'**
+  String get meetingResponseAccepted;
+
+  /// No description provided for @meetingResponseDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Client asked for another time'**
+  String get meetingResponseDeclined;
+
+  /// No description provided for @meetingResponseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: {note}'**
+  String meetingResponseNote(Object note);
+
+  /// No description provided for @meetingAnswerQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Does this time work for you?'**
+  String get meetingAnswerQuestion;
+
+  /// No description provided for @meetingAnswerAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept this time'**
+  String get meetingAnswerAccept;
+
+  /// No description provided for @meetingAnswerDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not suitable'**
+  String get meetingAnswerDecline;
+
+  /// No description provided for @meetingAnswerNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest another time or leave a note (optional)'**
+  String get meetingAnswerNoteHint;
+
+  /// No description provided for @meetingAnswerSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get meetingAnswerSend;
+
+  /// No description provided for @meetingAnswerCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get meetingAnswerCancel;
+
+  /// No description provided for @meetingAnswerYouAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'You accepted this time'**
+  String get meetingAnswerYouAccepted;
+
+  /// No description provided for @meetingAnswerYouDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'You said this time is not suitable'**
+  String get meetingAnswerYouDeclined;
+
+  /// No description provided for @meetingAnswerChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change answer'**
+  String get meetingAnswerChange;
+
+  /// No description provided for @meetingAnswerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your answer. Try again.'**
+  String get meetingAnswerFailed;
+
   /// No description provided for @passwordFieldLabel.
   ///
   /// In en, this message translates to:
@@ -11937,8 +12021,20 @@ abstract class AppLocalizations {
   /// No description provided for @adsToggleHint.
   ///
   /// In en, this message translates to:
-  /// **'The agency fee is part of the contract value, not added on top.'**
+  /// **'The contract value is the ad budget. The agency fee is added on top of it.'**
   String get adsToggleHint;
+
+  /// No description provided for @adsPreviewFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Agency fee on top'**
+  String get adsPreviewFee;
+
+  /// No description provided for @adsPreviewBeforeTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Total before tax'**
+  String get adsPreviewBeforeTax;
 
   /// No description provided for @adsPercentageLabel.
   ///
@@ -11979,7 +12075,7 @@ abstract class AppLocalizations {
   /// No description provided for @adsConversionHint.
   ///
   /// In en, this message translates to:
-  /// **'Added on top of the contract value and not taxed. Leave empty for none.'**
+  /// **'Added on top, calculated on the full ad budget, and not taxed. Leave empty for none.'**
   String get adsConversionHint;
 
   /// No description provided for @adsConversionInvalid.

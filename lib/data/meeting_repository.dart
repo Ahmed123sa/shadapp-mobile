@@ -41,4 +41,11 @@ class MeetingRepository {
 
   Future<Map<String, dynamic>> enter(int meetingId) =>
       _api.post('/meetings/$meetingId/enter', {});
+
+  /// The client's answer about a meeting's time: 'accepted' or 'declined'
+  /// (with an optional note).
+  Future<void> respond(int meetingId, String response, {String? note}) => _api.post(
+        '/meetings/$meetingId/respond',
+        {'response': response, if (note != null && note.isNotEmpty) 'note': note},
+      );
 }

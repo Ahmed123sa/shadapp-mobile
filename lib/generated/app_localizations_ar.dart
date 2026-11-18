@@ -548,6 +548,51 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetingChipRescheduled => 'تم تغيير الميعاد';
 
   @override
+  String get meetingResponsePending => 'في انتظار رد العميل';
+
+  @override
+  String get meetingResponseAccepted => 'العميل وافق على الميعاد';
+
+  @override
+  String get meetingResponseDeclined => 'العميل طلب ميعاد تاني';
+
+  @override
+  String meetingResponseNote(Object note) {
+    return 'ملاحظة: $note';
+  }
+
+  @override
+  String get meetingAnswerQuestion => 'الميعاد ده مناسب ليك؟';
+
+  @override
+  String get meetingAnswerAccept => 'موافق على الميعاد';
+
+  @override
+  String get meetingAnswerDecline => 'مش مناسب';
+
+  @override
+  String get meetingAnswerNoteHint =>
+      'اقترح ميعاد تاني أو اكتب ملاحظة (اختياري)';
+
+  @override
+  String get meetingAnswerSend => 'إرسال';
+
+  @override
+  String get meetingAnswerCancel => 'إلغاء';
+
+  @override
+  String get meetingAnswerYouAccepted => 'وافقت على الميعاد ده';
+
+  @override
+  String get meetingAnswerYouDeclined => 'قلت إن الميعاد ده مش مناسب';
+
+  @override
+  String get meetingAnswerChange => 'غيّر ردّك';
+
+  @override
+  String get meetingAnswerFailed => 'مقدرناش نبعت ردّك. حاول تاني.';
+
+  @override
   String get passwordFieldLabel => 'كلمة المرور';
 
   @override
@@ -6218,7 +6263,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adsToggleHint =>
-      'نسبة الشركة جزء من قيمة العقد وليست إضافة عليها.';
+      'قيمة العقد هي ميزانية الإعلانات، ونسبة الشركة تُضاف عليها.';
+
+  @override
+  String get adsPreviewFee => 'نسبة الشركة المضافة';
+
+  @override
+  String get adsPreviewBeforeTax => 'الإجمالي قبل الضريبة';
 
   @override
   String get adsPercentageLabel => 'نسبة إدارة الإعلانات (%)';
@@ -6243,7 +6294,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adsConversionHint =>
-      'تُضاف فوق قيمة العقد ولا تُحسب عليها ضريبة. اتركها فاضية لو مفيش.';
+      'تُضاف فوق الميزانية وتُحسب على ميزانية الإعلانات كاملة ولا تُحسب عليها ضريبة. اتركها فاضية لو مفيش.';
 
   @override
   String get adsConversionInvalid => 'اكتب نسبة بين 0 و100.';

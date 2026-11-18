@@ -528,10 +528,13 @@ class _PaymentFigures {
   Map<String, dynamic>? lastRejected;
   int? workspaceId;
 
-  // Dollar-conversion fees: added on top of the value, never taxed.
+  // Dollar-conversion fees: added on top, never taxed.
   double conversion = 0;
 
-  double get grand => total + conversion + tax;
+  // Agency fees of ads contracts: added on top of the ad budget (the value).
+  double fee = 0;
+
+  double get grand => total + fee + conversion + tax;
   double get remaining => grand - paid;
 
   _PaymentFigures(Map<String, dynamic>? ws, Map<String, dynamic>? client, Map<String, dynamic>? taxSettings) {
@@ -550,6 +553,7 @@ class _PaymentFigures {
             _taxBase += contractHasAds(c) ? (double.tryParse((c['ads_amount'] ?? '0').toString()) ?? 0.0) : value;
           }
           if (contractHasConversion(c)) conversion += double.tryParse('${c['conversion_amount']}') ?? 0.0;
+          if (contractHasAds(c)) fee += double.tryParse('${c['ads_amount']}') ?? 0.0;
           // The server prices each contract with its own locked rate.
           final serverTax = double.tryParse((c['tax_amount'] ?? '').toString());
           if (serverTax != null) {
@@ -652,12 +656,11 @@ Widget buildPaymentStage({
         _billRow(context, l10n.onboarding_amount, f.total, f.currency),
         for (final c in f.adsContracts) ...[
           _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsFee(_pctLabel(c['ads_percentage']))}', double.tryParse('${c['ads_amount']}') ?? 0, f.currency),
-          _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsBudget}', double.tryParse('${c['ads_budget']}') ?? 0, f.currency),
         ],
         for (final c in f.adsContracts.where(contractHasConversion))
           _billRow(context, '${f.adsContracts.length > 1 ? '${c['title'] ?? ''} · ' : ''}${l10n.adsConversion(_pctLabel(c['conversion_percentage']))}', double.tryParse('${c['conversion_amount']}') ?? 0, f.currency),
         if (f.tax > 0) _billRow(context, l10n.onboarding_tax, f.tax, f.currency),
-        _billRow(context, f.conversion > 0 ? l10n.totalDue : l10n.onboarding_total, f.grand, f.currency, strong: true),
+        _billRow(context, (f.conversion > 0 || f.fee > 0) ? l10n.totalDue : l10n.onboarding_total, f.grand, f.currency, strong: true),
         _billRow(context, l10n.onboarding_paidAmount, f.paid, f.currency),
         _billRow(context, l10n.onboarding_remainingAmount2, f.remaining, f.currency, last: true),
       ]),

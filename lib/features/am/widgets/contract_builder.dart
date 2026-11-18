@@ -341,8 +341,40 @@ class _ContractBuilderState extends State<ContractBuilder> {
         child: Text(text.toUpperCase(), style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 2.2)),
       );
 
+  /// Live preview under the ads fields: the fee added on top of the budget (the
+  /// value typed above) and the total before tax. Empty until both are valid.
+  Widget _adsPreview(AppLocalizations l10n) {
+    final budget = double.tryParse(_valueController.text.trim());
+    final pct = double.tryParse(_adsPctController.text.trim());
+    if (!_isAds || budget == null || budget <= 0 || pct == null || pct < 0.01 || pct > 100) {
+      return const SizedBox.shrink();
+    }
+    final conv = double.tryParse(_convPctController.text.trim());
+    final fee = (budget * pct).round() / 100;
+    final convAmount = (conv != null && conv > 0 && conv <= 100) ? (budget * conv).round() / 100 : 0.0;
+    final cur = _selectedCurrency;
+    Widget line(String label, double v, {bool strong = false}) => Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Flexible(child: Text(label, style: Lx.text(context, size: 12, color: strong ? Lx.ink : Lx.muted, weight: strong ? FontWeight.w600 : FontWeight.w400))),
+            const SizedBox(width: 8),
+            Text('${lxFormatMoney(v)} $cur', textDirection: TextDirection.ltr, style: Lx.text(context, size: 12, color: strong ? Lx.ink : Lx.muted, weight: strong ? FontWeight.w600 : FontWeight.w400)),
+          ]),
+        );
+    return Padding(
+      key: const ValueKey('cb-ads-preview'),
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        line(l10n.adsBudget, budget),
+        line(l10n.adsPreviewFee, fee),
+        if (convAmount > 0) line(l10n.adsConversionTotal, convAmount),
+        line(l10n.adsPreviewBeforeTax, budget + fee + convAmount, strong: true),
+      ]),
+    );
+  }
+
   /// The "Ads contract" switch. Ticking it reveals the percentage (the
-  /// agency's fee, inside the contract value); unticking makes it normal again.
+  /// agency's fee, added on top of the contract value); unticking makes it normal again.
   Widget _adsField(AppLocalizations l10n) {
     final invalid = _isAds && _adsTried && !(() {
       final v = double.tryParse(_adsPctController.text.trim());
@@ -413,6 +445,7 @@ class _ContractBuilderState extends State<ContractBuilder> {
             ),
           ),
         ),
+      _adsPreview(l10n),
     ]);
   }
 

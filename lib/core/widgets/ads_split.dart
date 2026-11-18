@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../luxe/tokens.dart';
 
-/// Ads contracts: the agency's management fee is a share of the contract value
-/// (inside it, never on top). The server sends the split already computed, so
-/// this only shows it; the value, the tax and the total are not touched.
+/// Ads contracts: the contract value is the ad budget, and the agency's
+/// management fee is a share of it added on top. The server sends the figures
+/// already computed, so this only shows them; the tax and the total are not touched.
 bool contractHasAds(Map? c) {
   if (c == null) return false;
   return c['ads_percentage'] != null && c['ads_amount'] != null && c['ads_budget'] != null;
 }
 
 /// An ads contract with a dollar-conversion fee above zero. The fee is added on
-/// top of the value (never inside it, never taxed).
+/// top (a share of the full ad budget, never taxed).
 bool contractHasConversion(Map? c) {
   if (!contractHasAds(c)) return false;
   return (num.tryParse('${c!['conversion_amount'] ?? 0}') ?? 0) > 0;
@@ -19,7 +19,7 @@ bool contractHasConversion(Map? c) {
 
 String _pct(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
-/// The two lines under a contract value: the fee, then the budget.
+/// The lines under an ads contract: the budget, then the fee added on top of it.
 class AdsSplit extends StatelessWidget {
   const AdsSplit({super.key, required this.contract, required this.currency, this.size = 11.5});
 
@@ -48,18 +48,13 @@ class AdsSplit extends StatelessWidget {
         key: const ValueKey('ads-split'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          line(l10n.adsFee(_pct(n(contract['ads_percentage']))), n(contract['ads_amount'])),
           line(l10n.adsBudget, n(contract['ads_budget'])),
-          if (contractHasConversion(contract)) ...[
+          line(l10n.adsFee(_pct(n(contract['ads_percentage']))), n(contract['ads_amount'])),
+          if (contractHasConversion(contract))
             KeyedSubtree(
               key: const ValueKey('ads-conversion'),
               child: line(l10n.adsConversion(_pct(n(contract['conversion_percentage']))), n(contract['conversion_amount'])),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(l10n.adsExclConversion, style: Lx.text(context, size: size, color: Lx.muted)),
-            ),
-          ],
         ],
       ),
     );

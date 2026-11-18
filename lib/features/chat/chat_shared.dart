@@ -69,11 +69,13 @@ Widget chatMeetingBubble(
   Map<String, dynamic> m, {
   Future<void> Function(int meetingId)? onEnter,
   bool? isHost,
+  Future<void> Function(int meetingId, String response, String? note)? onRespond,
+  bool canAnswer = false,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      MeetingChip(metadata: metadata, onEnter: onEnter, isHost: isHost),
+      MeetingChip(metadata: metadata, onEnter: onEnter, isHost: isHost, onRespond: onRespond, canAnswer: canAnswer),
       if (m['created_at'] != null)
         Padding(
           padding: const EdgeInsetsDirectional.only(top: 3, start: 2),

@@ -33,8 +33,18 @@ List<Widget> buildChatMessageList({
   required void Function(int msgId, String action) onRespondToMessage,
   required VoidCallback? onGoToPayments,
   required void Function(Map<String, dynamic> msg) onLongPressMessage,
+  Future<void> Function(int meetingId, String response, String? note)? onRespondToMeeting,
 }) {
   final widgets = <Widget>[];
+  // A meeting can have several cards (the first one and one per reschedule);
+  // only the newest asks for an answer, the older ones just show it.
+  final latestCardOf = <int, Object?>{};
+  for (final msg in messages) {
+    if (msg is Map && msg['type'] == 'meeting') {
+      final mid = (msg['metadata'] as Map?)?['meeting_id'];
+      if (mid is int) latestCardOf[mid] = msg['id'];
+    }
+  }
   String? lastDate;
   String? lastSenderKey;
 
@@ -62,7 +72,17 @@ List<Widget> buildChatMessageList({
 
     Widget bubble;
     if (type == 'meeting' && metadata != null) {
-      bubble = chatMeetingBubble(metadata, m);
+      final meetingId = metadata['meeting_id'];
+      final startsAt = DateTime.tryParse('${metadata['scheduled_at'] ?? ''}');
+      bubble = chatMeetingBubble(
+        metadata,
+        m,
+        onRespond: onRespondToMeeting,
+        canAnswer: meetingId is int &&
+            latestCardOf[meetingId] == m['id'] &&
+            startsAt != null &&
+            startsAt.isAfter(DateTime.now()),
+      );
     } else if (hasContract) {
       bubble = _buildContractBubble(context, m, contract, isClient, api, onApprove, onGoToPayments);
     } else {

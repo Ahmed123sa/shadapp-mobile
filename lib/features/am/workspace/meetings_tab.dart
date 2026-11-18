@@ -10,6 +10,7 @@ import '../../../core/theme.dart' show statusLabels;
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
+import '../../../core/widgets/meeting_answer.dart';
 import '../../../providers/contract_provider.dart';
 import '../../../providers/meeting_provider.dart';
 
@@ -345,6 +346,13 @@ class _MeetingsTabState extends State<MeetingsTab> {
               Text(statusLabels(l10n)[statusKey] ?? statusKey,
                   style: Lx.text(context, size: 12, color: Lx.ink2)),
             ]),
+          ),
+        // What the client answered about this time (waiting / accepted /
+        // asked for another time).
+        if (isScheduled)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: MeetingResponseBadge(response: m['client_response'], note: m['client_response_note']),
           ),
         if (m['notes'] != null) ...[
           const SizedBox(height: 6),
