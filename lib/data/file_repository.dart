@@ -40,7 +40,7 @@ class FileRepository {
         '/files/$fileId/review',
         {
           'action': action,
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
+          if (reason != null && reason.isNotEmpty) 'rejection_reason': reason,
         },
       );
 

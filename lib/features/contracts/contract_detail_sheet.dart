@@ -324,13 +324,29 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
               const SizedBox(height: 16),
             ],
 
-            // Required documents (only show when action is needed)
-            if (requiredDocs.isNotEmpty && needsAction) ...[
+            // Required documents: while the contract waits on the client, and
+            // after the client approved while the company still has to accept
+            // each one (a rejected one can be replaced).
+            if (requiredDocs.isNotEmpty && (needsAction || status == 'client_approved')) ...[
               Text(l10n.requiredDocuments,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Lx.ink)),
               const SizedBox(height: 8),
               ...requiredDocs.map((doc) {
-                final docStatus = doc['status'] as String? ?? 'pending';
+                // From the document's own files when it has any (approved if
+                // one is, rejected if all are, else waiting).
+                final docFiles =
+                    (doc['files'] as List<dynamic>?)?.whereType<Map>().toList() ?? const <Map>[];
+                final docStatus = docFiles.isNotEmpty
+                    ? (docFiles.any((f) => f['status'] == 'approved')
+                        ? 'approved'
+                        : docFiles.every((f) => f['status'] == 'rejected')
+                            ? 'rejected'
+                            : 'pending')
+                    : (doc['status'] as String? ?? 'pending');
+                final rejectedFile = docFiles.reversed
+                    .firstWhere((f) => f['status'] == 'rejected', orElse: () => const {});
+                final rejectionReason =
+                    (doc['rejection_reason'] ?? rejectedFile['rejection_reason'])?.toString();
                 final docStatusColor = docStatus == 'approved'
                     ? Lx.ok
                     : docStatus == 'rejected'
@@ -363,9 +379,9 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                         ),
                       ),
                     ]),
-                    if (doc['rejection_reason'] != null) ...[
+                    if (docStatus == 'rejected' && rejectionReason != null && rejectionReason.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(l10n.rejectionReason(doc['rejection_reason'] as String),
+                      Text(l10n.rejectionReason(rejectionReason),
                           style: const TextStyle(fontSize: 11, color: Lx.danger)),
                     ],
                     // subuser-review-plan.md م٦ — required-document uploads
@@ -433,9 +449,12 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (f['status'] as String?) == 'approved'
-                              ? Lx.ok.withAlpha(25)
-                              : Lx.wait.withAlpha(25),
+                          color: ((f['status'] as String?) == 'approved'
+                                  ? Lx.ok
+                                  : (f['status'] as String?) == 'rejected'
+                                      ? Lx.danger
+                                      : Lx.wait)
+                              .withAlpha(25),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -445,7 +464,11 @@ class _ContractDetailSheetState extends State<ContractDetailSheet> {
                               '',
                           style: TextStyle(
                               fontSize: 9,
-                              color: (f['status'] as String?) == 'approved' ? Lx.ok : Lx.wait),
+                              color: (f['status'] as String?) == 'approved'
+                                  ? Lx.ok
+                                  : (f['status'] as String?) == 'rejected'
+                                      ? Lx.danger
+                                      : Lx.wait),
                         ),
                       ),
                     ]),
