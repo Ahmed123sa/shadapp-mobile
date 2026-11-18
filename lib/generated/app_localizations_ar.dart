@@ -6323,4 +6323,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String payMethodFee(Object percent) {
     return 'رسوم ($percent%)';
   }
+
+  @override
+  String payMethodFeeAmount(Object amount, Object currency) {
+    return 'رسوم $amount $currency';
+  }
 }

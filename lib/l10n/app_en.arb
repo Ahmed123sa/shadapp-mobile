@@ -2174,5 +2174,12 @@
     "placeholders": {
       "percent": {}
     }
+  },
+  "payMethodFeeAmount": "Fee {amount} {currency}",
+  "@payMethodFeeAmount": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
   }
 }

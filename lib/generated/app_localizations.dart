@@ -12131,6 +12131,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fee ({percent}%)'**
   String payMethodFee(Object percent);
+
+  /// No description provided for @payMethodFeeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee {amount} {currency}'**
+  String payMethodFeeAmount(Object amount, Object currency);
 }
 
 class _AppLocalizationsDelegate

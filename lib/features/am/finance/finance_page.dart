@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
 import '../../../core/api_client.dart';
 import '../../../core/app_log.dart';
+import '../../../core/helpers/payment_method_text.dart';
 import '../../../core/widgets/reject_reason_dialog.dart';
 import '../../../core/luxe/lx_icons.dart';
 import '../../../core/luxe/tokens.dart';
@@ -349,7 +350,8 @@ class _FinancePageState extends State<FinancePage> {
       'mobile_wallet': l10n.payments_methodMobileWallet,
       'cheque': l10n.payments_methodCheque,
     };
-    final method = methods['${p['method_type']}'] ?? '${p['method_type'] ?? ''}';
+    final method = paymentMethodName(p, methods['${p['method_type']}'] ?? '${p['method_type'] ?? ''}');
+    final fee = paymentFee(p);
     // Mockup card sub: "manager · 16 Oct".
     final created = DateTime.tryParse('${p['created_at'] ?? ''}')?.toLocal();
     final date = created == null ? '' : DateFormat('d MMM', Localizations.localeOf(context).toString()).format(created);
@@ -382,6 +384,9 @@ class _FinancePageState extends State<FinancePage> {
         const SizedBox(height: 4),
         Text(clientName, style: Lx.text(context, size: 16)),
         if (sub.isNotEmpty) Text(sub, style: Lx.text(context, size: 12.5, color: Lx.muted)),
+        if (fee != null)
+          Text(l10n.payMethodFeeAmount(lxFormatMoney(fee), '${p['currency'] ?? 'SAR'}'),
+              key: ValueKey('finance-fee-${p['id']}'), style: Lx.text(context, size: 12.5, color: Lx.muted)),
         const SizedBox(height: 10),
         Directionality(
           textDirection: TextDirection.ltr,

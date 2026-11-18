@@ -6347,4 +6347,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String payMethodFee(Object percent) {
     return 'Fee ($percent%)';
   }
+
+  @override
+  String payMethodFeeAmount(Object amount, Object currency) {
+    return 'Fee $amount $currency';
+  }
 }

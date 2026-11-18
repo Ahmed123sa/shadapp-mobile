@@ -2053,5 +2053,12 @@
     "placeholders": {
       "percent": {}
     }
+  },
+  "payMethodFeeAmount": "رسوم {amount} {currency}",
+  "@payMethodFeeAmount": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
   }
 }
