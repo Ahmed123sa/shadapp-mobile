@@ -140,7 +140,10 @@ List<Widget> buildChatMessageList({
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(Lx.rPill),
                                     border: Border.all(color: Lx.line2)),
-                                child: Text(AppLocalizations.of(context)!.accountManager,
+                                child: Text(
+                                    sender?['role'] == 'super_admin'
+                                        ? AppLocalizations.of(context)!.senderSupervisor
+                                        : AppLocalizations.of(context)!.accountManager,
                                     style: Lx.text(context, size: 9.5, color: Lx.muted)),
                               ),
                             ],

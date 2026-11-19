@@ -86,6 +86,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   Map<String, dynamic>? _nextPayment;
   Map<int, int?> _hostByMeetingId = {};
   bool _requestApproval = false;
+  // The super admin only watches a client's chat until they join it; the server keeps it per client.
+  bool _chatJoined = false;
+  bool _joinBusy = false;
   Map<String, dynamic>? _editingMessage;
   Map<String, dynamic>? _replyTo;
   int? get _wsId => widget.workspaceId ?? _api.workspaceId;
@@ -160,10 +163,12 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
       final data = await _chatProvider.fetchWorkspace(wsId);
       final nm = data['nextMeeting'] as Map<String, dynamic>?;
       final np = data['nextPayment'] as Map<String, dynamic>?;
+      final joined = (data['workspace'] as Map?)?['chat_joined'] == true;
       if (mounted) {
         setState(() {
           _nextMeeting = nm;
           _nextPayment = np;
+          _chatJoined = joined;
         });
       }
     } catch (e, s) {
@@ -298,8 +303,31 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _setChatJoined(bool join) async {
+    final wsId = _wsId;
+    if (wsId == null || _joinBusy) return;
+    setState(() => _joinBusy = true);
+    try {
+      if (join) {
+        await _chatProvider.joinChat(wsId);
+      } else {
+        await _chatProvider.leaveChat(wsId);
+      }
+      if (mounted) setState(() => _chatJoined = join);
+    } catch (e, s) {
+      AppLog.error('chat_tab._setChatJoined', e, s);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatJoinFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _joinBusy = false);
+    }
+  }
+
   void _showMessageActions(dynamic m) {
-    final isSA = _api.role == 'super_admin';
+    // A super admin acts here only after joining the chat.
+    final isSA = _api.role == 'super_admin' && !_chatJoined;
     final isOwnMessage = m['sender_type'] == 'App\\Models\\User' &&
         m['sender_id'].toString() == _api.userId.toString();
     final canEdit = isOwnMessage && m['type'] == 'text' && m['approval_id'] == null;
@@ -447,7 +475,9 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isSA = _api.role == 'super_admin';
+    final isSuper = _api.role == 'super_admin';
+    // Watching only: a super admin who has not joined.
+    final isSA = isSuper && !_chatJoined;
     final wsActive = widget.wsStatus == 'active';
 
     if (!wsActive) {
@@ -510,10 +540,45 @@ class _ChatTabState extends State<ChatTab> with WidgetsBindingObserver {
         Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 26),
           decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const LxIcon('lock', size: 18, color: Lx.faint),
-            const SizedBox(width: 8),
-            Text(l10n.chatReadOnly, style: Lx.text(context, size: 12.5, color: Lx.faint)),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const LxIcon('lock', size: 18, color: Lx.faint),
+              const SizedBox(width: 8),
+              Flexible(child: Text(l10n.chatJoinHint, style: Lx.text(context, size: 12.5, color: Lx.faint))),
+            ]),
+            const SizedBox(height: 10),
+            GestureDetector(
+              key: const ValueKey('chat-join'),
+              behavior: HitTestBehavior.opaque,
+              onTap: _joinBusy ? null : () => _setChatJoined(true),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Lx.rPill),
+                    border: Border.all(color: Lx.crimson),
+                    color: Lx.crimson.withAlpha(30),
+                  ),
+                  child: Text(l10n.chatJoin, style: Lx.text(context, size: 13, color: Lx.ink)),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      // A super admin who joined: a slim bar to leave again.
+      if (isSuper && _chatJoined)
+        Container(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 8, 6),
+          decoration: const BoxDecoration(border: Border(top: BorderSide(color: Lx.line))),
+          child: Row(children: [
+            Expanded(child: Text(l10n.chatJoinedLabel, style: Lx.text(context, size: 12, color: Lx.muted))),
+            TextButton(
+              key: const ValueKey('chat-leave'),
+              onPressed: _joinBusy ? null : () => _setChatJoined(false),
+              child: Text(l10n.chatLeave, style: Lx.text(context, size: 12.5, color: Lx.ink)),
+            ),
           ]),
         ),
       // Input Bar (AM, or an assistant with can_chat)

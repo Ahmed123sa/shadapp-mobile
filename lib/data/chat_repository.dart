@@ -29,6 +29,12 @@ class ChatRepository {
 
   Future<void> markRead(int workspaceId) => _api.post('/workspaces/$workspaceId/chat/mark-read', {});
 
+  /// The super admin joins a client's chat (to write there, ask for approvals
+  /// and schedule meetings) or leaves it again. Kept on the server per client.
+  Future<void> joinChat(int workspaceId) => _api.post('/workspaces/$workspaceId/chat/join', {});
+
+  Future<void> leaveChat(int workspaceId) => _api.delete('/workspaces/$workspaceId/chat/join');
+
   /// [replyToId] is only included in the request body when non-null, and
   /// `requires_action` is only included (as `true`) when [requiresAction] is
   /// true — matching the original inline behavior in both screens (neither

@@ -248,6 +248,12 @@ abstract class AppLocalizations {
   /// **'Account Manager'**
   String get accountManager;
 
+  /// No description provided for @senderSupervisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Management'**
+  String get senderSupervisor;
+
   /// No description provided for @loading.
   ///
   /// In en, this message translates to:
@@ -7844,7 +7850,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatJoin.
   ///
   /// In en, this message translates to:
-  /// **'Join'**
+  /// **'Join chat'**
   String get chatJoin;
 
   /// No description provided for @chatMessage.
@@ -7900,6 +7906,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View chat only'**
   String get chatReadOnly;
+
+  /// No description provided for @chatJoinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You are watching this chat. Join to write, send files, ask for approvals and set up meetings.'**
+  String get chatJoinHint;
+
+  /// No description provided for @chatLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave chat'**
+  String get chatLeave;
+
+  /// No description provided for @chatJoinedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'You joined this chat'**
+  String get chatJoinedLabel;
+
+  /// No description provided for @chatJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change your place in the chat. Try again.'**
+  String get chatJoinFailed;
 
   /// No description provided for @chatRejectedStatus.
   ///

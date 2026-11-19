@@ -84,6 +84,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountManager => 'Account Manager';
 
   @override
+  String get senderSupervisor => 'Management';
+
+  @override
   String get loading => 'Loading...';
 
   @override
@@ -4056,7 +4059,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatJoin => 'Join';
+  String get chatJoin => 'Join chat';
 
   @override
   String get chatMessage => 'Message';
@@ -4084,6 +4087,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatReadOnly => 'View chat only';
+
+  @override
+  String get chatJoinHint =>
+      'You are watching this chat. Join to write, send files, ask for approvals and set up meetings.';
+
+  @override
+  String get chatLeave => 'Leave chat';
+
+  @override
+  String get chatJoinedLabel => 'You joined this chat';
+
+  @override
+  String get chatJoinFailed =>
+      'Could not change your place in the chat. Try again.';
 
   @override
   String get chatRejectedStatus => 'Rejected';
