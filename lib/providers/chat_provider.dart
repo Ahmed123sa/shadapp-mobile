@@ -22,6 +22,11 @@ class ChatProvider {
   /// See [ChatRepository.markRead].
   Future<void> markRead(int workspaceId) => _repo.markRead(workspaceId);
 
+  /// See [ChatRepository.joinChat] / [ChatRepository.leaveChat].
+  Future<void> joinChat(int workspaceId) => _repo.joinChat(workspaceId);
+
+  Future<void> leaveChat(int workspaceId) => _repo.leaveChat(workspaceId);
+
   /// See [ChatRepository.sendMessage].
   Future<void> sendMessage(int workspaceId, String message, {int? replyToId, bool requiresAction = false}) =>
       _repo.sendMessage(workspaceId, message, replyToId: replyToId, requiresAction: requiresAction);

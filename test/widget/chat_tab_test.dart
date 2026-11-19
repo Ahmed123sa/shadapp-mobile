@@ -57,7 +57,8 @@ void main() {
   final clientMsg = msg(1, senderType: 'App\\Models\\Client', senderId: 20, senderName: 'Ali Client', message: 'Hello there');
   final ownMsg = msg(2, senderType: 'App\\Models\\User', senderId: 10, senderName: 'Manager Name', message: 'Own AM message');
 
-  void stubDefaultGets(MockHttpClient httpClient, {List<dynamic>? messages, List<dynamic>? contracts, List<dynamic>? meetings}) {
+  void stubDefaultGets(MockHttpClient httpClient,
+      {List<dynamic>? messages, List<dynamic>? contracts, List<dynamic>? meetings, bool chatJoined = false}) {
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
       final uri = inv.positionalArguments[0] as Uri;
       if (uri.path.endsWith('/chat')) {
@@ -70,7 +71,10 @@ void main() {
         return jsonResponse(jsonEncode({'meetings': meetings ?? []}));
       }
       return jsonResponse(jsonEncode({
-        'workspace': {'client': {'contact_person': 'Ali Client', 'avatar_url': null, 'client_type': null}},
+        'workspace': {
+          'client': {'contact_person': 'Ali Client', 'avatar_url': null, 'client_type': null},
+          'chat_joined': chatJoined,
+        },
         'nextMeeting': null,
         'nextPayment': null,
       }));
@@ -149,7 +153,7 @@ void main() {
     expect(find.text('No messages yet'), findsOneWidget);
   });
 
-  testWidgets('super admin sees the read-only indicator and no input bar', (tester) async {
+  testWidgets('super admin sees the watching notice with a join button and no input bar', (tester) async {
     final httpClient = MockHttpClient();
     final api = buildTestApiClient(client: httpClient);
     api.role = 'super_admin';
@@ -158,8 +162,74 @@ void main() {
 
     await pumpTab(tester, api);
 
-    expect(find.text('View chat only'), findsOneWidget);
+    expect(find.textContaining('You are watching this chat'), findsOneWidget);
+    expect(find.byKey(const ValueKey('chat-join')), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
+  });
+
+  group('super admin joining the chat', () {
+    testWidgets('joining posts to the server and unlocks the input bar', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'super_admin';
+      api.userId = 99;
+      stubDefaultGets(httpClient);
+      when(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/chat/join'))),
+          headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((_) async => jsonResponse('{"chat_joined":true}'));
+
+      await pumpTab(tester, api);
+      await tester.tap(find.byKey(const ValueKey('chat-join')));
+      await tester.pumpAndSettle();
+
+      verify(() => httpClient.post(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/chat/join'))),
+          headers: any(named: 'headers'), body: any(named: 'body'))).called(1);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byKey(const ValueKey('chat-leave')), findsOneWidget);
+      expect(find.byKey(const ValueKey('chat-join')), findsNothing);
+    });
+
+    testWidgets('opens already unlocked when the server says it is joined', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'super_admin';
+      api.userId = 99;
+      stubDefaultGets(httpClient, chatJoined: true);
+
+      await pumpTab(tester, api);
+
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byKey(const ValueKey('chat-join')), findsNothing);
+    });
+
+    testWidgets('leaving goes back to watching only', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'super_admin';
+      api.userId = 99;
+      stubDefaultGets(httpClient, chatJoined: true);
+      when(() => httpClient.delete(any(that: predicate<Uri>((u) => u.path.endsWith('/workspaces/5/chat/join'))),
+          headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer((_) async => jsonResponse('{"chat_joined":false}'));
+
+      await pumpTab(tester, api);
+      await tester.tap(find.byKey(const ValueKey('chat-leave')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('chat-join')), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('a manager never sees a join button', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'account_manager';
+      api.userId = 10;
+      stubDefaultGets(httpClient);
+
+      await pumpTab(tester, api);
+
+      expect(find.byKey(const ValueKey('chat-join')), findsNothing);
+      expect(find.byKey(const ValueKey('chat-leave')), findsNothing);
+    });
   });
 
   testWidgets('sending a plain message posts {message} with no extra fields', (tester) async {

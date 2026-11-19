@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadapp_client/core/api_client.dart';
 import 'package:shadapp_client/data/meeting_repository.dart';
 import 'package:shadapp_client/features/am/workspace/meetings_tab.dart';
 import 'package:shadapp_client/generated/app_localizations.dart';
@@ -14,11 +15,13 @@ void main() {
     registerFallbackValue(Uri.parse('http://localhost'));
   });
 
-  Future<void> pumpTab(WidgetTester tester, MeetingProvider meetingProvider, ContractProvider contractProvider) async {
+  Future<void> pumpTab(WidgetTester tester, MeetingProvider meetingProvider, ContractProvider contractProvider,
+      {ApiClient? api}) async {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: MeetingsTab(workspaceId: 5, meetingProvider: meetingProvider, contractProvider: contractProvider),
+      home: MeetingsTab(
+          workspaceId: 5, meetingProvider: meetingProvider, contractProvider: contractProvider, api: api),
     ));
     await tester.pumpAndSettle();
   }
@@ -62,10 +65,34 @@ void main() {
 
     await pumpTab(tester, meetingProvider, contractProvider);
 
-    expect(requested.map((u) => u.path), everyElement(endsWith('/workspaces/5/meetings')));
+    // The meetings list, plus the workspace itself (to know whether the super
+    // admin joined the chat).
+    expect(requested.map((u) => u.path),
+        everyElement(anyOf(endsWith('/workspaces/5/meetings'), endsWith('/workspaces/5'))));
     expect(requested.any((u) => u.path.contains('all-meetings')), isFalse);
     expect(find.text('Future Sync'), findsOneWidget);
   });
+
+  // A super admin schedules only from a chat they joined.
+  for (final joined in [false, true]) {
+    testWidgets('a super admin ${joined ? 'who joined the chat' : 'who has not joined'} ${joined ? 'can' : 'cannot'} create a meeting',
+        (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.role = 'super_admin';
+      when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
+        final uri = inv.positionalArguments.first as Uri;
+        if (uri.path.endsWith('/meetings')) return jsonResponse('{"meetings":[]}');
+        return jsonResponse('{"workspace":{"id":5,"chat_joined":$joined}}');
+      });
+      final meetingProvider = MeetingProvider(repository: MeetingRepository(api: api));
+      final contractProvider = ContractProvider(api: api);
+
+      await pumpTab(tester, meetingProvider, contractProvider, api: api);
+
+      expect(find.byKey(const ValueKey('meetings-new')), joined ? findsOneWidget : findsNothing);
+    });
+  }
 
   testWidgets('shows the empty state when there are no meetings', (tester) async {
     final httpClient = MockHttpClient();

@@ -84,6 +84,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accountManager => 'مدير الحساب';
 
   @override
+  String get senderSupervisor => 'الإدارة';
+
+  @override
   String get loading => 'جار التحميل...';
 
   @override
@@ -4041,7 +4044,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get chatJoin => 'انضم';
+  String get chatJoin => 'انضم للمحادثة';
 
   @override
   String get chatMessage => 'رسالة';
@@ -4069,6 +4072,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatReadOnly => 'عرض المحادثة فقط';
+
+  @override
+  String get chatJoinHint =>
+      'أنت بتشوف المحادثة بس. انضم عشان تكتب وتبعت ملفات وتطلب موافقات وتعمل اجتماعات.';
+
+  @override
+  String get chatLeave => 'غادر المحادثة';
+
+  @override
+  String get chatJoinedLabel => 'أنت منضم للمحادثة دي';
+
+  @override
+  String get chatJoinFailed => 'ماقدرناش نغيّر وضعك في المحادثة. جرّب تاني.';
 
   @override
   String get chatRejectedStatus => 'تم الرفض';

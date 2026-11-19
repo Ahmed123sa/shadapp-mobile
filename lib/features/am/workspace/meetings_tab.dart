@@ -35,6 +35,8 @@ class _MeetingsTabState extends State<MeetingsTab> {
   List<dynamic> _meetings = [];
   bool _loading = true;
   String? _error;
+  // A super admin schedules only from a chat they joined (kept on the server).
+  bool _chatJoined = false;
 
   @override
   void initState() {
@@ -55,6 +57,14 @@ class _MeetingsTabState extends State<MeetingsTab> {
           await _meetingProvider.fetchForWorkspaceRaw((widget.workspaceId ?? _api.workspaceId)!);
     } catch (_) {
       if (mounted) _error = AppLocalizations.of(context)?.amMeetingsLoadFailed;
+    }
+    if (_api.role == 'super_admin') {
+      try {
+        final res = await _api.get('/workspaces/${widget.workspaceId ?? _api.workspaceId}');
+        _chatJoined = (res['workspace'] as Map?)?['chat_joined'] == true;
+      } catch (_) {
+        _chatJoined = false;
+      }
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -226,7 +236,7 @@ class _MeetingsTabState extends State<MeetingsTab> {
       }
     }).toList();
 
-    final canCreate = _api.role != 'super_admin' && _api.canDo('can_manage_meetings');
+    final canCreate = (_api.role != 'super_admin' || _chatJoined) && _api.canDo('can_manage_meetings');
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LuxeFormTheme(
