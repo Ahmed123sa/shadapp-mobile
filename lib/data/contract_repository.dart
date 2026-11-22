@@ -77,6 +77,20 @@ class ContractRepository {
 
   Future<void> delete(int id) => _api.delete('/contracts/$id');
 
+  /// What the close dialog shows: balance, proofs waiting for review and the
+  /// installments that closing would remove (`GET /contracts/:id/close-preview`).
+  Future<Map<String, dynamic>> closePreview(int id) async {
+    final res = await _api.get('/contracts/$id/close-preview');
+    return Map<String, dynamic>.from((res['preview'] as Map?) ?? const {});
+  }
+
+  /// Closes a finished contract. Only the super admin may pass
+  /// [confirmOutstanding] to close one that still has a balance.
+  Future<void> close(int id, {bool confirmOutstanding = false}) =>
+      _api.post('/contracts/$id/close', confirmOutstanding ? {'confirm_outstanding': true} : {});
+
+  Future<void> reopen(int id) => _api.post('/contracts/$id/reopen');
+
   /// Not really a contracts endpoint, but the only current caller
   /// (am/workspace/contracts_tab.dart's company-approve-with-signature flow,
   /// which checks for a saved signature before falling back to a manual

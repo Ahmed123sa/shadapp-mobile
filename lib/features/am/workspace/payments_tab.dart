@@ -79,7 +79,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
     return _contracts
         .cast<Map<String, dynamic>?>()
         .where(
-          (c) => c?['status'] == 'company_approved' || c?['status'] == 'completed',
+          // A closed contract takes no more payments (the server refuses them too).
+          (c) =>
+              (c?['status'] == 'company_approved' || c?['status'] == 'completed') &&
+              c?['closed_at'] == null,
         )
         .whereType<Map<String, dynamic>>()
         .toList();

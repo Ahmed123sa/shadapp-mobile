@@ -225,4 +225,44 @@ void main() {
       expect(find.byIcon(Icons.upload_file), findsNothing);
     });
   });
+
+  group('closed contracts', () {
+    const sent = '{"id":1,"title":"Villa Renovation Deal","status":"sent","value":1000,"currency":"SAR"}';
+    const closed =
+        '{"id":2,"title":"Finished Agreement","status":"completed","value":3000,"currency":"SAR","closed_at":"2026-11-10T10:00:00Z"}';
+
+    testWidgets('leave the working list and sit in a collapsed section for reference', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      stubCommon(httpClient, contractsJson: '{"contracts":[$sent,$closed]}');
+
+      await pumpPage(tester, api);
+
+      expect(find.text('Villa Renovation Deal'), findsWidgets);
+      expect(find.text('Finished Agreement'), findsNothing);
+
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('closed-contracts-toggle')), 300,
+          scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.byKey(const ValueKey('closed-contracts-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Closed contracts (1)'), findsOneWidget);
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('closed-contract-2')), 300,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text('Finished Agreement'), findsOneWidget);
+    });
+
+    testWidgets('a client whose only contract is closed does not see the waiting-for-contracts message', (tester) async {
+      final httpClient = MockHttpClient();
+      final api = buildTestApiClient(client: httpClient);
+      api.workspaceId = 5;
+      stubCommon(httpClient, contractsJson: '{"contracts":[$closed]}');
+
+      await pumpPage(tester, api);
+
+      expect(find.byKey(const ValueKey('contracts-waiting-pulse')), findsNothing);
+      expect(find.byKey(const ValueKey('closed-contracts')), findsOneWidget);
+    });
+  });
 }

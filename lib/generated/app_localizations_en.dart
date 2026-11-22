@@ -6420,4 +6420,145 @@ class AppLocalizationsEn extends AppLocalizations {
   String payMethodFeeAmount(Object amount, Object currency) {
     return 'Fee $amount $currency';
   }
+
+  @override
+  String get closeContract => 'Close contract';
+
+  @override
+  String closeContractTitle(Object title) {
+    return 'Close \"$title\"?';
+  }
+
+  @override
+  String get closeContractIntro =>
+      'The contract stays on record and leaves the client\'s balance. You can reopen it later.';
+
+  @override
+  String get closeSummaryTotal => 'Contract total';
+
+  @override
+  String get closeSummaryPaid => 'Paid';
+
+  @override
+  String get closeSummaryOutstanding => 'Still owed';
+
+  @override
+  String get closeLoadError =>
+      'Could not check the contract. Close this and try again.';
+
+  @override
+  String closePendingBlock(int count) {
+    return '$count payment(s) are waiting for review on this contract. Review them before closing.';
+  }
+
+  @override
+  String get closeOutstandingManager =>
+      'This contract still has a balance. Only the super admin can close it with money owed.';
+
+  @override
+  String closeOutstandingConfirm(Object amount, Object currency) {
+    return 'I understand the client still owes $amount $currency and I want to close this contract anyway.';
+  }
+
+  @override
+  String closeInstallmentsNote(int count, Object amount, Object currency) {
+    return '$count scheduled installment(s) ($amount $currency) will be removed. Reopening does not bring them back.';
+  }
+
+  @override
+  String closeUnlinkedNote(Object amount, Object currency) {
+    return '$amount $currency of this client\'s approved payments are not linked to any contract and are not counted above.';
+  }
+
+  @override
+  String get closeTypeName => 'Type the contract name to confirm';
+
+  @override
+  String get closeContractConfirm => 'Close contract';
+
+  @override
+  String get closeDone => 'Contract closed.';
+
+  @override
+  String closedContractsHeading(int count) {
+    return 'Closed contracts ($count)';
+  }
+
+  @override
+  String get closedContractBadge => 'Closed';
+
+  @override
+  String closedOn(Object date) {
+    return 'Closed on $date';
+  }
+
+  @override
+  String closedOwed(Object amount, Object currency) {
+    return 'Closed with $amount $currency still owed';
+  }
+
+  @override
+  String get reopenContract => 'Reopen';
+
+  @override
+  String reopenContractTitle(Object title) {
+    return 'Reopen \"$title\"?';
+  }
+
+  @override
+  String get reopenContractBody =>
+      'The contract returns to the client\'s balance. Anything that was still owed when it was closed is owed again. Installments removed on closing are not restored.';
+
+  @override
+  String get reopenContractConfirm => 'Reopen contract';
+
+  @override
+  String get reopenDone => 'Contract reopened.';
+
+  @override
+  String get contractMoreActions => 'More actions';
+
+  @override
+  String get payContractsValue => 'Contracts value';
+
+  @override
+  String get payFeeLine => 'Management fee';
+
+  @override
+  String get payConversionLine => 'Conversion fee';
+
+  @override
+  String get payTaxLine => 'Tax';
+
+  @override
+  String payTaxLinePct(Object pct) {
+    return 'Tax ($pct%)';
+  }
+
+  @override
+  String get payTotalDue => 'Total due';
+
+  @override
+  String payDetailsToggle(int count) {
+    return 'Contract details ($count)';
+  }
+
+  @override
+  String payShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get payShowLess => 'Show fewer';
+
+  @override
+  String get payDetailValue => 'Value';
+
+  @override
+  String payClosedToggle(int count) {
+    return 'Closed contracts ($count)';
+  }
+
+  @override
+  String get payClosedNoPayments => 'No payments on record.';
 }

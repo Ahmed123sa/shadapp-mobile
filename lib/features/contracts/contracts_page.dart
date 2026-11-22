@@ -217,16 +217,69 @@ class _ContractsPageState extends State<ContractsPage> {
       );
     }
 
+    // A closed contract is finished and wrapped up: it leaves the working list
+    // and sits in a collapsed section below, for reference only.
+    final open = _contracts.where((c) => c is Map && c['closed_at'] == null).toList();
+    final closed = _contracts.whereType<Map>().where((c) => c['closed_at'] != null).toList();
+
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
         children: [
           LuxePageTitle(l10n.contracts),
-          ..._contracts.map((c) => _contractCard(c)),
+          ...open.map((c) => _contractCard(c)),
+          if (closed.isNotEmpty) _closedSection(l10n, closed),
         ],
       ),
     );
+  }
+
+  bool _closedOpen = false;
+
+  Widget _closedSection(AppLocalizations l10n, List<Map> closed) {
+    String date(Object? raw) {
+      final d = DateTime.tryParse('${raw ?? ''}')?.toLocal();
+      return d == null
+          ? ''
+          : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    }
+
+    return Column(key: const ValueKey('closed-contracts'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      InkWell(
+        key: const ValueKey('closed-contracts-toggle'),
+        onTap: () => setState(() => _closedOpen = !_closedOpen),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(children: [
+            Expanded(
+                child: Text(l10n.closedContractsHeading(closed.length),
+                    style: Lx.text(context, size: 14, color: Lx.ink2))),
+            Icon(_closedOpen ? Icons.expand_less : Icons.expand_more, size: 20, color: Lx.muted),
+          ]),
+        ),
+      ),
+      if (_closedOpen)
+        for (final c in closed)
+          Padding(
+            key: ValueKey('closed-contract-${c['id']}'),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${c['title'] ?? ''}', style: Lx.text(context, size: 14.5)),
+                  Text(
+                      [
+                        if ((num.tryParse('${c['value'] ?? 0}') ?? 0) > 0)
+                          '${lxFormatMoney(num.parse('${c['value']}'))} ${c['currency'] ?? 'SAR'}',
+                        l10n.closedOn(date(c['closed_at'])),
+                      ].join(' · '),
+                      style: Lx.text(context, size: 12, color: Lx.muted)),
+                ]),
+              ),
+            ]),
+          ),
+    ]);
   }
 
   /// Which contract-lifecycle step is "now" (steps before it are done).

@@ -12263,6 +12263,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fee {amount} {currency}'**
   String payMethodFeeAmount(Object amount, Object currency);
+
+  /// No description provided for @closeContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Close contract'**
+  String get closeContract;
+
+  /// No description provided for @closeContractTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close \"{title}\"?'**
+  String closeContractTitle(Object title);
+
+  /// No description provided for @closeContractIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The contract stays on record and leaves the client\'s balance. You can reopen it later.'**
+  String get closeContractIntro;
+
+  /// No description provided for @closeSummaryTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract total'**
+  String get closeSummaryTotal;
+
+  /// No description provided for @closeSummaryPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get closeSummaryPaid;
+
+  /// No description provided for @closeSummaryOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Still owed'**
+  String get closeSummaryOutstanding;
+
+  /// No description provided for @closeLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check the contract. Close this and try again.'**
+  String get closeLoadError;
+
+  /// No description provided for @closePendingBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} payment(s) are waiting for review on this contract. Review them before closing.'**
+  String closePendingBlock(int count);
+
+  /// No description provided for @closeOutstandingManager.
+  ///
+  /// In en, this message translates to:
+  /// **'This contract still has a balance. Only the super admin can close it with money owed.'**
+  String get closeOutstandingManager;
+
+  /// No description provided for @closeOutstandingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand the client still owes {amount} {currency} and I want to close this contract anyway.'**
+  String closeOutstandingConfirm(Object amount, Object currency);
+
+  /// No description provided for @closeInstallmentsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scheduled installment(s) ({amount} {currency}) will be removed. Reopening does not bring them back.'**
+  String closeInstallmentsNote(int count, Object amount, Object currency);
+
+  /// No description provided for @closeUnlinkedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {currency} of this client\'s approved payments are not linked to any contract and are not counted above.'**
+  String closeUnlinkedNote(Object amount, Object currency);
+
+  /// No description provided for @closeTypeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the contract name to confirm'**
+  String get closeTypeName;
+
+  /// No description provided for @closeContractConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close contract'**
+  String get closeContractConfirm;
+
+  /// No description provided for @closeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract closed.'**
+  String get closeDone;
+
+  /// No description provided for @closedContractsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed contracts ({count})'**
+  String closedContractsHeading(int count);
+
+  /// No description provided for @closedContractBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get closedContractBadge;
+
+  /// No description provided for @closedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed on {date}'**
+  String closedOn(Object date);
+
+  /// No description provided for @closedOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed with {amount} {currency} still owed'**
+  String closedOwed(Object amount, Object currency);
+
+  /// No description provided for @reopenContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get reopenContract;
+
+  /// No description provided for @reopenContractTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen \"{title}\"?'**
+  String reopenContractTitle(Object title);
+
+  /// No description provided for @reopenContractBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The contract returns to the client\'s balance. Anything that was still owed when it was closed is owed again. Installments removed on closing are not restored.'**
+  String get reopenContractBody;
+
+  /// No description provided for @reopenContractConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen contract'**
+  String get reopenContractConfirm;
+
+  /// No description provided for @reopenDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract reopened.'**
+  String get reopenDone;
+
+  /// No description provided for @contractMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get contractMoreActions;
+
+  /// No description provided for @payContractsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracts value'**
+  String get payContractsValue;
+
+  /// No description provided for @payFeeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Management fee'**
+  String get payFeeLine;
+
+  /// No description provided for @payConversionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversion fee'**
+  String get payConversionLine;
+
+  /// No description provided for @payTaxLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get payTaxLine;
+
+  /// No description provided for @payTaxLinePct.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax ({pct}%)'**
+  String payTaxLinePct(Object pct);
+
+  /// No description provided for @payTotalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total due'**
+  String get payTotalDue;
+
+  /// No description provided for @payDetailsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract details ({count})'**
+  String payDetailsToggle(int count);
+
+  /// No description provided for @payShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all ({count})'**
+  String payShowAll(int count);
+
+  /// No description provided for @payShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer'**
+  String get payShowLess;
+
+  /// No description provided for @payDetailValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get payDetailValue;
+
+  /// No description provided for @payClosedToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed contracts ({count})'**
+  String payClosedToggle(int count);
+
+  /// No description provided for @payClosedNoPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'No payments on record.'**
+  String get payClosedNoPayments;
 }
 
 class _AppLocalizationsDelegate

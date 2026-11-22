@@ -17,6 +17,8 @@ void main() {
       });
 
       test('routes contract*/payment*/approval* to their tabs', () {
+        expect(fcmTabIndex('contract_closed', isClient: true), 0);
+        expect(fcmTabIndex('contract_reopened', isClient: true), 0);
         expect(fcmTabIndex('contract_sent', isClient: true), 0);
         expect(fcmTabIndex('payment_due', isClient: true), 1);
         expect(fcmTabIndex('approval_requested', isClient: true), 3);
@@ -34,6 +36,13 @@ void main() {
     });
 
     group('AM workspace (isClient: false)', () {
+      test('a client document upload opens Files; other contract types still open Contracts', () {
+        expect(fcmTabIndex('contract_document_uploaded'), 1);
+        expect(fcmTabIndex('contract_closed'), 2);
+        expect(fcmTabIndex('contract_reopened'), 2);
+        expect(fcmTabIndex('contract_sent'), 2);
+      });
+
       test('defaults to the chat tab for null or "chat"', () {
         expect(fcmTabIndex(null), 0);
         expect(fcmTabIndex('chat'), 0);

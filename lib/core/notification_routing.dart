@@ -31,6 +31,9 @@ int fcmTabIndex(String? type, {bool isClient = false}) {
   }
   // AM workspace tabs: 0=chat, 1=files, 2=contracts, 3=payments, 4=approvals, 5=meetings
   if (type == null || type == 'chat') return 0;
+  // A client uploaded a required document: it is reviewed in Files, not Contracts
+  // (this must come before the `contract*` rule below).
+  if (type == 'contract_document_uploaded') return 1;
   if (type.startsWith('contract')) return 2;
   if (type.startsWith('payment') || type == 'workspace_activated') return 3;
   if (type.startsWith('approval')) return 4;
