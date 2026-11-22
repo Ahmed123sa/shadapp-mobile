@@ -2087,5 +2087,112 @@
       "amount": {},
       "currency": {}
     }
-  }
+  },
+  "closeContract": "إنهاء العقد",
+  "closeContractTitle": "تنهي \"{title}\"؟",
+  "@closeContractTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "closeContractIntro": "العقد هيفضل محفوظ وهيخرج من حساب العميل. تقدر تفتحه تاني بعدين.",
+  "closeSummaryTotal": "إجمالي العقد",
+  "closeSummaryPaid": "المدفوع",
+  "closeSummaryOutstanding": "المتبقي",
+  "closeLoadError": "معرفناش نراجع العقد. اقفل وجرب تاني.",
+  "closePendingBlock": "فيه {count} دفعة بانتظار المراجعة على العقد ده. راجعها الأول قبل الإنهاء.",
+  "@closePendingBlock": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "closeOutstandingManager": "لسه فيه مبلغ متبقي على العقد ده. المشرف العام بس هو اللي يقدر ينهي عقد عليه فلوس.",
+  "closeOutstandingConfirm": "فاهم إن العميل لسه عليه {amount} {currency} وعايز أنهي العقد برضو.",
+  "@closeOutstandingConfirm": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeInstallmentsNote": "{count} قسط مجدول ({amount} {currency}) هيتحذف. فتح العقد تاني مش بيرجّعه.",
+  "@closeInstallmentsNote": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeUnlinkedNote": "{amount} {currency} من مدفوعات العميل المعتمدة مش مربوطة بأي عقد، ومش محسوبة فوق.",
+  "@closeUnlinkedNote": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeTypeName": "اكتب اسم العقد للتأكيد",
+  "closeContractConfirm": "إنهاء العقد",
+  "closeDone": "تم إنهاء العقد.",
+  "closedContractsHeading": "عقود منتهية ({count})",
+  "@closedContractsHeading": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "closedContractBadge": "منتهي",
+  "closedOn": "اتنهى يوم {date}",
+  "@closedOn": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "closedOwed": "اتنهى وفضل عليه {amount} {currency}",
+  "@closedOwed": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "reopenContract": "إعادة فتح",
+  "reopenContractTitle": "تفتح \"{title}\" تاني؟",
+  "@reopenContractTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "reopenContractBody": "العقد هيرجع لحساب العميل، وأي مبلغ كان متبقي وقت الإنهاء هيرجع عليه. الأقساط اللي اتحذفت عند الإنهاء مش هترجع.",
+  "reopenContractConfirm": "افتح العقد",
+  "reopenDone": "تم فتح العقد.",
+  "contractMoreActions": "إجراءات أخرى",
+  "payContractsValue": "قيمة العقود",
+  "payFeeLine": "رسوم الإدارة",
+  "payConversionLine": "رسوم التحويل",
+  "payTaxLine": "الضريبة",
+  "payTaxLinePct": "الضريبة ({pct}%)",
+  "@payTaxLinePct": {
+    "placeholders": {
+      "pct": {}
+    }
+  },
+  "payTotalDue": "الإجمالي المستحق",
+  "payDetailsToggle": "تفاصيل العقود ({count})",
+  "@payDetailsToggle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payShowAll": "عرض الكل ({count})",
+  "@payShowAll": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payShowLess": "عرض أقل",
+  "payDetailValue": "القيمة",
+  "payClosedToggle": "عقود منتهية ({count})",
+  "@payClosedToggle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payClosedNoPayments": "مفيش مدفوعات مسجلة."
 }

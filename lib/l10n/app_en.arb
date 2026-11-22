@@ -2208,5 +2208,112 @@
       "amount": {},
       "currency": {}
     }
-  }
+  },
+  "closeContract": "Close contract",
+  "closeContractTitle": "Close \"{title}\"?",
+  "@closeContractTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "closeContractIntro": "The contract stays on record and leaves the client's balance. You can reopen it later.",
+  "closeSummaryTotal": "Contract total",
+  "closeSummaryPaid": "Paid",
+  "closeSummaryOutstanding": "Still owed",
+  "closeLoadError": "Could not check the contract. Close this and try again.",
+  "closePendingBlock": "{count} payment(s) are waiting for review on this contract. Review them before closing.",
+  "@closePendingBlock": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "closeOutstandingManager": "This contract still has a balance. Only the super admin can close it with money owed.",
+  "closeOutstandingConfirm": "I understand the client still owes {amount} {currency} and I want to close this contract anyway.",
+  "@closeOutstandingConfirm": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeInstallmentsNote": "{count} scheduled installment(s) ({amount} {currency}) will be removed. Reopening does not bring them back.",
+  "@closeInstallmentsNote": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeUnlinkedNote": "{amount} {currency} of this client's approved payments are not linked to any contract and are not counted above.",
+  "@closeUnlinkedNote": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "closeTypeName": "Type the contract name to confirm",
+  "closeContractConfirm": "Close contract",
+  "closeDone": "Contract closed.",
+  "closedContractsHeading": "Closed contracts ({count})",
+  "@closedContractsHeading": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "closedContractBadge": "Closed",
+  "closedOn": "Closed on {date}",
+  "@closedOn": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "closedOwed": "Closed with {amount} {currency} still owed",
+  "@closedOwed": {
+    "placeholders": {
+      "amount": {},
+      "currency": {}
+    }
+  },
+  "reopenContract": "Reopen",
+  "reopenContractTitle": "Reopen \"{title}\"?",
+  "@reopenContractTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "reopenContractBody": "The contract returns to the client's balance. Anything that was still owed when it was closed is owed again. Installments removed on closing are not restored.",
+  "reopenContractConfirm": "Reopen contract",
+  "reopenDone": "Contract reopened.",
+  "contractMoreActions": "More actions",
+  "payContractsValue": "Contracts value",
+  "payFeeLine": "Management fee",
+  "payConversionLine": "Conversion fee",
+  "payTaxLine": "Tax",
+  "payTaxLinePct": "Tax ({pct}%)",
+  "@payTaxLinePct": {
+    "placeholders": {
+      "pct": {}
+    }
+  },
+  "payTotalDue": "Total due",
+  "payDetailsToggle": "Contract details ({count})",
+  "@payDetailsToggle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payShowAll": "Show all ({count})",
+  "@payShowAll": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payShowLess": "Show fewer",
+  "payDetailValue": "Value",
+  "payClosedToggle": "Closed contracts ({count})",
+  "@payClosedToggle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "payClosedNoPayments": "No payments on record."
 }

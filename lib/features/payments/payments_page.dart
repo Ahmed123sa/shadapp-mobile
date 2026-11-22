@@ -7,13 +7,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/luxe/lx_icons.dart';
 import '../../core/luxe/tokens.dart';
-import '../../core/widgets/ads_split.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/luxe/luxe_widgets.dart';
 import '../../core/widgets/payment_detail_sheet.dart';
 import '../../providers/contract_provider.dart';
 import '../../providers/payment_provider.dart';
+import 'client_payment_summary.dart';
 import 'payments_page_sheets.dart';
 
 class PaymentsPage extends StatefulWidget {
@@ -40,6 +40,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
   late final PaymentProvider _paymentProvider = widget.paymentProvider ?? PaymentProvider();
   late final ContractProvider _contractProvider = widget.contractProvider ?? ContractProvider();
   List<dynamic> _payments = [];
+  // Payments of closed contracts: history only, never part of the balance.
+  List<dynamic> _closedPayments = [];
   List<dynamic> _contracts = [];
   List<String> _availableMethods = [];
   Map<String, dynamic>? _taxSummary;
@@ -121,113 +123,40 @@ class _PaymentsPageState extends State<PaymentsPage> {
         0, (sum, p) => sum + (num.tryParse(p['amount']?.toString() ?? '')?.toDouble() ?? 0));
   }
 
-  /// The ads contracts in the payments summary (empty for a normal client).
-  List<Map> get _adsContracts {
-    final cs = _taxSummary?['contracts'];
-    if (cs is! List) return const [];
-    return cs.whereType<Map>().where(contractHasAds).toList();
-  }
-
-  /// Fee and budget of each ads contract. The total below it is unchanged: the
-  /// fee is inside the contract value.
-  Widget _adsCard(BuildContext context, String cur) {
-    final many = ((_taxSummary?['contracts'] as List?)?.length ?? 0) > 1;
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Container(
-        key: const ValueKey('payments-ads-card'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Lx.surface,
-          borderRadius: BorderRadius.circular(Lx.rCard),
-          border: Border.all(color: Lx.line2),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          for (final c in _adsContracts) ...[
-            if (many)
-              Text('${c['title'] ?? ''}',
-                  style: Lx.text(context, size: 11.5, color: Lx.ink, weight: FontWeight.w600)),
-            AdsSplit(contract: c, currency: cur),
-          ],
-        ]),
-      ),
-    );
-  }
-
-  /// Small tax card under the progress bar: the contracts' value, the tax at
-  /// each contract's own rate (one row per contract when rates differ) and the
-  /// total including tax. Stays visible after the balance is fully paid.
-  Widget _taxCard(BuildContext context, String cur) {
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
-    String f(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  /// One summary block per currency. An older server sends no `by_currency`,
+  /// so a single block is worked out here from what it does send.
+  List<Map<String, dynamic>> get _summaryBlocks {
+    final by = _taxSummary?['by_currency'];
+    if (by is List && by.isNotEmpty) {
+      return by.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+    }
+    final ts = _taxSummary;
     num n(Object? v) => num.tryParse('${v ?? 0}') ?? 0;
-    final ts = _taxSummary!;
-    final contracts =
-        (ts['contracts'] is List) ? (ts['contracts'] as List).whereType<Map>().toList() : <Map>[];
-    final rows = <Widget>[];
-    Widget row(String l, String v, {bool bold = false}) => Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Flexible(
-                child: Text(l,
-                    style: Lx.text(context,
-                        size: 11.5,
-                        color: bold ? Lx.ink : Lx.muted,
-                        weight: bold ? FontWeight.w600 : FontWeight.w400))),
-            Text('$v $cur',
-                textDirection: TextDirection.ltr,
-                style: Lx.text(context,
-                    size: 11.5,
-                    color: bold ? Lx.ink : Lx.muted,
-                    weight: bold ? FontWeight.w600 : FontWeight.w400)),
-          ]),
-        );
-    rows.add(row(ar ? 'قيمة العقود' : 'Contracts value', f(n(ts['contracts_total']))));
-    // Dollar-conversion fees: added on top of the value, never taxed.
-    for (final c in contracts.where(contractHasConversion)) {
-      final label = ar
-          ? 'رسوم التحويل الدولاري (${f(n(c['conversion_percentage']))}%)'
-          : 'Dollar conversion fee (${f(n(c['conversion_percentage']))}%)';
-      rows.add(row(contracts.length > 1 ? '${c['title'] ?? ''} · $label' : label,
-          f(n(c['conversion_amount']))));
-    }
-    if (contracts.length > 1) {
-      for (final c in contracts) {
-        if (c['tax_excluded'] == true) continue;
-        rows.add(row(
-            ar
-                ? 'ضريبة ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)'
-                : 'Tax · ${c['title'] ?? ''} (${f(n(c['tax_percentage']))}%)',
-            f(n(c['tax_amount']))));
+    final payable = _payableContracts;
+    final grand = _grandTotal;
+    final paid = _totalPaid;
+    return [
+      {
+        'currency': _contractCurrency,
+        'contracts_total': ts?['contracts_total'] ??
+            (payable.isNotEmpty ? payable.fold<num>(0, (s, c) => s + n(c['value'])) : grand),
+        'company_fee_total':
+            ts?['company_fee_total'] ?? payable.fold<num>(0, (s, c) => s + n(c['ads_amount'])),
+        'conversion_total':
+            ts?['conversion_total'] ?? payable.fold<num>(0, (s, c) => s + n(c['conversion_amount'])),
+        'tax_amount': ts?['tax_amount'] ?? 0,
+        'grand_total': grand,
+        'paid': paid,
+        'remaining': (grand - paid) < 0 ? 0 : (grand - paid),
+        'contracts': ts?['contracts'] ?? const [],
       }
-    } else if (n(ts['tax_amount']) > 0) {
-      rows.add(row(
-          ar ? 'ضريبة ${f(n(ts['tax_percentage']))}%' : 'Tax ${f(n(ts['tax_percentage']))}%',
-          f(n(ts['tax_amount']))));
-    }
-    final hasConversionFee = n(ts['conversion_total']) > 0;
-    rows.add(row(
-      hasConversionFee
-          ? (ar ? 'الإجمالي المستحق' : 'Total due')
-          : (ar ? 'الإجمالي شامل الضريبة' : 'Total incl. tax'),
-      f(n(ts['grand_total'])),
-      bold: true,
-    ));
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Container(
-        key: const ValueKey('payments-tax-card'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Lx.surface,
-          borderRadius: BorderRadius.circular(Lx.rCard),
-          border: Border.all(color: Lx.line2),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
-      ),
-    );
+    ];
+  }
+
+  List<Map<String, dynamic>> get _closedContracts {
+    final c = _taxSummary?['closed'];
+    if (c is! List) return const [];
+    return c.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
   }
 
   String get _contractCurrency {
@@ -313,6 +242,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
     try {
       final paymentsData = await _paymentProvider.fetchWorkspaceEnvelope(wsId);
       _payments = safeList(paymentsData['payments']);
+      _closedPayments = safeList(paymentsData['closed_payments']);
       _availableMethods =
           (paymentsData['available_methods'] as List<dynamic>?)?.cast<String>() ?? [];
       _taxSummary = paymentsData['tax_summary'] as Map<String, dynamic>?;
@@ -333,7 +263,10 @@ class _PaymentsPageState extends State<PaymentsPage> {
     return _contracts
         .cast<Map<String, dynamic>?>()
         .where(
-          (c) => c?['status'] == 'company_approved' || c?['status'] == 'completed',
+          // A closed contract is out of the balance and takes no more payments.
+          (c) =>
+              (c?['status'] == 'company_approved' || c?['status'] == 'completed') &&
+              c?['closed_at'] == null,
         )
         .whereType<Map<String, dynamic>>()
         .toList();
@@ -357,44 +290,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
     if (_loading) return const LoadingState();
     if (_error != null) return ErrorState(message: _error!, onRetry: _load);
 
-    final grandTotal = _grandTotal;
-    final contractCur = _contractCurrency;
-    final progress = grandTotal > 0 ? (_totalPaid / grandTotal).clamp(0.0, 1.0) : 0.0;
-    final isFullyPaid = _totalPaid >= grandTotal && grandTotal > 0;
-
     final l10n = AppLocalizations.of(context)!;
-    final paid = _totalPaid;
-    final remaining = (grandTotal - paid).clamp(0, double.infinity).toDouble();
-    final pctPaid = (progress * 100).round();
-
-    Widget tile(String label, num value, {bool highlight = false}) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14), border: Border.all(color: Lx.line)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Lx.text(context, size: 10, color: Lx.faint).copyWith(letterSpacing: 1.4)),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: AlignmentDirectional.centerStart,
-                child: Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: Text.rich(TextSpan(children: [
-                    TextSpan(
-                        text: lxFormatMoney(value),
-                        style: Lx.display(context, size: 16, color: highlight ? Lx.ok : Lx.ink)),
-                    TextSpan(
-                        text: ' $contractCur', style: Lx.text(context, size: 9.5, color: Lx.muted)),
-                  ])),
-                ),
-              ),
-            ]),
-          ),
-        );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -416,48 +312,12 @@ class _PaymentsPageState extends State<PaymentsPage> {
           padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 80),
           children: [
             LuxePageTitle(l10n.dashboard_tab_payments),
-            Row(key: const ValueKey('payments-summary'), children: [
-              tile(l10n.onboarding_total, grandTotal),
-              const SizedBox(width: 8),
-              tile(l10n.onboarding_paidAmount, paid, highlight: true),
-              const SizedBox(width: 8),
-              tile(l10n.onboarding_remainingAmount2, remaining),
-            ]),
-            const SizedBox(height: 14),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text.rich(TextSpan(children: [
-                TextSpan(
-                    text: '${l10n.onboarding_paidAmount} ',
-                    style: Lx.text(context, size: 11.5, color: Lx.muted)),
-                TextSpan(
-                    text: '$pctPaid%',
-                    style: Lx.text(context, size: 11.5, weight: FontWeight.w500)),
-              ])),
-              Text.rich(TextSpan(children: [
-                TextSpan(
-                    text: '${l10n.onboarding_remainingAmount2} ',
-                    style: Lx.text(context, size: 11.5, color: Lx.muted)),
-                TextSpan(
-                    text: '${100 - pctPaid}%',
-                    style: Lx.text(context, size: 11.5, weight: FontWeight.w500)),
-              ])),
-            ]),
-            const SizedBox(height: 8),
-            LuxeProgressSplit(fraction: progress),
-            if (isFullyPaid)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(key: const ValueKey('payments-paid-in-full'), children: [
-                  const LuxeStatusDot(status: LxStatus.ok),
-                  const SizedBox(width: 7),
-                  Text(l10n.payments_paidInFull, style: Lx.text(context, size: 12, color: Lx.ok)),
-                ]),
-              ),
-            if (_adsContracts.isNotEmpty) _adsCard(context, contractCur),
-            if (_taxSummary != null &&
-                ((num.tryParse('${_taxSummary!['tax_amount'] ?? 0}') ?? 0) > 0 ||
-                    (num.tryParse('${_taxSummary!['conversion_total'] ?? 0}') ?? 0) > 0))
-              _taxCard(context, contractCur),
+            ClientPaymentSummary(
+              key: const ValueKey('payments-summary'),
+              blocks: _summaryBlocks,
+              closedContracts: _closedContracts,
+              closedPayments: _closedPayments,
+            ),
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

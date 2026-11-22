@@ -72,6 +72,16 @@ class ContractProvider {
   /// also exposes list-mutating methods.
   Future<void> deleteContract(int id) => _repo.delete(id);
 
+  /// See [ContractRepository.closePreview].
+  Future<Map<String, dynamic>> closePreview(int id) => _repo.closePreview(id);
+
+  /// See [ContractRepository.close].
+  Future<void> closeContract(int id, {bool confirmOutstanding = false}) =>
+      _repo.close(id, confirmOutstanding: confirmOutstanding);
+
+  /// See [ContractRepository.reopen].
+  Future<void> reopenContract(int id) => _repo.reopen(id);
+
   /// `/auth/me` — am/workspace/contracts_tab.dart reads the signed-in
   /// account manager's saved signature off this before falling back to a
   /// manual signature pad. See [ContractRepository.fetchCurrentUser].

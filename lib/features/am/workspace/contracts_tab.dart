@@ -14,6 +14,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/luxe/luxe_widgets.dart';
 import '../../../providers/contract_provider.dart';
 import '../widgets/contract_builder.dart';
+import 'close_contract_dialog.dart';
 
 class ContractsTab extends StatefulWidget {
   final int? workspaceId;
@@ -365,6 +366,98 @@ class _ContractsTabState extends State<ContractsTab> {
     }
   }
 
+  /// The client's manager and the super admin close and reopen contracts; the
+  /// server enforces it, so everyone else simply never sees the control.
+  bool get _canClose => _api.role == 'super_admin' || _api.role == 'account_manager';
+
+  Future<void> _closeContract(Map<String, dynamic> c) async {
+    final closed = await CloseContractDialog.show(context, contract: c, provider: _contractProvider);
+    if (closed != true || !mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.closeDone)));
+    await _load();
+  }
+
+  Future<void> _reopenContract(Map<String, dynamic> c) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.reopenContractTitle('${c['title'] ?? ''}')),
+        content: Text(l10n.reopenContractBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          ElevatedButton(
+              key: const ValueKey('reopen-confirm'),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.reopenContractConfirm)),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _contractProvider.reopenContract(c['id'] as int);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.reopenDone)));
+      await _load();
+    } catch (e, s) {
+      AppLog.error('contracts_tab._reopenContract', e, s);
+      if (!mounted) return;
+      final reason = e is ValidationException || e is ServerException ? e.toString() : '';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(reason.isEmpty ? AppLocalizations.of(context)!.errorOccurred : reason)));
+    }
+  }
+
+  /// Collapsed "Closed contracts (N)" list, for reference and reopening.
+  Widget _closedSection(AppLocalizations l10n, List<Map<String, dynamic>> closed) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: const ValueKey('closed-contracts'),
+          tilePadding: EdgeInsets.zero,
+          title: Text(l10n.closedContractsHeading(closed.length),
+              style: Lx.text(context, size: 14, color: Lx.ink2)),
+          children: [
+            for (final c in closed)
+              Padding(
+                key: ValueKey('closed-contract-${c['id']}'),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${c['title'] ?? ''}', style: Lx.text(context, size: 14.5)),
+                      Text(
+                          [
+                            if ((num.tryParse('${c['value'] ?? 0}') ?? 0) > 0)
+                              '${lxFormatMoney(num.parse('${c['value']}'))} ${c['currency'] ?? 'SAR'}',
+                            l10n.closedOn(_formatDate(c['closed_at'])),
+                          ].join(' · '),
+                          style: Lx.text(context, size: 12, color: Lx.muted)),
+                      if ((num.tryParse('${c['closed_outstanding'] ?? 0}') ?? 0) > 0)
+                        Text(
+                            l10n.closedOwed(lxFormatMoney(num.parse('${c['closed_outstanding']}')),
+                                '${c['currency'] ?? 'SAR'}'),
+                            style: Lx.text(context, size: 12, color: Lx.crimsonInk)),
+                    ]),
+                  ),
+                  if (_canClose)
+                    TextButton(
+                      key: ValueKey('reopen-contract-${c['id']}'),
+                      onPressed: () => _reopenContract(c),
+                      child: Text(l10n.reopenContract),
+                    ),
+                ]),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _companyApproveWithSignature(Map<String, dynamic> contract) async {
     final messenger = ScaffoldMessenger.of(context);
     String? savedSignature;
@@ -561,6 +654,16 @@ class _ContractsTabState extends State<ContractsTab> {
           )
         : const SizedBox.shrink();
 
+    // A closed contract keeps status 'completed' but leaves the working list.
+    final openContracts = _contracts
+        .whereType<Map<String, dynamic>>()
+        .where((c) => c['closed_at'] == null)
+        .toList();
+    final closedContracts = _contracts
+        .whereType<Map<String, dynamic>>()
+        .where((c) => c['closed_at'] != null)
+        .toList();
+
     return RefreshIndicator(
       onRefresh: _load,
       color: Lx.crimsonInk,
@@ -580,7 +683,7 @@ class _ContractsTabState extends State<ContractsTab> {
               ]),
             )
           else
-            ..._contracts.map((c) {
+            ...openContracts.map((c) {
               final rawActions = actionsForStatus[c['status']] ?? [];
               final actions = rawActions.where((a) {
                 if (isSA) return a == 'company-approve' || a == 'complete';
@@ -661,6 +764,28 @@ class _ContractsTabState extends State<ContractsTab> {
                     size: LuxeButtonSize.sm,
                     onPressed: () => _openPdf(c),
                   ),
+                // The rare, hard-to-undo action sits behind a menu, away from the
+                // everyday buttons.
+                if (status == 'completed' && _canClose)
+                  PopupMenuButton<String>(
+                    key: ValueKey('contract-more-${c['id']}'),
+                    tooltip: l10n.contractMoreActions,
+                    onSelected: (_) => _closeContract(c),
+                    itemBuilder: (_) => [
+                      PopupMenuItem<String>(
+                        key: ValueKey('contract-close-${c['id']}'),
+                        value: 'close',
+                        child: Text(l10n.closeContract),
+                      ),
+                    ],
+                    child: IgnorePointer(
+                      child: LuxeButton(
+                        label: l10n.contractMoreActions,
+                        size: LuxeButtonSize.sm,
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
               ];
               // Mockup case 2: `.card` (`.ap` when it waits on the company),
               // kind Main/Additional, title, "status · date", `.amt`, the
@@ -728,6 +853,7 @@ class _ContractsTabState extends State<ContractsTab> {
                 ]),
               );
             }),
+          if (closedContracts.isNotEmpty) _closedSection(l10n, closedContracts),
         ],
       ),
     );

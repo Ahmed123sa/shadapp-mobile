@@ -60,28 +60,129 @@ void main() {
     expect(find.text('No payments'), findsNothing);
   });
 
-  testWidgets('shows the tax card with each contract at its own rate, and keeps it when fully paid', (tester) async {
+  // Serves one /payments envelope and an (empty) contracts list.
+  MockHttpClient serve(String paymentsJson) {
     final httpClient = MockHttpClient();
-    final api = buildTestApiClient(client: httpClient);
-    api.workspaceId = 5;
     when(() => httpClient.get(any(), headers: any(named: 'headers'))).thenAnswer((inv) async {
       final uri = inv.positionalArguments[0] as Uri;
       if (uri.path.endsWith('/contracts')) return jsonResponse('{"contracts":[]}');
-      return jsonResponse(
-        '{"payments":[{"id":1,"amount":6170,"currency":"SAR","status":"approved"}],"available_methods":[],'
-        '"tax_summary":{"contracts_total":5500,"tax_percentage":12,"tax_amount":670,"grand_total":6170,'
-        '"contracts":[{"id":1,"title":"Retainer","value":5000,"tax_percentage":12,"tax_amount":600,"total":5600},'
-        '{"id":2,"title":"Extra","value":500,"tax_percentage":14,"tax_amount":70,"total":570}]}}',
-      );
+      return jsonResponse(paymentsJson);
     });
+    return httpClient;
+  }
+
+  Finder inBlock(String cur, Finder f) =>
+      find.descendant(of: find.byKey(ValueKey('payments-lines-$cur')), matching: f);
+
+  // The lines add up to the total: value + fee + conversion + tax.
+  testWidgets('shows fixed summary lines that add up to the total, with no line for a zero fee', (tester) async {
+    final api = buildTestApiClient(client: serve(
+      '{"payments":[{"id":1,"amount":6170,"currency":"SAR","status":"approved"}],"available_methods":[],'
+      '"tax_summary":{"contracts_total":5500,"tax_percentage":12,"tax_amount":670,"grand_total":6170,'
+      '"by_currency":[{"currency":"SAR","contracts_total":5500,"company_fee_total":0,"conversion_total":0,'
+      '"tax_amount":670,"grand_total":6170,"paid":6170,"remaining":0,"contracts":['
+      '{"id":1,"title":"Retainer","currency":"SAR","value":5000,"tax_percentage":12,"tax_amount":600,"total":5600},'
+      '{"id":2,"title":"Extra","currency":"SAR","value":500,"tax_percentage":14,"tax_amount":70,"total":570}]}]}}'))
+      ..workspaceId = 5;
 
     await pumpPage(tester, api);
 
-    final card = find.byKey(const ValueKey('payments-tax-card'));
-    expect(card, findsOneWidget);
-    expect(find.descendant(of: card, matching: find.textContaining('Retainer')), findsOneWidget);
-    expect(find.descendant(of: card, matching: find.textContaining('(14%)')), findsOneWidget);
-    expect(find.descendant(of: card, matching: find.text('6170 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('5,500 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('Tax')), findsOneWidget);
+    expect(inBlock('SAR', find.text('670 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('6,170 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('Management fee')), findsNothing);
+    expect(inBlock('SAR', find.text('Conversion fee')), findsNothing);
+    expect(find.byKey(const ValueKey('payments-paid-in-full')), findsOneWidget);
+  });
+
+  testWidgets('lists value, fee, conversion and tax so they sum to 116,400', (tester) async {
+    final api = buildTestApiClient(client: serve(
+      '{"payments":[],"available_methods":[],"tax_summary":{"contracts_total":100000,"tax_percentage":14,'
+      '"tax_amount":1400,"grand_total":116400,"by_currency":[{"currency":"SAR","contracts_total":100000,'
+      '"company_fee_total":10000,"conversion_total":5000,"tax_amount":1400,"grand_total":116400,"paid":0,'
+      '"remaining":116400,"contracts":[{"id":1,"title":"Retainer","currency":"SAR","value":100000,'
+      '"tax_percentage":14,"tax_amount":1400,"total":111400,"total_due":116400}]}]}}'))
+      ..workspaceId = 5;
+
+    await pumpPage(tester, api);
+
+    expect(inBlock('SAR', find.text('100,000 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('Management fee')), findsOneWidget);
+    expect(inBlock('SAR', find.text('10,000 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('Conversion fee')), findsOneWidget);
+    expect(inBlock('SAR', find.text('5,000 SAR')), findsOneWidget);
+    expect(inBlock('SAR', find.text('Tax (14%)')), findsOneWidget);
+    expect(inBlock('SAR', find.text('116,400 SAR')), findsOneWidget);
+    expect(100000 + 10000 + 5000 + 1400, 116400);
+  });
+
+  testWidgets('keeps two currencies apart and never adds them', (tester) async {
+    final api = buildTestApiClient(client: serve(
+      '{"payments":[],"available_methods":[],"tax_summary":{"contracts_total":0,"tax_percentage":0,"tax_amount":0,'
+      '"grand_total":0,"by_currency":['
+      '{"currency":"SAR","contracts_total":5000,"company_fee_total":0,"conversion_total":0,"tax_amount":0,'
+      '"grand_total":5000,"paid":2000,"remaining":3000,"contracts":[]},'
+      '{"currency":"USD","contracts_total":800,"company_fee_total":0,"conversion_total":0,"tax_amount":0,'
+      '"grand_total":800,"paid":0,"remaining":800,"contracts":[]}]}}'))
+      ..workspaceId = 5;
+
+    await pumpPage(tester, api);
+
+    expect(find.byKey(const ValueKey('payments-block-SAR')), findsOneWidget);
+    expect(find.byKey(const ValueKey('payments-block-USD')), findsOneWidget);
+    expect(find.text('5,800 SAR'), findsNothing);
+    expect(find.text('5,800 USD'), findsNothing);
+  });
+
+  testWidgets('hides contract details behind a toggle, shows the first 5, then all on request', (tester) async {
+    final contracts = [
+      for (var i = 1; i <= 50; i++)
+        '{"id":$i,"title":"Deal $i","currency":"SAR","value":100,"tax_percentage":0,"tax_amount":0,"total":100}'
+    ].join(',');
+    final api = buildTestApiClient(client: serve(
+      '{"payments":[],"available_methods":[],"tax_summary":{"contracts_total":5000,"tax_percentage":0,"tax_amount":0,'
+      '"grand_total":5000,"by_currency":[{"currency":"SAR","contracts_total":5000,"company_fee_total":0,'
+      '"conversion_total":0,"tax_amount":0,"grand_total":5000,"paid":0,"remaining":5000,"contracts":[$contracts]}]}}'))
+      ..workspaceId = 5;
+
+    await pumpPage(tester, api);
+
+    expect(find.text('Deal 1'), findsNothing);
+    await tester.ensureVisible(find.byKey(const ValueKey('payments-details-toggle')));
+    await tester.tap(find.byKey(const ValueKey('payments-details-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('payments-detail-row-5')), findsOneWidget);
+    expect(find.byKey(const ValueKey('payments-detail-row-6')), findsNothing);
+
+    await tester.ensureVisible(find.byKey(const ValueKey('payments-show-all')));
+    await tester.tap(find.byKey(const ValueKey('payments-show-all')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('payments-detail-row-50')), 400,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.byKey(const ValueKey('payments-detail-row-50')), findsOneWidget);
+  });
+
+  testWidgets('closed contracts stay out of the balance and are listed as history with their payments', (tester) async {
+    final api = buildTestApiClient(client: serve(
+      '{"payments":[],"closed_payments":[{"id":77,"contract_id":5,"amount":4000,"currency":"SAR","status":"approved",'
+      '"created_at":"2026-08-01T00:00:00Z"}],"available_methods":[],"tax_summary":{"contracts_total":5000,'
+      '"tax_percentage":0,"tax_amount":0,"grand_total":5000,"by_currency":[{"currency":"SAR","contracts_total":5000,'
+      '"company_fee_total":0,"conversion_total":0,"tax_amount":0,"grand_total":5000,"paid":0,"remaining":5000,'
+      '"contracts":[]}],"closed":[{"id":5,"title":"Finished deal","currency":"SAR","total_due":4000,'
+      '"closed_at":"2026-11-10T10:00:00Z","closed_outstanding":0}]}}'))
+      ..workspaceId = 5;
+
+    await pumpPage(tester, api);
+
+    expect(find.text('Finished deal'), findsNothing);
+    await tester.ensureVisible(find.byKey(const ValueKey('payments-closed-toggle')));
+    await tester.tap(find.byKey(const ValueKey('payments-closed-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Finished deal'), findsOneWidget);
+    expect(find.text('4,000 SAR'), findsOneWidget);
   });
 
   testWidgets('shows the empty state when there are no payments', (tester) async {

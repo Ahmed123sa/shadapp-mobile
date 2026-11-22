@@ -6395,4 +6395,144 @@ class AppLocalizationsAr extends AppLocalizations {
   String payMethodFeeAmount(Object amount, Object currency) {
     return 'رسوم $amount $currency';
   }
+
+  @override
+  String get closeContract => 'إنهاء العقد';
+
+  @override
+  String closeContractTitle(Object title) {
+    return 'تنهي \"$title\"؟';
+  }
+
+  @override
+  String get closeContractIntro =>
+      'العقد هيفضل محفوظ وهيخرج من حساب العميل. تقدر تفتحه تاني بعدين.';
+
+  @override
+  String get closeSummaryTotal => 'إجمالي العقد';
+
+  @override
+  String get closeSummaryPaid => 'المدفوع';
+
+  @override
+  String get closeSummaryOutstanding => 'المتبقي';
+
+  @override
+  String get closeLoadError => 'معرفناش نراجع العقد. اقفل وجرب تاني.';
+
+  @override
+  String closePendingBlock(int count) {
+    return 'فيه $count دفعة بانتظار المراجعة على العقد ده. راجعها الأول قبل الإنهاء.';
+  }
+
+  @override
+  String get closeOutstandingManager =>
+      'لسه فيه مبلغ متبقي على العقد ده. المشرف العام بس هو اللي يقدر ينهي عقد عليه فلوس.';
+
+  @override
+  String closeOutstandingConfirm(Object amount, Object currency) {
+    return 'فاهم إن العميل لسه عليه $amount $currency وعايز أنهي العقد برضو.';
+  }
+
+  @override
+  String closeInstallmentsNote(int count, Object amount, Object currency) {
+    return '$count قسط مجدول ($amount $currency) هيتحذف. فتح العقد تاني مش بيرجّعه.';
+  }
+
+  @override
+  String closeUnlinkedNote(Object amount, Object currency) {
+    return '$amount $currency من مدفوعات العميل المعتمدة مش مربوطة بأي عقد، ومش محسوبة فوق.';
+  }
+
+  @override
+  String get closeTypeName => 'اكتب اسم العقد للتأكيد';
+
+  @override
+  String get closeContractConfirm => 'إنهاء العقد';
+
+  @override
+  String get closeDone => 'تم إنهاء العقد.';
+
+  @override
+  String closedContractsHeading(int count) {
+    return 'عقود منتهية ($count)';
+  }
+
+  @override
+  String get closedContractBadge => 'منتهي';
+
+  @override
+  String closedOn(Object date) {
+    return 'اتنهى يوم $date';
+  }
+
+  @override
+  String closedOwed(Object amount, Object currency) {
+    return 'اتنهى وفضل عليه $amount $currency';
+  }
+
+  @override
+  String get reopenContract => 'إعادة فتح';
+
+  @override
+  String reopenContractTitle(Object title) {
+    return 'تفتح \"$title\" تاني؟';
+  }
+
+  @override
+  String get reopenContractBody =>
+      'العقد هيرجع لحساب العميل، وأي مبلغ كان متبقي وقت الإنهاء هيرجع عليه. الأقساط اللي اتحذفت عند الإنهاء مش هترجع.';
+
+  @override
+  String get reopenContractConfirm => 'افتح العقد';
+
+  @override
+  String get reopenDone => 'تم فتح العقد.';
+
+  @override
+  String get contractMoreActions => 'إجراءات أخرى';
+
+  @override
+  String get payContractsValue => 'قيمة العقود';
+
+  @override
+  String get payFeeLine => 'رسوم الإدارة';
+
+  @override
+  String get payConversionLine => 'رسوم التحويل';
+
+  @override
+  String get payTaxLine => 'الضريبة';
+
+  @override
+  String payTaxLinePct(Object pct) {
+    return 'الضريبة ($pct%)';
+  }
+
+  @override
+  String get payTotalDue => 'الإجمالي المستحق';
+
+  @override
+  String payDetailsToggle(int count) {
+    return 'تفاصيل العقود ($count)';
+  }
+
+  @override
+  String payShowAll(int count) {
+    return 'عرض الكل ($count)';
+  }
+
+  @override
+  String get payShowLess => 'عرض أقل';
+
+  @override
+  String get payDetailValue => 'القيمة';
+
+  @override
+  String payClosedToggle(int count) {
+    return 'عقود منتهية ($count)';
+  }
+
+  @override
+  String get payClosedNoPayments => 'مفيش مدفوعات مسجلة.';
 }
